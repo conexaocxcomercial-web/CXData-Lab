@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace CXData</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <style>
+        :root { 
+            --bg-board: #f4f4f5; 
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --text-main: #1e1e1e;
+            --text-muted: #71717a;
+            --primary-purple: #7371ff; 
+            --accent-lime: #bef533; 
+            --light-purple: #dbbfff; 
+            --accent-pink: #ff43c0; 
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+
+        .top-bar { 
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
+            height: 70px; padding: 0 40px; display: flex; justify-content: space-between; 
+            align-items: center; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); z-index: 10; 
+        }
+        
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; display: flex; align-items: center;}
+        .top-bar-logo span.roxo { color: var(--primary-purple); }
+        .top-bar-logo:hover { opacity: 0.8; }
+
+        .btn-acao { background-color: var(--primary-purple); color: white; padding: 12px 24px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
+        .btn-acao:hover { background-color: var(--text-main); }
+        .btn-acao:disabled { background-color: var(--text-muted); cursor: not-allowed; }
+
+        .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
+
+        .filter-bar { padding: 0 40px 15px 40px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .filter-input { 
+            padding: 10px 20px; font-size: 12px; font-weight: 600; color: var(--text-main);
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
+            border-radius: 50px !important; outline: none; cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s;
+        }
+        .filter-input:focus { background: #fff; box-shadow: 0 4px 15px rgba(115, 113, 255, 0.1); }
+        .date-wrapper {
+            display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px); padding: 5px 20px; border-radius: 50px !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+        .date-wrapper span { font-size: 10px; font-weight: 800; color: var(--text-muted); }
+        .filter-date { background: transparent; font-size: 12px; font-weight: 600; outline: none; color: var(--text-main); cursor: pointer; }
+        .btn-limpar {
+            background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 800;
+            cursor: pointer; text-transform: uppercase; border-radius: 50px !important; padding: 10px 20px;
+            transition: 0.2s; border: 1px solid #e4e4e7;
+        }
+        .btn-limpar:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
+
+        .kanban-board { display: flex; padding: 0 40px 30px 40px; gap: 20px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
+        .kanban-column { background: transparent; min-width: 320px; width: 320px; display: flex; flex-direction: column; max-height: 100%; }
+        
+        .column-header { padding: 0 0 15px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
+        .column-title { font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
+
+        .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
+
+        .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
+        .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
+        .card.dragging { opacity: 0.4; }
+        .drag-over { background-color: rgba(115, 113, 255, 0.05); }
+
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
+        .card-empresa { color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase;}
+        
+        .card-nome { font-size: 18px; font-weight: 900; margin-bottom: 6px; line-height: 1.1; letter-spacing: -0.5px;}
+        .card-resp { font-size: 12px; color: var(--text-main); font-weight: 600; margin-bottom: 15px;}
+        
+        .dias-aberto { display: inline-block; color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; text-transform: uppercase; letter-spacing: 0.5px;}
+
+        .select-atividade { width: 100%; padding: 10px; font-size: 12px; font-weight: 600; background: #f4f4f5; color: var(--text-main); outline: none; margin-bottom: 10px; border-bottom: 2px solid transparent; transition: 0.2s; cursor: pointer;}
+        .select-atividade:focus { border-bottom: 2px solid var(--primary-purple); background: #ffffff;}
+        .select-atividade:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        .card-timer-area { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 10px 15px; border-radius: 30px !important; }
+        .timer-display { font-family: monospace; font-size: 16px; font-weight: 800; color: #ffffff; }
+        .timer-display.ativo { color: var(--accent-lime); }
+        
+        .btn-play { background-color: var(--accent-lime); color: var(--text-main); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; border-radius: 50% !important; }
+        .btn-play:hover { transform: scale(1.1); }
+        .btn-play.parar { background-color: var(--accent-pink); color: white; animation: pulse 1.5s infinite; }
+        .btn-play:disabled { opacity: 0.7; cursor: wait; animation: none; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 67, 192, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(244,244,245,0.7); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); padding: 40px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .modal-header h2 { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;}
+        .close-btn { background: none; color: var(--text-muted); font-size: 24px; cursor: pointer; font-weight: 300;}
+        .close-btn:hover { color: var(--accent-pink); }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .input-group label { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-item { width: 100%; padding: 14px; background: #f4f4f5; color: var(--text-main); font-size: 14px; font-weight: 500; outline: none; border-left: 3px solid transparent; transition: all 0.2s;}
+        .input-item:focus { background: #ffffff; border-left-color: var(--primary-purple); box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
+        .historico-item { padding: 15px; background: #f4f4f5; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center;}
+        .historico-info span { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">
+            <span class="material-symbols-rounded" style="margin-right: 8px; font-size: 22px;">arrow_back</span>
+            CXData <span class="roxo" style="margin-left: 5px;">Lab</span>
+        </div>
+    </div>
+
+    <div class="command-bar">
+        <h1 id="tituloWorkspace" style="font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Carregando...</h1>
+        <button class="btn-acao" onclick="abrirModalProjeto()">
+            <span class="material-symbols-rounded">add</span> NOVO PROJETO
+        </button>
+    </div>
+
+    <div class="filter-bar">
+        <select id="filtroCliente" class="filter-input" onchange="renderizarProjetos()">
+            <option value="">Todos os Clientes</option>
+        </select>
+        
+        <select id="filtroResp" class="filter-input" onchange="renderizarProjetos()">
+            <option value="">Todos os Responsáveis</option>
+        </select>
+        
+        <div class="date-wrapper">
+            <span>DE:</span>
+            <input type="date" id="filtroDataInicio" class="filter-date" onchange="renderizarProjetos()">
+            <span>ATÉ:</span>
+            <input type="date" id="filtroDataFim" class="filter-date" onchange="renderizarProjetos()">
+        </div>
+        
+        <button class="btn-limpar" onclick="limparFiltros()">Limpar Filtros</button>
+    </div>
+
+    <div class="kanban-board" id="boardDinamico"></div>
+
+    <div class="modal-overlay" id="modalFormProjeto" onclick="fecharModalFundo(event, 'modalFormProjeto')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Setup do Projeto</h2>
+                <button class="close-btn" onclick="fecharModal('modalFormProjeto')">X</button>
+            </div>
+            
+            <div class="input-group">
+                <label>Empresa / Cliente / Vaga</label>
+                <input type="text" id="projEmpresa" class="input-item" required>
+            </div>
+            <div class="input-group">
+                <label>Nome do Projeto</label>
+                <input type="text" id="projNome" class="input-item" required>
+            </div>
+            <div class="input-group">
+                <label>Área</label>
+                <select id="projArea" class="input-item"></select>
+            </div>
+            <div class="input-group">
+                <label>Responsável</label>
+                <select id="projResp" class="input-item">
+                    <option value="Jhonattan Luiz">Jhonattan Luiz</option>
+                    <option value="Gabrriela Farias">Gabrriela Farias</option>
+                    <option value="Mirian Meireles">Mirian Meireles</option>
+                    <option value="Itiana Andrade">Itiana Andrade</option>
+                    <option value="Matheus Alves">Matheus Alves</option>
+                    <option value="Clara Viana">Clara Viana</option>
+                    <option value="Alisson Maciel">Alisson Maciel</option>
+                    <option value="Juliete Cadete">Juliete Cadete</option>
+                    <option value="Ana Medeiros">Ana Medeiros</option>
+                </select>
+            </div>
+            
+            <button class="btn-acao" id="btnSalvarProjeto" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarProjeto()">CRIAR PROJETO</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
+        <div class="modal-content" style="max-width: 600px; background: white;">
+            <div class="modal-header">
+                <div>
+                    <span id="detArea" style="color: var(--primary-purple); font-size: 12px; font-weight: 800; text-transform: uppercase;"></span>
+                    <h2 id="detNome">Nome do Projeto</h2>
+                </div>
+                <button class="close-btn" onclick="fecharModal('modalDetalhes')">X</button>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 20px; display: flex; gap: 15px;">
+                <span>Início: <b id="detDataInicio" style="color: var(--text-main);"></b></span>
+                <span>Conclusão/Pausa: <b id="detDataFim" style="color: var(--text-main);"></b></span>
+            </div>
+            
+            <div style="background: #1e1e1e; padding: 25px; color: white; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 30px !important;">
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-lime);">Tempo Total Dedicado</span>
+                <div style="font-size: 32px; font-weight: 900; font-family: monospace;" id="detTempoTotal">00:00:00</div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Histórico de Execução</h3>
+                <div id="listaHistorico"></div>
+            </div>
+
+            <button class="btn-acao" style="width: 100%; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
+        </div>
+    </div>
+
+    <script>
+        const QUADRO_ATUAL = "{{ quadro_atual }}";
+
+        const WORKSPACES = {
+            'geral': {
+                titulo: 'Quadro Geral',
+                areasPermitidas: ['CX Data', 'Comercial', 'Marketing'],
+                atividades: ["Planejamento Inicial", "Reunião de Alinhamento", "Coleta de Dados / Briefing", "Produção / Execução", "Análise / Revisão", "Apresentação / Entrega"],
+                statusInicial: 'Não Iniciado',
+                colunas: [
+                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--text-main)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--primary-purple)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--accent-pink)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: '#10b981' }
+                ]
+            },
+            'recrutamento': {
+                titulo: 'Recrutamento e Seleção',
+                areasPermitidas: ['Recrutamento e seleção'],
+                atividades: ["Abertura de vaga", "Entrevista", "Hunting", "Reunião de onboarding", "Reunião com cliente", "Produção de relatório", "Triagem", "Aplicação de testes"],
+                statusInicial: 'Backlog',
+                colunas: [
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--text-main)' },
+                    { id: 'Abertura', nome: 'Abertura', cor: '#3b82f6' },
+                    { id: 'Triagem', nome: 'Triagem', cor: '#8b5cf6' },
+                    { id: 'Hunting', nome: 'Hunting', cor: '#f59e0b' },
+                    { id: 'Testes', nome: 'Testes', cor: '#06b6d4' },
+                    { id: 'Entrevista', nome: 'Entrevista', cor: '#ec4899' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--accent-pink)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: '#10b981' }
+                ]
+            },
+            'rhestrategico': {
+                titulo: 'RH Estratégico',
+                areasPermitidas: ['RH Estratégico'],
+                atividades: ["Atividade Estratégica 1", "Atividade Estratégica 2"],
+                statusInicial: 'Onboarding',
+                colunas: [
+                    { id: 'Onboarding', nome: 'Onboarding', cor: '#3b82f6' },
+                    { id: 'Pesquisa de Clima Organizacional', nome: 'Pesquisa de Clima', cor: '#8b5cf6' },
+                    { id: 'Planos de Cargos, Carreiras e Salários', nome: 'Cargos e Salários', cor: '#f59e0b' },
+                    { id: 'Gestão de Desempenho', nome: 'Gestão de Desempenho', cor: '#06b6d4' },
+                    { id: 'Gestão de conhecimento', nome: 'Gestão de Conhecimento', cor: 'var(--primary-purple)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--accent-pink)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: '#10b981' }
+                ]
+            }
+        };
+
+        const cfg = WORKSPACES[QUADRO_ATUAL] || WORKSPACES['geral'];
+
+        let projetosGlobais = [];
+        let timersAtivos = {}; 
+        let projIdEmFoco = null;
+
+        function montarWorkspace() {
+            document.getElementById('tituloWorkspace').innerText = cfg.titulo;
+            
+            const selectArea = document.getElementById('projArea');
+            selectArea.innerHTML = cfg.areasPermitidas.map(a => `<option value="${a}">${a}</option>`).join('');
+
+            const board = document.getElementById('boardDinamico');
+            board.innerHTML = '';
+            cfg.colunas.forEach(col => {
+                // CORREÇÃO MESTRA: Removemos tudo que não for letra ou número para não quebrar o HTML ID
+                const colHTMLId = 'col-' + col.id.replace(/[^a-zA-Z0-9]/g, '');
+                const html = `
+                <div class="kanban-column" id="${colHTMLId}" data-status="${col.id}">
+                    <div class="column-header">
+                        <div class="column-title" style="color: ${col.cor};">${col.nome}</div>
+                        <span class="col-count">0</span>
+                    </div>
+                    <div class="kanban-cards" ondrop="soltarCard(event)" ondragover="permitirSoltar(event)" ondragenter="entrarDrop(event)" ondragleave="sairDrop(event)"></div>
+                </div>`;
+                board.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function atualizarDropdownsFiltro(projetosWorkspace) {
+            const clientes = [...new Set(projetosWorkspace.map(p => p.empresa))].sort();
+            const responsaveis = [...new Set(projetosWorkspace.map(p => p.responsavel))].sort();
+            
+            const selectCliente = document.getElementById('filtroCliente');
+            const valC = selectCliente.value;
+            selectCliente.innerHTML = '<option value="">Todos os Clientes</option>' + clientes.map(c => `<option value="${c}">${c}</option>`).join('');
+            selectCliente.value = valC;
+
+            const selectResp = document.getElementById('filtroResp');
+            const valR = selectResp.value;
+            selectResp.innerHTML = '<option value="">Todos os Responsáveis</option>' + responsaveis.map(r => `<option value="${r}">${r}</option>`).join('');
+            selectResp.value = valR;
+        }
+
+        function limparFiltros() {
+            document.getElementById('filtroCliente').value = '';
+            document.getElementById('filtroResp').value = '';
+            document.getElementById('filtroDataInicio').value = '';
+            document.getElementById('filtroDataFim').value = '';
+            renderizarProjetos();
+        }
+
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        function fecharModalFundo(event, id) { if(event.target.id === id) fecharModal(id); }
+        function abrirModalProjeto() {
+            document.getElementById('projEmpresa').value = '';
+            document.getElementById('projNome').value = '';
+            document.getElementById('modalFormProjeto').style.display = 'flex';
+        }
+
+        function permitirSoltar(ev) { ev.preventDefault(); }
+        function entrarDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+        function sairDrop(ev) { ev.currentTarget.classList.remove('drag-over'); }
+        function arrastarCard(ev) { 
+            if(timersAtivos[ev.target.id]) { ev.preventDefault(); alert("Pare o timer antes de mover o card."); return; }
+            ev.dataTransfer.setData("text", ev.target.id); 
+            setTimeout(() => ev.target.classList.add('dragging'), 0); 
+            ev.stopPropagation(); 
+        }
+        function finalizarArrasto(ev) { ev.target.classList.remove('dragging'); }
+        
+        async function soltarCard(ev) {
+            ev.preventDefault();
+            var id = ev.dataTransfer.getData("text");
+            var card = document.getElementById(id);
+            var destino = ev.currentTarget;
+            destino.classList.remove('drag-over');
+            
+            if(destino) { destino.appendChild(card); }
+            atualizarContadores();
+
+            const colunaContainer = destino.closest('.kanban-column');
+            const novoStatus = colunaContainer.getAttribute('data-status');
+            
+            try {
+                await fetch(`/api/projetos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+            } catch (error) {
+                console.error("Erro ao mover card", error);
+            }
+            
+            await carregarProjetos();
+        }
+
+        function atualizarContadores() {
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.querySelector('.col-count').innerText = col.querySelectorAll('.card').length;
+            });
+        }
+
+        async function carregarProjetos() {
+            try {
+                const res = await fetch('/api/projetos');
+                const data = await res.json();
+                if(data.status === 'sucesso') {
+                    projetosGlobais = data.projetos;
+                    renderizarProjetos();
+                }
+            } catch(e) { console.error("Erro ao puxar dados", e); }
+        }
+
+        function calcularDias(dataInicio, dataConclusao) {
+            if(!dataInicio) return 0;
+            const inicio = new Date(dataInicio);
+            const fim = dataConclusao ? new Date(dataConclusao) : new Date();
+            return Math.floor(Math.abs(fim - inicio) / (1000 * 60 * 60 * 24));
+        }
+
+        function formatarSegundosTick(segundos) {
+            const h = Math.floor(segundos / 3600);
+            const m = Math.floor((segundos % 3600) / 60);
+            const s = segundos % 60;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function renderizarProjetos() {
+            document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
+            
+            let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
+            
+            atualizarDropdownsFiltro(projetosFiltrados);
+
+            const fCliente = document.getElementById('filtroCliente').value;
+            const fResp = document.getElementById('filtroResp').value;
+            const fDataInic = document.getElementById('filtroDataInicio').value;
+            const fDataFim = document.getElementById('filtroDataFim').value;
+
+            projetosFiltrados = projetosFiltrados.filter(p => {
+                let passaCliente = fCliente === "" || p.empresa === fCliente;
+                let passaResp = fResp === "" || p.responsavel === fResp;
+                
+                let passaData = true;
+                if (fDataInic || fDataFim) {
+                    const dtProj = new Date(p.criado_em);
+                    dtProj.setHours(0,0,0,0);
+                    if (fDataInic && dtProj < new Date(fDataInic + "T00:00:00")) passaData = false;
+                    if (fDataFim && dtProj > new Date(fDataFim + "T23:59:59")) passaData = false;
+                }
+                return passaCliente && passaResp && passaData;
+            });
+
+            projetosFiltrados.forEach(p => {
+                let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
+                
+                // CORREÇÃO MESTRA 2: Refletimos a mesma limpeza de caracteres na hora de renderizar os cards
+                const colHTMLId = 'col-' + statusCard.replace(/[^a-zA-Z0-9]/g, '');
+                const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
+                
+                if(!container) return;
+
+                let isRodando = timersAtivos[p.id] !== undefined;
+                let displayTempo = formatarSegundosTick((p.tempo_total_segundos || 0) + (isRodando ? timersAtivos[p.id].segundosAtuais : 0));
+                
+                let options = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
+
+                let badgesDatas = '';
+                if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
+                    const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
+                    const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, null);
+                    
+                    badgesDatas = `
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d no Total</span>
+                        <span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>
+                    </div>`;
+                }
+
+                const cardHTML = `
+                <div class="card" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
+                    <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
+                        <div class="card-header">
+                            <span class="card-area">${p.area}</span>
+                            <span class="card-empresa">${p.empresa}</span>
+                        </div>
+                        <div class="card-nome">${p.nome_projeto}</div>
+                        <div class="card-resp">${p.responsavel}</div>
+                        ${badgesDatas}
+                    </div>
+                    
+                    <div style="margin-top: 10px;">
+                        <select class="select-atividade" id="select-${p.id}">
+                            <option value="">Selecione a atividade para iniciar...</option>
+                            ${options}
+                        </select>
+                        <div class="card-timer-area">
+                            <div class="timer-display ${isRodando ? 'ativo' : ''}" id="disp-${p.id}">${displayTempo}</div>
+                            <button class="btn-play ${isRodando ? 'parar' : ''}" id="btn-${p.id}" onclick="toggleTimer('${p.id}', ${p.tempo_total_segundos || 0})">
+                                <span class="material-symbols-rounded">${isRodando ? 'stop' : 'play_arrow'}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', cardHTML);
+            });
+            atualizarContadores();
+        }
+
+        async function salvarProjeto() {
+            const btn = document.getElementById('btnSalvarProjeto');
+            btn.innerText = "CRIANDO..."; btn.disabled = true;
+
+            const dados = {
+                empresa: document.getElementById('projEmpresa').value,
+                nome_projeto: document.getElementById('projNome').value,
+                area: document.getElementById('projArea').value,
+                responsavel: document.getElementById('projResp').value,
+                status_inicial: cfg.statusInicial 
+            };
+
+            if(!dados.empresa || !dados.nome_projeto) {
+                alert("Preencha Empresa e Nome."); btn.innerText = "CRIAR PROJETO"; btn.disabled = false; return;
+            }
+
+            try {
+                await fetch('/api/projetos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+                await carregarProjetos();
+                fecharModal('modalFormProjeto'); 
+            } catch(e) {
+                alert("Erro ao criar projeto");
+            } finally {
+                btn.innerText = "CRIAR PROJETO"; btn.disabled = false;
+            }
+        }
+
+        async function toggleTimer(id, baseSegundos) {
+            const btn = document.getElementById(`btn-${id}`);
+            const disp = document.getElementById(`disp-${id}`);
+            const selectAtiv = document.getElementById(`select-${id}`);
+            const tarefaEscolhida = selectAtiv.value;
+
+            if (timersAtivos[id]) {
+                const dataFimAtual = new Date().toISOString();
+                clearInterval(timersAtivos[id].intervalo);
+                const segExecutados = timersAtivos[id].segundosAtuais;
+                const tarefaFinal = timersAtivos[id].tarefa;
+                const dataInicioAtividade = timersAtivos[id].dataInicio;
+                
+                delete timersAtivos[id];
+                
+                btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+                btn.classList.remove('parar');
+                btn.disabled = true;
+                disp.classList.remove('ativo');
+                selectAtiv.disabled = false;
+
+                const proj = projetosGlobais.find(p => p.id === id);
+                
+                try {
+                    await fetch(`/api/projetos/${id}/timer`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ 
+                            tempo_segundos: segExecutados, 
+                            descricao_tarefa: tarefaFinal, 
+                            colaborador: proj.responsavel,
+                            data_inicio_atividade: dataInicioAtividade,
+                            data_fim_atividade: dataFimAtual
+                        })
+                    });
+                    await carregarProjetos(); 
+                } catch(e) {
+                    console.error("Erro ao salvar timer", e);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span>`;
+                }
+            } else {
+                if(!tarefaEscolhida) { alert("Você precisa selecionar qual atividade vai executar antes de dar o play!"); return; }
+                const dataInicioAtual = new Date().toISOString();
+                selectAtiv.disabled = true;
+                btn.classList.add('parar');
+                btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
+                disp.classList.add('ativo');
+
+                let contador = 0;
+                const intervalo = setInterval(() => {
+                    contador++;
+                    disp.innerText = formatarSegundosTick(baseSegundos + contador);
+                    timersAtivos[id].segundosAtuais = contador;
+                }, 1000);
+
+                timersAtivos[id] = { 
+                    intervalo: intervalo, segundosAtuais: 0, tarefa: tarefaEscolhida, dataInicio: dataInicioAtual 
+                };
+            }
+        }
+
+        async function abrirDetalhes(id, event) {
+            if(event.target.closest('select') || event.target.closest('button')) return;
+
+            projIdEmFoco = id;
+            const proj = projetosGlobais.find(p => p.id === id);
+            
+            document.getElementById('detArea').innerText = proj.area;
+            document.getElementById('detNome').innerText = proj.nome_projeto;
+            document.getElementById('detTempoTotal').innerText = formatarSegundosTick(proj.tempo_total_segundos || 0);
+
+            document.getElementById('detDataInicio').innerText = proj.data_inicio ? new Date(proj.data_inicio).toLocaleDateString('pt-BR') : '-';
+            document.getElementById('detDataFim').innerText = proj.data_conclusao ? new Date(proj.data_conclusao).toLocaleDateString('pt-BR') : 'Em aberto';
+
+            document.getElementById('modalDetalhes').style.display = 'flex';
+
+            const res = await fetch(`/api/projetos/${id}/historico`);
+            const data = await res.json();
+            const container = document.getElementById('listaHistorico');
+            
+            if (data.historico && data.historico.length > 0) {
+                container.innerHTML = data.historico.map(h => {
+                    return `
+                    <div class="historico-item">
+                        <div class="historico-info">
+                            <span style="font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${h.descricao_tarefa}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
+                                ${new Date(h.criado_em).toLocaleDateString('pt-BR')} • ${h.colaborador}
+                            </span>
+                        </div>
+                        <span style="font-family: monospace; font-size: 16px; font-weight: 900; color: var(--primary-purple);">${formatarSegundosTick(h.tempo_segundos)}</span>
+                    </div>`;
+                }).join('');
+            } else {
+                container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registros.</p>';
+            }
+        }
+
+        async function excluirProjeto() {
+            if(!confirm("Tem certeza que deseja excluir?")) return;
+            await fetch(`/api/projetos/${projIdEmFoco}`, { method: 'DELETE' });
+            fecharModal('modalDetalhes');
+            carregarProjetos();
+        }
+
+        window.onload = () => {
+            montarWorkspace();
+            carregarProjetos();
+        };
+    </script>
+</body>
+</html>
