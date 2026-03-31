@@ -283,7 +283,6 @@
             const board = document.getElementById('boardDinamico');
             board.innerHTML = '';
             cfg.colunas.forEach(col => {
-                // LIMPEZA DE CARACTERES PARA O CARD NÃO SUMIR
                 const colHTMLId = 'col-' + col.id.replace(/[^a-zA-Z0-9]/g, '');
                 const html = `
                 <div class="kanban-column" id="${colHTMLId}" data-status="${col.id}">
@@ -375,7 +374,6 @@
             try {
                 const res = await fetch('/api/projetos');
                 
-                // SE A SESSÃO DA VERCEL CAIU, DEVOLVE PARA A TELA DE LOGIN
                 if (res.status === 401) {
                     window.location.href = '/login';
                     return;
@@ -432,7 +430,6 @@
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
                 
-                // MANTENDO A LIMPEZA NO RENDER TAMBÉM
                 const colHTMLId = 'col-' + statusCard.replace(/[^a-zA-Z0-9]/g, '');
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 
@@ -548,7 +545,6 @@
                         })
                     });
 
-                    // AVISO NA TELA SE A INTERNET FALHAR OU A SESSÃO CAIR
                     if (!req.ok) {
                         alert("Ops! O servidor recusou a gravação do tempo. Sua sessão pode ter expirado, recarregue a página.");
                     }
@@ -569,11 +565,13 @@
                 btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
                 disp.classList.add('ativo');
 
-                let contador = 0;
+                // SOLUÇÃO MESTRA: Calcula pelo relógio do PC, blindado contra o navegador dormindo
+                const tempoInicioReal = Date.now(); 
+
                 const intervalo = setInterval(() => {
-                    contador++;
-                    disp.innerText = formatarSegundosTick(baseSegundos + contador);
-                    timersAtivos[id].segundosAtuais = contador;
+                    const segundosDecorridos = Math.floor((Date.now() - tempoInicioReal) / 1000);
+                    disp.innerText = formatarSegundosTick(baseSegundos + segundosDecorridos);
+                    timersAtivos[id].segundosAtuais = segundosDecorridos;
                 }, 1000);
 
                 timersAtivos[id] = { 
