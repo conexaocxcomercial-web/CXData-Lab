@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from supabase import create_client, Client
+from datetime import datetime
 
 app = Flask(__name__)
 # CHAVE FIXA: Impede que a Vercel derrube o login a cada 5 minutos
@@ -92,10 +93,28 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
+        
         if "status" in dados:
-            atualizacao["status"] = dados.get("status")
+            novo_status = dados.get("status")
+            atualizacao["status"] = novo_status
+            atualizacao["data_status_atual"] = datetime.utcnow().isoformat()
+
+            # REGRA MESTRA DE DIAS: Congela se entrar nessas colunas
+            status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding"]
+            if novo_status in status_pausa:
+                atualizacao["data_conclusao"] = datetime.utcnow().isoformat()
+            else:
+                # Retoma a contagem removendo a conclusão
+                atualizacao["data_conclusao"] = None 
+                
+                # Se é a primeira vez que vai pra 'Em Andamento', carimba o Início Real
+                res_atual = supabase.table("projetos").select("data_inicio").eq("id", projeto_id).execute()
+                if res_atual.data and not res_atual.data[0].get("data_inicio"):
+                    atualizacao["data_inicio"] = datetime.utcnow().isoformat()
+
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
+        
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
@@ -117,7 +136,6 @@ def salvar_tempo(projeto_id):
         supabase.table("time_logs").insert(novo_log).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        # BLINDAGEM DUPLA: Se o banco recusar as datas, salva apenas os segundos!
         try:
             log_seguro = {
                 "projeto_id": projeto_id,
