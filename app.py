@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from supabase import create_client, Client
-import secrets
 
 app = Flask(__name__)
-# Chave secreta para criptografar os cookies de login
-app.secret_key = secrets.token_hex(16)
+# CHAVE FIXA: Isso impede que a Vercel derrube o seu login a cada 5 minutos!
+app.secret_key = "cxdata_chave_mestra_oficial_2026_!@"
 
 URL = "https://udqeheyyhvqlwejdwkbj.supabase.co"
 KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ"
@@ -49,7 +48,7 @@ def tela_projetos(nome_quadro):
         return redirect(url_for('login'))
     return render_template('projetos.html', quadro_atual=nome_quadro)
 
-# --- API (Mantida igual) ---
+# --- API ---
 
 @app.route('/api/projetos', methods=['GET'])
 def listar_projetos():
