@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from supabase import create_client, Client
 
 app = Flask(__name__)
-# CHAVE FIXA: Isso impede que a Vercel derrube o seu login a cada 5 minutos!
+# CHAVE FIXA: Impede que a Vercel derrube o login a cada 5 minutos
 app.secret_key = "cxdata_chave_mestra_oficial_2026_!@"
 
 URL = "https://udqeheyyhvqlwejdwkbj.supabase.co"
@@ -117,7 +117,19 @@ def salvar_tempo(projeto_id):
         supabase.table("time_logs").insert(novo_log).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        # BLINDAGEM DUPLA: Se o banco recusar as datas, salva apenas os segundos!
+        try:
+            log_seguro = {
+                "projeto_id": projeto_id,
+                "colaborador": dados.get("colaborador", "Membro"), 
+                "descricao_tarefa": dados.get("descricao_tarefa", "Atividade"),
+                "tempo_segundos": int(dados.get("tempo_segundos", 0))
+            }
+            supabase.table("time_logs").insert(log_seguro).execute()
+            return jsonify({"status": "sucesso", "alerta": "Salvo sem datas"}), 200
+        except Exception as erro_critico:
+            print("Erro Crítico no Timer:", erro_critico)
+            return jsonify({"status": "erro", "mensagem": str(erro_critico)}), 400
 
 @app.route('/api/projetos/<projeto_id>/historico', methods=['GET'])
 def historico_tempo(projeto_id):
