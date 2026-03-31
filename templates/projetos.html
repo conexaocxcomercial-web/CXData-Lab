@@ -100,6 +100,20 @@
         .btn-play:disabled { opacity: 0.7; cursor: wait; animation: none; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 67, 192, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } }
 
+        /* O MINI PLAYER FLUTUANTE DE LUXO */
+        .floating-player {
+            position: fixed; bottom: 30px; right: 30px;
+            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px);
+            padding: 15px 25px; border-radius: 50px !important;
+            display: flex; align-items: center; gap: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 9999;
+            color: white; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .fp-info { display: flex; flex-direction: column; max-width: 250px; }
+        .fp-info span { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fp-info strong { font-size: 14px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
+        .fp-timer { font-family: monospace; font-size: 20px; font-weight: 900; color: var(--accent-lime); letter-spacing: 1px;}
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(244,244,245,0.7); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); padding: 40px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
@@ -151,6 +165,18 @@
     </div>
 
     <div class="kanban-board" id="boardDinamico"></div>
+
+    <div id="floatingPlayer" class="floating-player" style="display: none;">
+        <div class="fp-info">
+            <span id="fpArea" style="color: var(--light-purple);">Área</span>
+            <strong id="fpNome">Projeto</strong>
+            <span id="fpTarefa" style="color: var(--text-muted);">Tarefa</span>
+        </div>
+        <div class="fp-timer" id="fpTempo">00:00:00</div>
+        <button class="btn-play parar" onclick="pararTimer()">
+            <span class="material-symbols-rounded">stop</span>
+        </button>
+    </div>
 
     <div class="modal-overlay" id="modalFormProjeto" onclick="fecharModalFundo(event, 'modalFormProjeto')">
         <div class="modal-content">
@@ -271,8 +297,11 @@
         const cfg = WORKSPACES[QUADRO_ATUAL] || WORKSPACES['geral'];
 
         let projetosGlobais = [];
-        let timersAtivos = {}; 
         let projIdEmFoco = null;
+        
+        // MOTOR DO TIMER GLOBAL
+        let timerInterval = null;
+        let activeTimerData = null;
 
         function montarWorkspace() {
             document.getElementById('tituloWorkspace').innerText = cfg.titulo;
@@ -331,7 +360,9 @@
         function entrarDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function sairDrop(ev) { ev.currentTarget.classList.remove('drag-over'); }
         function arrastarCard(ev) { 
-            if(timersAtivos[ev.target.id]) { ev.preventDefault(); alert("Pare o timer antes de mover o card."); return; }
+            if(activeTimerData && activeTimerData.id === ev.target.id) { 
+                ev.preventDefault(); alert("Pare o timer antes de mover o card."); return; 
+            }
             ev.dataTransfer.setData("text", ev.target.id); 
             setTimeout(() => ev.target.classList.add('dragging'), 0); 
             ev.stopPropagation(); 
@@ -374,10 +405,7 @@
             try {
                 const res = await fetch('/api/projetos');
                 
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
+                if (res.status === 401) { window.location.href = '/login'; return; }
 
                 const data = await res.json();
                 if(data.status === 'sucesso') {
@@ -390,8 +418,10 @@
         function calcularDias(dataInicio, dataConclusao) {
             if(!dataInicio) return 0;
             const inicio = new Date(dataInicio);
+            // Se tiver data de conclusão (Pausado/Finalizado), a contagem CONGELA nessa data.
             const fim = dataConclusao ? new Date(dataConclusao) : new Date();
-            return Math.floor(Math.abs(fim - inicio) / (1000 * 60 * 60 * 24));
+            const dias = Math.floor(Math.abs(fim - inicio) / (1000 * 60 * 60 * 24));
+            return dias < 0 ? 0 : dias;
         }
 
         function formatarSegundosTick(segundos) {
@@ -405,7 +435,6 @@
             document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
             
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
-            
             atualizarDropdownsFiltro(projetosFiltrados);
 
             const fCliente = document.getElementById('filtroCliente').value;
@@ -416,7 +445,6 @@
             projetosFiltrados = projetosFiltrados.filter(p => {
                 let passaCliente = fCliente === "" || p.empresa === fCliente;
                 let passaResp = fResp === "" || p.responsavel === fResp;
-                
                 let passaData = true;
                 if (fDataInic || fDataFim) {
                     const dtProj = new Date(p.criado_em);
@@ -429,26 +457,25 @@
 
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
-                
                 const colHTMLId = 'col-' + statusCard.replace(/[^a-zA-Z0-9]/g, '');
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
-                
                 if(!container) return;
 
-                let isRodando = timersAtivos[p.id] !== undefined;
-                let displayTempo = formatarSegundosTick((p.tempo_total_segundos || 0) + (isRodando ? timersAtivos[p.id].segundosAtuais : 0));
-                
+                let isRodando = activeTimerData && activeTimerData.id === p.id;
+                let displayTempo = formatarSegundosTick(p.tempo_total_segundos || 0);
                 let options = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
 
                 let badgesDatas = '';
+                const isStatusPausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding"].includes(p.status);
+                
                 if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
+                    // Agora calcula os dias congelando corretamente se estiver pausado
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
-                    const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, null);
+                    const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
                     
                     badgesDatas = `
                     <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d no Total</span>
-                        <span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>
+                        <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Ativo${tagCongelado}</span>
                     </div>`;
                 }
 
@@ -465,13 +492,13 @@
                     </div>
                     
                     <div style="margin-top: 10px;">
-                        <select class="select-atividade" id="select-${p.id}">
-                            <option value="">Selecione a atividade para iniciar...</option>
+                        <select class="select-atividade" id="select-${p.id}" ${isRodando ? 'disabled' : ''}>
+                            <option value="">Selecione a atividade...</option>
                             ${options}
                         </select>
                         <div class="card-timer-area">
                             <div class="timer-display ${isRodando ? 'ativo' : ''}" id="disp-${p.id}">${displayTempo}</div>
-                            <button class="btn-play ${isRodando ? 'parar' : ''}" id="btn-${p.id}" onclick="toggleTimer('${p.id}', ${p.tempo_total_segundos || 0})">
+                            <button class="btn-play ${isRodando ? 'parar' : ''}" id="btn-${p.id}" onclick="iniciarTimerCard('${p.id}', '${p.nome_projeto}', '${p.area}', ${p.tempo_total_segundos || 0})">
                                 <span class="material-symbols-rounded">${isRodando ? 'stop' : 'play_arrow'}</span>
                             </button>
                         </div>
@@ -480,6 +507,9 @@
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
             atualizarContadores();
+            
+            // Força o relógio a sincronizar a interface visual se já estiver rodando
+            if(activeTimerData) iniciarRelogioVisual();
         }
 
         async function salvarProjeto() {
@@ -502,81 +532,132 @@
                 await fetch('/api/projetos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
                 await carregarProjetos();
                 fecharModal('modalFormProjeto'); 
-            } catch(e) {
-                alert("Erro ao criar projeto");
-            } finally {
-                btn.innerText = "CRIAR PROJETO"; btn.disabled = false;
+            } catch(e) { alert("Erro ao criar projeto"); } 
+            finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
+        }
+
+        // --- LÓGICA DO TIMER COM MEMÓRIA ---
+
+        function checarTimerSalvo() {
+            const salvo = localStorage.getItem('cxdata_timer_ativo');
+            if (salvo) {
+                activeTimerData = JSON.parse(salvo);
+                iniciarRelogioVisual();
+            } else {
+                document.getElementById('floatingPlayer').style.display = 'none';
             }
         }
 
-        async function toggleTimer(id, baseSegundos) {
-            const btn = document.getElementById(`btn-${id}`);
-            const disp = document.getElementById(`disp-${id}`);
+        function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
+            // Se clicou no botão de um card que JÁ está rodando, ele para.
+            if (activeTimerData && activeTimerData.id === id) {
+                pararTimer();
+                return;
+            }
+            // Se clicou em outro card enquanto um roda
+            if (activeTimerData && activeTimerData.id !== id) {
+                alert("Você já tem um timer rodando no projeto: " + activeTimerData.nome + ". Pare-o primeiro!");
+                return;
+            }
+
             const selectAtiv = document.getElementById(`select-${id}`);
             const tarefaEscolhida = selectAtiv.value;
+            if(!tarefaEscolhida) { alert("Selecione qual atividade vai executar antes de dar play!"); return; }
 
-            if (timersAtivos[id]) {
-                const dataFimAtual = new Date().toISOString();
-                clearInterval(timersAtivos[id].intervalo);
-                const segExecutados = timersAtivos[id].segundosAtuais;
-                const tarefaFinal = timersAtivos[id].tarefa;
-                const dataInicioAtividade = timersAtivos[id].dataInicio;
+            const proj = projetosGlobais.find(p => p.id === id);
+
+            // Cria o registro na memória do navegador
+            activeTimerData = {
+                id: id,
+                nome: nomeProjeto,
+                area: areaProjeto,
+                tarefa: tarefaEscolhida,
+                colaborador: proj.responsavel,
+                baseSegundos: baseSegundos,
+                startTime: Date.now(),
+                isoInicio: new Date().toISOString()
+            };
+            
+            localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+            iniciarRelogioVisual();
+        }
+
+        function iniciarRelogioVisual() {
+            if (!activeTimerData) return;
+
+            // Mostra o Player Flutuante
+            document.getElementById('floatingPlayer').style.display = 'flex';
+            document.getElementById('fpArea').innerText = activeTimerData.area;
+            document.getElementById('fpNome').innerText = activeTimerData.nome;
+            document.getElementById('fpTarefa').innerText = activeTimerData.tarefa;
+
+            if(timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                const segundosDecorridos = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                const tempoTela = formatarSegundosTick(activeTimerData.baseSegundos + segundosDecorridos);
                 
-                delete timersAtivos[id];
-                
+                document.getElementById('fpTempo').innerText = tempoTela;
+
+                // Atualiza o Card na tela atual (se ele estiver renderizado nesta tela)
+                const disp = document.getElementById(`disp-${activeTimerData.id}`);
+                if (disp) {
+                    disp.innerText = tempoTela;
+                    disp.classList.add('ativo');
+                    
+                    const btn = document.getElementById(`btn-${activeTimerData.id}`);
+                    if(btn) {
+                        btn.classList.add('parar');
+                        btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
+                    }
+                    const sel = document.getElementById(`select-${activeTimerData.id}`);
+                    if(sel) { sel.value = activeTimerData.tarefa; sel.disabled = true; }
+                }
+            }, 1000);
+        }
+
+        async function pararTimer() {
+            if (!activeTimerData) return;
+            clearInterval(timerInterval);
+            
+            const segundosDecorridos = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+            const dadosPraSalvar = { ...activeTimerData, segundosDecorridos };
+            
+            // Limpa tudo visualmente e da memória Imediatamente
+            localStorage.removeItem('cxdata_timer_ativo');
+            activeTimerData = null;
+            document.getElementById('floatingPlayer').style.display = 'none';
+            
+            // Volta o visual do card ao normal
+            const btn = document.getElementById(`btn-${dadosPraSalvar.id}`);
+            if(btn) {
                 btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
                 btn.classList.remove('parar');
                 btn.disabled = true;
-                disp.classList.remove('ativo');
-                selectAtiv.disabled = false;
+                const disp = document.getElementById(`disp-${dadosPraSalvar.id}`);
+                if(disp) disp.classList.remove('ativo');
+                const sel = document.getElementById(`select-${dadosPraSalvar.id}`);
+                if(sel) sel.disabled = false;
+            }
 
-                const proj = projetosGlobais.find(p => p.id === id);
+            try {
+                const req = await fetch(`/api/projetos/${dadosPraSalvar.id}/timer`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        tempo_segundos: dadosPraSalvar.segundosDecorridos, 
+                        descricao_tarefa: dadosPraSalvar.tarefa, 
+                        colaborador: dadosPraSalvar.colaborador,
+                        data_inicio_atividade: dadosPraSalvar.isoInicio,
+                        data_fim_atividade: new Date().toISOString()
+                    })
+                });
+
+                if (!req.ok) alert("Sessão expirada. O tempo foi guardado na memória, recarregue e tente parar novamente.");
                 
-                try {
-                    const req = await fetch(`/api/projetos/${id}/timer`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ 
-                            tempo_segundos: segExecutados, 
-                            descricao_tarefa: tarefaFinal, 
-                            colaborador: proj.responsavel,
-                            data_inicio_atividade: dataInicioAtividade,
-                            data_fim_atividade: dataFimAtual
-                        })
-                    });
-
-                    if (!req.ok) {
-                        alert("Ops! O servidor recusou a gravação do tempo. Sua sessão pode ter expirado, recarregue a página.");
-                    }
-
-                    await carregarProjetos(); 
-                } catch(e) {
-                    console.error("Erro ao salvar timer", e);
-                    alert("Erro de conexão. O tempo não pôde ser salvo.");
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span>`;
-                }
-            } else {
-                if(!tarefaEscolhida) { alert("Você precisa selecionar qual atividade vai executar antes de dar o play!"); return; }
-                const dataInicioAtual = new Date().toISOString();
-                selectAtiv.disabled = true;
-                btn.classList.add('parar');
-                btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
-                disp.classList.add('ativo');
-
-                // SOLUÇÃO MESTRA: Calcula pelo relógio do PC, blindado contra o navegador dormindo
-                const tempoInicioReal = Date.now(); 
-
-                const intervalo = setInterval(() => {
-                    const segundosDecorridos = Math.floor((Date.now() - tempoInicioReal) / 1000);
-                    disp.innerText = formatarSegundosTick(baseSegundos + segundosDecorridos);
-                    timersAtivos[id].segundosAtuais = segundosDecorridos;
-                }, 1000);
-
-                timersAtivos[id] = { 
-                    intervalo: intervalo, segundosAtuais: 0, tarefa: tarefaEscolhida, dataInicio: dataInicioAtual 
-                };
+                await carregarProjetos(); 
+            } catch(e) {
+                alert("Erro de conexão. Seu tempo não foi perdido (verifique a internet e tente de novo).");
             }
         }
 
@@ -626,6 +707,7 @@
 
         window.onload = () => {
             montarWorkspace();
+            checarTimerSalvo(); // Verifica a memória antes de baixar os projetos!
             carregarProjetos();
         };
     </script>
