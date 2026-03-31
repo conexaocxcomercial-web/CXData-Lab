@@ -283,7 +283,7 @@
             const board = document.getElementById('boardDinamico');
             board.innerHTML = '';
             cfg.colunas.forEach(col => {
-                // CORREÇÃO MESTRA: Removemos tudo que não for letra ou número para não quebrar o HTML ID
+                // LIMPEZA DE CARACTERES PARA O CARD NÃO SUMIR
                 const colHTMLId = 'col-' + col.id.replace(/[^a-zA-Z0-9]/g, '');
                 const html = `
                 <div class="kanban-column" id="${colHTMLId}" data-status="${col.id}">
@@ -374,6 +374,13 @@
         async function carregarProjetos() {
             try {
                 const res = await fetch('/api/projetos');
+                
+                // SE A SESSÃO DA VERCEL CAIU, DEVOLVE PARA A TELA DE LOGIN
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
                 const data = await res.json();
                 if(data.status === 'sucesso') {
                     projetosGlobais = data.projetos;
@@ -425,7 +432,7 @@
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
                 
-                // CORREÇÃO MESTRA 2: Refletimos a mesma limpeza de caracteres na hora de renderizar os cards
+                // MANTENDO A LIMPEZA NO RENDER TAMBÉM
                 const colHTMLId = 'col-' + statusCard.replace(/[^a-zA-Z0-9]/g, '');
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 
@@ -529,7 +536,7 @@
                 const proj = projetosGlobais.find(p => p.id === id);
                 
                 try {
-                    await fetch(`/api/projetos/${id}/timer`, {
+                    const req = await fetch(`/api/projetos/${id}/timer`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ 
@@ -540,9 +547,16 @@
                             data_fim_atividade: dataFimAtual
                         })
                     });
+
+                    // AVISO NA TELA SE A INTERNET FALHAR OU A SESSÃO CAIR
+                    if (!req.ok) {
+                        alert("Ops! O servidor recusou a gravação do tempo. Sua sessão pode ter expirado, recarregue a página.");
+                    }
+
                     await carregarProjetos(); 
                 } catch(e) {
                     console.error("Erro ao salvar timer", e);
+                    alert("Erro de conexão. O tempo não pôde ser salvo.");
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span>`;
