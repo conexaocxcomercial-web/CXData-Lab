@@ -466,16 +466,17 @@
                 let options = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
 
                 let badgesDatas = '';
-                const isStatusPausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding"].includes(p.status);
                 
                 if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
-                    // Agora calcula os dias congelando corretamente se estiver pausado
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
+                    // O indicador DE VOLTA: também respeita se foi pausado para não contar dias extras
+                    const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
                     const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
                     
                     badgesDatas = `
                     <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Ativo${tagCongelado}</span>
+                        <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Total${tagCongelado}</span>
+                        <span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>
                     </div>`;
                 }
 
@@ -707,7 +708,7 @@
 
         window.onload = () => {
             montarWorkspace();
-            checarTimerSalvo(); // Verifica a memória antes de baixar os projetos!
+            checarTimerSalvo(); 
             carregarProjetos();
         };
     </script>
