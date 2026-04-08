@@ -283,7 +283,10 @@
                 <div id="listaHistorico"></div>
             </div>
 
-            <button class="btn-acao" style="width: 100%; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn-acao" style="flex: 1; justify-content: center; background: #f4f4f5; color: var(--text-main); border: 1px solid #d4d4d8;" onclick="abrirModalEdicao(projIdEmFoco, event)">EDITAR PROJETO</button>
+                <button class="btn-acao" style="flex: 1; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
+            </div>
         </div>
     </div>
 
@@ -445,10 +448,12 @@
 
         // --- FUNÇÕES DE EDIÇÃO ---
         function abrirModalEdicao(id, event) {
-            event.stopPropagation(); // Não abre o detalhe do card junto
+            if(event) event.stopPropagation(); // Não abre o detalhe do card junto se clicar sem querer
             const proj = projetosGlobais.find(p => p.id === id);
             if(!proj) return;
             
+            fecharModal('modalDetalhes'); // Fecha a janela de detalhes primeiro
+
             document.getElementById('editProjId').value = proj.id;
             document.getElementById('editProjEmpresa').value = proj.empresa;
             document.getElementById('editProjNome').value = proj.nome_projeto;
@@ -544,9 +549,11 @@
         }
 
         function formatarSegundosTick(segundos) {
-            const h = Math.floor(segundos / 3600);
-            const m = Math.floor((segundos % 3600) / 60);
-            const s = segundos % 60;
+            let val = Number(segundos);
+            if (isNaN(val)) val = 0; // Se vier vazio ou quebrado, vira zero
+            const h = Math.floor(val / 3600);
+            const m = Math.floor((val % 3600) / 60);
+            const s = Math.floor(val % 60);
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
@@ -609,12 +616,7 @@
                     <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
                         <div class="card-header">
                             <span class="card-area">${p.area}</span>
-                            <div style="display: flex; gap: 5px; align-items: center;">
-                                <span class="card-empresa">${p.empresa}</span>
-                                <button onclick="abrirModalEdicao('${p.id}', event)" style="background:none; border:none; color:var(--primary-purple); cursor:pointer; padding:0; display:flex; align-items:center;" title="Editar">
-                                    <span class="material-symbols-rounded" style="font-size: 14px;">edit</span>
-                                </button>
-                            </div>
+                            <span class="card-empresa">${p.empresa}</span>
                         </div>
                         <div class="card-nome">${p.nome_projeto}</div>
                         <div class="card-resp">${p.responsavel}</div>
