@@ -173,9 +173,15 @@
             <span id="fpTarefa" style="color: var(--text-muted);">Tarefa</span>
         </div>
         <div class="fp-timer" id="fpTempo">00:00:00</div>
-        <button class="btn-play parar" onclick="pararTimer()">
-            <span class="material-symbols-rounded">stop</span>
-        </button>
+        
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-play" id="btnPauseResume" style="background-color: #f59e0b; color: white;" onclick="togglePauseTimer()" title="Pausar/Retomar">
+                <span class="material-symbols-rounded" id="iconPauseResume">pause</span>
+            </button>
+            <button class="btn-play parar" style="background-color: var(--accent-pink); color: white;" onclick="pararTimer()" title="Finalizar Sessão e Salvar">
+                <span class="material-symbols-rounded">stop</span>
+            </button>
+        </div>
     </div>
 
     <div class="modal-overlay" id="modalFormProjeto" onclick="fecharModalFundo(event, 'modalFormProjeto')">
@@ -216,6 +222,42 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="modalEditarProjeto" onclick="fecharModalFundo(event, 'modalEditarProjeto')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Projeto</h2>
+                <button class="close-btn" onclick="fecharModal('modalEditarProjeto')">X</button>
+            </div>
+            
+            <input type="hidden" id="editProjId">
+            
+            <div class="input-group">
+                <label>Empresa / Cliente / Vaga</label>
+                <input type="text" id="editProjEmpresa" class="input-item" required>
+            </div>
+            <div class="input-group">
+                <label>Nome do Projeto</label>
+                <input type="text" id="editProjNome" class="input-item" required>
+            </div>
+            <div class="input-group">
+                <label>Responsável</label>
+                <select id="editProjResp" class="input-item">
+                    <option value="Jhonattan Luiz">Jhonattan Luiz</option>
+                    <option value="Gabrriela Farias">Gabrriela Farias</option>
+                    <option value="Mirian Meireles">Mirian Meireles</option>
+                    <option value="Itiana Andrade">Itiana Andrade</option>
+                    <option value="Matheus Alves">Matheus Alves</option>
+                    <option value="Clara Viana">Clara Viana</option>
+                    <option value="Alisson Maciel">Alisson Maciel</option>
+                    <option value="Juliete Cadete">Juliete Cadete</option>
+                    <option value="Ana Medeiros">Ana Medeiros</option>
+                </select>
+            </div>
+            
+            <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
         <div class="modal-content" style="max-width: 600px; background: white;">
             <div class="modal-header">
@@ -252,45 +294,45 @@
             'geral': {
                 titulo: 'Quadro Geral',
                 areasPermitidas: ['CX Data', 'Comercial', 'Marketing', 'Adm/Fin'],
-    atividades: [
-    "Prospecções", 
-    "Geração de leads", 
-    "Produção de proposta", 
-    "Reunião de proposta", 
-    "Reunião de alinhamento", 
-    "Reunião com cliente", 
-    "Produção de dashboard", 
-    "Atualização de base de dados", 
-    "Construção de automação", 
-    "Construção de ferramenta", 
-    "Cobrança", 
-    "Reunião interna", 
-    "Reunião com BPO", 
-    "Construção de dashboard",
-    "Planejamento de conteúdo mensal",
-    "Planejamento de atividades (semanal/diário)",
-    "Levantamento de orçamentos",
-    "Prospecção de parceiros",
-    "Roteiro de vídeos",
-    "Blog — criação e publicação de post",
-    "Planejamento de campanhas",
-    "Planejamento de evento",
-    "Edição de material — on",
-    "Edição de material — off",
-    "Edição de material — Treinamentos",
-    "Card de vagas",
-    "Postar card de vaga",
-    "Edição de vídeo",
-    "LinkedIn post",
-    "Gravação de stories",
-    "Publicar stories",
-    "Gravação de vídeo",
-    "Qui_Conexão — criação e disparo",
-    "E-mail marketing — criação e disparo",
-    "Follow up — redes sociais",
-    "Follow up — ações de marketing",
-    "Relatório de desempenho (métricas + análise)"
-],
+                atividades: [
+                    "Prospecções", 
+                    "Geração de leads", 
+                    "Produção de proposta", 
+                    "Reunião de proposta", 
+                    "Reunião de alinhamento", 
+                    "Reunião com cliente", 
+                    "Produção de dashboard", 
+                    "Atualização de base de dados", 
+                    "Construção de automação", 
+                    "Construção de ferramenta", 
+                    "Cobrança", 
+                    "Reunião interna", 
+                    "Reunião com BPO", 
+                    "Construção de dashboard",
+                    "Planejamento de conteúdo mensal",
+                    "Planejamento de atividades (semanal/diário)",
+                    "Levantamento de orçamentos",
+                    "Prospecção de parceiros",
+                    "Roteiro de vídeos",
+                    "Blog — criação e publicação de post",
+                    "Planejamento de campanhas",
+                    "Planejamento de evento",
+                    "Edição de material — on",
+                    "Edição de material — off",
+                    "Edição de material — Treinamentos",
+                    "Card de vagas",
+                    "Postar card de vaga",
+                    "Edição de vídeo",
+                    "LinkedIn post",
+                    "Gravação de stories",
+                    "Publicar stories",
+                    "Gravação de vídeo",
+                    "Qui_Conexão — criação e disparo",
+                    "E-mail marketing — criação e disparo",
+                    "Follow up — redes sociais",
+                    "Follow up — ações de marketing",
+                    "Relatório de desempenho (métricas + análise)"
+                ],
                 statusInicial: 'Não Iniciado',
                 colunas: [
                     { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--text-main)' },
@@ -401,6 +443,39 @@
             document.getElementById('modalFormProjeto').style.display = 'flex';
         }
 
+        // --- FUNÇÕES DE EDIÇÃO ---
+        function abrirModalEdicao(id, event) {
+            event.stopPropagation(); // Não abre o detalhe do card junto
+            const proj = projetosGlobais.find(p => p.id === id);
+            if(!proj) return;
+            
+            document.getElementById('editProjId').value = proj.id;
+            document.getElementById('editProjEmpresa').value = proj.empresa;
+            document.getElementById('editProjNome').value = proj.nome_projeto;
+            document.getElementById('editProjResp').value = proj.responsavel;
+            
+            document.getElementById('modalEditarProjeto').style.display = 'flex';
+        }
+
+        async function salvarEdicaoProjeto() {
+            const id = document.getElementById('editProjId').value;
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.innerText = "SALVANDO..."; btn.disabled = true;
+
+            const dados = {
+                empresa: document.getElementById('editProjEmpresa').value,
+                nome_projeto: document.getElementById('editProjNome').value,
+                responsavel: document.getElementById('editProjResp').value
+            };
+
+            try {
+                await fetch(`/api/projetos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+                await carregarProjetos();
+                fecharModal('modalEditarProjeto'); 
+            } catch(e) { alert("Erro ao editar projeto"); } 
+            finally { btn.innerText = "SALVAR ALTERAÇÕES"; btn.disabled = false; }
+        }
+
         function permitirSoltar(ev) { ev.preventDefault(); }
         function entrarDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function sairDrop(ev) { ev.currentTarget.classList.remove('drag-over'); }
@@ -463,7 +538,6 @@
         function calcularDias(dataInicio, dataConclusao) {
             if(!dataInicio) return 0;
             const inicio = new Date(dataInicio);
-            // Se tiver data de conclusão (Pausado/Finalizado), a contagem CONGELA nessa data.
             const fim = dataConclusao ? new Date(dataConclusao) : new Date();
             const dias = Math.floor(Math.abs(fim - inicio) / (1000 * 60 * 60 * 24));
             return dias < 0 ? 0 : dias;
@@ -506,15 +580,20 @@
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 if(!container) return;
 
-                let isRodando = activeTimerData && activeTimerData.id === p.id;
+                let isRodando = activeTimerData && activeTimerData.id === p.id && !activeTimerData.paused;
+                let isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
+                
                 let displayTempo = formatarSegundosTick(p.tempo_total_segundos || 0);
                 let options = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
+
+                let btnClass = isRodando ? 'parar' : '';
+                let btnIcon = isRodando ? 'stop' : (isPausado ? 'pause' : 'play_arrow');
+                let btnStyle = isPausado ? 'style="background-color: #f59e0b; color: white;"' : '';
 
                 let badgesDatas = '';
                 
                 if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
-                    // O indicador DE VOLTA: também respeita se foi pausado para não contar dias extras
                     const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
                     const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
                     
@@ -530,7 +609,12 @@
                     <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
                         <div class="card-header">
                             <span class="card-area">${p.area}</span>
-                            <span class="card-empresa">${p.empresa}</span>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <span class="card-empresa">${p.empresa}</span>
+                                <button onclick="abrirModalEdicao('${p.id}', event)" style="background:none; border:none; color:var(--primary-purple); cursor:pointer; padding:0; display:flex; align-items:center;" title="Editar">
+                                    <span class="material-symbols-rounded" style="font-size: 14px;">edit</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-nome">${p.nome_projeto}</div>
                         <div class="card-resp">${p.responsavel}</div>
@@ -538,14 +622,14 @@
                     </div>
                     
                     <div style="margin-top: 10px;">
-                        <select class="select-atividade" id="select-${p.id}" ${isRodando ? 'disabled' : ''}>
+                        <select class="select-atividade" id="select-${p.id}" ${isRodando || isPausado ? 'disabled' : ''}>
                             <option value="">Selecione a atividade...</option>
                             ${options}
                         </select>
                         <div class="card-timer-area">
                             <div class="timer-display ${isRodando ? 'ativo' : ''}" id="disp-${p.id}">${displayTempo}</div>
-                            <button class="btn-play ${isRodando ? 'parar' : ''}" id="btn-${p.id}" onclick="iniciarTimerCard('${p.id}', '${p.nome_projeto}', '${p.area}', ${p.tempo_total_segundos || 0})">
-                                <span class="material-symbols-rounded">${isRodando ? 'stop' : 'play_arrow'}</span>
+                            <button class="btn-play ${btnClass}" id="btn-${p.id}" ${btnStyle} onclick="iniciarTimerCard('${p.id}', '${p.nome_projeto}', '${p.area}', ${p.tempo_total_segundos || 0})">
+                                <span class="material-symbols-rounded">${btnIcon}</span>
                             </button>
                         </div>
                     </div>
@@ -554,7 +638,6 @@
             });
             atualizarContadores();
             
-            // Força o relógio a sincronizar a interface visual se já estiver rodando
             if(activeTimerData) iniciarRelogioVisual();
         }
 
@@ -582,7 +665,7 @@
             finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
         }
 
-        // --- LÓGICA DO TIMER COM MEMÓRIA ---
+        // --- LÓGICA DO TIMER ATUALIZADA (COM MEMÓRIA DE PAUSE) ---
 
         function checarTimerSalvo() {
             const salvo = localStorage.getItem('cxdata_timer_ativo');
@@ -595,14 +678,16 @@
         }
 
         function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
-            // Se clicou no botão de um card que JÁ está rodando, ele para.
             if (activeTimerData && activeTimerData.id === id) {
-                pararTimer();
+                if(activeTimerData.paused) {
+                    togglePauseTimer(); // Se clicou e tava pausado, ele retoma
+                } else {
+                    pararTimer(); // Se clicou e tava rodando, ele finaliza de vez
+                }
                 return;
             }
-            // Se clicou em outro card enquanto um roda
             if (activeTimerData && activeTimerData.id !== id) {
-                alert("Você já tem um timer rodando no projeto: " + activeTimerData.nome + ". Pare-o primeiro!");
+                alert("Você já tem um timer ativo em: " + activeTimerData.nome + ". Finalize-o primeiro!");
                 return;
             }
 
@@ -612,40 +697,87 @@
 
             const proj = projetosGlobais.find(p => p.id === id);
 
-            // Cria o registro na memória do navegador
             activeTimerData = {
                 id: id,
                 nome: nomeProjeto,
                 area: areaProjeto,
                 tarefa: tarefaEscolhida,
                 colaborador: proj.responsavel,
-                baseSegundos: baseSegundos,
+                baseSegundosOriginal: baseSegundos, // O tempo de histórico do banco
+                sessaoAtualSegundos: 0, // O tempo gerado SÓ NESSA SESSÃO (acumula as pausas)
                 startTime: Date.now(),
-                isoInicio: new Date().toISOString()
+                isoInicio: new Date().toISOString(),
+                paused: false
             };
             
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
             iniciarRelogioVisual();
         }
 
+        function togglePauseTimer() {
+            if (!activeTimerData) return;
+            
+            if (activeTimerData.paused) {
+                // RETOMAR
+                activeTimerData.paused = false;
+                activeTimerData.startTime = Date.now();
+                document.getElementById('iconPauseResume').innerText = 'pause';
+                document.getElementById('btnPauseResume').style.backgroundColor = '#f59e0b';
+                iniciarRelogioVisual();
+            } else {
+                // PAUSAR
+                clearInterval(timerInterval);
+                activeTimerData.paused = true;
+                
+                // Calcula o que trabalhou agora e guarda na sessão
+                const decorridoAgora = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                activeTimerData.sessaoAtualSegundos += decorridoAgora;
+                activeTimerData.startTime = null; 
+                
+                // Visual Player
+                document.getElementById('iconPauseResume').innerText = 'play_arrow';
+                document.getElementById('btnPauseResume').style.backgroundColor = 'var(--accent-lime)';
+                
+                // Visual Card
+                const btn = document.getElementById(`btn-${activeTimerData.id}`);
+                if(btn) {
+                    btn.classList.remove('parar'); 
+                    btn.style.backgroundColor = '#f59e0b'; 
+                    btn.innerHTML = `<span class="material-symbols-rounded">pause</span>`;
+                }
+                const disp = document.getElementById(`disp-${activeTimerData.id}`);
+                if(disp) disp.classList.remove('ativo');
+            }
+            localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+        }
+
         function iniciarRelogioVisual() {
             if (!activeTimerData) return;
 
-            // Mostra o Player Flutuante
             document.getElementById('floatingPlayer').style.display = 'flex';
             document.getElementById('fpArea').innerText = activeTimerData.area;
             document.getElementById('fpNome').innerText = activeTimerData.nome;
             document.getElementById('fpTarefa').innerText = activeTimerData.tarefa;
 
+            if (activeTimerData.paused) {
+                document.getElementById('iconPauseResume').innerText = 'play_arrow';
+                document.getElementById('btnPauseResume').style.backgroundColor = 'var(--accent-lime)';
+                const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos);
+                document.getElementById('fpTempo').innerText = tempoTela;
+                return; // Pausado não roda o loop
+            }
+
+            document.getElementById('iconPauseResume').innerText = 'pause';
+            document.getElementById('btnPauseResume').style.backgroundColor = '#f59e0b';
+
             if(timerInterval) clearInterval(timerInterval);
 
             timerInterval = setInterval(() => {
-                const segundosDecorridos = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
-                const tempoTela = formatarSegundosTick(activeTimerData.baseSegundos + segundosDecorridos);
+                const decorridoAgora = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + decorridoAgora);
                 
                 document.getElementById('fpTempo').innerText = tempoTela;
 
-                // Atualiza o Card na tela atual (se ele estiver renderizado nesta tela)
                 const disp = document.getElementById(`disp-${activeTimerData.id}`);
                 if (disp) {
                     disp.innerText = tempoTela;
@@ -654,6 +786,7 @@
                     const btn = document.getElementById(`btn-${activeTimerData.id}`);
                     if(btn) {
                         btn.classList.add('parar');
+                        btn.style.backgroundColor = ''; 
                         btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
                     }
                     const sel = document.getElementById(`select-${activeTimerData.id}`);
@@ -666,20 +799,23 @@
             if (!activeTimerData) return;
             clearInterval(timerInterval);
             
-            const segundosDecorridos = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
-            const dadosPraSalvar = { ...activeTimerData, segundosDecorridos };
+            // Calcula tempo final da sessão (salva só o que ele trabalhou hoje)
+            let tempoFinalSessao = activeTimerData.sessaoAtualSegundos;
+            if (!activeTimerData.paused) {
+                tempoFinalSessao += Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+            }
             
-            // Limpa tudo visualmente e da memória Imediatamente
+            const dadosPraSalvar = { ...activeTimerData, tempoFinalSessao };
+            
             localStorage.removeItem('cxdata_timer_ativo');
             activeTimerData = null;
             document.getElementById('floatingPlayer').style.display = 'none';
             
-            // Volta o visual do card ao normal
             const btn = document.getElementById(`btn-${dadosPraSalvar.id}`);
             if(btn) {
-                btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>`;
+                btn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span>`;
                 btn.classList.remove('parar');
-                btn.disabled = true;
+                btn.style.backgroundColor = '';
                 const disp = document.getElementById(`disp-${dadosPraSalvar.id}`);
                 if(disp) disp.classList.remove('ativo');
                 const sel = document.getElementById(`select-${dadosPraSalvar.id}`);
@@ -691,19 +827,17 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
-                        tempo_segundos: dadosPraSalvar.segundosDecorridos, 
+                        tempo_segundos: dadosPraSalvar.tempoFinalSessao, 
                         descricao_tarefa: dadosPraSalvar.tarefa, 
                         colaborador: dadosPraSalvar.colaborador,
                         data_inicio_atividade: dadosPraSalvar.isoInicio,
                         data_fim_atividade: new Date().toISOString()
                     })
                 });
-
-                if (!req.ok) alert("Sessão expirada. O tempo foi guardado na memória, recarregue e tente parar novamente.");
-                
+                if (!req.ok) alert("Erro ao salvar no banco. Tempo retido apenas na interface.");
                 await carregarProjetos(); 
             } catch(e) {
-                alert("Erro de conexão. Seu tempo não foi perdido (verifique a internet e tente de novo).");
+                alert("Erro de conexão. A página não conseguiu enviar o log para o banco.");
             }
         }
 
@@ -759,4 +893,3 @@
     </script>
 </body>
 </html>
-
