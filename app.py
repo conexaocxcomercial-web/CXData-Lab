@@ -104,7 +104,6 @@ def atualizar_projeto(projeto_id):
             if novo_status in status_pausa:
                 atualizacao["data_conclusao"] = datetime.utcnow().isoformat()
             else:
-                # Retoma a contagem removendo a conclusão
                 atualizacao["data_conclusao"] = None 
                 
                 # Se é a primeira vez que vai pra 'Em Andamento', carimba o Início Real
@@ -114,6 +113,9 @@ def atualizar_projeto(projeto_id):
 
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
+        # --- ADICIONADO PARA EDIÇÃO ---
+        if "empresa" in dados: atualizacao["empresa"] = dados.get("empresa")
+        if "nome_projeto" in dados: atualizacao["nome_projeto"] = dados.get("nome_projeto")
         
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
