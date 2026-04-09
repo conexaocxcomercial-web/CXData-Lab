@@ -80,7 +80,8 @@ def criar_projeto():
             "responsavel": dados.get("responsavel", "Não definido"),
             "status": dados.get("status_inicial", "Backlog"),
             "progresso": 0,
-            "anotacoes": ""
+            "anotacoes": "",
+            "prazo_dias": int(dados.get("prazo_dias")) if dados.get("prazo_dias") else None
         }
         supabase.table("projetos").insert(novo_projeto).execute()
         return jsonify({"status": "sucesso"}), 200
@@ -113,9 +114,9 @@ def atualizar_projeto(projeto_id):
 
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
-        # --- ADICIONADO PARA EDIÇÃO ---
         if "empresa" in dados: atualizacao["empresa"] = dados.get("empresa")
         if "nome_projeto" in dados: atualizacao["nome_projeto"] = dados.get("nome_projeto")
+        if "prazo_dias" in dados: atualizacao["prazo_dias"] = int(dados.get("prazo_dias")) if dados.get("prazo_dias") else None
         
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
