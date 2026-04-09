@@ -223,8 +223,8 @@
                 </select>
             </div>
             <div class="input-group">
-                <label>Prazo (em dias)</label>
-                <input type="number" id="projPrazo" class="input-item" placeholder="Ex: 15" min="1">
+                <label>Prazo Limite (Data)</label>
+                <input type="date" id="projPrazo" class="input-item">
             </div>
             
             <button class="btn-acao" id="btnSalvarProjeto" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarProjeto()">CRIAR PROJETO</button>
@@ -263,8 +263,8 @@
                 </select>
             </div>
             <div class="input-group">
-                <label>Prazo (em dias)</label>
-                <input type="number" id="editProjPrazo" class="input-item" placeholder="Ex: 15" min="1">
+                <label>Prazo Limite (Data)</label>
+                <input type="date" id="editProjPrazo" class="input-item">
             </div>
             
             <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
@@ -463,17 +463,23 @@
 
         // --- FUNÇÕES DE EDIÇÃO ---
         function abrirModalEdicao(id, event) {
-            if(event) event.stopPropagation(); // Não abre o detalhe do card junto se clicar sem querer
+            if(event) event.stopPropagation(); 
             const proj = projetosGlobais.find(p => p.id === id);
             if(!proj) return;
             
-            fecharModal('modalDetalhes'); // Fecha a janela de detalhes primeiro
+            fecharModal('modalDetalhes'); 
 
             document.getElementById('editProjId').value = proj.id;
             document.getElementById('editProjEmpresa').value = proj.empresa;
             document.getElementById('editProjNome').value = proj.nome_projeto;
             document.getElementById('editProjResp').value = proj.responsavel;
-            document.getElementById('editProjPrazo').value = proj.prazo_dias || '';
+            
+            let prazoFormatado = '';
+            if(proj.prazo_data) {
+                // Previne problemas de timezone convertendo pro padrao YYYY-MM-DD localmente
+                prazoFormatado = proj.prazo_data.split('T')[0];
+            }
+            document.getElementById('editProjPrazo').value = prazoFormatado;
             
             document.getElementById('modalEditarProjeto').style.display = 'flex';
         }
@@ -487,7 +493,7 @@
                 empresa: document.getElementById('editProjEmpresa').value,
                 nome_projeto: document.getElementById('editProjNome').value,
                 responsavel: document.getElementById('editProjResp').value,
-                prazo_dias: document.getElementById('editProjPrazo').value
+                prazo_data: document.getElementById('editProjPrazo').value || null
             };
 
             try {
@@ -567,7 +573,7 @@
 
         function formatarSegundosTick(segundos) {
             let val = Number(segundos);
-            if (isNaN(val)) val = 0; // Se vier vazio ou quebrado, vira zero
+            if (isNaN(val)) val = 0; 
             const h = Math.floor(val / 3600);
             const m = Math.floor((val % 3600) / 60);
             const s = Math.floor(val % 60);
@@ -624,15 +630,13 @@
                     
                     let htmlContagemRegressiva = '';
                     
-                    // LÓGICA DO PRAZO E CONTAGEM REGRESSIVA
-                    if (p.prazo_dias) {
-                        const dataBase = p.data_inicio ? new Date(p.data_inicio) : new Date(p.criado_em);
-                        const dataAlvo = new Date(dataBase);
-                        dataAlvo.setDate(dataAlvo.getDate() + parseInt(p.prazo_dias));
+                    if (p.prazo_data) {
+                        // Extrai a data sem problemas de fuso horario convertendo string do form
+                        const partes = p.prazo_data.split('T')[0].split('-');
+                        const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
                         
                         const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
                         
-                        // Zera as horas para comparar apenas os dias exatos
                         dataAlvo.setHours(0,0,0,0);
                         dataComparacao.setHours(0,0,0,0);
                         
@@ -640,14 +644,15 @@
 
                         if (p.status !== 'Finalizado') {
                             if (diffDias < 0) {
-                                isAtrasadoClass = 'atrasado'; // Pinta o card de vermelho
+                                isAtrasadoClass = 'atrasado'; 
                                 htmlContagemRegressiva = `<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;" title="O prazo estourou!">Atrasado ${Math.abs(diffDias)}d</span>`;
+                            } else if (diffDias === 0) {
+                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: #f59e0b; margin-bottom: 0;">Vence Hoje</span>`;
                             } else {
-                                const corPrazo = diffDias <= 2 ? '#f59e0b' : '#10b981'; // Laranja se faltar 2 dias ou menos, senão verde
+                                const corPrazo = diffDias <= 2 ? '#f59e0b' : '#10b981'; 
                                 htmlContagemRegressiva = `<span class="dias-aberto" style="background: ${corPrazo}; margin-bottom: 0;">Faltam ${diffDias}d</span>`;
                             }
                         } else {
-                            // Se tá finalizado, exibe o status de entrega
                             if (diffDias < 0) {
                                 htmlContagemRegressiva = `<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;">Entregue c/ Atraso</span>`;
                             } else {
@@ -705,7 +710,7 @@
                 nome_projeto: document.getElementById('projNome').value,
                 area: document.getElementById('projArea').value,
                 responsavel: document.getElementById('projResp').value,
-                prazo_dias: document.getElementById('projPrazo').value,
+                prazo_data: document.getElementById('projPrazo').value || null,
                 status_inicial: cfg.statusInicial 
             };
 
@@ -736,9 +741,9 @@
         function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
             if (activeTimerData && activeTimerData.id === id) {
                 if(activeTimerData.paused) {
-                    togglePauseTimer(); // Se clicou e tava pausado, ele retoma
+                    togglePauseTimer(); 
                 } else {
-                    pararTimer(); // Se clicou e tava rodando, ele finaliza de vez
+                    pararTimer(); 
                 }
                 return;
             }
@@ -759,8 +764,8 @@
                 area: areaProjeto,
                 tarefa: tarefaEscolhida,
                 colaborador: proj.responsavel,
-                baseSegundosOriginal: baseSegundos, // O tempo de histórico do banco
-                sessaoAtualSegundos: 0, // O tempo gerado SÓ NESSA SESSÃO (acumula as pausas)
+                baseSegundosOriginal: baseSegundos, 
+                sessaoAtualSegundos: 0, 
                 startTime: Date.now(),
                 isoInicio: new Date().toISOString(),
                 paused: false
@@ -785,16 +790,13 @@
                 clearInterval(timerInterval);
                 activeTimerData.paused = true;
                 
-                // Calcula o que trabalhou agora e guarda na sessão
                 const decorridoAgora = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
                 activeTimerData.sessaoAtualSegundos += decorridoAgora;
                 activeTimerData.startTime = null; 
                 
-                // Visual Player
                 document.getElementById('iconPauseResume').innerText = 'play_arrow';
                 document.getElementById('btnPauseResume').style.backgroundColor = 'var(--accent-lime)';
                 
-                // Visual Card
                 const btn = document.getElementById(`btn-${activeTimerData.id}`);
                 if(btn) {
                     btn.classList.remove('parar'); 
@@ -820,7 +822,7 @@
                 document.getElementById('btnPauseResume').style.backgroundColor = 'var(--accent-lime)';
                 const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos);
                 document.getElementById('fpTempo').innerText = tempoTela;
-                return; // Pausado não roda o loop
+                return; 
             }
 
             document.getElementById('iconPauseResume').innerText = 'pause';
@@ -855,7 +857,6 @@
             if (!activeTimerData) return;
             clearInterval(timerInterval);
             
-            // Calcula tempo final da sessão (salva só o que ele trabalhou hoje)
             let tempoFinalSessao = activeTimerData.sessaoAtualSegundos;
             if (!activeTimerData.paused) {
                 tempoFinalSessao += Math.floor((Date.now() - activeTimerData.startTime) / 1000);
