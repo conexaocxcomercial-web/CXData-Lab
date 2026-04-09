@@ -77,6 +77,11 @@
         .card.dragging { opacity: 0.4; }
         .drag-over { background-color: rgba(115, 113, 255, 0.05); }
 
+        /* ESTILOS DE CARD ATRASADO */
+        .card.atrasado { background: rgba(254, 226, 226, 0.95); border: 1px solid #fca5a5; }
+        .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
+        .card.atrasado .card-nome { color: #991b1b; }
+
         .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
         .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
         .card-empresa { color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase;}
@@ -84,7 +89,7 @@
         .card-nome { font-size: 18px; font-weight: 900; margin-bottom: 6px; line-height: 1.1; letter-spacing: -0.5px;}
         .card-resp { font-size: 12px; color: var(--text-main); font-weight: 600; margin-bottom: 15px;}
         
-        .dias-aberto { display: inline-block; color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .dias-aberto { display: inline-block; color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px !important;}
 
         .select-atividade { width: 100%; padding: 10px; font-size: 12px; font-weight: 600; background: #f4f4f5; color: var(--text-main); outline: none; margin-bottom: 10px; border-bottom: 2px solid transparent; transition: 0.2s; cursor: pointer;}
         .select-atividade:focus { border-bottom: 2px solid var(--primary-purple); background: #ffffff;}
@@ -217,6 +222,10 @@
                     <option value="Ana Medeiros">Ana Medeiros</option>
                 </select>
             </div>
+            <div class="input-group">
+                <label>Prazo (em dias)</label>
+                <input type="number" id="projPrazo" class="input-item" placeholder="Ex: 15" min="1">
+            </div>
             
             <button class="btn-acao" id="btnSalvarProjeto" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarProjeto()">CRIAR PROJETO</button>
         </div>
@@ -252,6 +261,10 @@
                     <option value="Juliete Cadete">Juliete Cadete</option>
                     <option value="Ana Medeiros">Ana Medeiros</option>
                 </select>
+            </div>
+            <div class="input-group">
+                <label>Prazo (em dias)</label>
+                <input type="number" id="editProjPrazo" class="input-item" placeholder="Ex: 15" min="1">
             </div>
             
             <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
@@ -440,9 +453,11 @@
 
         function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
         function fecharModalFundo(event, id) { if(event.target.id === id) fecharModal(id); }
+        
         function abrirModalProjeto() {
             document.getElementById('projEmpresa').value = '';
             document.getElementById('projNome').value = '';
+            document.getElementById('projPrazo').value = '';
             document.getElementById('modalFormProjeto').style.display = 'flex';
         }
 
@@ -458,6 +473,7 @@
             document.getElementById('editProjEmpresa').value = proj.empresa;
             document.getElementById('editProjNome').value = proj.nome_projeto;
             document.getElementById('editProjResp').value = proj.responsavel;
+            document.getElementById('editProjPrazo').value = proj.prazo_dias || '';
             
             document.getElementById('modalEditarProjeto').style.display = 'flex';
         }
@@ -470,7 +486,8 @@
             const dados = {
                 empresa: document.getElementById('editProjEmpresa').value,
                 nome_projeto: document.getElementById('editProjNome').value,
-                responsavel: document.getElementById('editProjResp').value
+                responsavel: document.getElementById('editProjResp').value,
+                prazo_dias: document.getElementById('editProjPrazo').value
             };
 
             try {
@@ -598,21 +615,57 @@
                 let btnStyle = isPausado ? 'style="background-color: #f59e0b; color: white;"' : '';
 
                 let badgesDatas = '';
+                let isAtrasadoClass = '';
                 
                 if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
                     const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
                     const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
                     
+                    let htmlContagemRegressiva = '';
+                    
+                    // LÓGICA DO PRAZO E CONTAGEM REGRESSIVA
+                    if (p.prazo_dias) {
+                        const dataBase = p.data_inicio ? new Date(p.data_inicio) : new Date(p.criado_em);
+                        const dataAlvo = new Date(dataBase);
+                        dataAlvo.setDate(dataAlvo.getDate() + parseInt(p.prazo_dias));
+                        
+                        const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
+                        
+                        // Zera as horas para comparar apenas os dias exatos
+                        dataAlvo.setHours(0,0,0,0);
+                        dataComparacao.setHours(0,0,0,0);
+                        
+                        const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
+
+                        if (p.status !== 'Finalizado') {
+                            if (diffDias < 0) {
+                                isAtrasadoClass = 'atrasado'; // Pinta o card de vermelho
+                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;" title="O prazo estourou!">Atrasado ${Math.abs(diffDias)}d</span>`;
+                            } else {
+                                const corPrazo = diffDias <= 2 ? '#f59e0b' : '#10b981'; // Laranja se faltar 2 dias ou menos, senão verde
+                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: ${corPrazo}; margin-bottom: 0;">Faltam ${diffDias}d</span>`;
+                            }
+                        } else {
+                            // Se tá finalizado, exibe o status de entrega
+                            if (diffDias < 0) {
+                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;">Entregue c/ Atraso</span>`;
+                            } else {
+                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: #10b981; margin-bottom: 0;">No Prazo</span>`;
+                            }
+                        }
+                    }
+
                     badgesDatas = `
                     <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
                         <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Total${tagCongelado}</span>
                         <span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>
+                        ${htmlContagemRegressiva}
                     </div>`;
                 }
 
                 const cardHTML = `
-                <div class="card" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
+                <div class="card ${isAtrasadoClass}" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
                     <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
                         <div class="card-header">
                             <span class="card-area">${p.area}</span>
@@ -652,6 +705,7 @@
                 nome_projeto: document.getElementById('projNome').value,
                 area: document.getElementById('projArea').value,
                 responsavel: document.getElementById('projResp').value,
+                prazo_dias: document.getElementById('projPrazo').value,
                 status_inicial: cfg.statusInicial 
             };
 
