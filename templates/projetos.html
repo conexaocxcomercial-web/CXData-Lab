@@ -49,13 +49,20 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s;
         }
         .filter-input:focus { background: #fff; box-shadow: 0 4px 15px rgba(115, 113, 255, 0.1); }
-        .date-wrapper {
+        
+        .date-wrapper, .filter-checkbox-wrapper {
             display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.7); 
             backdrop-filter: blur(10px); padding: 5px 20px; border-radius: 50px !important;
             box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         }
-        .date-wrapper span { font-size: 10px; font-weight: 800; color: var(--text-muted); }
+        .date-wrapper span, .filter-checkbox-wrapper span { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;}
         .filter-date { background: transparent; font-size: 12px; font-weight: 600; outline: none; color: var(--text-main); cursor: pointer; }
+        
+        .filter-checkbox-wrapper { padding: 10px 20px; cursor: pointer; transition: 0.2s; }
+        .filter-checkbox-wrapper:hover { background: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15); }
+        .filter-checkbox-wrapper input { cursor: pointer; width: 14px; height: 14px; accent-color: #3b82f6;}
+        .filter-checkbox-wrapper span { color: #3b82f6; font-size: 11px; letter-spacing: 0.5px;}
+
         .btn-limpar {
             background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 800;
             cursor: pointer; text-transform: uppercase; border-radius: 50px !important; padding: 10px 20px;
@@ -81,9 +88,12 @@
         .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
         .card.atrasado .card-nome { color: #991b1b; }
 
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;}
+        .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;}
         .card-empresa { color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase;}
+        
+        /* ETIQUETA SCRUM */
+        .badge-scrum { background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px !important; font-size: 9px; font-weight: 900; letter-spacing: 0.5px; }
         
         .card-nome { font-size: 18px; font-weight: 900; margin-bottom: 6px; line-height: 1.1; letter-spacing: -0.5px;}
         .card-resp { font-size: 12px; color: var(--text-main); font-weight: 600; margin-bottom: 15px;}
@@ -131,7 +141,6 @@
         .historico-item { padding: 15px; background: #f4f4f5; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center;}
         .historico-info span { display: block; }
 
-        /* ESTILOS DE COMENTÁRIOS */
         .comentarios-section { margin-top: 25px; border-top: 1px solid #e4e4e7; padding-top: 20px; }
         .comentarios-lista { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px;}
         .comentario-box { background: #f4f4f5; padding: 12px 15px; border-radius: 8px !important; }
@@ -144,6 +153,11 @@
         .comentario-textarea:focus { border-color: var(--primary-purple); }
         .btn-enviar-comentario { background: var(--primary-purple); color: white; border: none; padding: 12px; border-radius: 8px !important; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-enviar-comentario:hover { background: var(--text-main); }
+        
+        /* ESTILOS CHECKBOX SCRUM NOS MODAIS */
+        .checkbox-group { flex-direction: row; align-items: center; gap: 10px; background: #f4f4f5; padding: 15px; border-radius: 8px !important; margin-bottom: 20px; cursor: pointer;}
+        .checkbox-group input { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;}
+        .checkbox-group label { margin: 0; font-size: 13px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px;}
     </style>
 </head>
 <body>
@@ -163,6 +177,11 @@
     </div>
 
     <div class="filter-bar">
+        <label class="filter-checkbox-wrapper">
+            <input type="checkbox" id="filtroScrum" onchange="renderizarProjetos()">
+            <span>Apenas Scrum</span>
+        </label>
+        
         <select id="filtroCliente" class="filter-input" onchange="renderizarProjetos()">
             <option value="">Todos os Clientes</option>
         </select>
@@ -239,6 +258,11 @@
                 <input type="date" id="projPrazo" class="input-item">
             </div>
             
+            <div class="input-group checkbox-group" onclick="document.getElementById('projScrum').click()">
+                <input type="checkbox" id="projScrum" onclick="event.stopPropagation()">
+                <label><span class="badge-scrum" style="font-size: 10px;">SCRUM</span> Marcar como projeto ágil (Sprint)</label>
+            </div>
+            
             <button class="btn-acao" id="btnSalvarProjeto" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarProjeto()">CRIAR PROJETO</button>
         </div>
     </div>
@@ -277,6 +301,11 @@
             <div class="input-group">
                 <label>Prazo Limite (Data)</label>
                 <input type="date" id="editProjPrazo" class="input-item">
+            </div>
+            
+            <div class="input-group checkbox-group" onclick="document.getElementById('editProjScrum').click()">
+                <input type="checkbox" id="editProjScrum" onclick="event.stopPropagation()">
+                <label><span class="badge-scrum" style="font-size: 10px;">SCRUM</span> Marcar como projeto ágil (Sprint)</label>
             </div>
             
             <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
@@ -441,6 +470,7 @@
         }
 
         function limparFiltros() {
+            document.getElementById('filtroScrum').checked = false;
             document.getElementById('filtroCliente').value = '';
             document.getElementById('filtroResp').value = '';
             document.getElementById('filtroDataInicio').value = '';
@@ -455,6 +485,7 @@
             document.getElementById('projEmpresa').value = '';
             document.getElementById('projNome').value = '';
             document.getElementById('projPrazo').value = '';
+            document.getElementById('projScrum').checked = false;
             document.getElementById('modalFormProjeto').style.display = 'flex';
         }
 
@@ -469,6 +500,7 @@
             document.getElementById('editProjEmpresa').value = proj.empresa;
             document.getElementById('editProjNome').value = proj.nome_projeto;
             document.getElementById('editProjResp').value = proj.responsavel;
+            document.getElementById('editProjScrum').checked = proj.is_scrum || false;
             
             let prazoFormatado = '';
             if(proj.prazo_data) {
@@ -488,7 +520,8 @@
                 empresa: document.getElementById('editProjEmpresa').value,
                 nome_projeto: document.getElementById('editProjNome').value,
                 responsavel: document.getElementById('editProjResp').value,
-                prazo_data: document.getElementById('editProjPrazo').value || null
+                prazo_data: document.getElementById('editProjPrazo').value || null,
+                is_scrum: document.getElementById('editProjScrum').checked
             };
 
             try {
@@ -581,12 +614,14 @@
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
             atualizarDropdownsFiltro(projetosFiltrados);
 
+            const fScrum = document.getElementById('filtroScrum').checked;
             const fCliente = document.getElementById('filtroCliente').value;
             const fResp = document.getElementById('filtroResp').value;
             const fDataInic = document.getElementById('filtroDataInicio').value;
             const fDataFim = document.getElementById('filtroDataFim').value;
 
             projetosFiltrados = projetosFiltrados.filter(p => {
+                let passaScrum = fScrum ? p.is_scrum === true : true;
                 let passaCliente = fCliente === "" || p.empresa === fCliente;
                 let passaResp = fResp === "" || p.responsavel === fResp;
                 let passaData = true;
@@ -596,7 +631,7 @@
                     if (fDataInic && dtProj < new Date(fDataInic + "T00:00:00")) passaData = false;
                     if (fDataFim && dtProj > new Date(fDataFim + "T23:59:59")) passaData = false;
                 }
-                return passaCliente && passaResp && passaData;
+                return passaScrum && passaCliente && passaResp && passaData;
             });
 
             projetosFiltrados.forEach(p => {
@@ -662,11 +697,13 @@
                     </div>`;
                 }
 
+                let htmlBadgeScrum = p.is_scrum ? '<span class="badge-scrum">SCRUM</span>' : '';
+
                 const cardHTML = `
                 <div class="card ${isAtrasadoClass}" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
                     <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
                         <div class="card-header">
-                            <span class="card-area">${p.area}</span>
+                            <span class="card-area">${p.area} ${htmlBadgeScrum}</span>
                             <span class="card-empresa">${p.empresa}</span>
                         </div>
                         <div class="card-nome">${p.nome_projeto}</div>
@@ -704,6 +741,7 @@
                 area: document.getElementById('projArea').value,
                 responsavel: document.getElementById('projResp').value,
                 prazo_data: document.getElementById('projPrazo').value || null,
+                is_scrum: document.getElementById('projScrum').checked,
                 status_inicial: cfg.statusInicial 
             };
 
@@ -887,7 +925,6 @@
             }
         }
 
-        // --- FUNÇÕES DE COMENTÁRIOS ---
         async function carregarComentarios(projetoId) {
             const container = document.getElementById('listaComentarios');
             container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando comentários...</p>';
@@ -951,7 +988,6 @@
 
             document.getElementById('modalDetalhes').style.display = 'flex';
 
-            // Carrega os logs de tempo
             const res = await fetch(`/api/projetos/${id}/historico`);
             const data = await res.json();
             const container = document.getElementById('listaHistorico');
@@ -973,7 +1009,6 @@
                 container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registros.</p>';
             }
 
-            // Carrega os comentários!
             carregarComentarios(id);
         }
 
