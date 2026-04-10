@@ -77,8 +77,7 @@
         .card.dragging { opacity: 0.4; }
         .drag-over { background-color: rgba(115, 113, 255, 0.05); }
 
-        /* ESTILOS DE CARD ATRASADO */
-        .card.atrasado { background: rgba(254, 226, 226, 0.95); }
+        .card.atrasado { background: rgba(254, 226, 226, 0.95); border: 1px solid #fca5a5; }
         .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
         .card.atrasado .card-nome { color: #991b1b; }
 
@@ -105,7 +104,6 @@
         .btn-play:disabled { opacity: 0.7; cursor: wait; animation: none; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 67, 192, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } }
 
-        /* O MINI PLAYER FLUTUANTE DE LUXO */
         .floating-player {
             position: fixed; bottom: 30px; right: 30px;
             background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px);
@@ -132,6 +130,20 @@
         .input-item:focus { background: #ffffff; border-left-color: var(--primary-purple); box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
         .historico-item { padding: 15px; background: #f4f4f5; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center;}
         .historico-info span { display: block; }
+
+        /* ESTILOS DE COMENTÁRIOS */
+        .comentarios-section { margin-top: 25px; border-top: 1px solid #e4e4e7; padding-top: 20px; }
+        .comentarios-lista { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px;}
+        .comentario-box { background: #f4f4f5; padding: 12px 15px; border-radius: 8px !important; }
+        .comentario-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .comentario-autor { font-size: 11px; font-weight: 800; color: var(--primary-purple); }
+        .comentario-data { font-size: 9px; font-weight: 600; color: var(--text-muted); }
+        .comentario-texto { font-size: 13px; color: var(--text-main); line-height: 1.4; white-space: pre-wrap; word-break: break-word;}
+        .comentario-input-area { display: flex; gap: 10px; align-items: flex-start; }
+        .comentario-textarea { flex: 1; padding: 12px; border-radius: 8px !important; border: 1px solid #d4d4d8; background: #fff; outline: none; font-size: 13px; font-family: 'Inter', sans-serif; resize: none; min-height: 45px;}
+        .comentario-textarea:focus { border-color: var(--primary-purple); }
+        .btn-enviar-comentario { background: var(--primary-purple); color: white; border: none; padding: 12px; border-radius: 8px !important; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-enviar-comentario:hover { background: var(--text-main); }
     </style>
 </head>
 <body>
@@ -197,7 +209,7 @@
             </div>
             
             <div class="input-group">
-                <label>Empresa / Cliente</label>
+                <label>Empresa / Cliente / Vaga</label>
                 <input type="text" id="projEmpresa" class="input-item" required>
             </div>
             <div class="input-group">
@@ -293,10 +305,21 @@
 
             <div style="margin-bottom: 15px;">
                 <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Histórico de Execução</h3>
-                <div id="listaHistorico"></div>
+                <div id="listaHistorico" style="max-height: 150px; overflow-y: auto;"></div>
             </div>
 
-            <div style="display: flex; gap: 10px; width: 100%;">
+            <div class="comentarios-section">
+                <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Comentários e Links</h3>
+                <div class="comentarios-lista" id="listaComentarios"></div>
+                <div class="comentario-input-area">
+                    <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização ou cole o link de um arquivo (Drive/Notion)..."></textarea>
+                    <button class="btn-enviar-comentario" onclick="salvarComentario()">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">send</span>
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; width: 100%; margin-top: 20px;">
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #f4f4f5; color: var(--text-main); border: 1px solid #d4d4d8;" onclick="abrirModalEdicao(projIdEmFoco, event)">EDITAR PROJETO</button>
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
             </div>
@@ -311,42 +334,17 @@
                 titulo: 'Quadro Geral',
                 areasPermitidas: ['CX Data', 'Comercial', 'Marketing', 'Adm/Fin'],
                 atividades: [
-                    "Prospecções", 
-                    "Geração de leads", 
-                    "Produção de proposta", 
-                    "Reunião de proposta", 
-                    "Reunião de alinhamento", 
-                    "Reunião com cliente", 
-                    "Produção de dashboard", 
-                    "Atualização de base de dados", 
-                    "Construção de automação", 
-                    "Construção de ferramenta", 
-                    "Cobrança", 
-                    "Reunião interna", 
-                    "Reunião com BPO", 
-                    "Construção de dashboard",
-                    "Planejamento de conteúdo mensal",
-                    "Planejamento de atividades (semanal/diário)",
-                    "Levantamento de orçamentos",
-                    "Prospecção de parceiros",
-                    "Roteiro de vídeos",
-                    "Blog — criação e publicação de post",
-                    "Planejamento de campanhas",
-                    "Planejamento de evento",
-                    "Edição de material — on",
-                    "Edição de material — off",
-                    "Edição de material — Treinamentos",
-                    "Card de vagas",
-                    "Postar card de vaga",
-                    "Edição de vídeo",
-                    "LinkedIn post",
-                    "Gravação de stories",
-                    "Publicar stories",
-                    "Gravação de vídeo",
-                    "Qui_Conexão — criação e disparo",
-                    "E-mail marketing — criação e disparo",
-                    "Follow up — redes sociais",
-                    "Follow up — ações de marketing",
+                    "Prospecções", "Geração de leads", "Produção de proposta", "Reunião de proposta", 
+                    "Reunião de alinhamento", "Reunião com cliente", "Produção de dashboard", 
+                    "Atualização de base de dados", "Construção de automação", "Construção de ferramenta", 
+                    "Cobrança", "Reunião interna", "Reunião com BPO", "Construção de dashboard",
+                    "Planejamento de conteúdo mensal", "Planejamento de atividades (semanal/diário)",
+                    "Levantamento de orçamentos", "Prospecção de parceiros", "Roteiro de vídeos",
+                    "Blog — criação e publicação de post", "Planejamento de campanhas", "Planejamento de evento",
+                    "Edição de material — on", "Edição de material — off", "Edição de material — Treinamentos",
+                    "Card de vagas", "Postar card de vaga", "Edição de vídeo", "LinkedIn post",
+                    "Gravação de stories", "Publicar stories", "Gravação de vídeo", "Qui_Conexão — criação e disparo",
+                    "E-mail marketing — criação e disparo", "Follow up — redes sociais", "Follow up — ações de marketing",
                     "Relatório de desempenho (métricas + análise)"
                 ],
                 statusInicial: 'Não Iniciado',
@@ -402,7 +400,6 @@
         let projetosGlobais = [];
         let projIdEmFoco = null;
         
-        // MOTOR DO TIMER GLOBAL
         let timerInterval = null;
         let activeTimerData = null;
 
@@ -461,7 +458,6 @@
             document.getElementById('modalFormProjeto').style.display = 'flex';
         }
 
-        // --- FUNÇÕES DE EDIÇÃO ---
         function abrirModalEdicao(id, event) {
             if(event) event.stopPropagation(); 
             const proj = projetosGlobais.find(p => p.id === id);
@@ -476,7 +472,6 @@
             
             let prazoFormatado = '';
             if(proj.prazo_data) {
-                // Previne problemas de timezone convertendo pro padrao YYYY-MM-DD localmente
                 prazoFormatado = proj.prazo_data.split('T')[0];
             }
             document.getElementById('editProjPrazo').value = prazoFormatado;
@@ -631,10 +626,8 @@
                     let htmlContagemRegressiva = '';
                     
                     if (p.prazo_data) {
-                        // Extrai a data sem problemas de fuso horario convertendo string do form
                         const partes = p.prazo_data.split('T')[0].split('-');
                         const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
-                        
                         const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
                         
                         dataAlvo.setHours(0,0,0,0);
@@ -726,8 +719,6 @@
             finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
         }
 
-        // --- LÓGICA DO TIMER ATUALIZADA (COM MEMÓRIA DE PAUSE) ---
-
         function checarTimerSalvo() {
             const salvo = localStorage.getItem('cxdata_timer_ativo');
             if (salvo) {
@@ -779,14 +770,12 @@
             if (!activeTimerData) return;
             
             if (activeTimerData.paused) {
-                // RETOMAR
                 activeTimerData.paused = false;
                 activeTimerData.startTime = Date.now();
                 document.getElementById('iconPauseResume').innerText = 'pause';
                 document.getElementById('btnPauseResume').style.backgroundColor = '#f59e0b';
                 iniciarRelogioVisual();
             } else {
-                // PAUSAR
                 clearInterval(timerInterval);
                 activeTimerData.paused = true;
                 
@@ -898,6 +887,55 @@
             }
         }
 
+        // --- FUNÇÕES DE COMENTÁRIOS ---
+        async function carregarComentarios(projetoId) {
+            const container = document.getElementById('listaComentarios');
+            container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando comentários...</p>';
+            try {
+                const res = await fetch(`/api/projetos/${projetoId}/comentarios`);
+                const data = await res.json();
+                if (data.comentarios && data.comentarios.length > 0) {
+                    container.innerHTML = data.comentarios.map(c => `
+                        <div class="comentario-box">
+                            <div class="comentario-header">
+                                <span class="comentario-autor">${c.autor}</span>
+                                <span class="comentario-data">${new Date(c.criado_em).toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div class="comentario-texto">${c.texto}</div>
+                        </div>
+                    `).join('');
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = '<p style="font-size: 12px; color: #999;">Nenhum comentário ainda.</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="font-size: 12px; color: #ef4444;">Erro ao carregar comentários.</p>';
+            }
+        }
+
+        async function salvarComentario() {
+            const textoInput = document.getElementById('novoComentarioTexto');
+            const texto = textoInput.value.trim();
+            if (!texto || !projIdEmFoco) return;
+
+            textoInput.disabled = true;
+            
+            try {
+                await fetch(`/api/projetos/${projIdEmFoco}/comentarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: texto })
+                });
+                textoInput.value = '';
+                await carregarComentarios(projIdEmFoco);
+            } catch (e) {
+                alert('Erro ao enviar comentário.');
+            } finally {
+                textoInput.disabled = false;
+                textoInput.focus();
+            }
+        }
+
         async function abrirDetalhes(id, event) {
             if(event.target.closest('select') || event.target.closest('button')) return;
 
@@ -913,6 +951,7 @@
 
             document.getElementById('modalDetalhes').style.display = 'flex';
 
+            // Carrega os logs de tempo
             const res = await fetch(`/api/projetos/${id}/historico`);
             const data = await res.json();
             const container = document.getElementById('listaHistorico');
@@ -933,6 +972,9 @@
             } else {
                 container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registros.</p>';
             }
+
+            // Carrega os comentários!
+            carregarComentarios(id);
         }
 
         async function excluirProjeto() {
