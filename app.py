@@ -161,6 +161,34 @@ def historico_tempo(projeto_id):
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 400
 
+# --- ROTAS DE COMENTÁRIOS ---
+
+@app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
+def listar_comentarios(projeto_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        res = supabase.table("comentarios").select("*").eq("projeto_id", projeto_id).order("criado_em", desc=False).execute()
+        return jsonify({"status": "sucesso", "comentarios": res.data}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+
+@app.route('/api/projetos/<projeto_id>/comentarios', methods=['POST'])
+def adicionar_comentario(projeto_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    dados = request.json
+    texto = dados.get("texto")
+    if not texto: return jsonify({"erro": "Texto vazio"}), 400
+    try:
+        novo_comentario = {
+            "projeto_id": projeto_id,
+            "autor": session.get("usuario_nome", "Usuário"),
+            "texto": texto
+        }
+        supabase.table("comentarios").insert(novo_comentario).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+
 @app.route('/api/projetos/<projeto_id>', methods=['DELETE'])
 def excluir_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
