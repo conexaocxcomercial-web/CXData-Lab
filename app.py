@@ -49,7 +49,7 @@ def tela_projetos(nome_quadro):
         return redirect(url_for('login'))
     return render_template('projetos.html', quadro_atual=nome_quadro)
 
-# --- API ---
+# --- API PROJETOS ---
 
 @app.route('/api/projetos', methods=['GET'])
 def listar_projetos():
@@ -82,7 +82,7 @@ def criar_projeto():
             "progresso": 0,
             "anotacoes": "",
             "prazo_data": dados.get("prazo_data") if dados.get("prazo_data") else None,
-            "is_scrum": bool(dados.get("is_scrum", False)) # NOVO CAMPO SCRUM
+            "is_scrum": bool(dados.get("is_scrum", False))
         }
         supabase.table("projetos").insert(novo_projeto).execute()
         return jsonify({"status": "sucesso"}), 200
@@ -101,14 +101,12 @@ def atualizar_projeto(projeto_id):
             atualizacao["status"] = novo_status
             atualizacao["data_status_atual"] = datetime.utcnow().isoformat()
 
-            # REGRA MESTRA DE DIAS: Congela se entrar nessas colunas
             status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding"]
             if novo_status in status_pausa:
                 atualizacao["data_conclusao"] = datetime.utcnow().isoformat()
             else:
                 atualizacao["data_conclusao"] = None 
                 
-                # Se é a primeira vez que vai pra 'Em Andamento', carimba o Início Real
                 res_atual = supabase.table("projetos").select("data_inicio").eq("id", projeto_id).execute()
                 if res_atual.data and not res_atual.data[0].get("data_inicio"):
                     atualizacao["data_inicio"] = datetime.utcnow().isoformat()
@@ -118,12 +116,23 @@ def atualizar_projeto(projeto_id):
         if "empresa" in dados: atualizacao["empresa"] = dados.get("empresa")
         if "nome_projeto" in dados: atualizacao["nome_projeto"] = dados.get("nome_projeto")
         if "prazo_data" in dados: atualizacao["prazo_data"] = dados.get("prazo_data") if dados.get("prazo_data") else None
-        if "is_scrum" in dados: atualizacao["is_scrum"] = bool(dados.get("is_scrum")) # NOVO CAMPO SCRUM
+        if "is_scrum" in dados: atualizacao["is_scrum"] = bool(dados.get("is_scrum"))
         
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 400
+
+@app.route('/api/projetos/<projeto_id>', methods=['DELETE'])
+def excluir_projeto(projeto_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        supabase.table("projetos").delete().eq("id", projeto_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+
+# --- API TIMER ---
 
 @app.route('/api/projetos/<projeto_id>/timer', methods=['POST'])
 def salvar_tempo(projeto_id):
@@ -163,7 +172,7 @@ def historico_tempo(projeto_id):
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 400
 
-# --- ROTAS DE COMENTÁRIOS ---
+# --- API COMENTÁRIOS (HIERARQUIA E EDIÇÃO) ---
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
 def listar_comentarios(projeto_id):
@@ -179,23 +188,29 @@ def adicionar_comentario(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     dados = request.json
     texto = dados.get("texto")
+    parent_id = dados.get("parent_id", None) # Recebe o ID do pai se for resposta
+    
     if not texto: return jsonify({"erro": "Texto vazio"}), 400
     try:
         novo_comentario = {
             "projeto_id": projeto_id,
             "autor": session.get("usuario_nome", "Usuário"),
-            "texto": texto
+            "texto": texto,
+            "parent_id": parent_id
         }
         supabase.table("comentarios").insert(novo_comentario).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 400
 
-@app.route('/api/projetos/<projeto_id>', methods=['DELETE'])
-def excluir_projeto(projeto_id):
+@app.route('/api/comentarios/<comentario_id>', methods=['PUT'])
+def editar_comentario(comentario_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    dados = request.json
+    texto_novo = dados.get("texto")
+    if not texto_novo: return jsonify({"erro": "Texto vazio"}), 400
     try:
-        supabase.table("projetos").delete().eq("id", projeto_id).execute()
+        supabase.table("comentarios").update({"texto": texto_novo}).eq("id", comentario_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 400
