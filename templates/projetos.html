@@ -149,16 +149,12 @@
         .comentarios-lista { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px;}
         .comentario-thread { display: flex; flex-direction: column; gap: 6px; }
         .comentario-box { background: #f4f4f5; padding: 12px 15px; border-radius: 8px !important; transition: 0.2s;}
-        
-        /* Estilo para a Resposta (hierarquia) */
         .comentario-box.resposta { margin-left: 20px; border-left: 3px solid var(--light-purple); background: #fafafa;}
-        
         .comentario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .comentario-autor { font-size: 12px; font-weight: 800; color: var(--primary-purple); }
         .comentario-data { font-size: 9px; font-weight: 600; color: var(--text-muted); }
         .comentario-texto { font-size: 13px; color: var(--text-main); line-height: 1.4; white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;}
         
-        /* Botões de Ação do Comentário */
         .comentario-acoes { display: flex; gap: 12px; }
         .btn-comentario-acao { background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 4px; padding: 0;}
         .btn-comentario-acao:hover { color: var(--primary-purple); }
@@ -191,6 +187,15 @@
     </div>
 
     <div class="filter-bar">
+        
+        <select id="filtroOrdenacao" class="filter-input" onchange="renderizarProjetos()">
+            <option value="padrao">Ordenar por: Criação</option>
+            <option value="az">A-Z (Nome do Projeto)</option>
+            <option value="za">Z-A (Nome do Projeto)</option>
+            <option value="prazo_curto">Prazo: Mais Curto</option>
+            <option value="prazo_longo">Prazo: Mais Longo</option>
+        </select>
+
         <label class="filter-checkbox-wrapper">
             <input type="checkbox" id="filtroScrum" onchange="renderizarProjetos()">
             <span>Apenas Scrum</span>
@@ -483,6 +488,7 @@
         }
 
         function limparFiltros() {
+            document.getElementById('filtroOrdenacao').value = 'padrao';
             document.getElementById('filtroScrum').checked = false;
             document.getElementById('filtroCliente').value = '';
             document.getElementById('filtroResp').value = '';
@@ -621,12 +627,14 @@
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
             atualizarDropdownsFiltro(projetosFiltrados);
 
+            const fOrdenacao = document.getElementById('filtroOrdenacao').value;
             const fScrum = document.getElementById('filtroScrum').checked;
             const fCliente = document.getElementById('filtroCliente').value;
             const fResp = document.getElementById('filtroResp').value;
             const fDataInic = document.getElementById('filtroDataInicio').value;
             const fDataFim = document.getElementById('filtroDataFim').value;
 
+            // Filtra primeiro
             projetosFiltrados = projetosFiltrados.filter(p => {
                 let passaScrum = fScrum ? p.is_scrum === true : true;
                 let passaCliente = fCliente === "" || p.empresa === fCliente;
@@ -639,6 +647,27 @@
                     if (fDataFim && dtProj > new Date(fDataFim + "T23:59:59")) passaData = false;
                 }
                 return passaScrum && passaCliente && passaResp && passaData;
+            });
+
+            // Aplica a Ordenação
+            projetosFiltrados.sort((a, b) => {
+                if (fOrdenacao === 'az') {
+                    return a.nome_projeto.localeCompare(b.nome_projeto);
+                } else if (fOrdenacao === 'za') {
+                    return b.nome_projeto.localeCompare(a.nome_projeto);
+                } else if (fOrdenacao === 'prazo_curto' || fOrdenacao === 'prazo_longo') {
+                    let dateA = a.prazo_data ? new Date(a.prazo_data).getTime() : Infinity;
+                    let dateB = b.prazo_data ? new Date(b.prazo_data).getTime() : Infinity;
+
+                    if (fOrdenacao === 'prazo_curto') {
+                        return dateA - dateB;
+                    } else {
+                        if (!a.prazo_data) return 1; // Mantém nulos no final mesmo invertido
+                        if (!b.prazo_data) return -1;
+                        return dateB - dateA;
+                    }
+                }
+                return 0; // Padrão
             });
 
             projetosFiltrados.forEach(p => {
@@ -756,7 +785,6 @@
             finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
         }
 
-        // --- TIMER OMITIDO PARA ENCURTAR A LEITURA AQUI, MAS ESTÁ IGUAL ---
         function checarTimerSalvo() {
             const salvo = localStorage.getItem('cxdata_timer_ativo');
             if (salvo) { activeTimerData = JSON.parse(salvo); iniciarRelogioVisual(); } 
@@ -846,8 +874,6 @@
             } catch(e) { alert("Erro de conexão."); }
         }
 
-        // --- FUNÇÕES DE COMENTÁRIOS (HIERARQUIA E EDIÇÃO) ---
-
         async function carregarComentarios(projetoId) {
             const container = document.getElementById('listaComentarios');
             container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando comentários...</p>';
@@ -856,16 +882,12 @@
                 const data = await res.json();
                 
                 if (data.comentarios && data.comentarios.length > 0) {
-                    // Separa pais e filhos
                     const principais = data.comentarios.filter(c => !c.parent_id);
                     const filhos = data.comentarios.filter(c => c.parent_id);
 
                     let html = '';
                     principais.forEach(pai => {
-                        // Renderiza o pai
                         html += criarHtmlComentario(pai, false);
-                        
-                        // Busca e renderiza as respostas (filhos) logo abaixo
                         const respostasDoPai = filhos.filter(f => f.parent_id === pai.id);
                         respostasDoPai.forEach(filho => {
                             html += criarHtmlComentario(filho, true);
@@ -882,11 +904,9 @@
             }
         }
 
-        // Função auxiliar para gerar o HTML do comentário e botões
         function criarHtmlComentario(c, isResposta) {
             const classeCaixa = isResposta ? 'comentario-box resposta' : 'comentario-box';
             
-            // O texto precisa estar em uma div com ID único para a edição
             return `
                 <div class="comentario-thread" id="thread-${c.id}">
                     <div class="${classeCaixa}">
@@ -929,15 +949,9 @@
             }
         }
 
-        // --- SISTEMA DE RESPOSTA ---
         function abrirCaixaResposta(parentId) {
             const divResposta = document.getElementById(`caixa-resposta-${parentId}`);
-            
-            // Se já está aberto, fecha
-            if (divResposta.style.display === 'block') {
-                divResposta.style.display = 'none';
-                return;
-            }
+            if (divResposta.style.display === 'block') { divResposta.style.display = 'none'; return; }
             
             divResposta.innerHTML = `
                 <div class="comentario-input-area">
@@ -952,12 +966,10 @@
             document.getElementById(`resposta-texto-${parentId}`).focus();
         }
 
-        // --- SISTEMA DE EDIÇÃO ---
         function abrirEdicaoComentario(id) {
             const divTexto = document.getElementById(`texto-comentario-${id}`);
             const textoAtual = divTexto.innerText;
             
-            // Troca o texto por um textarea e botões de salvar/cancelar
             divTexto.innerHTML = `
                 <div class="comentario-input-area" style="margin-top: 5px;">
                     <textarea id="edicao-texto-${id}" class="comentario-textarea">${textoAtual}</textarea>
@@ -988,7 +1000,6 @@
                 textarea.disabled = false;
             }
         }
-
 
         async function abrirDetalhes(id, event) {
             if(event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes')) return;
