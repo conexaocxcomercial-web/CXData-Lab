@@ -183,7 +183,10 @@
     </div>
 
     <div class="command-bar">
-        <h1 id="tituloWorkspace" style="font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Carregando...</h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <h1 id="tituloWorkspace" style="font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Carregando...</h1>
+            <span id="contadorAbertos" style="background: var(--text-main); color: white; padding: 6px 14px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 50px !important; transition: 0.3s;">0 Em Aberto</span>
+        </div>
         <button class="btn-acao" onclick="abrirModalProjeto()">
             <span class="material-symbols-rounded">add</span> NOVO PROJETO
         </button>
@@ -672,6 +675,11 @@
                 }
                 return 0; // Padrão
             });
+
+            // NOVA LÓGICA: Atualizar o contador de cards em aberto
+            const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado').length;
+            const badgeContador = document.getElementById('contadorAbertos');
+            if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
 
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
