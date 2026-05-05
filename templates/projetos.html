@@ -27,9 +27,7 @@
 
         .top-bar { 
             background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
-            height: 70px; 
-            min-height: 70px; /* Garante a altura mínima */
-            flex-shrink: 0; /* Proíbe o Flexbox de esmagar a barra */
+            height: 70px; min-height: 70px; flex-shrink: 0;
             padding: 0 40px; display: flex; justify-content: space-between; 
             align-items: center; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); z-index: 10; 
         }
@@ -37,6 +35,11 @@
         .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; display: flex; align-items: center;}
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
+
+        /* NOVO: Sino de Notificações na Top Bar */
+        .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
+        .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
+        .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
 
         .btn-acao { background-color: var(--primary-purple); color: white; padding: 12px 24px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
         .btn-acao:hover { background-color: var(--text-main); }
@@ -91,6 +94,19 @@
         .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
         .card.atrasado .card-nome { color: #991b1b; }
 
+        /* NOVO: A bolinha vermelha no Card */
+        .notification-dot {
+            position: absolute; top: -6px; right: -6px; width: 14px; height: 14px; 
+            background-color: var(--accent-pink); border-radius: 50% !important;
+            border: 2px solid var(--bg-board);
+            animation: pulse-dot 2s infinite; z-index: 5;
+        }
+        @keyframes pulse-dot { 
+            0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.6); } 
+            70% { box-shadow: 0 0 0 6px rgba(255, 67, 192, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } 
+        }
+
         .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;}
         .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;}
         .card-empresa { color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase;}
@@ -114,7 +130,6 @@
         .btn-play:hover { transform: scale(1.1); }
         .btn-play.parar { background-color: var(--accent-pink); color: white; animation: pulse 1.5s infinite; }
         .btn-play:disabled { opacity: 0.7; cursor: wait; animation: none; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 67, 192, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } }
 
         .floating-player {
             position: fixed; bottom: 30px; right: 30px;
@@ -147,30 +162,42 @@
         .checkbox-group input { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;}
         .checkbox-group label { margin: 0; font-size: 13px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px;}
 
-        /* ESTILOS DE COMENTÁRIOS E RESPOSTAS */
+        /* REDESIGN: ESTILOS DE COMENTÁRIOS PREMIUM */
         .comentarios-section { margin-top: 25px; border-top: 1px solid #e4e4e7; padding-top: 20px; }
-        .comentarios-lista { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px;}
-        .comentario-thread { display: flex; flex-direction: column; gap: 6px; }
-        .comentario-box { background: #f4f4f5; padding: 12px 15px; border-radius: 8px !important; transition: 0.2s;}
-        .comentario-box.resposta { margin-left: 20px; border-left: 3px solid var(--light-purple); background: #fafafa;}
-        .comentario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .comentario-autor { font-size: 12px; font-weight: 800; color: var(--primary-purple); }
-        .comentario-data { font-size: 9px; font-weight: 600; color: var(--text-muted); }
-        .comentario-texto { font-size: 13px; color: var(--text-main); line-height: 1.4; white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;}
+        .comentarios-lista { display: flex; flex-direction: column; gap: 18px; margin-bottom: 20px; max-height: 350px; overflow-y: auto; padding-right: 10px;}
+        .comentario-thread { display: flex; flex-direction: column; gap: 8px; }
         
-        .comentario-acoes { display: flex; gap: 12px; }
-        .btn-comentario-acao { background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 4px; padding: 0;}
-        .btn-comentario-acao:hover { color: var(--primary-purple); }
+        .avatar-circle { width: 34px; height: 34px; min-width: 34px; background: var(--light-purple); color: var(--primary-purple); font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; letter-spacing: 0.5px;}
+        
+        .chat-bubble { background: #ffffff; padding: 16px; border-radius: 0 12px 12px 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f4f4f5; transition: 0.3s; width: 100%;}
+        .chat-bubble.resposta { border-radius: 12px 0 12px 12px !important; background: #fafafa; border-right: 3px solid var(--light-purple); border-left: none;}
+        
+        /* O "Grito" visual da notificação não lida */
+        .chat-bubble.unread-highlight { border-left: 3px solid var(--accent-pink); background: #fffaff; box-shadow: 0 4px 20px rgba(255, 67, 192, 0.08); }
 
-        .comentario-input-area { display: flex; flex-direction: column; gap: 8px; width: 100%;}
-        .comentario-textarea { width: 100%; padding: 12px; border-radius: 8px !important; border: 1px solid #d4d4d8; background: #fff; outline: none; font-size: 13px; font-family: 'Inter', sans-serif; resize: none; min-height: 50px;}
-        .comentario-textarea:focus { border-color: var(--primary-purple); }
+        .comentario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .comentario-autor { font-size: 13px; font-weight: 800; color: var(--text-main); }
+        .comentario-data { font-size: 9px; font-weight: 600; color: var(--text-muted); }
+        .comentario-texto { font-size: 13px; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px;}
         
-        .btn-enviar-comentario { background: var(--primary-purple); color: white; border: none; padding: 10px 15px; border-radius: 8px !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 800; font-size: 11px; text-transform: uppercase; align-self: flex-end;}
-        .btn-enviar-comentario:hover { background: var(--text-main); }
+        .comentario-acoes { display: flex; gap: 15px; align-items: center; }
+        .btn-comentario-acao { background: none; border: none; color: var(--text-muted); font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 4px; padding: 0; transition: 0.2s;}
+        .btn-comentario-acao:hover { color: var(--primary-purple); }
         
-        .btn-cancelar-edicao { background: #e4e4e7; color: var(--text-main); border: none; padding: 10px 15px; border-radius: 8px !important; cursor: pointer; font-weight: 800; font-size: 11px; text-transform: uppercase; }
-        .botoes-form-comentario { display: flex; gap: 8px; justify-content: flex-end; }
+        /* O Botão Mágico de Marcar como Lido */
+        .btn-ciente { background: #dcfce7; color: #166534; border: none; font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 50px !important; cursor: pointer; display: flex; align-items: center; gap: 4px; text-transform: uppercase; margin-left: auto; transition: 0.2s; box-shadow: 0 2px 10px rgba(22, 101, 52, 0.1);}
+        .btn-ciente:hover { background: #bbf7d0; transform: translateY(-1px);}
+
+        .comentario-input-area { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--glass-bg); padding: 10px; border-radius: 50px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
+        .comentario-textarea { flex-grow: 1; border: none; background: transparent; outline: none; font-size: 13px; font-family: 'Inter', sans-serif; resize: none; height: 38px; padding: 10px 15px; color: var(--text-main);}
+        
+        .btn-enviar-comentario { background: var(--primary-purple); color: white; border: none; width: 40px; height: 40px; border-radius: 50% !important; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .btn-enviar-comentario:hover { background: var(--text-main); transform: scale(1.05);}
+        .btn-enviar-comentario span { font-size: 18px; margin-left: 2px;} /* Ajuste fino do ícone send */
+        
+        .btn-cancelar-edicao { background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 50px !important; cursor: pointer; font-weight: 800; font-size: 11px; text-transform: uppercase; }
+        .btn-cancelar-edicao:hover { background: #f4f4f5; }
+        .botoes-form-comentario { display: flex; gap: 8px; justify-content: flex-end; width: 100%; margin-top: 10px;}
     </style>
 </head>
 <body>
@@ -179,6 +206,18 @@
         <div class="top-bar-logo" onclick="window.location.href='/'">
             <span class="material-symbols-rounded" style="margin-right: 8px; font-size: 22px;">arrow_back</span>
             CXData <span class="roxo" style="margin-left: 5px;">Flow</span>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <!-- SINO DE NOTIFICAÇÕES -->
+            <div class="bell-container" title="Notificações Pendentes">
+                <span class="material-symbols-rounded" style="font-size: 22px;">notifications</span>
+                <div class="bell-badge" id="sinoNotificacoes" style="display: none;">0</div>
+            </div>
+            
+            <div style="background: var(--text-main); color: white; padding: 8px 16px; border-radius: 50px !important; font-size: 12px; font-weight: 800;">
+                {{ usuario_nome }}
+            </div>
         </div>
     </div>
 
@@ -339,7 +378,7 @@
 
     <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
         <div class="modal-content" style="max-width: 600px; background: white;">
-            <div class="modal-header">
+            <div class="modal-header" style="margin-bottom: 20px;">
                 <div>
                     <span id="detArea" style="color: var(--primary-purple); font-size: 12px; font-weight: 800; text-transform: uppercase;"></span>
                     <h2 id="detNome">Nome do Projeto</h2>
@@ -363,13 +402,13 @@
             </div>
 
             <div class="comentarios-section">
-                <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Mural e Atualizações</h3>
+                <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--text-muted);">Mural e Atualizações</h3>
                 
                 <div class="comentarios-lista" id="listaComentarios"></div>
                 
                 <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
-                    <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização principal ou aviso..."></textarea>
-                    <button class="btn-enviar-comentario" onclick="salvarComentario()">Publicar</button>
+                    <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização principal..."></textarea>
+                    <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar Comentário"><span class="material-symbols-rounded">send</span></button>
                 </div>
             </div>
 
@@ -382,6 +421,7 @@
 
     <script>
         const QUADRO_ATUAL = "{{ quadro_atual }}";
+        const USUARIO_LOGADO = "{{ usuario_nome }}"; // O Python agora manda o seu nome para o JS ler!
 
         const WORKSPACES = {
             'geral': {
@@ -641,7 +681,6 @@
             const fDataInic = document.getElementById('filtroDataInicio').value;
             const fDataFim = document.getElementById('filtroDataFim').value;
 
-            // Filtra primeiro
             projetosFiltrados = projetosFiltrados.filter(p => {
                 let passaScrum = fScrum ? p.is_scrum === true : true;
                 let passaCliente = fCliente === "" || p.empresa === fCliente;
@@ -656,37 +695,38 @@
                 return passaScrum && passaCliente && passaResp && passaData;
             });
 
-            // Aplica a Ordenação
             projetosFiltrados.sort((a, b) => {
-                if (fOrdenacao === 'az') {
-                    return a.nome_projeto.localeCompare(b.nome_projeto);
-                } else if (fOrdenacao === 'za') {
-                    return b.nome_projeto.localeCompare(a.nome_projeto);
-                } else if (fOrdenacao === 'prazo_curto' || fOrdenacao === 'prazo_longo') {
+                if (fOrdenacao === 'az') return a.nome_projeto.localeCompare(b.nome_projeto);
+                if (fOrdenacao === 'za') return b.nome_projeto.localeCompare(a.nome_projeto);
+                if (fOrdenacao === 'prazo_curto' || fOrdenacao === 'prazo_longo') {
                     let dateA = a.prazo_data ? new Date(a.prazo_data).getTime() : Infinity;
                     let dateB = b.prazo_data ? new Date(b.prazo_data).getTime() : Infinity;
-
-                    if (fOrdenacao === 'prazo_curto') {
-                        return dateA - dateB;
-                    } else {
-                        if (!a.prazo_data) return 1; // Mantém nulos no final mesmo invertido
-                        if (!b.prazo_data) return -1;
-                        return dateB - dateA;
-                    }
+                    if (fOrdenacao === 'prazo_curto') return dateA - dateB;
+                    if (!a.prazo_data) return 1; 
+                    if (!b.prazo_data) return -1;
+                    return dateB - dateA;
                 }
-                return 0; // Padrão
+                return 0;
             });
 
-            // NOVA LÓGICA: Atualizar o contador de cards em aberto
             const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
+
+            let totalNotificacoesGeral = 0; // O contador do Sino
 
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
                 const colHTMLId = 'col-' + statusCard.replace(/[^a-zA-Z0-9]/g, '');
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 if(!container) return;
+
+                // LÓGICA DE NOTIFICAÇÃO: Se eu sou o responsável, tem bolinha?
+                let isMeuProjeto = (p.responsavel === USUARIO_LOGADO);
+                let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
+                if(hasUnread) totalNotificacoesGeral += p.qtd_nao_lidos;
+
+                let htmlBolinha = hasUnread ? `<div class="notification-dot" title="Você tem ${p.qtd_nao_lidos} mensagens novas!"></div>` : '';
 
                 let isRodando = activeTimerData && activeTimerData.id === p.id && !activeTimerData.paused;
                 let isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
@@ -698,16 +738,11 @@
                 let btnIcon = isRodando ? 'stop' : (isPausado ? 'pause' : 'play_arrow');
                 let btnStyle = isPausado ? 'style="background-color: #f59e0b; color: white;"' : '';
 
-                // --- NOVA LÓGICA DE ETIQUETAS (AGRUPADAS) ---
                 let arrayBadges = [];
                 let isAtrasadoClass = '';
                 
-                // 1. Etiqueta SCRUM entra primeiro na fila de badges
-                if (p.is_scrum) {
-                    arrayBadges.push(`<span class="dias-aberto" style="background: #3b82f6; margin-bottom: 0;">SCRUM</span>`);
-                }
+                if (p.is_scrum) arrayBadges.push(`<span class="dias-aberto" style="background: #3b82f6; margin-bottom: 0;">SCRUM</span>`);
 
-                // 2. Etiquetas de Datas
                 if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
                     const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
@@ -740,11 +775,11 @@
                     }
                 }
 
-                // Junta todas as etiquetas geradas em uma única linha Flexbox
                 let htmlBadgesFinal = arrayBadges.length > 0 ? `<div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">${arrayBadges.join('')}</div>` : '';
 
                 const cardHTML = `
                 <div class="card ${isAtrasadoClass}" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
+                    ${htmlBolinha}
                     <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
                         <div class="card-header">
                             <span class="card-area">${p.area}</span>
@@ -771,6 +806,16 @@
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
             atualizarContadores();
+            
+            // Acende ou apaga o Sino Mestre
+            const sino = document.getElementById('sinoNotificacoes');
+            if(totalNotificacoesGeral > 0) {
+                sino.innerText = totalNotificacoesGeral;
+                sino.style.display = 'flex';
+            } else {
+                sino.style.display = 'none';
+            }
+            
             if(activeTimerData) iniciarRelogioVisual();
         }
 
@@ -891,7 +936,7 @@
 
         async function carregarComentarios(projetoId) {
             const container = document.getElementById('listaComentarios');
-            container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando comentários...</p>';
+            container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando atualizações...</p>';
             try {
                 const res = await fetch(`/api/projetos/${projetoId}/comentarios`);
                 const data = await res.json();
@@ -912,7 +957,7 @@
                     container.innerHTML = html;
                     container.scrollTop = container.scrollHeight;
                 } else {
-                    container.innerHTML = '<p style="font-size: 12px; color: #999;">Nenhum comentário ainda.</p>';
+                    container.innerHTML = '<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem novidades por aqui. Seja o primeiro a comentar!</p>';
                 }
             } catch (e) {
                 container.innerHTML = '<p style="font-size: 12px; color: #ef4444;">Erro ao carregar comentários.</p>';
@@ -920,26 +965,48 @@
         }
 
         function criarHtmlComentario(c, isResposta) {
-            const classeCaixa = isResposta ? 'comentario-box resposta' : 'comentario-box';
+            const proj = projetosGlobais.find(p => p.id === c.projeto_id);
+            const isMeuProjeto = (proj && proj.responsavel === USUARIO_LOGADO);
+            const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && c.autor !== USUARIO_LOGADO);
             
+            const classeCaixa = isResposta ? 'chat-bubble resposta' : 'chat-bubble';
+            const highlightClass = isUnread ? 'unread-highlight' : '';
+            const iniciais = c.autor.substring(0,2).toUpperCase();
+            
+            // O botão Ciente só aparece para o Responsável, em comentários de outras pessoas, que não foram lidos.
+            const btnCienteHTML = isUnread ? `<button class="btn-ciente" onclick="marcarComoLido(${c.id}, this)"><span class="material-symbols-rounded" style="font-size: 12px;">done_all</span> Ciente</button>` : '';
+
             return `
                 <div class="comentario-thread" id="thread-${c.id}">
-                    <div class="${classeCaixa}">
-                        <div class="comentario-header">
-                            <span class="comentario-autor">${c.autor}</span>
-                            <span class="comentario-data">${new Date(c.criado_em).toLocaleString('pt-BR')}</span>
-                        </div>
-                        <div class="comentario-texto" id="texto-comentario-${c.id}">${c.texto}</div>
-                        
-                        <div class="comentario-acoes">
-                            ${!isResposta ? `<button class="btn-comentario-acao" onclick="abrirCaixaResposta(${c.id})"><span class="material-symbols-rounded" style="font-size: 12px;">reply</span> Responder</button>` : ''}
-                            <button class="btn-comentario-acao" onclick="abrirEdicaoComentario(${c.id})"><span class="material-symbols-rounded" style="font-size: 12px;">edit</span> Editar</button>
+                    <div style="display: flex; gap: 12px;">
+                        <div class="avatar-circle">${iniciais}</div>
+                        <div class="${classeCaixa} ${highlightClass}">
+                            <div class="comentario-header">
+                                <span class="comentario-autor">${c.autor}</span>
+                                <span class="comentario-data">${new Date(c.criado_em).toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div class="comentario-texto" id="texto-comentario-${c.id}">${c.texto}</div>
+                            
+                            <div class="comentario-acoes">
+                                ${!isResposta ? `<button class="btn-comentario-acao" onclick="abrirCaixaResposta(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">reply</span> Responder</button>` : ''}
+                                <button class="btn-comentario-acao" onclick="abrirEdicaoComentario(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">edit</span> Editar</button>
+                                ${btnCienteHTML}
+                            </div>
                         </div>
                     </div>
-                    
-                    <div id="caixa-resposta-${c.id}" style="display: none; margin-left: 20px; margin-top: 5px;"></div>
+                    <div id="caixa-resposta-${c.id}" style="display: none; margin-left: 46px; margin-top: 5px;"></div>
                 </div>
             `;
+        }
+
+        async function marcarComoLido(comentarioId, btnElement) {
+            btnElement.innerHTML = `<span class="material-symbols-rounded" style="font-size: 12px;">hourglass_empty</span>...`;
+            btnElement.disabled = true;
+            try {
+                await fetch(`/api/comentarios/${comentarioId}/lido`, { method: 'PUT' });
+                await carregarProjetos(); // Atualiza a bolinha e o Sino
+                carregarComentarios(projIdEmFoco); // Recarrega a timeline para tirar a borda rosa
+            } catch(e) { alert("Erro ao marcar como lido"); }
         }
 
         async function salvarComentario(parentId = null) {
@@ -957,9 +1024,11 @@
                     body: JSON.stringify({ texto: texto, parent_id: parentId })
                 });
                 textoInput.value = '';
+                await carregarProjetos(); // Se o dono respondeu, isso limpa os badges
                 await carregarComentarios(projIdEmFoco);
             } catch (e) {
                 alert('Erro ao enviar comentário.');
+            } finally {
                 textoInput.disabled = false;
             }
         }
@@ -969,11 +1038,11 @@
             if (divResposta.style.display === 'block') { divResposta.style.display = 'none'; return; }
             
             divResposta.innerHTML = `
-                <div class="comentario-input-area">
-                    <textarea id="resposta-texto-${parentId}" class="comentario-textarea" placeholder="Digite sua resposta..." style="min-height: 40px;"></textarea>
-                    <div class="botoes-form-comentario">
+                <div style="background: var(--glass-bg); padding: 10px; border-radius: 12px !important; border-left: 3px solid var(--primary-purple);">
+                    <textarea id="resposta-texto-${parentId}" class="comentario-textarea" placeholder="Digite sua resposta..." style="width: 100%; border-bottom: 1px solid #d4d4d8; margin-bottom: 8px; border-radius: 0 !important;"></textarea>
+                    <div class="botoes-form-comentario" style="margin-top:0;">
                         <button class="btn-cancelar-edicao" onclick="document.getElementById('caixa-resposta-${parentId}').style.display='none'">Cancelar</button>
-                        <button class="btn-enviar-comentario" onclick="salvarComentario(${parentId})">Responder</button>
+                        <button class="btn-enviar-comentario" style="width: auto; height: auto; border-radius: 50px !important; padding: 6px 12px; font-size: 11px;" onclick="salvarComentario(${parentId})">Responder</button>
                     </div>
                 </div>
             `;
@@ -986,11 +1055,11 @@
             const textoAtual = divTexto.innerText;
             
             divTexto.innerHTML = `
-                <div class="comentario-input-area" style="margin-top: 5px;">
-                    <textarea id="edicao-texto-${id}" class="comentario-textarea">${textoAtual}</textarea>
+                <div style="margin-top: 5px;">
+                    <textarea id="edicao-texto-${id}" class="comentario-textarea" style="width: 100%; border: 1px solid var(--primary-purple); border-radius: 8px !important; background: #fff;">${textoAtual}</textarea>
                     <div class="botoes-form-comentario">
                         <button class="btn-cancelar-edicao" onclick="carregarComentarios(projIdEmFoco)">Cancelar</button>
-                        <button class="btn-enviar-comentario" onclick="salvarEdicaoComentario(${id})">Salvar</button>
+                        <button class="btn-enviar-comentario" style="width: auto; height: auto; border-radius: 50px !important; padding: 6px 12px; font-size: 11px;" onclick="salvarEdicaoComentario(${id})">Salvar</button>
                     </div>
                 </div>
             `;
