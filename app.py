@@ -47,7 +47,8 @@ def index():
 def tela_projetos(nome_quadro):
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('projetos.html', quadro_atual=nome_quadro)
+    # Enviamos o nome do usuário logado para o Frontend (Vital para as notificações)
+    return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'))
 
 # --- API PROJETOS ---
 
@@ -57,13 +58,24 @@ def listar_projetos():
     try:
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = res_projetos.data
+        
         res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
         tempos_agrupados = {}
         for log in res_tempo.data:
             pid = log['projeto_id']
             tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + log['tempo_segundos']
+            
+        # NOVA MÁGICA: Buscar comentários não lidos
+        res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
+        unread_counts = {}
+        for c in res_unread.data:
+            pid = c['projeto_id']
+            unread_counts[pid] = unread_counts.get(pid, 0) + 1
+            
         for p in projetos:
             p['tempo_total_segundos'] = tempos_agrupados.get(p['id'], 0)
+            p['qtd_nao_lidos'] = unread_counts.get(p['id'], 0)
+            
         return jsonify({"status": "sucesso", "projetos": projetos}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no GET Projetos: {str(e)}")
@@ -98,7 +110,6 @@ def atualizar_projeto(projeto_id):
     try:
         atualizacao = {}
         
-        # 1. Busca o status atual no banco ANTES de atualizar
         res_atual = supabase.table("projetos").select("status", "data_inicio").eq("id", projeto_id).execute()
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         
@@ -116,7 +127,6 @@ def atualizar_projeto(projeto_id):
             if res_atual.data and not res_atual.data[0].get("data_inicio"):
                 atualizacao["data_inicio"] = datetime.utcnow().isoformat()
 
-            # 2. A MÁGICA PROTEGIDA: Tenta gravar no histórico, se der erro de banco, não trava o card
             if novo_status and novo_status != status_anterior:
                 try:
                     supabase.table("historico_colunas").insert({
@@ -126,7 +136,7 @@ def atualizar_projeto(projeto_id):
                         "movimentado_por": session.get("usuario_nome", "Sistema")
                     }).execute()
                 except Exception as erro_hist:
-                    print(f"[AVISO BI] Erro ao gravar histórico (não afeta o Kanban): {str(erro_hist)}")
+                    print(f"[AVISO BI] Erro ao gravar histórico: {str(erro_hist)}")
 
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
@@ -192,7 +202,7 @@ def historico_tempo(projeto_id):
         print(f"[CRITICAL] Erro no Histórico: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar histórico."}), 500
 
-# --- API COMENTÁRIOS (HIERARQUIA E EDIÇÃO) ---
+# --- API COMENTÁRIOS COM NOTIFICAÇÕES ---
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
 def listar_comentarios(projeto_id):
@@ -209,17 +219,34 @@ def adicionar_comentario(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     dados = request.json
     texto = dados.get("texto")
-    parent_id = dados.get("parent_id", None) # Recebe o ID do pai se for resposta
+    parent_id = dados.get("parent_id", None)
     
     if not texto: return jsonify({"erro": "Texto vazio"}), 400
     try:
+        autor = session.get("usuario_nome", "Usuário")
+        
+        # 1. Verifica de quem é a "Casa" (quem é o responsável pelo projeto)
+        res_proj = supabase.table("projetos").select("responsavel").eq("id", projeto_id).execute()
+        responsavel_projeto = res_proj.data[0]['responsavel'] if res_proj.data else ""
+        
+        # 2. Se quem está comentando já é o responsável, o comentário já nasce "lido".
+        # Se for outra pessoa (ex: Mirian), nasce como False para acionar o sino do Jhonattan.
+        ja_lido = True if autor == responsavel_projeto else False
+        
         novo_comentario = {
             "projeto_id": projeto_id,
-            "autor": session.get("usuario_nome", "Usuário"),
+            "autor": autor,
             "texto": texto,
-            "parent_id": parent_id
+            "parent_id": parent_id,
+            "lido_pelo_responsavel": ja_lido
         }
         supabase.table("comentarios").insert(novo_comentario).execute()
+        
+        # 3. MÁGICA: Baixa Automática! 
+        # Se o dono do projeto respondeu, limpamos TODAS as bolinhas vermelhas pendentes daquele card.
+        if autor == responsavel_projeto:
+            supabase.table("comentarios").update({"lido_pelo_responsavel": True}).eq("projeto_id", projeto_id).eq("lido_pelo_responsavel", False).execute()
+            
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no POST Comentários: {str(e)}")
@@ -237,6 +264,16 @@ def editar_comentario(comentario_id):
     except Exception as e:
         print(f"[CRITICAL] Erro no PUT Comentário: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao editar comentário."}), 500
+
+@app.route('/api/comentarios/<comentario_id>/lido', methods=['PUT'])
+def marcar_comentario_lido(comentario_id):
+    # Rota específica do "Botão Ciente"
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        supabase.table("comentarios").update({"lido_pelo_responsavel": True}).eq("id", comentario_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
