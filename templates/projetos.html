@@ -41,6 +41,17 @@
         .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
 
+        /* NOVO: Botão de Sair */
+        .btn-logout {
+            display: flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
+            border-radius: 50% !important; color: var(--text-muted); cursor: pointer;
+            transition: all 0.2s; border: none; outline: none;
+        }
+        .btn-logout:hover {
+            background: #fee2e2; color: #ef4444; transform: scale(1.05);
+        }
+
         .btn-acao { background-color: var(--primary-purple); color: white; padding: 12px 24px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
         .btn-acao:hover { background-color: var(--text-main); }
         .btn-acao:disabled { background-color: var(--text-muted); cursor: not-allowed; }
@@ -94,7 +105,7 @@
         .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
         .card.atrasado .card-nome { color: #991b1b; }
 
-        /* NOVO: A bolinha vermelha no Card */
+        /* A bolinha vermelha no Card */
         .notification-dot {
             position: absolute; top: -6px; right: -6px; width: 14px; height: 14px; 
             background-color: var(--accent-pink); border-radius: 50% !important;
@@ -215,9 +226,15 @@
                 <div class="bell-badge" id="sinoNotificacoes" style="display: none;">0</div>
             </div>
             
+            <!-- NOME DO USUÁRIO -->
             <div style="background: var(--text-main); color: white; padding: 8px 16px; border-radius: 50px !important; font-size: 12px; font-weight: 800;">
                 {{ usuario_nome }}
             </div>
+
+            <!-- BOTÃO SAIR -->
+            <button onclick="window.location.href='/logout'" class="btn-logout" title="Sair do Sistema">
+                <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
+            </button>
         </div>
     </div>
 
@@ -721,8 +738,8 @@
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 if(!container) return;
 
-                // LÓGICA DE NOTIFICAÇÃO: Se eu sou o responsável, tem bolinha?
-                let isMeuProjeto = (p.responsavel === USUARIO_LOGADO);
+                // LÓGICA DE NOTIFICAÇÃO (BLINDADA CONTRA ERROS DE ESPAÇOS E MAIÚSCULAS)
+                let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
                 if(hasUnread) totalNotificacoesGeral += p.qtd_nao_lidos;
 
@@ -966,8 +983,10 @@
 
         function criarHtmlComentario(c, isResposta) {
             const proj = projetosGlobais.find(p => p.id === c.projeto_id);
-            const isMeuProjeto = (proj && proj.responsavel === USUARIO_LOGADO);
-            const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && c.autor !== USUARIO_LOGADO);
+            
+            // BLINDAGEM AQUI TAMBÉM: Trim() e toLowerCase()
+            const isMeuProjeto = (proj && proj.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
+            const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && c.autor.trim().toLowerCase() !== USUARIO_LOGADO.trim().toLowerCase());
             
             const classeCaixa = isResposta ? 'chat-bubble resposta' : 'chat-bubble';
             const highlightClass = isUnread ? 'unread-highlight' : '';
