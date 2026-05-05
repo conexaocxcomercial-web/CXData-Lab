@@ -678,7 +678,7 @@
             });
 
             // NOVA LÓGICA: Atualizar o contador de cards em aberto
-            const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado').length;
+            const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
 
@@ -698,15 +698,24 @@
                 let btnIcon = isRodando ? 'stop' : (isPausado ? 'pause' : 'play_arrow');
                 let btnStyle = isPausado ? 'style="background-color: #f59e0b; color: white;"' : '';
 
-                let badgesDatas = '';
+                // --- NOVA LÓGICA DE ETIQUETAS (AGRUPADAS) ---
+                let arrayBadges = [];
                 let isAtrasadoClass = '';
                 
+                // 1. Etiqueta SCRUM entra primeiro na fila de badges
+                if (p.is_scrum) {
+                    arrayBadges.push(`<span class="dias-aberto" style="background: #3b82f6; margin-bottom: 0;">SCRUM</span>`);
+                }
+
+                // 2. Etiquetas de Datas
                 if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
                     const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
                     const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
                     
-                    let htmlContagemRegressiva = '';
+                    arrayBadges.push(`<span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Total${tagCongelado}</span>`);
+                    arrayBadges.push(`<span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>`);
+
                     if (p.prazo_data) {
                         const partes = p.prazo_data.split('T')[0].split('-');
                         const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
@@ -714,42 +723,36 @@
                         dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
                         const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
 
-                        if (p.status !== 'Finalizado') {
+                        if (p.status !== 'Finalizado' && p.status !== 'Cancelado') {
                             if (diffDias < 0) {
                                 isAtrasadoClass = 'atrasado'; 
-                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;" title="O prazo estourou!">Atrasado ${Math.abs(diffDias)}d</span>`;
+                                arrayBadges.push(`<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;" title="O prazo estourou!">Atrasado ${Math.abs(diffDias)}d</span>`);
                             } else if (diffDias === 0) {
-                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: #f59e0b; margin-bottom: 0;">Vence Hoje</span>`;
+                                arrayBadges.push(`<span class="dias-aberto" style="background: #f59e0b; margin-bottom: 0;">Vence Hoje</span>`);
                             } else {
                                 const corPrazo = diffDias <= 2 ? '#f59e0b' : '#10b981'; 
-                                htmlContagemRegressiva = `<span class="dias-aberto" style="background: ${corPrazo}; margin-bottom: 0;">Faltam ${diffDias}d</span>`;
+                                arrayBadges.push(`<span class="dias-aberto" style="background: ${corPrazo}; margin-bottom: 0;">Faltam ${diffDias}d</span>`);
                             }
                         } else {
-                            if (diffDias < 0) { htmlContagemRegressiva = `<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;">Entregue c/ Atraso</span>`; } 
-                            else { htmlContagemRegressiva = `<span class="dias-aberto" style="background: #10b981; margin-bottom: 0;">No Prazo</span>`; }
+                            if (diffDias < 0) { arrayBadges.push(`<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;">Entregue c/ Atraso</span>`); } 
+                            else { arrayBadges.push(`<span class="dias-aberto" style="background: #10b981; margin-bottom: 0;">No Prazo</span>`); }
                         }
                     }
-
-                    badgesDatas = `
-                    <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Total${tagCongelado}</span>
-                        <span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>
-                        ${htmlContagemRegressiva}
-                    </div>`;
                 }
 
-                let htmlBadgeScrum = p.is_scrum ? '<span class="badge-scrum">SCRUM</span>' : '';
+                // Junta todas as etiquetas geradas em uma única linha Flexbox
+                let htmlBadgesFinal = arrayBadges.length > 0 ? `<div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">${arrayBadges.join('')}</div>` : '';
 
                 const cardHTML = `
                 <div class="card ${isAtrasadoClass}" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
                     <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
                         <div class="card-header">
-                            <span class="card-area">${p.area} ${htmlBadgeScrum}</span>
+                            <span class="card-area">${p.area}</span>
                             <span class="card-empresa">${p.empresa}</span>
                         </div>
                         <div class="card-nome">${p.nome_projeto}</div>
                         <div class="card-resp">${p.responsavel}</div>
-                        ${badgesDatas}
+                        ${htmlBadgesFinal}
                     </div>
                     
                     <div style="margin-top: 10px;">
