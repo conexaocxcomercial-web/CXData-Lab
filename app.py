@@ -107,7 +107,7 @@ def atualizar_projeto(projeto_id):
             atualizacao["status"] = novo_status
             atualizacao["data_status_atual"] = datetime.utcnow().isoformat()
 
-            status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding"]
+            status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding", "Cancelado"]
             if novo_status in status_pausa:
                 atualizacao["data_conclusao"] = datetime.utcnow().isoformat()
             else:
