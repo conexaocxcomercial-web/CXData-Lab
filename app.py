@@ -116,14 +116,17 @@ def atualizar_projeto(projeto_id):
             if res_atual.data and not res_atual.data[0].get("data_inicio"):
                 atualizacao["data_inicio"] = datetime.utcnow().isoformat()
 
-            # 2. A MÁGICA: Se o status mudou, grava no histórico de colunas para cálculo de BI
+            # 2. A MÁGICA PROTEGIDA: Tenta gravar no histórico, se der erro de banco, não trava o card
             if novo_status and novo_status != status_anterior:
-                supabase.table("historico_colunas").insert({
-                    "projeto_id": projeto_id,
-                    "status_anterior": status_anterior,
-                    "status_novo": novo_status,
-                    "movimentado_por": session.get("usuario_nome", "Sistema")
-                }).execute()
+                try:
+                    supabase.table("historico_colunas").insert({
+                        "projeto_id": projeto_id,
+                        "status_anterior": status_anterior,
+                        "status_novo": novo_status,
+                        "movimentado_por": session.get("usuario_nome", "Sistema")
+                    }).execute()
+                except Exception as erro_hist:
+                    print(f"[AVISO BI] Erro ao gravar histórico (não afeta o Kanban): {str(erro_hist)}")
 
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
