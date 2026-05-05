@@ -66,7 +66,8 @@ def listar_projetos():
             p['tempo_total_segundos'] = tempos_agrupados.get(p['id'], 0)
         return jsonify({"status": "sucesso", "projetos": projetos}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no GET Projetos: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar projetos."}), 500
 
 @app.route('/api/projetos', methods=['POST'])
 def criar_projeto():
@@ -87,7 +88,8 @@ def criar_projeto():
         supabase.table("projetos").insert(novo_projeto).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no POST Projetos: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao criar o projeto."}), 500
 
 @app.route('/api/projetos/<projeto_id>', methods=['PUT'])
 def atualizar_projeto(projeto_id):
@@ -95,6 +97,10 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
+        
+        # 1. Busca o status atual no banco ANTES de atualizar
+        res_atual = supabase.table("projetos").select("status", "data_inicio").eq("id", projeto_id).execute()
+        status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         
         if "status" in dados:
             novo_status = dados.get("status")
@@ -107,9 +113,17 @@ def atualizar_projeto(projeto_id):
             else:
                 atualizacao["data_conclusao"] = None 
                 
-                res_atual = supabase.table("projetos").select("data_inicio").eq("id", projeto_id).execute()
-                if res_atual.data and not res_atual.data[0].get("data_inicio"):
-                    atualizacao["data_inicio"] = datetime.utcnow().isoformat()
+            if res_atual.data and not res_atual.data[0].get("data_inicio"):
+                atualizacao["data_inicio"] = datetime.utcnow().isoformat()
+
+            # 2. A MÁGICA: Se o status mudou, grava no histórico de colunas para cálculo de BI
+            if novo_status and novo_status != status_anterior:
+                supabase.table("historico_colunas").insert({
+                    "projeto_id": projeto_id,
+                    "status_anterior": status_anterior,
+                    "status_novo": novo_status,
+                    "movimentado_por": session.get("usuario_nome", "Sistema")
+                }).execute()
 
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
@@ -121,7 +135,8 @@ def atualizar_projeto(projeto_id):
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no PUT (Atualizar): {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro interno de atualização"}), 500
 
 @app.route('/api/projetos/<projeto_id>', methods=['DELETE'])
 def excluir_projeto(projeto_id):
@@ -130,7 +145,8 @@ def excluir_projeto(projeto_id):
         supabase.table("projetos").delete().eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no DELETE: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir o projeto."}), 500
 
 # --- API TIMER ---
 
@@ -161,7 +177,7 @@ def salvar_tempo(projeto_id):
             return jsonify({"status": "sucesso", "alerta": "Salvo sem datas"}), 200
         except Exception as erro_critico:
             print("Erro Crítico no Timer:", erro_critico)
-            return jsonify({"status": "erro", "mensagem": str(erro_critico)}), 400
+            return jsonify({"status": "erro", "mensagem": "Erro ao salvar log de tempo"}), 500
 
 @app.route('/api/projetos/<projeto_id>/historico', methods=['GET'])
 def historico_tempo(projeto_id):
@@ -170,7 +186,8 @@ def historico_tempo(projeto_id):
         resposta = supabase.table("time_logs").select("*").eq("projeto_id", projeto_id).order("criado_em", desc=True).execute()
         return jsonify({"status": "sucesso", "historico": resposta.data}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no Histórico: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar histórico."}), 500
 
 # --- API COMENTÁRIOS (HIERARQUIA E EDIÇÃO) ---
 
@@ -181,7 +198,8 @@ def listar_comentarios(projeto_id):
         res = supabase.table("comentarios").select("*").eq("projeto_id", projeto_id).order("criado_em", desc=False).execute()
         return jsonify({"status": "sucesso", "comentarios": res.data}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro ao listar comentários: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar comentários."}), 500
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['POST'])
 def adicionar_comentario(projeto_id):
@@ -201,7 +219,8 @@ def adicionar_comentario(projeto_id):
         supabase.table("comentarios").insert(novo_comentario).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no POST Comentários: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar comentário."}), 500
 
 @app.route('/api/comentarios/<comentario_id>', methods=['PUT'])
 def editar_comentario(comentario_id):
@@ -213,7 +232,8 @@ def editar_comentario(comentario_id):
         supabase.table("comentarios").update({"texto": texto_novo}).eq("id", comentario_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 400
+        print(f"[CRITICAL] Erro no PUT Comentário: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao editar comentário."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
