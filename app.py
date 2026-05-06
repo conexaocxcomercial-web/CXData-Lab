@@ -47,7 +47,6 @@ def index():
 def tela_projetos(nome_quadro):
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    # Enviamos o nome do usuário logado para o Frontend (Vital para as notificações)
     return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'))
 
 # --- API PROJETOS ---
@@ -65,7 +64,6 @@ def listar_projetos():
             pid = log['projeto_id']
             tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + log['tempo_segundos']
             
-        # NOVA MÁGICA: Buscar comentários não lidos
         res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
         unread_counts = {}
         for c in res_unread.data:
@@ -109,7 +107,6 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
-        
         res_atual = supabase.table("projetos").select("status", "data_inicio").eq("id", projeto_id).execute()
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         
@@ -158,7 +155,6 @@ def excluir_projeto(projeto_id):
         supabase.table("projetos").delete().eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro no DELETE: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir o projeto."}), 500
 
 # --- API TIMER ---
@@ -189,7 +185,6 @@ def salvar_tempo(projeto_id):
             supabase.table("time_logs").insert(log_seguro).execute()
             return jsonify({"status": "sucesso", "alerta": "Salvo sem datas"}), 200
         except Exception as erro_critico:
-            print("Erro Crítico no Timer:", erro_critico)
             return jsonify({"status": "erro", "mensagem": "Erro ao salvar log de tempo"}), 500
 
 @app.route('/api/projetos/<projeto_id>/historico', methods=['GET'])
@@ -199,10 +194,47 @@ def historico_tempo(projeto_id):
         resposta = supabase.table("time_logs").select("*").eq("projeto_id", projeto_id).order("criado_em", desc=True).execute()
         return jsonify({"status": "sucesso", "historico": resposta.data}), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro no Histórico: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar histórico."}), 500
 
-# --- API COMENTÁRIOS COM NOTIFICAÇÕES ---
+# --- API COMENTÁRIOS E NOTIFICAÇÕES ---
+
+@app.route('/api/notificacoes', methods=['GET'])
+def get_notificacoes():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    usuario = session.get('usuario_nome')
+    try:
+        # 1. Busca todos os projetos do banco
+        res_projetos = supabase.table('projetos').select('id, nome_projeto, responsavel').execute()
+        projetos_do_usuario = {}
+        
+        # Filtra na unha (Python) para evitar erro de maiúscula/minúscula/espaço
+        for p in res_projetos.data:
+            if p['responsavel'] and p['responsavel'].strip().lower() == usuario.strip().lower():
+                projetos_do_usuario[p['id']] = p['nome_projeto']
+
+        if not projetos_do_usuario:
+            return jsonify({"status": "sucesso", "notificacoes": []}), 200
+
+        proj_ids = list(projetos_do_usuario.keys())
+        
+        # 2. Busca comentários não lidos apenas desses projetos
+        res_comentarios = supabase.table('comentarios').select('*').in_('projeto_id', proj_ids).eq('lido_pelo_responsavel', False).execute()
+        
+        notificacoes = []
+        for c in res_comentarios.data:
+            # Não notifica se o autor for você mesmo
+            if c['autor'].strip().lower() != usuario.strip().lower():
+                c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
+                notificacoes.append(c)
+
+        # 3. Ordena para os mais novos ficarem no topo
+        notificacoes.sort(key=lambda x: x['criado_em'], reverse=True)
+        
+        return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro em Notificacoes: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao buscar notificacoes"}), 500
+
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
 def listar_comentarios(projeto_id):
@@ -211,7 +243,6 @@ def listar_comentarios(projeto_id):
         res = supabase.table("comentarios").select("*").eq("projeto_id", projeto_id).order("criado_em", desc=False).execute()
         return jsonify({"status": "sucesso", "comentarios": res.data}), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro ao listar comentários: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar comentários."}), 500
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['POST'])
@@ -225,13 +256,10 @@ def adicionar_comentario(projeto_id):
     try:
         autor = session.get("usuario_nome", "Usuário")
         
-        # 1. Verifica de quem é a "Casa" (quem é o responsável pelo projeto)
         res_proj = supabase.table("projetos").select("responsavel").eq("id", projeto_id).execute()
         responsavel_projeto = res_proj.data[0]['responsavel'] if res_proj.data else ""
         
-        # 2. Se quem está comentando já é o responsável, o comentário já nasce "lido".
-        # Se for outra pessoa (ex: Mirian), nasce como False para acionar o sino do Jhonattan.
-        ja_lido = True if autor == responsavel_projeto else False
+        ja_lido = True if autor.strip().lower() == responsavel_projeto.strip().lower() else False
         
         novo_comentario = {
             "projeto_id": projeto_id,
@@ -242,14 +270,12 @@ def adicionar_comentario(projeto_id):
         }
         supabase.table("comentarios").insert(novo_comentario).execute()
         
-        # 3. MÁGICA: Baixa Automática! 
-        # Se o dono do projeto respondeu, limpamos TODAS as bolinhas vermelhas pendentes daquele card.
-        if autor == responsavel_projeto:
+        # Baixa Automática!
+        if autor.strip().lower() == responsavel_projeto.strip().lower():
             supabase.table("comentarios").update({"lido_pelo_responsavel": True}).eq("projeto_id", projeto_id).eq("lido_pelo_responsavel", False).execute()
             
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro no POST Comentários: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao salvar comentário."}), 500
 
 @app.route('/api/comentarios/<comentario_id>', methods=['PUT'])
@@ -262,12 +288,10 @@ def editar_comentario(comentario_id):
         supabase.table("comentarios").update({"texto": texto_novo}).eq("id", comentario_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro no PUT Comentário: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao editar comentário."}), 500
 
 @app.route('/api/comentarios/<comentario_id>/lido', methods=['PUT'])
 def marcar_comentario_lido(comentario_id):
-    # Rota específica do "Botão Ciente"
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
         supabase.table("comentarios").update({"lido_pelo_responsavel": True}).eq("id", comentario_id).execute()
