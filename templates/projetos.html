@@ -36,21 +36,36 @@
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
 
-        /* NOVO: Sino de Notificações na Top Bar */
+        /* SINO E PAINEL DE NOTIFICAÇÕES */
         .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
         .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
 
-        /* NOVO: Botão de Sair */
+        .notifications-dropdown {
+            position: fixed; top: 75px; right: 40px; width: 340px;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px);
+            border-radius: 16px !important; box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+            border: 1px solid #e4e4e7; z-index: 9999; display: none;
+            flex-direction: column; overflow: hidden;
+        }
+        .notifications-header { padding: 15px 20px; border-bottom: 1px solid #e4e4e7; font-weight: 900; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .notifications-body { max-height: 400px; overflow-y: auto; }
+        .notification-item { padding: 15px 20px; border-bottom: 1px solid #f4f4f5; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; }
+        .notification-item:hover { background: #fafafa; border-left: 3px solid var(--primary-purple); padding-left: 17px; }
+        .notif-autor { font-size: 12px; font-weight: 800; color: var(--text-main); }
+        .notif-projeto { font-size: 10px; font-weight: 800; color: var(--primary-purple); text-transform: uppercase; margin-bottom: 2px;}
+        .notif-texto { font-size: 11px; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-style: italic; }
+        .notif-data { font-size: 9px; color: #a1a1aa; font-weight: 600; }
+        .notif-empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600;}
+
+        /* BOTÃO DE SAIR */
         .btn-logout {
             display: flex; align-items: center; justify-content: center;
             width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
             border-radius: 50% !important; color: var(--text-muted); cursor: pointer;
             transition: all 0.2s; border: none; outline: none;
         }
-        .btn-logout:hover {
-            background: #fee2e2; color: #ef4444; transform: scale(1.05);
-        }
+        .btn-logout:hover { background: #fee2e2; color: #ef4444; transform: scale(1.05); }
 
         .btn-acao { background-color: var(--primary-purple); color: white; padding: 12px 24px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
         .btn-acao:hover { background-color: var(--text-main); }
@@ -101,16 +116,14 @@
         .card.dragging { opacity: 0.4; }
         .drag-over { background-color: rgba(115, 113, 255, 0.05); }
 
-        .card.atrasado { background: rgba(254, 226, 226, 0.95);}
+        .card.atrasado { background: rgba(254, 226, 226, 0.95); border: 1px solid #fca5a5; }
         .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
-        .card.atrasado .card-nome { color: #fa2a00; }
+        .card.atrasado .card-nome { color: #991b1b; }
 
-        /* A bolinha vermelha no Card */
         .notification-dot {
             position: absolute; top: -6px; right: -6px; width: 14px; height: 14px; 
             background-color: var(--accent-pink); border-radius: 50% !important;
-            border: 2px solid var(--bg-board);
-            animation: pulse-dot 2s infinite; z-index: 5;
+            border: 2px solid var(--bg-board); animation: pulse-dot 2s infinite; z-index: 5;
         }
         @keyframes pulse-dot { 
             0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.6); } 
@@ -173,7 +186,6 @@
         .checkbox-group input { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;}
         .checkbox-group label { margin: 0; font-size: 13px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px;}
 
-        /* REDESIGN: ESTILOS DE COMENTÁRIOS PREMIUM */
         .comentarios-section { margin-top: 25px; border-top: 1px solid #e4e4e7; padding-top: 20px; }
         .comentarios-lista { display: flex; flex-direction: column; gap: 18px; margin-bottom: 20px; max-height: 350px; overflow-y: auto; padding-right: 10px;}
         .comentario-thread { display: flex; flex-direction: column; gap: 8px; }
@@ -182,8 +194,6 @@
         
         .chat-bubble { background: #ffffff; padding: 16px; border-radius: 0 12px 12px 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f4f4f5; transition: 0.3s; width: 100%;}
         .chat-bubble.resposta { border-radius: 12px 0 12px 12px !important; background: #fafafa; border-right: 3px solid var(--light-purple); border-left: none;}
-        
-        /* O "Grito" visual da notificação não lida */
         .chat-bubble.unread-highlight { border-left: 3px solid var(--accent-pink); background: #fffaff; box-shadow: 0 4px 20px rgba(255, 67, 192, 0.08); }
 
         .comentario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -195,7 +205,6 @@
         .btn-comentario-acao { background: none; border: none; color: var(--text-muted); font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 4px; padding: 0; transition: 0.2s;}
         .btn-comentario-acao:hover { color: var(--primary-purple); }
         
-        /* O Botão Mágico de Marcar como Lido */
         .btn-ciente { background: #dcfce7; color: #166534; border: none; font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 50px !important; cursor: pointer; display: flex; align-items: center; gap: 4px; text-transform: uppercase; margin-left: auto; transition: 0.2s; box-shadow: 0 2px 10px rgba(22, 101, 52, 0.1);}
         .btn-ciente:hover { background: #bbf7d0; transform: translateY(-1px);}
 
@@ -204,7 +213,7 @@
         
         .btn-enviar-comentario { background: var(--primary-purple); color: white; border: none; width: 40px; height: 40px; border-radius: 50% !important; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
         .btn-enviar-comentario:hover { background: var(--text-main); transform: scale(1.05);}
-        .btn-enviar-comentario span { font-size: 18px; margin-left: 2px;} /* Ajuste fino do ícone send */
+        .btn-enviar-comentario span { font-size: 18px; margin-left: 2px;}
         
         .btn-cancelar-edicao { background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 50px !important; cursor: pointer; font-weight: 800; font-size: 11px; text-transform: uppercase; }
         .btn-cancelar-edicao:hover { background: #f4f4f5; }
@@ -220,13 +229,12 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 15px;">
-            <!-- SINO DE NOTIFICAÇÕES -->
-            <div class="bell-container" title="Notificações Pendentes">
+            <!-- SINO E DROPDOWN -->
+            <div class="bell-container" onclick="toggleDropdownNotificacoes()" title="Notificações Pendentes">
                 <span class="material-symbols-rounded" style="font-size: 22px;">notifications</span>
                 <div class="bell-badge" id="sinoNotificacoes" style="display: none;">0</div>
             </div>
             
-            <!-- NOME DO USUÁRIO -->
             <div style="background: var(--text-main); color: white; padding: 8px 16px; border-radius: 50px !important; font-size: 12px; font-weight: 800;">
                 {{ usuario_nome }}
             </div>
@@ -235,6 +243,17 @@
             <button onclick="window.location.href='/logout'" class="btn-logout" title="Sair do Sistema">
                 <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
             </button>
+        </div>
+    </div>
+
+    <!-- PAINEL FLUTUANTE DE NOTIFICAÇÕES -->
+    <div id="dropdownNotificacoes" class="notifications-dropdown">
+        <div class="notifications-header">
+            <span>Central de Notificações</span>
+            <button class="btn-comentario-acao" onclick="toggleDropdownNotificacoes()" style="font-size: 20px; color: var(--text-main);">&times;</button>
+        </div>
+        <div class="notifications-body" id="listaNotificacoesDropdown">
+            <!-- As notificações aparecerão aqui via JavaScript -->
         </div>
     </div>
 
@@ -438,7 +457,7 @@
 
     <script>
         const QUADRO_ATUAL = "{{ quadro_atual }}";
-        const USUARIO_LOGADO = "{{ usuario_nome }}"; // O Python agora manda o seu nome para o JS ler!
+        const USUARIO_LOGADO = "{{ usuario_nome }}";
 
         const WORKSPACES = {
             'geral': {
@@ -668,6 +687,48 @@
             } catch(e) { console.error("Erro ao puxar dados", e); }
         }
 
+        // --- MÁGICA DA NOVA CENTRAL DE NOTIFICAÇÕES ---
+        async function carregarNotificacoes() {
+            try {
+                const res = await fetch('/api/notificacoes');
+                const data = await res.json();
+                if(data.status === 'sucesso') {
+                    const container = document.getElementById('listaNotificacoesDropdown');
+                    const sino = document.getElementById('sinoNotificacoes');
+
+                    if(data.notificacoes && data.notificacoes.length > 0) {
+                        sino.innerText = data.notificacoes.length;
+                        sino.style.display = 'flex';
+
+                        container.innerHTML = data.notificacoes.map(n => `
+                            <div class="notification-item" onclick="abrirModalPeloSino('${n.projeto_id}')">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                    <span class="notif-autor">${n.autor} comentou:</span>
+                                    <span class="notif-data">${new Date(n.criado_em).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <span class="notif-projeto">${n.nome_projeto}</span>
+                                <span class="notif-texto">"${n.texto}"</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        sino.style.display = 'none';
+                        container.innerHTML = `<div class="notif-empty">Você não tem novas notificações pendentes.</div>`;
+                    }
+                }
+            } catch(e) { console.error("Erro no sino:", e); }
+        }
+
+        function toggleDropdownNotificacoes() {
+            const dp = document.getElementById('dropdownNotificacoes');
+            dp.style.display = dp.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function abrirModalPeloSino(projetoId) {
+            document.getElementById('dropdownNotificacoes').style.display = 'none'; // Fecha o painel
+            // Criamos um evento falso para o JS não bloquear o clique
+            abrirDetalhes(projetoId, { target: document.createElement('div') }); 
+        }
+
         function calcularDias(dataInicio, dataConclusao) {
             if(!dataInicio) return 0;
             const inicio = new Date(dataInicio);
@@ -730,20 +791,16 @@
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
 
-            let totalNotificacoesGeral = 0; // O contador do Sino
-
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
                 const colHTMLId = 'col-' + statusCard.replace(/[^a-zA-Z0-9]/g, '');
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 if(!container) return;
 
-                // LÓGICA DE NOTIFICAÇÃO (BLINDADA CONTRA ERROS DE ESPAÇOS E MAIÚSCULAS)
                 let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
-                if(hasUnread) totalNotificacoesGeral += p.qtd_nao_lidos;
-
-                let htmlBolinha = hasUnread ? `<div class="notification-dot" title="Você tem ${p.qtd_nao_lidos} mensagens novas!"></div>` : '';
+                
+                let htmlBolinha = hasUnread ? `<div class="notification-dot" title="Mensagens novas!"></div>` : '';
 
                 let isRodando = activeTimerData && activeTimerData.id === p.id && !activeTimerData.paused;
                 let isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
@@ -824,14 +881,8 @@
             });
             atualizarContadores();
             
-            // Acende ou apaga o Sino Mestre
-            const sino = document.getElementById('sinoNotificacoes');
-            if(totalNotificacoesGeral > 0) {
-                sino.innerText = totalNotificacoesGeral;
-                sino.style.display = 'flex';
-            } else {
-                sino.style.display = 'none';
-            }
+            // Recarrega o painel do sino para manter atualizado sempre que a tela atualizar
+            carregarNotificacoes(); 
             
             if(activeTimerData) iniciarRelogioVisual();
         }
@@ -984,7 +1035,6 @@
         function criarHtmlComentario(c, isResposta) {
             const proj = projetosGlobais.find(p => p.id === c.projeto_id);
             
-            // BLINDAGEM AQUI TAMBÉM: Trim() e toLowerCase()
             const isMeuProjeto = (proj && proj.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
             const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && c.autor.trim().toLowerCase() !== USUARIO_LOGADO.trim().toLowerCase());
             
@@ -992,7 +1042,6 @@
             const highlightClass = isUnread ? 'unread-highlight' : '';
             const iniciais = c.autor.substring(0,2).toUpperCase();
             
-            // O botão Ciente só aparece para o Responsável, em comentários de outras pessoas, que não foram lidos.
             const btnCienteHTML = isUnread ? `<button class="btn-ciente" onclick="marcarComoLido(${c.id}, this)"><span class="material-symbols-rounded" style="font-size: 12px;">done_all</span> Ciente</button>` : '';
 
             return `
@@ -1023,8 +1072,8 @@
             btnElement.disabled = true;
             try {
                 await fetch(`/api/comentarios/${comentarioId}/lido`, { method: 'PUT' });
-                await carregarProjetos(); // Atualiza a bolinha e o Sino
-                carregarComentarios(projIdEmFoco); // Recarrega a timeline para tirar a borda rosa
+                await carregarProjetos(); 
+                carregarComentarios(projIdEmFoco); 
             } catch(e) { alert("Erro ao marcar como lido"); }
         }
 
@@ -1043,7 +1092,7 @@
                     body: JSON.stringify({ texto: texto, parent_id: parentId })
                 });
                 textoInput.value = '';
-                await carregarProjetos(); // Se o dono respondeu, isso limpa os badges
+                await carregarProjetos(); 
                 await carregarComentarios(projIdEmFoco);
             } catch (e) {
                 alert('Erro ao enviar comentário.');
