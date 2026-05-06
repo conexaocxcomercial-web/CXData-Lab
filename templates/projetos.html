@@ -218,9 +218,19 @@
         .btn-cancelar-edicao { background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 50px !important; cursor: pointer; font-weight: 800; font-size: 11px; text-transform: uppercase; }
         .btn-cancelar-edicao:hover { background: #f4f4f5; }
         .botoes-form-comentario { display: flex; gap: 8px; justify-content: flex-end; width: 100%; margin-top: 10px;}
+
+        /* NOVO: TOASTS PREMIUM */
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); color: white; padding: 12px 24px; border-radius: 50px !important; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; pointer-events: auto;}
+        .toast.error { background: rgba(239, 68, 68, 0.95); }
+        .toast.success { background: rgba(16, 185, 129, 0.95); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
     </style>
 </head>
 <body>
+
+    <div id="toastContainer" class="toast-container"></div>
 
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">
@@ -229,7 +239,6 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 15px;">
-            <!-- SINO E DROPDOWN -->
             <div class="bell-container" onclick="toggleDropdownNotificacoes()" title="Notificações Pendentes">
                 <span class="material-symbols-rounded" style="font-size: 22px;">notifications</span>
                 <div class="bell-badge" id="sinoNotificacoes" style="display: none;">0</div>
@@ -239,22 +248,19 @@
                 {{ usuario_nome }}
             </div>
 
-            <!-- BOTÃO SAIR -->
             <button onclick="window.location.href='/logout'" class="btn-logout" title="Sair do Sistema">
                 <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
             </button>
         </div>
     </div>
 
-    <!-- PAINEL FLUTUANTE DE NOTIFICAÇÕES -->
     <div id="dropdownNotificacoes" class="notifications-dropdown">
         <div class="notifications-header">
             <span>Central de Notificações</span>
             <button class="btn-comentario-acao" onclick="toggleDropdownNotificacoes()" style="font-size: 20px; color: var(--text-main);">&times;</button>
         </div>
         <div class="notifications-body" id="listaNotificacoesDropdown">
-            <!-- As notificações aparecerão aqui via JavaScript -->
-        </div>
+            </div>
     </div>
 
     <div class="command-bar">
@@ -367,11 +373,11 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modalEditarProjeto" onclick="fecharModalFundo(event, 'modalEditarProjeto')">
+    <div class="modal-overlay" id="modalEditarProjeto" onclick="fecharModalFundoEdicao(event)">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Editar Projeto</h2>
-                <button class="close-btn" onclick="fecharModal('modalEditarProjeto')">X</button>
+                <button class="close-btn" onclick="fecharModalEdicao()">X</button>
             </div>
             
             <input type="hidden" id="editProjId">
@@ -533,6 +539,33 @@
         let timerInterval = null;
         let activeTimerData = null;
 
+        // --- NOVO: SISTEMA DE TOASTS PREMIUM ---
+        function showToast(msg, type = 'default') {
+            const container = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            let icon = 'info';
+            if(type === 'error') icon = 'error';
+            if(type === 'success') icon = 'check_circle';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">${icon}</span> ${msg}`;
+            container.appendChild(t);
+            setTimeout(() => { 
+                t.style.animation = 'fadeOut 0.3s ease forwards'; 
+                setTimeout(() => t.remove(), 300); 
+            }, 3000);
+        }
+
+        // --- FLUXO INTELIGENTE DE MODAIS ---
+        function fecharModalEdicao() {
+            document.getElementById('modalEditarProjeto').style.display = 'none';
+            // Se viemos de um card (temos um ID em foco), reabrimos o modal de detalhes
+            if(projIdEmFoco) { document.getElementById('modalDetalhes').style.display = 'flex'; }
+        }
+
+        function fecharModalFundoEdicao(event) {
+            if(event.target.id === 'modalEditarProjeto') { fecharModalEdicao(); }
+        }
+
         function montarWorkspace() {
             document.getElementById('tituloWorkspace').innerText = cfg.titulo;
             
@@ -627,8 +660,9 @@
             try {
                 await fetch(`/api/projetos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
                 await carregarProjetos();
-                fecharModal('modalEditarProjeto'); 
-            } catch(e) { alert("Erro ao editar projeto"); } 
+                fecharModalEdicao(); 
+                showToast("Projeto atualizado com sucesso", "success");
+            } catch(e) { showToast("Erro ao editar projeto", "error"); } 
             finally { btn.innerText = "SALVAR ALTERAÇÕES"; btn.disabled = false; }
         }
 
@@ -637,7 +671,7 @@
         function sairDrop(ev) { ev.currentTarget.classList.remove('drag-over'); }
         function arrastarCard(ev) { 
             if(activeTimerData && activeTimerData.id === ev.target.id) { 
-                ev.preventDefault(); alert("Pare o timer antes de mover o card."); return; 
+                ev.preventDefault(); showToast("Pare o timer ativo antes de mover o card.", "error"); return; 
             }
             ev.dataTransfer.setData("text", ev.target.id); 
             setTimeout(() => ev.target.classList.add('dragging'), 0); 
@@ -658,15 +692,17 @@
             const colunaContainer = destino.closest('.kanban-column');
             const novoStatus = colunaContainer.getAttribute('data-status');
             
+            // FIM DO PISCA-PISCA: Apenas envia a requisição para o banco sem recarregar a tela inteira.
             try {
                 await fetch(`/api/projetos/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: novoStatus })
                 });
-            } catch (error) { console.error("Erro ao mover card", error); }
-            
-            await carregarProjetos();
+            } catch (error) { 
+                console.error("Erro ao mover card", error); 
+                showToast("Erro de conexão ao mover o card.", "error");
+            }
         }
 
         function atualizarContadores() {
@@ -687,7 +723,6 @@
             } catch(e) { console.error("Erro ao puxar dados", e); }
         }
 
-        // --- MÁGICA DA NOVA CENTRAL DE NOTIFICAÇÕES ---
         async function carregarNotificacoes() {
             try {
                 const res = await fetch('/api/notificacoes');
@@ -724,8 +759,7 @@
         }
 
         function abrirModalPeloSino(projetoId) {
-            document.getElementById('dropdownNotificacoes').style.display = 'none'; // Fecha o painel
-            // Criamos um evento falso para o JS não bloquear o clique
+            document.getElementById('dropdownNotificacoes').style.display = 'none';
             abrirDetalhes(projetoId, { target: document.createElement('div') }); 
         }
 
@@ -881,7 +915,6 @@
             });
             atualizarContadores();
             
-            // Recarrega o painel do sino para manter atualizado sempre que a tela atualizar
             carregarNotificacoes(); 
             
             if(activeTimerData) iniciarRelogioVisual();
@@ -902,14 +935,16 @@
             };
 
             if(!dados.empresa || !dados.nome_projeto) {
-                alert("Preencha Empresa e Nome."); btn.innerText = "CRIAR PROJETO"; btn.disabled = false; return;
+                showToast("Preencha Empresa e Nome do projeto.", "error"); 
+                btn.innerText = "CRIAR PROJETO"; btn.disabled = false; return;
             }
 
             try {
                 await fetch('/api/projetos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
                 await carregarProjetos();
                 fecharModal('modalFormProjeto'); 
-            } catch(e) { alert("Erro ao criar projeto"); } 
+                showToast("Projeto criado com sucesso", "success");
+            } catch(e) { showToast("Erro ao criar projeto", "error"); } 
             finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
         }
 
@@ -924,11 +959,11 @@
                 if(activeTimerData.paused) togglePauseTimer(); else pararTimer();
                 return;
             }
-            if (activeTimerData && activeTimerData.id !== id) { alert("Você já tem um timer ativo em: " + activeTimerData.nome + ". Finalize-o primeiro!"); return; }
+            if (activeTimerData && activeTimerData.id !== id) { showToast(`Você já tem um timer ativo em outro projeto. Finalize-o primeiro!`, "error"); return; }
 
             const selectAtiv = document.getElementById(`select-${id}`);
             const tarefaEscolhida = selectAtiv.value;
-            if(!tarefaEscolhida) { alert("Selecione qual atividade vai executar antes de dar play!"); return; }
+            if(!tarefaEscolhida) { showToast("Selecione uma atividade antes de iniciar o timer.", "error"); return; }
             const proj = projetosGlobais.find(p => p.id === id);
 
             activeTimerData = {
@@ -997,9 +1032,9 @@
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ tempo_segundos: dadosPraSalvar.tempoFinalSessao, descricao_tarefa: dadosPraSalvar.tarefa, colaborador: dadosPraSalvar.colaborador, data_inicio_atividade: dadosPraSalvar.isoInicio, data_fim_atividade: new Date().toISOString() })
                 });
-                if (!req.ok) alert("Erro ao salvar no banco.");
+                if (!req.ok) showToast("Erro ao salvar registro de tempo no banco.", "error");
                 await carregarProjetos(); 
-            } catch(e) { alert("Erro de conexão."); }
+            } catch(e) { showToast("Erro de conexão ao salvar tempo.", "error"); }
         }
 
         async function carregarComentarios(projetoId) {
@@ -1072,9 +1107,16 @@
             btnElement.disabled = true;
             try {
                 await fetch(`/api/comentarios/${comentarioId}/lido`, { method: 'PUT' });
-                await carregarProjetos(); 
-                carregarComentarios(projIdEmFoco); 
-            } catch(e) { alert("Erro ao marcar como lido"); }
+                
+                // FIM DO PISCA-PISCA: Resolve o alerta visualmente e de forma silenciosa
+                const bubble = btnElement.closest('.chat-bubble');
+                if(bubble) { bubble.classList.remove('unread-highlight'); btnElement.remove(); }
+                
+                const card = document.getElementById(projIdEmFoco);
+                if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); }
+                
+                carregarNotificacoes(); 
+            } catch(e) { showToast("Erro ao marcar como lido", "error"); }
         }
 
         async function salvarComentario(parentId = null) {
@@ -1092,10 +1134,15 @@
                     body: JSON.stringify({ texto: texto, parent_id: parentId })
                 });
                 textoInput.value = '';
-                await carregarProjetos(); 
+                
+                // FIM DO PISCA-PISCA: Apaga a bolinha se você for o dono respondendo
+                const card = document.getElementById(projIdEmFoco);
+                if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); }
+                carregarNotificacoes(); 
+                
                 await carregarComentarios(projIdEmFoco);
             } catch (e) {
-                alert('Erro ao enviar comentário.');
+                showToast("Erro ao publicar atualização.", "error");
             } finally {
                 textoInput.disabled = false;
             }
@@ -1147,8 +1194,9 @@
                     body: JSON.stringify({ texto: novoTexto })
                 });
                 await carregarComentarios(projIdEmFoco);
+                showToast("Comentário editado.", "success");
             } catch(e) {
-                alert("Erro ao editar o comentário.");
+                showToast("Erro ao salvar edição.", "error");
                 textarea.disabled = false;
             }
         }
@@ -1193,10 +1241,11 @@
         }
 
         async function excluirProjeto() {
-            if(!confirm("Tem certeza que deseja excluir?")) return;
+            if(!confirm("Tem certeza que deseja excluir este projeto para sempre?")) return;
             await fetch(`/api/projetos/${projIdEmFoco}`, { method: 'DELETE' });
             fecharModal('modalDetalhes');
             carregarProjetos();
+            showToast("Projeto excluído.", "success");
         }
 
         window.onload = () => {
