@@ -36,6 +36,7 @@
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
 
+        /* SINO E PAINEL DE NOTIFICAÇÕES */
         .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
         .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
@@ -57,6 +58,7 @@
         .notif-data { font-size: 9px; color: #a1a1aa; font-weight: 600; }
         .notif-empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600;}
 
+        /* BOTÃO DE SAIR */
         .btn-logout {
             display: flex; align-items: center; justify-content: center;
             width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
@@ -71,7 +73,7 @@
 
         .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* NOVO: SELETOR DE VISÃO (STYLE NOTION) */
+        /* SELETOR DE VISÃO (STYLE NOTION) */
         .view-switcher { 
             display: flex; gap: 20px; padding: 0 40px 15px 40px; 
             border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
@@ -121,16 +123,45 @@
         .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
 
-        /* LIST VIEW BOARD */
-        .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
-        .list-table { width: 100%; border-collapse: collapse; min-width: 900px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
-        .list-table th { text-align: left; padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e4e4e7; background: rgba(255,255,255,0.8);}
-        .list-table td { padding: 15px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid #f4f4f5; vertical-align: middle; transition: 0.2s; cursor: pointer; }
-        .list-table tr:hover td { background-color: #ffffff; box-shadow: inset 4px 0 0 0 var(--primary-purple);}
-        .status-dot-list { width: 10px; height: 10px; border-radius: 50% !important; display: inline-block; margin-right: 8px; }
-        .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
+        /* NOVO: LIST VIEW (HORIZONTAL CARDS) */
+        .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; gap: 12px; }
+        
+        .list-card { 
+            background: var(--glass-bg); backdrop-filter: blur(16px); 
+            padding: 15px 25px; border-radius: 12px !important; 
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02); transition: all 0.3s ease; cursor: pointer;
+            border: 1px solid #f4f4f5; gap: 20px;
+        }
+        .list-card:hover { 
+            background: rgba(255, 255, 255, 0.9); transform: translateY(-3px); 
+            box-shadow: 0 12px 30px rgba(115, 113, 255, 0.1); border-color: var(--light-purple);
+        }
+        
+        /* ALERTA VERMELHO DE ATRASO */
+        .list-card.atrasado { background: rgba(254, 226, 226, 0.95); border: 1px solid #fca5a5; }
+        .list-card.atrasado:hover { box-shadow: 0 12px 30px rgba(239, 68, 68, 0.2); border-color: #ef4444; }
+        .list-card.atrasado .lc-title { color: #991b1b; }
+        
+        .lc-col { display: flex; flex-direction: column; gap: 4px; overflow: hidden;}
+        .lc-title { font-size: 15px; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .lc-subtitle { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 8px;}
+        
+        /* PÍLULA DE STATUS EDITÁVEL */
+        .status-pill-select {
+            appearance: none; -webkit-appearance: none;
+            border: none; padding: 6px 16px; border-radius: 50px !important;
+            font-size: 11px; font-weight: 900; color: white; cursor: pointer;
+            outline: none; transition: 0.2s; text-align: center; text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .status-pill-select:hover { filter: brightness(0.9); transform: scale(1.05); }
+        .status-pill-select option { background: white; color: var(--text-main); font-weight: 600;}
 
-        /* CARDS GERAIS */
+
+        /* CARDS GERAIS (KANBAN) */
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
         .card.dragging { opacity: 0.4; }
@@ -334,20 +365,7 @@
     <div class="kanban-board" id="boardDinamico"></div>
 
     <div class="list-view-container" id="listViewDinamico">
-        <table class="list-table">
-            <thead>
-                <tr>
-                    <th>Projeto</th>
-                    <th>Status</th>
-                    <th>Cliente / Empresa</th>
-                    <th>Responsável</th>
-                    <th>Prazo</th>
-                    <th>Tempo Investido</th>
-                </tr>
-            </thead>
-            <tbody id="listBodyDinamico"></tbody>
-        </table>
-    </div>
+        </div>
 
     <div class="list-view-container" id="calendarViewDinamico"></div>
 
@@ -583,7 +601,6 @@
         let timerInterval = null;
         let activeTimerData = null;
         
-        // CONTROLE DA VISÃO ATUAL (Kanban, Lista, Calendario)
         let visaoAtual = 'kanban'; 
 
         function showToast(msg, type = 'default') {
@@ -610,20 +627,16 @@
             if(event.target.id === 'modalEditarProjeto') { fecharModalEdicao(); }
         }
 
-        // MÁGICA: MUDANÇA DE VISÃO
         function mudarVisao(novaVisao) {
             visaoAtual = novaVisao;
             
-            // Troca a classe ativa nas abas do topo
             document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
             document.getElementById(`tab-${novaVisao}`).classList.add('active');
             
-            // Oculta/Exibe os containers do Board
             document.getElementById('boardDinamico').style.display = novaVisao === 'kanban' ? 'flex' : 'none';
-            document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'block' : 'none';
-            document.getElementById('calendarViewDinamico').style.display = novaVisao === 'calendario' ? 'block' : 'none';
+            document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'flex' : 'none';
+            document.getElementById('calendarViewDinamico').style.display = novaVisao === 'calendario' ? 'flex' : 'none';
             
-            // Aplica os filtros da barra diretamente na visão escolhida
             renderizarProjetos();
         }
 
@@ -841,7 +854,6 @@
         }
 
         function renderizarProjetos() {
-            // Pega as configurações de filtros da barra de comando
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
             atualizarDropdownsFiltro(projetosFiltrados);
 
@@ -884,14 +896,12 @@
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
 
-            // DIRECIONAMENTO PARA O RENDERIZADOR CORRETO COM BASE NA ABA ATUAL
             if (visaoAtual === 'kanban') {
                 renderizarKanban(projetosFiltrados);
             } else if (visaoAtual === 'lista') {
                 renderizarLista(projetosFiltrados);
             }
             
-            // Garante que o sino principal se mantenha atualizado
             carregarNotificacoes(); 
             if(activeTimerData) iniciarRelogioVisual();
         }
@@ -994,25 +1004,29 @@
         }
 
         // ==========================================
-        // RENDERIZADOR 2: LIST VIEW
+        // RENDERIZADOR 2: LIST VIEW (HORIZONTAL CARDS)
         // ==========================================
         function renderizarLista(projetosFiltrados) {
-            const tbody = document.getElementById('listBodyDinamico');
-            tbody.innerHTML = '';
+            const container = document.getElementById('listViewDinamico');
+            container.innerHTML = '';
+
+            if(projetosFiltrados.length === 0) {
+                container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted); font-weight: 600;">Nenhum projeto encontrado.</div>';
+                return;
+            }
 
             projetosFiltrados.forEach(p => {
                 let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
 
-                // Busca a cor oficial configurada para aquele status
                 const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
                 const corStatus = colInfo.cor;
 
-                // Cria o avatar do usuário
                 const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
 
-                // Lógica de Prazo
-                let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
+                let isAtrasadoClass = '';
+                let prazoText = '-';
+                
                 if (p.prazo_data) {
                     const partes = p.prazo_data.split('T')[0].split('-');
                     const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
@@ -1022,43 +1036,86 @@
                     
                     const strData = new Date(p.prazo_data).toLocaleDateString('pt-BR');
                     if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) {
-                        prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`;
+                        isAtrasadoClass = 'atrasado';
+                        prazoText = `${strData} (Atrasado)`;
                     } else if (p.status === 'Finalizado' || p.status === 'Cancelado') {
-                        prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`;
+                        prazoText = `${strData} (Concluído)`;
                     } else {
-                        prazoHtml = `<span>${strData}</span>`;
+                        prazoText = strData;
                     }
                 }
 
-                let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
-                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
+                let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:10px; height:10px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;" title="Novas mensagens"></span>` : '';
+                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:8px;">SCRUM</span>` : '';
+
+                // Opções da Pílula Editável
+                let optionsHtml = cfg.colunas.map(c => `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`).join('');
 
                 let html = `
-                    <tr onclick="abrirDetalhes('${p.id}', event)">
-                        <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
-                        <td>
+                    <div class="list-card ${isAtrasadoClass}" onclick="abrirDetalhes('${p.id}', event)">
+                        <div class="lc-col" style="flex: 2; min-width: 200px;">
                             <div style="display:flex; align-items:center;">
-                                <span class="status-dot-list" style="background-color: ${corStatus};"></span>
-                                ${p.status}
+                                ${badgeScrum}
+                                <span class="lc-title">${p.nome_projeto}</span>
+                                ${bolinhaHtml}
                             </div>
-                        </td>
-                        <td style="color: var(--text-muted);">${p.empresa}</td>
-                        <td>
-                            <div style="display:flex; align-items:center;">
+                            <span class="lc-subtitle" style="color: var(--primary-purple);">${p.area}</span>
+                        </div>
+
+                        <div class="lc-col" style="flex: 1.5;">
+                            <span class="lc-subtitle">Empresa/Cliente</span>
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">${p.empresa}</span>
+                        </div>
+
+                        <div class="lc-col" style="flex: 1.5; align-items: flex-start;">
+                            <span class="lc-subtitle">Responsável</span>
+                            <div style="display:flex; align-items:center; margin-top: 2px;">
                                 <div class="list-avatar">${iniciais}</div>
-                                ${p.responsavel}
+                                <span style="font-size: 13px; font-weight: 600;">${p.responsavel}</span>
                             </div>
-                        </td>
-                        <td>${prazoHtml}</td>
-                        <td style="font-family: monospace; font-size: 14px; color: var(--primary-purple); font-weight: 900;">
-                            ${formatarSegundosTick(p.tempo_total_segundos || 0)}
-                        </td>
-                    </tr>
+                        </div>
+
+                        <div class="lc-col" style="flex: 1;">
+                            <span class="lc-subtitle">Prazo</span>
+                            <span style="font-size: 13px; font-weight: 700; ${isAtrasadoClass ? 'color: #991b1b;' : 'color: var(--text-main);'}">${prazoText}</span>
+                        </div>
+                        
+                        <div class="lc-col" style="flex: 1; align-items: center;">
+                            <span class="lc-subtitle">Status</span>
+                            <select class="status-pill-select" style="background-color: ${corStatus};" onclick="event.stopPropagation()" onchange="mudarStatusLista('${p.id}', this.value, event)">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+
+                        <div class="lc-col" style="flex: 1; align-items: flex-end;">
+                            <span class="lc-subtitle">Tempo Ocupado</span>
+                            <span style="font-family: monospace; font-size: 15px; color: var(--primary-purple); font-weight: 900;">
+                                ${formatarSegundosTick(p.tempo_total_segundos || 0)}
+                            </span>
+                        </div>
+                    </div>
                 `;
-                tbody.insertAdjacentHTML('beforeend', html);
+                container.insertAdjacentHTML('beforeend', html);
             });
         }
 
+        // Função mágica para atualizar o status sem abrir o card
+        async function mudarStatusLista(id, novoStatus, event) {
+            if(event) event.stopPropagation(); // Evita abrir o modal
+            try {
+                showToast("Atualizando status...", "default");
+                await fetch(`/api/projetos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                await carregarProjetos(); // Recarrega a tela silenciosamente
+                showToast("Status atualizado com sucesso!", "success");
+            } catch (error) { 
+                console.error("Erro ao mover card", error); 
+                showToast("Erro de conexão ao atualizar o status.", "error");
+            }
+        }
 
         async function salvarProjeto() {
             const btn = document.getElementById('btnSalvarProjeto');
