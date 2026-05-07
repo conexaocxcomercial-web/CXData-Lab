@@ -73,7 +73,7 @@
 
         .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* SELETOR DE VISÃO (STYLE NOTION) */
+        /* SELETOR DE VISÃO */
         .view-switcher { 
             display: flex; gap: 20px; padding: 0 40px 15px 40px; 
             border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
@@ -123,45 +123,41 @@
         .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
 
-        /* NOVO: LIST VIEW (HORIZONTAL CARDS) */
-        .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; gap: 12px; }
+        /* REDESIGN DA LISTA (Horizontal Cards) */
+        .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
+        .list-table { width: 100%; border-collapse: separate; border-spacing: 0 12px; min-width: 900px; }
+        .list-table th { text-align: left; padding: 0 20px 5px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border: none; }
         
-        .list-card { 
-            background: var(--glass-bg); backdrop-filter: blur(16px); 
-            padding: 15px 25px; border-radius: 12px !important; 
-            display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02); transition: all 0.3s ease; cursor: pointer;
-            border: 1px solid #f4f4f5; gap: 20px;
+        .linha-projeto { transition: all 0.2s ease; cursor: pointer; }
+        .linha-projeto td { 
+            padding: 16px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); 
+            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: none;
+            transition: 0.2s;
         }
-        .list-card:hover { 
-            background: rgba(255, 255, 255, 0.9); transform: translateY(-3px); 
-            box-shadow: 0 12px 30px rgba(115, 113, 255, 0.1); border-color: var(--light-purple);
-        }
+        .linha-projeto td:first-child { border-radius: 12px 0 0 12px !important; }
+        .linha-projeto td:last-child { border-radius: 0 12px 12px 0 !important; }
         
-        /* ALERTA VERMELHO DE ATRASO */
-        .list-card.atrasado { background: rgba(254, 226, 226, 0.95); border: 1px solid #fca5a5; }
-        .list-card.atrasado:hover { box-shadow: 0 12px 30px rgba(239, 68, 68, 0.2); border-color: #ef4444; }
-        .list-card.atrasado .lc-title { color: #991b1b; }
-        
-        .lc-col { display: flex; flex-direction: column; gap: 4px; overflow: hidden;}
-        .lc-title { font-size: 15px; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-        .lc-subtitle { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
-        
-        .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 8px;}
-        
-        /* PÍLULA DE STATUS EDITÁVEL */
-        .status-pill-select {
-            appearance: none; -webkit-appearance: none;
-            border: none; padding: 6px 16px; border-radius: 50px !important;
-            font-size: 11px; font-weight: 900; color: white; cursor: pointer;
-            outline: none; transition: 0.2s; text-align: center; text-transform: uppercase;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .status-pill-select:hover { filter: brightness(0.9); transform: scale(1.05); }
-        .status-pill-select option { background: white; color: var(--text-main); font-weight: 600;}
+        /* Efeito de Elevação ao Passar o Mouse */
+        .linha-projeto:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
+        .linha-projeto:hover td { background: rgba(255, 255, 255, 0.95); }
 
+        /* Fundo Vermelho para Atrasados */
+        .linha-projeto.atrasado td { background: rgba(254, 226, 226, 0.9); }
+        .linha-projeto.atrasado:hover td { background: #fee2e2; }
 
-        /* CARDS GERAIS (KANBAN) */
+        .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
+
+        /* A NOVA PÍLULA DE STATUS (EDITÁVEL) */
+        .status-pill {
+            padding: 6px 14px; border-radius: 50px !important; font-size: 11px; font-weight: 800;
+            color: white; border: none; outline: none; cursor: pointer;
+            text-transform: uppercase; text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.2s; appearance: none;
+        }
+        .status-pill:hover { filter: brightness(0.9); transform: scale(1.05); }
+        .status-pill option { background: white; color: var(--text-main); font-weight: 600; }
+
+        /* CARDS GERAIS */
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
         .card.dragging { opacity: 0.4; }
@@ -310,8 +306,7 @@
             <span>Central de Notificações</span>
             <button class="btn-comentario-acao" onclick="toggleDropdownNotificacoes()" style="font-size: 20px; color: var(--text-main);">&times;</button>
         </div>
-        <div class="notifications-body" id="listaNotificacoesDropdown">
-            </div>
+        <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
 
     <div class="command-bar">
@@ -365,7 +360,20 @@
     <div class="kanban-board" id="boardDinamico"></div>
 
     <div class="list-view-container" id="listViewDinamico">
-        </div>
+        <table class="list-table">
+            <thead>
+                <tr>
+                    <th>Projeto</th>
+                    <th>Status</th>
+                    <th>Cliente / Empresa</th>
+                    <th>Responsável</th>
+                    <th>Prazo</th>
+                    <th>Tempo Investido</th>
+                </tr>
+            </thead>
+            <tbody id="listBodyDinamico"></tbody>
+        </table>
+    </div>
 
     <div class="list-view-container" id="calendarViewDinamico"></div>
 
@@ -629,13 +637,12 @@
 
         function mudarVisao(novaVisao) {
             visaoAtual = novaVisao;
-            
             document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
             document.getElementById(`tab-${novaVisao}`).classList.add('active');
             
             document.getElementById('boardDinamico').style.display = novaVisao === 'kanban' ? 'flex' : 'none';
-            document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'flex' : 'none';
-            document.getElementById('calendarViewDinamico').style.display = novaVisao === 'calendario' ? 'flex' : 'none';
+            document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'block' : 'none';
+            document.getElementById('calendarViewDinamico').style.display = novaVisao === 'calendario' ? 'block' : 'none';
             
             renderizarProjetos();
         }
@@ -778,6 +785,27 @@
             }
         }
 
+        // NOVO: Função para Mudar o Status direto pela Pílula na Lista
+        async function mudarStatusPelaLista(projetoId, novoStatus) {
+            try {
+                await fetch(`/api/projetos/${projetoId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                showToast("Status atualizado com sucesso!", "success");
+                
+                // Atualiza o array localmente para não dar reload pesado e recarrega a visão
+                let projLocal = projetosGlobais.find(p => p.id === projetoId);
+                if(projLocal) projLocal.status = novoStatus;
+                renderizarProjetos();
+                
+            } catch (error) {
+                console.error("Erro ao atualizar status pela lista", error);
+                showToast("Erro de conexão ao atualizar o status.", "error");
+            }
+        }
+
         function atualizarContadores() {
             document.querySelectorAll('.kanban-column').forEach(col => {
                 col.querySelector('.col-count').innerText = col.querySelectorAll('.card').length;
@@ -906,9 +934,6 @@
             if(activeTimerData) iniciarRelogioVisual();
         }
 
-        // ==========================================
-        // RENDERIZADOR 1: KANBAN BOARD
-        // ==========================================
         function renderizarKanban(projetosFiltrados) {
             document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
 
@@ -1004,29 +1029,31 @@
         }
 
         // ==========================================
-        // RENDERIZADOR 2: LIST VIEW (HORIZONTAL CARDS)
+        // RENDERIZADOR 2: LIST VIEW
         // ==========================================
         function renderizarLista(projetosFiltrados) {
-            const container = document.getElementById('listViewDinamico');
-            container.innerHTML = '';
-
-            if(projetosFiltrados.length === 0) {
-                container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted); font-weight: 600;">Nenhum projeto encontrado.</div>';
-                return;
-            }
+            const tbody = document.getElementById('listBodyDinamico');
+            tbody.innerHTML = '';
 
             projetosFiltrados.forEach(p => {
                 let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
 
-                const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
-                const corStatus = colInfo.cor;
+                // Encontra a cor do status na configuração do quadro
+                let statusInfo = cfg.colunas.find(c => c.id === p.status);
+                if (!statusInfo) statusInfo = cfg.colunas[0]; 
+                const corStatus = statusInfo.cor;
+
+                // Gera as opções do <select> baseadas no quadro atual
+                let optionsStatusHtml = cfg.colunas.map(c => 
+                    `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`
+                ).join('');
 
                 const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
 
-                let isAtrasadoClass = '';
-                let prazoText = '-';
-                
+                let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
+                let classAtrasado = '';
+
                 if (p.prazo_data) {
                     const partes = p.prazo_data.split('T')[0].split('-');
                     const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
@@ -1036,86 +1063,43 @@
                     
                     const strData = new Date(p.prazo_data).toLocaleDateString('pt-BR');
                     if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) {
-                        isAtrasadoClass = 'atrasado';
-                        prazoText = `${strData} (Atrasado)`;
+                        prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`;
+                        classAtrasado = 'atrasado'; // Ativa a faixa vermelha
                     } else if (p.status === 'Finalizado' || p.status === 'Cancelado') {
-                        prazoText = `${strData} (Concluído)`;
+                        prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`;
                     } else {
-                        prazoText = strData;
+                        prazoHtml = `<span>${strData}</span>`;
                     }
                 }
 
-                let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:10px; height:10px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;" title="Novas mensagens"></span>` : '';
-                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:8px;">SCRUM</span>` : '';
-
-                // Opções da Pílula Editável
-                let optionsHtml = cfg.colunas.map(c => `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`).join('');
+                let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
+                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
 
                 let html = `
-                    <div class="list-card ${isAtrasadoClass}" onclick="abrirDetalhes('${p.id}', event)">
-                        <div class="lc-col" style="flex: 2; min-width: 200px;">
-                            <div style="display:flex; align-items:center;">
-                                ${badgeScrum}
-                                <span class="lc-title">${p.nome_projeto}</span>
-                                ${bolinhaHtml}
-                            </div>
-                            <span class="lc-subtitle" style="color: var(--primary-purple);">${p.area}</span>
-                        </div>
-
-                        <div class="lc-col" style="flex: 1.5;">
-                            <span class="lc-subtitle">Empresa/Cliente</span>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">${p.empresa}</span>
-                        </div>
-
-                        <div class="lc-col" style="flex: 1.5; align-items: flex-start;">
-                            <span class="lc-subtitle">Responsável</span>
-                            <div style="display:flex; align-items:center; margin-top: 2px;">
-                                <div class="list-avatar">${iniciais}</div>
-                                <span style="font-size: 13px; font-weight: 600;">${p.responsavel}</span>
-                            </div>
-                        </div>
-
-                        <div class="lc-col" style="flex: 1;">
-                            <span class="lc-subtitle">Prazo</span>
-                            <span style="font-size: 13px; font-weight: 700; ${isAtrasadoClass ? 'color: #991b1b;' : 'color: var(--text-main);'}">${prazoText}</span>
-                        </div>
-                        
-                        <div class="lc-col" style="flex: 1; align-items: center;">
-                            <span class="lc-subtitle">Status</span>
-                            <select class="status-pill-select" style="background-color: ${corStatus};" onclick="event.stopPropagation()" onchange="mudarStatusLista('${p.id}', this.value, event)">
-                                ${optionsHtml}
+                    <tr class="linha-projeto ${classAtrasado}" onclick="abrirDetalhes('${p.id}', event)">
+                        <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
+                        <td>
+                            <select class="status-pill" style="background-color: ${corStatus};" onchange="mudarStatusPelaLista('${p.id}', this.value)" onclick="event.stopPropagation()">
+                                ${optionsStatusHtml}
                             </select>
-                        </div>
-
-                        <div class="lc-col" style="flex: 1; align-items: flex-end;">
-                            <span class="lc-subtitle">Tempo Ocupado</span>
-                            <span style="font-family: monospace; font-size: 15px; color: var(--primary-purple); font-weight: 900;">
-                                ${formatarSegundosTick(p.tempo_total_segundos || 0)}
-                            </span>
-                        </div>
-                    </div>
+                        </td>
+                        <td style="color: var(--text-muted);">${p.empresa}</td>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <div class="list-avatar">${iniciais}</div>
+                                ${p.responsavel}
+                            </div>
+                        </td>
+                        <td>${prazoHtml}</td>
+                        <td style="font-family: monospace; font-size: 14px; color: var(--primary-purple); font-weight: 900;">
+                            ${formatarSegundosTick(p.tempo_total_segundos || 0)}
+                        </td>
+                    </tr>
                 `;
-                container.insertAdjacentHTML('beforeend', html);
+                tbody.insertAdjacentHTML('beforeend', html);
             });
         }
 
-        // Função mágica para atualizar o status sem abrir o card
-        async function mudarStatusLista(id, novoStatus, event) {
-            if(event) event.stopPropagation(); // Evita abrir o modal
-            try {
-                showToast("Atualizando status...", "default");
-                await fetch(`/api/projetos/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: novoStatus })
-                });
-                await carregarProjetos(); // Recarrega a tela silenciosamente
-                showToast("Status atualizado com sucesso!", "success");
-            } catch (error) { 
-                console.error("Erro ao mover card", error); 
-                showToast("Erro de conexão ao atualizar o status.", "error");
-            }
-        }
 
         async function salvarProjeto() {
             const btn = document.getElementById('btnSalvarProjeto');
