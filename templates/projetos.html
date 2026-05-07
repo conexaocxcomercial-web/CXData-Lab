@@ -36,7 +36,6 @@
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
 
-        /* SINO E PAINEL DE NOTIFICAÇÕES */
         .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
         .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
@@ -58,7 +57,6 @@
         .notif-data { font-size: 9px; color: #a1a1aa; font-weight: 600; }
         .notif-empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600;}
 
-        /* BOTÃO DE SAIR */
         .btn-logout {
             display: flex; align-items: center; justify-content: center;
             width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
@@ -73,7 +71,6 @@
 
         .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* SELETOR DE VISÃO */
         .view-switcher { 
             display: flex; gap: 20px; padding: 0 40px 15px 40px; 
             border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
@@ -115,49 +112,48 @@
         }
         .btn-limpar:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
 
-        /* KANBAN BOARD */
         .kanban-board { display: flex; padding: 0 40px 30px 40px; gap: 20px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
         .kanban-column { background: transparent; min-width: 320px; width: 320px; display: flex; flex-direction: column; max-height: 100%; }
+        
         .column-header { padding: 0 0 15px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .column-title { font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
         .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
+
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
 
-        /* REDESIGN DA LISTA (Horizontal Cards) */
+        /* LIST VIEW BOARD APRIMORADO */
         .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
-        .list-table { width: 100%; border-collapse: separate; border-spacing: 0 12px; min-width: 900px; }
-        .list-table th { text-align: left; padding: 0 20px 5px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border: none; }
+        .list-table { width: 100%; border-collapse: collapse; min-width: 900px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        .list-table th { text-align: left; padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e4e4e7; background: rgba(255,255,255,0.8);}
+        .list-table td { padding: 15px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid #f4f4f5; vertical-align: middle; transition: 0.2s; cursor: pointer; }
         
-        .linha-projeto { transition: all 0.2s ease; cursor: pointer; }
-        .linha-projeto td { 
-            padding: 16px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); 
-            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: none;
-            transition: 0.2s;
-        }
-        .linha-projeto td:first-child { border-radius: 12px 0 0 12px !important; }
-        .linha-projeto td:last-child { border-radius: 0 12px 12px 0 !important; }
+        /* Fundo branco ao passar o mouse (sem a barra roxa) */
+        .list-table tr:hover td { background-color: #ffffff; }
         
-        /* Efeito de Elevação ao Passar o Mouse */
-        .linha-projeto:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
-        .linha-projeto:hover td { background: rgba(255, 255, 255, 0.95); }
-
-        /* Fundo Vermelho para Atrasados */
-        .linha-projeto.atrasado td { background: rgba(254, 226, 226, 0.9); }
-        .linha-projeto.atrasado:hover td { background: #fee2e2; }
-
         .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
 
-        /* A NOVA PÍLULA DE STATUS (EDITÁVEL) */
-        .status-pill {
-            padding: 6px 14px; border-radius: 50px !important; font-size: 11px; font-weight: 800;
-            color: white; border: none; outline: none; cursor: pointer;
-            text-transform: uppercase; text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.2s; appearance: none;
+        /* PÍLULA DE STATUS INTERATIVA (SELECT) */
+        .status-pill-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 50px !important;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            color: white;
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: 0.2s;
         }
-        .status-pill:hover { filter: brightness(0.9); transform: scale(1.05); }
-        .status-pill option { background: white; color: var(--text-main); font-weight: 600; }
+        .status-pill-select:hover { transform: scale(1.05); }
+        .status-pill-select option { background: white; color: var(--text-main); font-weight: 600; text-transform: none; }
 
-        /* CARDS GERAIS */
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
         .card.dragging { opacity: 0.4; }
@@ -785,24 +781,25 @@
             }
         }
 
-        // NOVO: Função para Mudar o Status direto pela Pílula na Lista
-        async function mudarStatusPelaLista(projetoId, novoStatus) {
+        // --- MÁGICA: ALTERAR STATUS DIRETO NA LISTA ---
+        async function alterarStatusLista(projetoId, novoStatus) {
+            showToast("Atualizando status...", "default");
+            
+            // Atualiza visualmente na hora (Optimistic UI) para não precisar piscar a tela inteira
+            const proj = projetosGlobais.find(p => p.id === projetoId);
+            if(proj) proj.status = novoStatus;
+            renderizarProjetos();
+
             try {
                 await fetch(`/api/projetos/${projetoId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: novoStatus })
                 });
-                showToast("Status atualizado com sucesso!", "success");
-                
-                // Atualiza o array localmente para não dar reload pesado e recarrega a visão
-                let projLocal = projetosGlobais.find(p => p.id === projetoId);
-                if(projLocal) projLocal.status = novoStatus;
-                renderizarProjetos();
-                
-            } catch (error) {
-                console.error("Erro ao atualizar status pela lista", error);
-                showToast("Erro de conexão ao atualizar o status.", "error");
+                showToast("Status alterado com sucesso", "success");
+            } catch (error) { 
+                console.error(error);
+                showToast("Erro ao mudar status no servidor", "error");
             }
         }
 
@@ -1028,9 +1025,6 @@
             atualizarContadores();
         }
 
-        // ==========================================
-        // RENDERIZADOR 2: LIST VIEW
-        // ==========================================
         function renderizarLista(projetosFiltrados) {
             const tbody = document.getElementById('listBodyDinamico');
             tbody.innerHTML = '';
@@ -1039,21 +1033,12 @@
                 let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
 
-                // Encontra a cor do status na configuração do quadro
-                let statusInfo = cfg.colunas.find(c => c.id === p.status);
-                if (!statusInfo) statusInfo = cfg.colunas[0]; 
-                const corStatus = statusInfo.cor;
-
-                // Gera as opções do <select> baseadas no quadro atual
-                let optionsStatusHtml = cfg.colunas.map(c => 
-                    `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`
-                ).join('');
+                const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
+                const corStatus = colInfo.cor;
 
                 const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
 
                 let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
-                let classAtrasado = '';
-
                 if (p.prazo_data) {
                     const partes = p.prazo_data.split('T')[0].split('-');
                     const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
@@ -1064,7 +1049,6 @@
                     const strData = new Date(p.prazo_data).toLocaleDateString('pt-BR');
                     if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) {
                         prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`;
-                        classAtrasado = 'atrasado'; // Ativa a faixa vermelha
                     } else if (p.status === 'Finalizado' || p.status === 'Cancelado') {
                         prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`;
                     } else {
@@ -1075,14 +1059,20 @@
                 let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
                 let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
 
+                // A MÁGICA DO STATUS EDITÁVEL (PÍLULA)
+                let optionsStatus = cfg.colunas.map(c => `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`).join('');
+                let htmlStatusPill = `
+                    <select class="status-pill-select" style="background-color: ${corStatus};" 
+                        onclick="event.stopPropagation()" 
+                        onchange="alterarStatusLista('${p.id}', this.value)">
+                        ${optionsStatus}
+                    </select>
+                `;
+
                 let html = `
-                    <tr class="linha-projeto ${classAtrasado}" onclick="abrirDetalhes('${p.id}', event)">
+                    <tr onclick="abrirDetalhes('${p.id}', event)">
                         <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
-                        <td>
-                            <select class="status-pill" style="background-color: ${corStatus};" onchange="mudarStatusPelaLista('${p.id}', this.value)" onclick="event.stopPropagation()">
-                                ${optionsStatusHtml}
-                            </select>
-                        </td>
+                        <td>${htmlStatusPill}</td>
                         <td style="color: var(--text-muted);">${p.empresa}</td>
                         <td>
                             <div style="display:flex; align-items:center;">
@@ -1381,7 +1371,7 @@
         }
 
         async function abrirDetalhes(id, event) {
-            if(event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes')) return;
+            if(event && (event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes'))) return;
 
             projIdEmFoco = id;
             const proj = projetosGlobais.find(p => p.id === id);
