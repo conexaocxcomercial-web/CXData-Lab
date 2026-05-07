@@ -36,7 +36,6 @@
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
 
-        /* SINO E PAINEL DE NOTIFICAÇÕES */
         .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
         .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
@@ -58,7 +57,6 @@
         .notif-data { font-size: 9px; color: #a1a1aa; font-weight: 600; }
         .notif-empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600;}
 
-        /* BOTÃO DE SAIR */
         .btn-logout {
             display: flex; align-items: center; justify-content: center;
             width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
@@ -72,6 +70,19 @@
         .btn-acao:disabled { background-color: var(--text-muted); cursor: not-allowed; }
 
         .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* NOVO: SELETOR DE VISÃO (STYLE NOTION) */
+        .view-switcher { 
+            display: flex; gap: 20px; padding: 0 40px 15px 40px; 
+            border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
+        }
+        .view-tab { 
+            font-size: 13px; font-weight: 800; color: var(--text-muted); 
+            cursor: pointer; padding-bottom: 10px; border-bottom: 3px solid transparent; 
+            transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase;
+        }
+        .view-tab:hover { color: var(--primary-purple); }
+        .view-tab.active { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
 
         .filter-bar { padding: 0 40px 15px 40px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .filter-input { 
@@ -102,15 +113,24 @@
         }
         .btn-limpar:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
 
+        /* KANBAN BOARD */
         .kanban-board { display: flex; padding: 0 40px 30px 40px; gap: 20px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
         .kanban-column { background: transparent; min-width: 320px; width: 320px; display: flex; flex-direction: column; max-height: 100%; }
-        
         .column-header { padding: 0 0 15px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .column-title { font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
         .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
-
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
 
+        /* LIST VIEW BOARD */
+        .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
+        .list-table { width: 100%; border-collapse: collapse; min-width: 900px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        .list-table th { text-align: left; padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e4e4e7; background: rgba(255,255,255,0.8);}
+        .list-table td { padding: 15px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid #f4f4f5; vertical-align: middle; transition: 0.2s; cursor: pointer; }
+        .list-table tr:hover td { background-color: #ffffff; box-shadow: inset 4px 0 0 0 var(--primary-purple);}
+        .status-dot-list { width: 10px; height: 10px; border-radius: 50% !important; display: inline-block; margin-right: 8px; }
+        .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
+
+        /* CARDS GERAIS */
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
         .card.dragging { opacity: 0.4; }
@@ -219,7 +239,7 @@
         .btn-cancelar-edicao:hover { background: #f4f4f5; }
         .botoes-form-comentario { display: flex; gap: 8px; justify-content: flex-end; width: 100%; margin-top: 10px;}
 
-        /* NOVO: TOASTS PREMIUM */
+        /* TOASTS PREMIUM */
         .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); color: white; padding: 12px 24px; border-radius: 50px !important; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; pointer-events: auto;}
         .toast.error { background: rgba(239, 68, 68, 0.95); }
@@ -273,8 +293,13 @@
         </button>
     </div>
 
+    <div class="view-switcher">
+        <div class="view-tab active" onclick="mudarVisao('kanban')" id="tab-kanban"><span class="material-symbols-rounded" style="font-size: 18px;">view_kanban</span> Kanban</div>
+        <div class="view-tab" onclick="mudarVisao('lista')" id="tab-lista"><span class="material-symbols-rounded" style="font-size: 18px;">format_list_bulleted</span> Lista</div>
+        <div class="view-tab" onclick="showToast('A visão calendário será liberada em breve!', 'default')" id="tab-calendario"><span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Calendário</div>
+    </div>
+
     <div class="filter-bar">
-        
         <select id="filtroOrdenacao" class="filter-input" onchange="renderizarProjetos()">
             <option value="padrao">Ordenar por: Criação</option>
             <option value="az">A-Z (Nome do Projeto)</option>
@@ -307,6 +332,25 @@
     </div>
 
     <div class="kanban-board" id="boardDinamico"></div>
+
+    <div class="list-view-container" id="listViewDinamico">
+        <table class="list-table">
+            <thead>
+                <tr>
+                    <th>Projeto</th>
+                    <th>Status</th>
+                    <th>Cliente / Empresa</th>
+                    <th>Responsável</th>
+                    <th>Prazo</th>
+                    <th>Tempo Investido</th>
+                </tr>
+            </thead>
+            <tbody id="listBodyDinamico"></tbody>
+        </table>
+    </div>
+
+    <div class="list-view-container" id="calendarViewDinamico"></div>
+
 
     <div id="floatingPlayer" class="floating-player" style="display: none;">
         <div class="fp-info">
@@ -538,8 +582,10 @@
         let projIdEmFoco = null;
         let timerInterval = null;
         let activeTimerData = null;
+        
+        // CONTROLE DA VISÃO ATUAL (Kanban, Lista, Calendario)
+        let visaoAtual = 'kanban'; 
 
-        // --- NOVO: SISTEMA DE TOASTS PREMIUM ---
         function showToast(msg, type = 'default') {
             const container = document.getElementById('toastContainer');
             const t = document.createElement('div');
@@ -555,15 +601,30 @@
             }, 3000);
         }
 
-        // --- FLUXO INTELIGENTE DE MODAIS ---
         function fecharModalEdicao() {
             document.getElementById('modalEditarProjeto').style.display = 'none';
-            // Se viemos de um card (temos um ID em foco), reabrimos o modal de detalhes
             if(projIdEmFoco) { document.getElementById('modalDetalhes').style.display = 'flex'; }
         }
 
         function fecharModalFundoEdicao(event) {
             if(event.target.id === 'modalEditarProjeto') { fecharModalEdicao(); }
+        }
+
+        // MÁGICA: MUDANÇA DE VISÃO
+        function mudarVisao(novaVisao) {
+            visaoAtual = novaVisao;
+            
+            // Troca a classe ativa nas abas do topo
+            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${novaVisao}`).classList.add('active');
+            
+            // Oculta/Exibe os containers do Board
+            document.getElementById('boardDinamico').style.display = novaVisao === 'kanban' ? 'flex' : 'none';
+            document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'block' : 'none';
+            document.getElementById('calendarViewDinamico').style.display = novaVisao === 'calendario' ? 'block' : 'none';
+            
+            // Aplica os filtros da barra diretamente na visão escolhida
+            renderizarProjetos();
         }
 
         function montarWorkspace() {
@@ -692,7 +753,6 @@
             const colunaContainer = destino.closest('.kanban-column');
             const novoStatus = colunaContainer.getAttribute('data-status');
             
-            // FIM DO PISCA-PISCA: Apenas envia a requisição para o banco sem recarregar a tela inteira.
             try {
                 await fetch(`/api/projetos/${id}`, {
                     method: 'PUT',
@@ -781,8 +841,7 @@
         }
 
         function renderizarProjetos() {
-            document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
-            
+            // Pega as configurações de filtros da barra de comando
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
             atualizarDropdownsFiltro(projetosFiltrados);
 
@@ -824,6 +883,24 @@
             const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
+
+            // DIRECIONAMENTO PARA O RENDERIZADOR CORRETO COM BASE NA ABA ATUAL
+            if (visaoAtual === 'kanban') {
+                renderizarKanban(projetosFiltrados);
+            } else if (visaoAtual === 'lista') {
+                renderizarLista(projetosFiltrados);
+            }
+            
+            // Garante que o sino principal se mantenha atualizado
+            carregarNotificacoes(); 
+            if(activeTimerData) iniciarRelogioVisual();
+        }
+
+        // ==========================================
+        // RENDERIZADOR 1: KANBAN BOARD
+        // ==========================================
+        function renderizarKanban(projetosFiltrados) {
+            document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
 
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
@@ -914,11 +991,74 @@
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
             atualizarContadores();
-            
-            carregarNotificacoes(); 
-            
-            if(activeTimerData) iniciarRelogioVisual();
         }
+
+        // ==========================================
+        // RENDERIZADOR 2: LIST VIEW
+        // ==========================================
+        function renderizarLista(projetosFiltrados) {
+            const tbody = document.getElementById('listBodyDinamico');
+            tbody.innerHTML = '';
+
+            projetosFiltrados.forEach(p => {
+                let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
+                let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
+
+                // Busca a cor oficial configurada para aquele status
+                const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
+                const corStatus = colInfo.cor;
+
+                // Cria o avatar do usuário
+                const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
+
+                // Lógica de Prazo
+                let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
+                if (p.prazo_data) {
+                    const partes = p.prazo_data.split('T')[0].split('-');
+                    const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
+                    const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
+                    dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
+                    const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
+                    
+                    const strData = new Date(p.prazo_data).toLocaleDateString('pt-BR');
+                    if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) {
+                        prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`;
+                    } else if (p.status === 'Finalizado' || p.status === 'Cancelado') {
+                        prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`;
+                    } else {
+                        prazoHtml = `<span>${strData}</span>`;
+                    }
+                }
+
+                let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
+                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
+
+                let html = `
+                    <tr onclick="abrirDetalhes('${p.id}', event)">
+                        <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <span class="status-dot-list" style="background-color: ${corStatus};"></span>
+                                ${p.status}
+                            </div>
+                        </td>
+                        <td style="color: var(--text-muted);">${p.empresa}</td>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <div class="list-avatar">${iniciais}</div>
+                                ${p.responsavel}
+                            </div>
+                        </td>
+                        <td>${prazoHtml}</td>
+                        <td style="font-family: monospace; font-size: 14px; color: var(--primary-purple); font-weight: 900;">
+                            ${formatarSegundosTick(p.tempo_total_segundos || 0)}
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
 
         async function salvarProjeto() {
             const btn = document.getElementById('btnSalvarProjeto');
@@ -1108,7 +1248,6 @@
             try {
                 await fetch(`/api/comentarios/${comentarioId}/lido`, { method: 'PUT' });
                 
-                // FIM DO PISCA-PISCA: Resolve o alerta visualmente e de forma silenciosa
                 const bubble = btnElement.closest('.chat-bubble');
                 if(bubble) { bubble.classList.remove('unread-highlight'); btnElement.remove(); }
                 
@@ -1135,7 +1274,6 @@
                 });
                 textoInput.value = '';
                 
-                // FIM DO PISCA-PISCA: Apaga a bolinha se você for o dono respondendo
                 const card = document.getElementById(projIdEmFoco);
                 if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); }
                 carregarNotificacoes(); 
