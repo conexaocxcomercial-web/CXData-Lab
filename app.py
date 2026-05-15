@@ -203,9 +203,11 @@ def get_notificacoes():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     usuario = session.get('usuario_nome')
     try:
+        # 1. Busca todos os projetos do banco
         res_projetos = supabase.table('projetos').select('id, nome_projeto, responsavel').execute()
         projetos_do_usuario = {}
         
+        # Filtra na unha (Python) para evitar erro de maiúscula/minúscula/espaço
         for p in res_projetos.data:
             if p['responsavel'] and p['responsavel'].strip().lower() == usuario.strip().lower():
                 projetos_do_usuario[p['id']] = p['nome_projeto']
@@ -214,18 +216,25 @@ def get_notificacoes():
             return jsonify({"status": "sucesso", "notificacoes": []}), 200
 
         proj_ids = list(projetos_do_usuario.keys())
+        
+        # 2. Busca comentários não lidos apenas desses projetos
         res_comentarios = supabase.table('comentarios').select('*').in_('projeto_id', proj_ids).eq('lido_pelo_responsavel', False).execute()
         
         notificacoes = []
         for c in res_comentarios.data:
+            # Não notifica se o autor for você mesmo
             if c['autor'].strip().lower() != usuario.strip().lower():
                 c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
                 notificacoes.append(c)
 
+        # 3. Ordena para os mais novos ficarem no topo
         notificacoes.sort(key=lambda x: x['criado_em'], reverse=True)
+        
         return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
     except Exception as e:
+        print(f"[CRITICAL] Erro em Notificacoes: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao buscar notificacoes"}), 500
+
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
 def listar_comentarios(projeto_id):
@@ -246,16 +255,22 @@ def adicionar_comentario(projeto_id):
     if not texto: return jsonify({"erro": "Texto vazio"}), 400
     try:
         autor = session.get("usuario_nome", "Usuário")
+        
         res_proj = supabase.table("projetos").select("responsavel").eq("id", projeto_id).execute()
         responsavel_projeto = res_proj.data[0]['responsavel'] if res_proj.data else ""
         
         ja_lido = True if autor.strip().lower() == responsavel_projeto.strip().lower() else False
+        
         novo_comentario = {
-            "projeto_id": projeto_id, "autor": autor, "texto": texto,
-            "parent_id": parent_id, "lido_pelo_responsavel": ja_lido
+            "projeto_id": projeto_id,
+            "autor": autor,
+            "texto": texto,
+            "parent_id": parent_id,
+            "lido_pelo_responsavel": ja_lido
         }
         supabase.table("comentarios").insert(novo_comentario).execute()
         
+        # Baixa Automática!
         if autor.strip().lower() == responsavel_projeto.strip().lower():
             supabase.table("comentarios").update({"lido_pelo_responsavel": True}).eq("projeto_id", projeto_id).eq("lido_pelo_responsavel", False).execute()
             
@@ -283,49 +298,6 @@ def marcar_comentario_lido(comentario_id):
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
-
-
-# --- API PLANEJAMENTO DIÁRIO (MEU DIA) ---
-
-@app.route('/api/planejamento/<data>', methods=['GET'])
-def get_planejamento(data):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    usuario = session.get('usuario_nome')
-    try:
-        res = supabase.table("planejamento_diario").select("*").eq("colaborador", usuario).eq("data_planejada", data).order("criado_em", desc=False).execute()
-        return jsonify({"status": "sucesso", "tarefas": res.data}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/planejamento', methods=['POST'])
-def criar_tarefa_planejamento():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    dados = request.json
-    try:
-        nova_tarefa = {
-            "projeto_id": dados.get("projeto_id"),
-            "colaborador": session.get('usuario_nome'),
-            "atividade": dados.get("atividade"),
-            "data_planejada": dados.get("data_planejada"),
-            "status": "Pendente"
-        }
-        supabase.table("planejamento_diario").insert(nova_tarefa).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/planejamento/<tarefa_id>', methods=['PUT', 'DELETE'])
-def gerenciar_tarefa_planejamento(tarefa_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    try:
-        if request.method == 'PUT':
-            dados = request.json
-            supabase.table("planejamento_diario").update({"status": dados.get("status")}).eq("id", tarefa_id).execute()
-        elif request.method == 'DELETE':
-            supabase.table("planejamento_diario").delete().eq("id", tarefa_id).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
