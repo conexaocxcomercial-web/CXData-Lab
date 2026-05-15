@@ -36,9 +36,12 @@
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
 
-        .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
-        .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
+        .bell-container, .btn-meu-dia { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
+        .bell-container:hover, .btn-meu-dia:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
+
+        .btn-meu-dia { background: var(--primary-purple); color: white; width: auto; padding: 0 16px; border-radius: 50px !important; font-size: 12px; font-weight: 800; gap: 6px;}
+        .btn-meu-dia:hover { background: var(--text-main); color: white;}
 
         .notifications-dropdown {
             position: fixed; top: 75px; right: 40px; width: 340px;
@@ -121,38 +124,71 @@
 
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
 
-        /* LIST VIEW BOARD APRIMORADO */
         .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
         .list-table { width: 100%; border-collapse: collapse; min-width: 900px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
         .list-table th { text-align: left; padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e4e4e7; background: rgba(255,255,255,0.8);}
         .list-table td { padding: 15px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid #f4f4f5; vertical-align: middle; transition: 0.2s; cursor: pointer; }
-        
-        /* Fundo branco ao passar o mouse (sem a barra roxa) */
         .list-table tr:hover td { background-color: #ffffff; }
         
         .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
 
-        /* PÍLULA DE STATUS INTERATIVA (SELECT) */
         .status-pill-select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 50px !important;
-            font-size: 10px;
-            font-weight: 800;
-            cursor: pointer;
-            color: white;
-            outline: none;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: 0.2s;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            border: none; padding: 6px 14px; border-radius: 50px !important;
+            font-size: 10px; font-weight: 800; cursor: pointer; color: white;
+            outline: none; text-transform: uppercase; letter-spacing: 0.5px;
+            text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s;
         }
         .status-pill-select:hover { transform: scale(1.05); }
         .status-pill-select option { background: white; color: var(--text-main); font-weight: 600; text-transform: none; }
+
+        /* NOVO: VISÃO CALENDÁRIO */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(255,255,255,0.7); padding: 15px 25px; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        .calendar-nav { display: flex; gap: 10px; align-items: center; }
+        .btn-cal-nav { background: #fff; border: 1px solid #e4e4e7; width: 36px; height: 36px; border-radius: 50% !important; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-main); transition: 0.2s;}
+        .btn-cal-nav:hover { background: var(--primary-purple); color: #fff; border-color: var(--primary-purple);}
+        .cal-month-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px;}
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .cal-day-header { text-align: center; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; padding-bottom: 10px;}
+        .cal-cell { background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); min-height: 120px; border-radius: 12px !important; padding: 10px; border: 1px solid transparent; display: flex; flex-direction: column; gap: 6px;}
+        .cal-cell.today { border-color: var(--primary-purple); background: #fff; box-shadow: 0 4px 20px rgba(115, 113, 255, 0.1); }
+        .cal-date-number { font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 5px; text-align: right;}
+        .cal-cell.today .cal-date-number { color: var(--primary-purple); font-size: 14px;}
+        
+        .cal-proj-pill { background: var(--text-main); color: white; padding: 6px 8px; border-radius: 6px !important; font-size: 10px; font-weight: 600; line-height: 1.2; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+        .cal-proj-pill:hover { transform: scale(1.02); }
+        .cal-proj-pill.atrasado { background: #ef4444; }
+
+        /* NOVO: PAINEL MEU DIA (CHECK-IN) */
+        .meu-dia-panel {
+            position: fixed; right: -420px; top: 70px; width: 420px; height: calc(100vh - 70px);
+            background: rgba(255,255,255,0.98); backdrop-filter: blur(20px);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 1000;
+            display: flex; flex-direction: column; border-left: 1px solid #e4e4e7;
+        }
+        .meu-dia-panel.open { right: 0; }
+        .md-header { padding: 25px 30px; border-bottom: 1px solid #e4e4e7; display: flex; justify-content: space-between; align-items: center; background: #fff;}
+        .md-header h2 { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px;}
+        .md-body { flex-grow: 1; padding: 25px 30px; overflow-y: auto; background: #fcfcfc;}
+        
+        .md-task-card { background: #fff; border: 1px solid #e4e4e7; padding: 15px; border-radius: 12px !important; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .md-task-card:hover { border-color: var(--primary-purple); box-shadow: 0 4px 15px rgba(115, 113, 255, 0.1);}
+        .md-task-card.concluida { opacity: 0.6; }
+        .md-task-card.concluida .md-task-title { text-decoration: line-through; color: var(--text-muted);}
+        
+        .md-checkbox { width: 22px; height: 22px; border: 2px solid #d4d4d8; border-radius: 6px !important; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; flex-shrink: 0; background: #fff;}
+        .md-task-card.concluida .md-checkbox { background: #10b981; border-color: #10b981; color: white;}
+        
+        .md-task-info { flex-grow: 1; display: flex; flex-direction: column; gap: 2px;}
+        .md-task-title { font-size: 13px; font-weight: 800; color: var(--text-main); line-height: 1.2;}
+        .md-task-proj { font-size: 10px; font-weight: 600; color: var(--primary-purple); text-transform: uppercase;}
+        
+        .md-play-btn { background: #f4f4f5; color: var(--text-main); width: 32px; height: 32px; border-radius: 50% !important; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;}
+        .md-play-btn:hover { background: var(--accent-lime); color: var(--text-main); transform: scale(1.1);}
+        .md-task-card.concluida .md-play-btn { display: none; }
+
+        .md-add-area { padding: 25px 30px; border-top: 1px solid #e4e4e7; background: #fff;}
 
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
@@ -282,6 +318,10 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="btn-meu-dia" onclick="toggleMeuDia()" title="Planejamento Diário">
+                <span class="material-symbols-rounded" style="font-size: 18px;">task_alt</span> Meu Dia
+            </div>
+
             <div class="bell-container" onclick="toggleDropdownNotificacoes()" title="Notificações Pendentes">
                 <span class="material-symbols-rounded" style="font-size: 22px;">notifications</span>
                 <div class="bell-badge" id="sinoNotificacoes" style="display: none;">0</div>
@@ -294,6 +334,27 @@
             <button onclick="window.location.href='/logout'" class="btn-logout" title="Sair do Sistema">
                 <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
             </button>
+        </div>
+    </div>
+
+    <div id="meuDiaPanel" class="meu-dia-panel">
+        <div class="md-header">
+            <h2><span class="material-symbols-rounded" style="color: var(--primary-purple);">today</span> Hoje</h2>
+            <button class="btn-comentario-acao" onclick="toggleMeuDia()" style="font-size: 24px; color: var(--text-muted);">&times;</button>
+        </div>
+        <div class="md-body" id="mdListaTarefas">
+            <p style="text-align: center; color: #999; font-size: 12px; margin-top: 20px;">Nenhuma tarefa planejada para hoje.</p>
+        </div>
+        <div class="md-add-area">
+            <div class="input-group" style="margin-bottom: 10px;">
+                <label>Vincular a qual projeto?</label>
+                <select id="mdProjetoSelect" class="input-item" style="padding: 10px;"></select>
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+                <label>Qual a atividade?</label>
+                <select id="mdAtividadeSelect" class="input-item" style="padding: 10px;"></select>
+            </div>
+            <button class="btn-acao" style="width: 100%; justify-content: center; padding: 12px;" onclick="adicionarTarefaDia()">ADICIONAR TAREFA</button>
         </div>
     </div>
 
@@ -318,7 +379,7 @@
     <div class="view-switcher">
         <div class="view-tab active" onclick="mudarVisao('kanban')" id="tab-kanban"><span class="material-symbols-rounded" style="font-size: 18px;">view_kanban</span> Kanban</div>
         <div class="view-tab" onclick="mudarVisao('lista')" id="tab-lista"><span class="material-symbols-rounded" style="font-size: 18px;">format_list_bulleted</span> Lista</div>
-        <div class="view-tab" onclick="showToast('A visão calendário será liberada em breve!', 'default')" id="tab-calendario"><span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Calendário</div>
+        <div class="view-tab" onclick="mudarVisao('calendario')" id="tab-calendario"><span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Calendário</div>
     </div>
 
     <div class="filter-bar">
@@ -371,7 +432,25 @@
         </table>
     </div>
 
-    <div class="list-view-container" id="calendarViewDinamico"></div>
+    <div class="list-view-container" id="calendarViewDinamico">
+        <div class="calendar-header">
+            <div class="cal-month-title" id="calMonthTitle">Maio 2026</div>
+            <div class="calendar-nav">
+                <button class="btn-cal-nav" onclick="mudarMes(-1)"><span class="material-symbols-rounded">chevron_left</span></button>
+                <button class="btn-cal-nav" onclick="irParaHoje()" style="width: auto; padding: 0 15px; border-radius: 50px !important; font-size: 11px; font-weight: 800; text-transform: uppercase;">Hoje</button>
+                <button class="btn-cal-nav" onclick="mudarMes(1)"><span class="material-symbols-rounded">chevron_right</span></button>
+            </div>
+        </div>
+        <div class="calendar-grid">
+            <div class="cal-day-header">Dom</div>
+            <div class="cal-day-header">Seg</div>
+            <div class="cal-day-header">Ter</div>
+            <div class="cal-day-header">Qua</div>
+            <div class="cal-day-header">Qui</div>
+            <div class="cal-day-header">Sex</div>
+            <div class="cal-day-header">Sáb</div>
+            </div>
+    </div>
 
 
     <div id="floatingPlayer" class="floating-player" style="display: none;">
@@ -608,6 +687,7 @@
         let activeTimerData = null;
         
         let visaoAtual = 'kanban'; 
+        let mesCalendarioAtual = new Date(); 
 
         function showToast(msg, type = 'default') {
             const container = document.getElementById('toastContainer');
@@ -651,6 +731,9 @@
             const selectArea = document.getElementById('projArea');
             selectArea.innerHTML = cfg.areasPermitidas.map(a => `<option value="${a}">${a}</option>`).join('');
 
+            const mdAtiv = document.getElementById('mdAtividadeSelect');
+            mdAtiv.innerHTML = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
+
             const board = document.getElementById('boardDinamico');
             board.innerHTML = '';
             cfg.colunas.forEach(col => {
@@ -680,6 +763,15 @@
             const valR = selectResp.value;
             selectResp.innerHTML = '<option value="">Todos os Responsáveis</option>' + responsaveis.map(r => `<option value="${r}">${r}</option>`).join('');
             selectResp.value = valR;
+
+            // Preenche os projetos do usuário logado no painel "Meu Dia"
+            const selectMdProj = document.getElementById('mdProjetoSelect');
+            const meusProjs = projetosWorkspace.filter(p => p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase() && p.status !== 'Finalizado' && p.status !== 'Cancelado');
+            if(meusProjs.length > 0) {
+                selectMdProj.innerHTML = meusProjs.map(p => `<option value="${p.id}">${p.nome_projeto}</option>`).join('');
+            } else {
+                selectMdProj.innerHTML = '<option value="">Nenhum projeto ativo para você</option>';
+            }
         }
 
         function limparFiltros() {
@@ -783,11 +875,9 @@
             }
         }
 
-        // --- MÁGICA: ALTERAR STATUS DIRETO NA LISTA ---
         async function alterarStatusLista(projetoId, novoStatus) {
             showToast("Atualizando status...", "default");
             
-            // Atualiza visualmente na hora (Optimistic UI) para não precisar piscar a tela inteira
             const proj = projetosGlobais.find(p => p.id === projetoId);
             if(proj) proj.status = novoStatus;
             renderizarProjetos();
@@ -863,13 +953,91 @@
             abrirDetalhes(projetoId, { target: document.createElement('div') }); 
         }
 
-        function calcularDias(dataInicio, dataConclusao) {
-            if(!dataInicio) return 0;
-            const inicio = new Date(dataInicio);
-            const fim = dataConclusao ? new Date(dataConclusao) : new Date();
-            const dias = Math.floor(Math.abs(fim - inicio) / (1000 * 60 * 60 * 24));
-            return dias < 0 ? 0 : dias;
+        // --- NOVO: LÓGICA DO PAINEL MEU DIA ---
+        function getHojeISO() {
+            const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+            return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
         }
+
+        function toggleMeuDia() {
+            const panel = document.getElementById('meuDiaPanel');
+            const isOpen = panel.classList.contains('open');
+            if(isOpen) {
+                panel.classList.remove('open');
+            } else {
+                panel.classList.add('open');
+                carregarTarefasMeuDia();
+            }
+        }
+
+        async function carregarTarefasMeuDia() {
+            const dataHoje = getHojeISO();
+            const container = document.getElementById('mdListaTarefas');
+            container.innerHTML = '<p style="text-align:center; font-size:12px; color:#999; margin-top:20px;">Carregando...</p>';
+            
+            try {
+                const res = await fetch(`/api/planejamento/${dataHoje}`);
+                const data = await res.json();
+                
+                if(data.tarefas && data.tarefas.length > 0) {
+                    container.innerHTML = data.tarefas.map(t => {
+                        const proj = projetosGlobais.find(p => p.id === t.projeto_id);
+                        const nomeProj = proj ? proj.nome_projeto : 'Projeto Deletado';
+                        const areaProj = proj ? proj.area : 'Geral';
+                        const isConcluida = t.status === 'Concluído';
+                        
+                        return `
+                        <div class="md-task-card ${isConcluida ? 'concluida' : ''}" id="task-${t.id}">
+                            <div class="md-checkbox" onclick="toggleStatusTarefa('${t.id}', '${isConcluida ? 'Pendente' : 'Concluído'}')">
+                                ${isConcluida ? '<span class="material-symbols-rounded" style="font-size:16px;">check</span>' : ''}
+                            </div>
+                            <div class="md-task-info">
+                                <span class="md-task-title">${t.atividade}</span>
+                                <span class="md-task-proj">${nomeProj}</span>
+                            </div>
+                            <div class="md-play-btn" title="Iniciar Atividade" onclick="iniciarTimerDireto('${t.projeto_id}', '${nomeProj}', '${areaProj}', '${t.atividade}', ${proj ? proj.tempo_total_segundos : 0})">
+                                <span class="material-symbols-rounded" style="font-size:20px;">play_arrow</span>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<p style="text-align:center; font-size:12px; color:#999; margin-top:20px;">O que vamos entregar hoje? Planeje seu dia abaixo.</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="text-align:center; font-size:12px; color:#ef4444; margin-top:20px;">Erro ao carregar planejamento.</p>';
+            }
+        }
+
+        async function adicionarTarefaDia() {
+            const projeto_id = document.getElementById('mdProjetoSelect').value;
+            const atividade = document.getElementById('mdAtividadeSelect').value;
+            
+            if(!projeto_id || !atividade) { showToast("Selecione o projeto e a atividade.", "error"); return; }
+
+            try {
+                await fetch('/api/planejamento', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ projeto_id, atividade, data_planejada: getHojeISO() })
+                });
+                carregarTarefasMeuDia();
+                showToast("Tarefa adicionada ao seu dia!", "success");
+            } catch(e) {
+                showToast("Erro ao adicionar tarefa.", "error");
+            }
+        }
+
+        async function toggleStatusTarefa(id, novoStatus) {
+            try {
+                await fetch(`/api/planejamento/${id}`, {
+                    method: 'PUT', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                carregarTarefasMeuDia();
+            } catch(e) { showToast("Erro ao atualizar tarefa.", "error"); }
+        }
+
+        // --- FIM LÓGICA MEU DIA ---
 
         function formatarSegundosTick(segundos) {
             let val = Number(segundos);
@@ -927,6 +1095,8 @@
                 renderizarKanban(projetosFiltrados);
             } else if (visaoAtual === 'lista') {
                 renderizarLista(projetosFiltrados);
+            } else if (visaoAtual === 'calendario') {
+                renderizarCalendario(projetosFiltrados);
             }
             
             carregarNotificacoes(); 
@@ -962,39 +1132,17 @@
                 
                 if (p.is_scrum) arrayBadges.push(`<span class="dias-aberto" style="background: #3b82f6; margin-bottom: 0;">SCRUM</span>`);
 
-                if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
-                    const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
-                    const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
-                    const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
-                    
-                    arrayBadges.push(`<span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Total${tagCongelado}</span>`);
-                    arrayBadges.push(`<span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>`);
+                if (p.prazo_data && p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
+                    const partes = p.prazo_data.split('T')[0].split('-');
+                    const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
+                    const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
+                    dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
+                    const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
 
-                    if (p.prazo_data) {
-                        const partes = p.prazo_data.split('T')[0].split('-');
-                        const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
-                        const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
-                        dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
-                        const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
-
-                        if (p.status !== 'Finalizado' && p.status !== 'Cancelado') {
-                            if (diffDias < 0) {
-                                isAtrasadoClass = 'atrasado'; 
-                                arrayBadges.push(`<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;" title="O prazo estourou!">Atrasado ${Math.abs(diffDias)}d</span>`);
-                            } else if (diffDias === 0) {
-                                arrayBadges.push(`<span class="dias-aberto" style="background: #f59e0b; margin-bottom: 0;">Vence Hoje</span>`);
-                            } else {
-                                const corPrazo = diffDias <= 2 ? '#f59e0b' : '#10b981'; 
-                                arrayBadges.push(`<span class="dias-aberto" style="background: ${corPrazo}; margin-bottom: 0;">Faltam ${diffDias}d</span>`);
-                            }
-                        } else {
-                            if (diffDias < 0) { arrayBadges.push(`<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;">Entregue c/ Atraso</span>`); } 
-                            else { arrayBadges.push(`<span class="dias-aberto" style="background: #10b981; margin-bottom: 0;">No Prazo</span>`); }
-                        }
+                    if (p.status !== 'Finalizado' && p.status !== 'Cancelado') {
+                        if (diffDias < 0) { isAtrasadoClass = 'atrasado'; }
                     }
                 }
-
-                let htmlBadgesFinal = arrayBadges.length > 0 ? `<div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">${arrayBadges.join('')}</div>` : '';
 
                 const cardHTML = `
                 <div class="card ${isAtrasadoClass}" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
@@ -1006,7 +1154,6 @@
                         </div>
                         <div class="card-nome">${p.nome_projeto}</div>
                         <div class="card-resp">${p.responsavel}</div>
-                        ${htmlBadgesFinal}
                     </div>
                     
                     <div style="margin-top: 10px;">
@@ -1037,7 +1184,6 @@
 
                 const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
                 const corStatus = colInfo.cor;
-
                 const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
 
                 let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
@@ -1059,9 +1205,7 @@
                 }
 
                 let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
-                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
-
-                // A MÁGICA DO STATUS EDITÁVEL (PÍLULA)
+                
                 let optionsStatus = cfg.colunas.map(c => `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`).join('');
                 let htmlStatusPill = `
                     <select class="status-pill-select" style="background-color: ${corStatus};" 
@@ -1073,7 +1217,7 @@
 
                 let html = `
                     <tr onclick="abrirDetalhes('${p.id}', event)">
-                        <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
+                        <td style="font-weight: 800;">${p.nome_projeto} ${bolinhaHtml}</td>
                         <td>${htmlStatusPill}</td>
                         <td style="color: var(--text-muted);">${p.empresa}</td>
                         <td>
@@ -1090,6 +1234,76 @@
                 `;
                 tbody.insertAdjacentHTML('beforeend', html);
             });
+        }
+
+        // --- LÓGICA DE RENDERIZAÇÃO DO CALENDÁRIO ---
+        function mudarMes(delta) {
+            mesCalendarioAtual.setMonth(mesCalendarioAtual.getMonth() + delta);
+            renderizarProjetos();
+        }
+        function irParaHoje() {
+            mesCalendarioAtual = new Date();
+            renderizarProjetos();
+        }
+
+        function renderizarCalendario(projetosFiltrados) {
+            const grid = document.querySelector('.calendar-grid');
+            
+            // Limpa as células antigas, mantendo os cabeçalhos dos dias da semana
+            const cells = grid.querySelectorAll('.cal-cell');
+            cells.forEach(c => c.remove());
+
+            const ano = mesCalendarioAtual.getFullYear();
+            const mes = mesCalendarioAtual.getMonth();
+            
+            const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            document.getElementById('calMonthTitle').innerText = `${nomesMeses[mes]} ${ano}`;
+
+            const primeiroDiaDoMes = new Date(ano, mes, 1).getDay(); // 0(Dom) a 6(Sab)
+            const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+            
+            const hojeLocal = getHojeISO(); // YYYY-MM-DD
+
+            // Células vazias iniciais
+            for(let i = 0; i < primeiroDiaDoMes; i++) {
+                grid.insertAdjacentHTML('beforeend', '<div class="cal-cell" style="background:transparent; border-color:transparent; box-shadow:none;"></div>');
+            }
+
+            // Células dos dias
+            for(let dia = 1; dia <= diasNoMes; dia++) {
+                // Monta a string YYYY-MM-DD segura para o dia atual no loop
+                const dataStringCell = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+                const isHoje = dataStringCell === hojeLocal;
+
+                let htmlPills = '';
+                
+                // Busca projetos que têm prazo para ESTE dia
+                const projsDoDia = projetosFiltrados.filter(p => {
+                    if(!p.prazo_data) return false;
+                    return p.prazo_data.split('T')[0] === dataStringCell && p.status !== 'Finalizado' && p.status !== 'Cancelado';
+                });
+
+                projsDoDia.forEach(p => {
+                    const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
+                    // Se estiver atrasado (dia do prazo é anterior a hoje), pinta de vermelho. Se é hoje ou futuro, pinta com a cor do status
+                    const isAtrasado = (dataStringCell < hojeLocal);
+                    const pillCor = isAtrasado ? '#ef4444' : colInfo.cor;
+
+                    htmlPills += `
+                        <div class="cal-proj-pill" style="background: ${pillCor};" onclick="abrirDetalhes('${p.id}', event)">
+                            <span style="font-weight: 800;">${p.nome_projeto}</span>
+                            <span style="font-size: 8px; font-weight: 500; text-transform: uppercase;">${p.responsavel}</span>
+                        </div>
+                    `;
+                });
+
+                grid.insertAdjacentHTML('beforeend', `
+                    <div class="cal-cell ${isHoje ? 'today' : ''}">
+                        <div class="cal-date-number">${dia}</div>
+                        ${htmlPills}
+                    </div>
+                `);
+            }
         }
 
 
@@ -1128,19 +1342,24 @@
         }
 
         function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
+            const selectAtiv = document.getElementById(`select-${id}`);
+            const tarefaEscolhida = selectAtiv ? selectAtiv.value : null;
+            if(!tarefaEscolhida) { showToast("Selecione uma atividade antes de iniciar o timer.", "error"); return; }
+            iniciarTimerDireto(id, nomeProjeto, areaProjeto, tarefaEscolhida, baseSegundos);
+        }
+
+        // NOVA FUNÇÃO: Acionada diretamente pelo "Meu Dia", sem precisar da caixa de seleção
+        function iniciarTimerDireto(id, nomeProjeto, areaProjeto, tarefaEscolhida, baseSegundos) {
             if (activeTimerData && activeTimerData.id === id) {
                 if(activeTimerData.paused) togglePauseTimer(); else pararTimer();
                 return;
             }
             if (activeTimerData && activeTimerData.id !== id) { showToast(`Você já tem um timer ativo em outro projeto. Finalize-o primeiro!`, "error"); return; }
 
-            const selectAtiv = document.getElementById(`select-${id}`);
-            const tarefaEscolhida = selectAtiv.value;
-            if(!tarefaEscolhida) { showToast("Selecione uma atividade antes de iniciar o timer.", "error"); return; }
             const proj = projetosGlobais.find(p => p.id === id);
 
             activeTimerData = {
-                id: id, nome: nomeProjeto, area: areaProjeto, tarefa: tarefaEscolhida, colaborador: proj.responsavel,
+                id: id, nome: nomeProjeto, area: areaProjeto, tarefa: tarefaEscolhida, colaborador: proj ? proj.responsavel : USUARIO_LOGADO,
                 baseSegundosOriginal: baseSegundos, sessaoAtualSegundos: 0, startTime: Date.now(), isoInicio: new Date().toISOString(), paused: false
             };
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
