@@ -58,21 +58,27 @@ def listar_projetos():
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = res_projetos.data
         
+        # 1. Busca os tempos
         res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
         tempos_agrupados = {}
         for log in res_tempo.data:
-            pid = log['projeto_id']
+            # BLINDAGEM: Força o ID a ser string para evitar incompatibilidade
+            pid = str(log['projeto_id'])
             tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + log['tempo_segundos']
             
+        # 2. Busca notificações não lidas
         res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
         unread_counts = {}
         for c in res_unread.data:
-            pid = c['projeto_id']
+            # BLINDAGEM: Força o ID a ser string
+            pid = str(c['projeto_id'])
             unread_counts[pid] = unread_counts.get(pid, 0) + 1
             
+        # 3. Consolida os dados nos projetos
         for p in projetos:
-            p['tempo_total_segundos'] = tempos_agrupados.get(p['id'], 0)
-            p['qtd_nao_lidos'] = unread_counts.get(p['id'], 0)
+            pid_str = str(p['id']) # Garante que está buscando a string correta
+            p['tempo_total_segundos'] = tempos_agrupados.get(pid_str, 0)
+            p['qtd_nao_lidos'] = unread_counts.get(pid_str, 0)
             
         return jsonify({"status": "sucesso", "projetos": projetos}), 200
     except Exception as e:
