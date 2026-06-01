@@ -36,12 +36,9 @@
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: 0.8; }
 
-        .bell-container, .btn-meu-dia { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
-        .bell-container:hover, .btn-meu-dia:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
+        .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
+        .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
         .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
-
-        .btn-meu-dia { background: var(--primary-purple); color: white; width: auto; padding: 0 16px; border-radius: 50px !important; font-size: 12px; font-weight: 800; gap: 6px;}
-        .btn-meu-dia:hover { background: var(--text-main); color: white;}
 
         .notifications-dropdown {
             position: fixed; top: 75px; right: 40px; width: 340px;
@@ -74,16 +71,32 @@
 
         .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
 
-        .view-switcher { display: flex; gap: 20px; padding: 0 40px 15px 40px; border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; }
-        .view-tab { font-size: 13px; font-weight: 800; color: var(--text-muted); cursor: pointer; padding-bottom: 10px; border-bottom: 3px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase;}
+        .view-switcher { 
+            display: flex; gap: 20px; padding: 0 40px 15px 40px; 
+            border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
+        }
+        .view-tab { 
+            font-size: 13px; font-weight: 800; color: var(--text-muted); 
+            cursor: pointer; padding-bottom: 10px; border-bottom: 3px solid transparent; 
+            transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase;
+        }
         .view-tab:hover { color: var(--primary-purple); }
         .view-tab.active { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
 
         .filter-bar { padding: 0 40px 15px 40px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-        .filter-input { padding: 10px 20px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s;}
+        .filter-input { 
+            padding: 10px 20px; font-size: 12px; font-weight: 600; color: var(--text-main);
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
+            border-radius: 50px !important; outline: none; cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s;
+        }
         .filter-input:focus { background: #fff; box-shadow: 0 4px 15px rgba(115, 113, 255, 0.1); }
         
-        .date-wrapper, .filter-checkbox-wrapper { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 5px 20px; border-radius: 50px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.03);}
+        .date-wrapper, .filter-checkbox-wrapper {
+            display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px); padding: 5px 20px; border-radius: 50px !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
         .date-wrapper span, .filter-checkbox-wrapper span { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;}
         .filter-date { background: transparent; font-size: 12px; font-weight: 600; outline: none; color: var(--text-main); cursor: pointer; }
         
@@ -92,76 +105,54 @@
         .filter-checkbox-wrapper input { cursor: pointer; width: 14px; height: 14px; accent-color: #3b82f6;}
         .filter-checkbox-wrapper span { color: #3b82f6; font-size: 11px; letter-spacing: 0.5px;}
 
-        .btn-limpar { background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; border-radius: 50px !important; padding: 10px 20px; transition: 0.2s; border: 1px solid #e4e4e7;}
+        .btn-limpar {
+            background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 800;
+            cursor: pointer; text-transform: uppercase; border-radius: 50px !important; padding: 10px 20px;
+            transition: 0.2s; border: 1px solid #e4e4e7;
+        }
         .btn-limpar:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
 
         .kanban-board { display: flex; padding: 0 40px 30px 40px; gap: 20px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
         .kanban-column { background: transparent; min-width: 320px; width: 320px; display: flex; flex-direction: column; max-height: 100%; }
+        
         .column-header { padding: 0 0 15px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .column-title { font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
         .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
+
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
 
+        /* LIST VIEW BOARD APRIMORADO */
         .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
         .list-table { width: 100%; border-collapse: collapse; min-width: 900px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
         .list-table th { text-align: left; padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e4e4e7; background: rgba(255,255,255,0.8);}
         .list-table td { padding: 15px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid #f4f4f5; vertical-align: middle; transition: 0.2s; cursor: pointer; }
+        
+        /* Fundo branco ao passar o mouse (sem a barra roxa) */
         .list-table tr:hover td { background-color: #ffffff; }
+        
         .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
 
-        .status-pill-select { -webkit-appearance: none; -moz-appearance: none; appearance: none; border: none; padding: 6px 14px; border-radius: 50px !important; font-size: 10px; font-weight: 800; cursor: pointer; color: white; outline: none; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s;}
+        /* PÍLULA DE STATUS INTERATIVA (SELECT) */
+        .status-pill-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 50px !important;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            color: white;
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: 0.2s;
+        }
         .status-pill-select:hover { transform: scale(1.05); }
         .status-pill-select option { background: white; color: var(--text-main); font-weight: 600; text-transform: none; }
-
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(255,255,255,0.7); padding: 15px 25px; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
-        .calendar-nav { display: flex; gap: 10px; align-items: center; }
-        .btn-cal-nav { background: #fff; border: 1px solid #e4e4e7; width: 36px; height: 36px; border-radius: 50% !important; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-main); transition: 0.2s;}
-        .btn-cal-nav:hover { background: var(--primary-purple); color: #fff; border-color: var(--primary-purple);}
-        .cal-month-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px;}
-        
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-        .cal-day-header { text-align: center; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; padding-bottom: 10px;}
-        .cal-cell { background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); min-height: 140px; max-height: 250px; overflow-y: auto; border-radius: 12px !important; padding: 10px; border: 1px solid transparent; display: flex; flex-direction: column; gap: 6px;}
-        .cal-cell.today { border-color: var(--primary-purple); background: #fff; box-shadow: 0 4px 20px rgba(115, 113, 255, 0.1); }
-        .cal-date-number { font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 5px; text-align: right;}
-        .cal-cell.today .cal-date-number { color: var(--primary-purple); font-size: 14px;}
-        
-        .cal-proj-pill { background: var(--text-main); color: white; padding: 6px 8px; border-radius: 6px !important; font-size: 10px; font-weight: 600; line-height: 1.2; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-        .cal-proj-pill:hover { transform: scale(1.02); }
-        .cal-proj-pill.atrasado { background: #ef4444; }
-
-        .cal-tasks-area { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; border-top: 1px dashed #e4e4e7; padding-top: 8px; }
-        .cal-task-item { display: flex; align-items: center; gap: 6px; font-size: 10px; background: #fff; padding: 6px; border-radius: 6px !important; border: 1px solid #e4e4e7; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
-        .cal-task-item.concluida { opacity: 0.5; background: #f4f4f5; }
-        .cal-task-item.concluida .cal-task-content { text-decoration: line-through; color: var(--text-muted); }
-        .cal-task-check { width: 16px; height: 16px; border: 1px solid #d4d4d8; border-radius: 4px !important; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; background: #fff; transition: 0.2s;}
-        .cal-task-item.concluida .cal-task-check { background: #10b981; border-color: #10b981; color: white; }
-        .cal-task-content { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); font-weight: 600; }
-        .cal-task-play { cursor: pointer; color: var(--text-muted); transition: 0.2s; display: flex; align-items: center;}
-        .cal-task-play:hover { color: var(--accent-lime); transform: scale(1.1);}
-
-        .meu-dia-panel { position: fixed; right: -420px; top: 70px; width: 420px; height: calc(100vh - 70px); background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); box-shadow: -10px 0 40px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 1000; display: flex; flex-direction: column; border-left: 1px solid #e4e4e7; }
-        .meu-dia-panel.open { right: 0; }
-        .md-header { padding: 25px 30px; border-bottom: 1px solid #e4e4e7; display: flex; justify-content: space-between; align-items: center; background: #fff;}
-        .md-header h2 { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px;}
-        .md-body { flex-grow: 1; padding: 25px 30px; overflow-y: auto; background: #fcfcfc;}
-        
-        .md-task-card { background: #fff; border: 1px solid #e4e4e7; padding: 15px; border-radius: 12px !important; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
-        .md-task-card:hover { border-color: var(--primary-purple); box-shadow: 0 4px 15px rgba(115, 113, 255, 0.1);}
-        .md-task-card.concluida { opacity: 0.6; }
-        .md-task-card.concluida .md-task-title { text-decoration: line-through; color: var(--text-muted);}
-        
-        .md-checkbox { width: 22px; height: 22px; border: 2px solid #d4d4d8; border-radius: 6px !important; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; flex-shrink: 0; background: #fff;}
-        .md-task-card.concluida .md-checkbox { background: #10b981; border-color: #10b981; color: white;}
-        
-        .md-task-info { flex-grow: 1; display: flex; flex-direction: column; gap: 2px;}
-        .md-task-title { font-size: 13px; font-weight: 800; color: var(--text-main); line-height: 1.2;}
-        .md-task-proj { font-size: 10px; font-weight: 600; color: var(--primary-purple); text-transform: uppercase;}
-        
-        .md-play-btn { background: #f4f4f5; color: var(--text-main); width: 32px; height: 32px; border-radius: 50% !important; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;}
-        .md-play-btn:hover { background: var(--accent-lime); color: var(--text-main); transform: scale(1.1);}
-        .md-task-card.concluida .md-play-btn { display: none; }
-        .md-add-area { padding: 25px 30px; border-top: 1px solid #e4e4e7; background: #fff;}
 
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
@@ -172,8 +163,16 @@
         .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
         .card.atrasado .card-nome { color: #991b1b; }
 
-        .notification-dot { position: absolute; top: -6px; right: -6px; width: 14px; height: 14px; background-color: var(--accent-pink); border-radius: 50% !important; border: 2px solid var(--bg-board); animation: pulse-dot 2s infinite; z-index: 5;}
-        @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.6); } 70% { box-shadow: 0 0 0 6px rgba(255, 67, 192, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } }
+        .notification-dot {
+            position: absolute; top: -6px; right: -6px; width: 14px; height: 14px; 
+            background-color: var(--accent-pink); border-radius: 50% !important;
+            border: 2px solid var(--bg-board); animation: pulse-dot 2s infinite; z-index: 5;
+        }
+        @keyframes pulse-dot { 
+            0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.6); } 
+            70% { box-shadow: 0 0 0 6px rgba(255, 67, 192, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } 
+        }
 
         .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;}
         .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;}
@@ -199,7 +198,14 @@
         .btn-play.parar { background-color: var(--accent-pink); color: white; animation: pulse 1.5s infinite; }
         .btn-play:disabled { opacity: 0.7; cursor: wait; animation: none; }
 
-        .floating-player { position: fixed; bottom: 30px; right: 30px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px); padding: 15px 25px; border-radius: 50px !important; display: flex; align-items: center; gap: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 9999; color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .floating-player {
+            position: fixed; bottom: 30px; right: 30px;
+            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px);
+            padding: 15px 25px; border-radius: 50px !important;
+            display: flex; align-items: center; gap: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 9999;
+            color: white; border: 1px solid rgba(255,255,255,0.1);
+        }
         .fp-info { display: flex; flex-direction: column; max-width: 250px; }
         .fp-info span { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fp-info strong { font-size: 14px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
@@ -226,29 +232,37 @@
         .comentarios-section { margin-top: 25px; border-top: 1px solid #e4e4e7; padding-top: 20px; }
         .comentarios-lista { display: flex; flex-direction: column; gap: 18px; margin-bottom: 20px; max-height: 350px; overflow-y: auto; padding-right: 10px;}
         .comentario-thread { display: flex; flex-direction: column; gap: 8px; }
+        
         .avatar-circle { width: 34px; height: 34px; min-width: 34px; background: var(--light-purple); color: var(--primary-purple); font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; letter-spacing: 0.5px;}
+        
         .chat-bubble { background: #ffffff; padding: 16px; border-radius: 0 12px 12px 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f4f4f5; transition: 0.3s; width: 100%;}
         .chat-bubble.resposta { border-radius: 12px 0 12px 12px !important; background: #fafafa; border-right: 3px solid var(--light-purple); border-left: none;}
         .chat-bubble.unread-highlight { border-left: 3px solid var(--accent-pink); background: #fffaff; box-shadow: 0 4px 20px rgba(255, 67, 192, 0.08); }
+
         .comentario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .comentario-autor { font-size: 13px; font-weight: 800; color: var(--text-main); }
         .comentario-data { font-size: 9px; font-weight: 600; color: var(--text-muted); }
         .comentario-texto { font-size: 13px; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px;}
+        
         .comentario-acoes { display: flex; gap: 15px; align-items: center; }
         .btn-comentario-acao { background: none; border: none; color: var(--text-muted); font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 4px; padding: 0; transition: 0.2s;}
         .btn-comentario-acao:hover { color: var(--primary-purple); }
+        
         .btn-ciente { background: #dcfce7; color: #166534; border: none; font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 50px !important; cursor: pointer; display: flex; align-items: center; gap: 4px; text-transform: uppercase; margin-left: auto; transition: 0.2s; box-shadow: 0 2px 10px rgba(22, 101, 52, 0.1);}
         .btn-ciente:hover { background: #bbf7d0; transform: translateY(-1px);}
 
         .comentario-input-area { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--glass-bg); padding: 10px; border-radius: 50px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
         .comentario-textarea { flex-grow: 1; border: none; background: transparent; outline: none; font-size: 13px; font-family: 'Inter', sans-serif; resize: none; height: 38px; padding: 10px 15px; color: var(--text-main);}
+        
         .btn-enviar-comentario { background: var(--primary-purple); color: white; border: none; width: 40px; height: 40px; border-radius: 50% !important; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
         .btn-enviar-comentario:hover { background: var(--text-main); transform: scale(1.05);}
         .btn-enviar-comentario span { font-size: 18px; margin-left: 2px;}
+        
         .btn-cancelar-edicao { background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 50px !important; cursor: pointer; font-weight: 800; font-size: 11px; text-transform: uppercase; }
         .btn-cancelar-edicao:hover { background: #f4f4f5; }
         .botoes-form-comentario { display: flex; gap: 8px; justify-content: flex-end; width: 100%; margin-top: 10px;}
 
+        /* TOASTS PREMIUM */
         .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); color: white; padding: 12px 24px; border-radius: 50px !important; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; pointer-events: auto;}
         .toast.error { background: rgba(239, 68, 68, 0.95); }
@@ -268,10 +282,6 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 15px;">
-            <div class="btn-meu-dia" onclick="toggleMeuDia()" title="Planear Agenda">
-                <span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Agenda
-            </div>
-
             <div class="bell-container" onclick="toggleDropdownNotificacoes()" title="Notificações Pendentes">
                 <span class="material-symbols-rounded" style="font-size: 22px;">notifications</span>
                 <div class="bell-badge" id="sinoNotificacoes" style="display: none;">0</div>
@@ -284,36 +294,6 @@
             <button onclick="window.location.href='/logout'" class="btn-logout" title="Sair do Sistema">
                 <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
             </button>
-        </div>
-    </div>
-
-    <div id="meuDiaPanel" class="meu-dia-panel">
-        <div class="md-header">
-            <h2><span class="material-symbols-rounded" style="color: var(--primary-purple);">view_timeline</span> Planeamento</h2>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="date" id="mdDataFiltro" class="filter-input" style="padding: 6px 12px; font-size: 11px;" onchange="carregarTarefasMeuDia()">
-                <button class="btn-comentario-acao" onclick="toggleMeuDia()" style="font-size: 24px; color: var(--text-muted);">&times;</button>
-            </div>
-        </div>
-        <div class="md-body" id="mdListaTarefas">
-            <p style="text-align: center; color: #999; font-size: 12px; margin-top: 20px;">Nenhuma tarefa planeada para este dia.</p>
-        </div>
-        <div class="md-add-area">
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <div class="input-group" style="flex-grow: 1; margin-bottom: 0;">
-                    <label>Para qual dia?</label>
-                    <input type="date" id="mdDataNovaTarefa" class="input-item" style="padding: 10px;">
-                </div>
-            </div>
-            <div class="input-group" style="margin-bottom: 10px;">
-                <label>Vincular a qual projeto?</label>
-                <select id="mdProjetoSelect" class="input-item" style="padding: 10px;"></select>
-            </div>
-            <div class="input-group" style="margin-bottom: 10px;">
-                <label>Qual a atividade?</label>
-                <select id="mdAtividadeSelect" class="input-item" style="padding: 10px;"></select>
-            </div>
-            <button class="btn-acao" style="width: 100%; justify-content: center; padding: 12px;" onclick="adicionarTarefaDia()">ADICIONAR TAREFA</button>
         </div>
     </div>
 
@@ -338,7 +318,7 @@
     <div class="view-switcher">
         <div class="view-tab active" onclick="mudarVisao('kanban')" id="tab-kanban"><span class="material-symbols-rounded" style="font-size: 18px;">view_kanban</span> Kanban</div>
         <div class="view-tab" onclick="mudarVisao('lista')" id="tab-lista"><span class="material-symbols-rounded" style="font-size: 18px;">format_list_bulleted</span> Lista</div>
-        <div class="view-tab" onclick="mudarVisao('calendario')" id="tab-calendario"><span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Calendário</div>
+        <div class="view-tab" onclick="showToast('A visão calendário será liberada em breve!', 'default')" id="tab-calendario"><span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Calendário</div>
     </div>
 
     <div class="filter-bar">
@@ -349,22 +329,27 @@
             <option value="prazo_curto">Prazo: Mais Próximo</option>
             <option value="prazo_longo">Prazo: Mais Distante</option>
         </select>
+
         <label class="filter-checkbox-wrapper">
             <input type="checkbox" id="filtroScrum" onchange="renderizarProjetos()">
             <span>Apenas Scrum</span>
         </label>
+        
         <select id="filtroCliente" class="filter-input" onchange="renderizarProjetos()">
             <option value="">Todos os Clientes</option>
         </select>
+        
         <select id="filtroResp" class="filter-input" onchange="renderizarProjetos()">
             <option value="">Todos os Responsáveis</option>
         </select>
+        
         <div class="date-wrapper">
             <span>DE:</span>
             <input type="date" id="filtroDataInicio" class="filter-date" onchange="renderizarProjetos()">
             <span>ATÉ:</span>
             <input type="date" id="filtroDataFim" class="filter-date" onchange="renderizarProjetos()">
         </div>
+        
         <button class="btn-limpar" onclick="limparFiltros()">Limpar Filtros</button>
     </div>
 
@@ -386,25 +371,7 @@
         </table>
     </div>
 
-    <div class="list-view-container" id="calendarViewDinamico">
-        <div class="calendar-header">
-            <div class="cal-month-title" id="calMonthTitle">Mês 2026</div>
-            <div class="calendar-nav">
-                <button class="btn-cal-nav" onclick="mudarMes(-1)"><span class="material-symbols-rounded">chevron_left</span></button>
-                <button class="btn-cal-nav" onclick="irParaHoje()" style="width: auto; padding: 0 15px; border-radius: 50px !important; font-size: 11px; font-weight: 800; text-transform: uppercase;">Hoje</button>
-                <button class="btn-cal-nav" onclick="mudarMes(1)"><span class="material-symbols-rounded">chevron_right</span></button>
-            </div>
-        </div>
-        <div class="calendar-grid">
-            <div class="cal-day-header">Dom</div>
-            <div class="cal-day-header">Seg</div>
-            <div class="cal-day-header">Ter</div>
-            <div class="cal-day-header">Qua</div>
-            <div class="cal-day-header">Qui</div>
-            <div class="cal-day-header">Sex</div>
-            <div class="cal-day-header">Sáb</div>
-        </div>
-    </div>
+    <div class="list-view-container" id="calendarViewDinamico"></div>
 
 
     <div id="floatingPlayer" class="floating-player" style="display: none;">
@@ -479,7 +446,9 @@
                 <h2>Editar Projeto</h2>
                 <button class="close-btn" onclick="fecharModalEdicao()">X</button>
             </div>
+            
             <input type="hidden" id="editProjId">
+            
             <div class="input-group">
                 <label>Empresa / Cliente / Vaga</label>
                 <input type="text" id="editProjEmpresa" class="input-item" required>
@@ -507,18 +476,19 @@
                 <label>Prazo Limite (Data)</label>
                 <input type="date" id="editProjPrazo" class="input-item">
             </div>
+            
             <div class="input-group checkbox-group" onclick="document.getElementById('editProjScrum').click()">
                 <input type="checkbox" id="editProjScrum" onclick="event.stopPropagation()">
                 <label><span class="badge-scrum" style="font-size: 10px;">SCRUM</span> Marcar como projeto ágil (Sprint)</label>
             </div>
+            
             <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
         </div>
     </div>
 
     <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
-        <div class="modal-content" style="max-width: 1000px; background: white; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
-            
-            <div class="modal-header" style="padding: 40px 40px 20px 40px; margin-bottom: 0; border-bottom: 1px solid #e4e4e7;">
+        <div class="modal-content" style="max-width: 600px; background: white;">
+            <div class="modal-header" style="margin-bottom: 20px;">
                 <div>
                     <span id="detArea" style="color: var(--primary-purple); font-size: 12px; font-weight: 800; text-transform: uppercase;"></span>
                     <h2 id="detNome">Nome do Projeto</h2>
@@ -526,49 +496,36 @@
                 <button class="close-btn" onclick="fecharModal('modalDetalhes')">X</button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr; flex-grow: 1;">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 20px; display: flex; gap: 15px;">
+                <span>Início: <b id="detDataInicio" style="color: var(--text-main);"></b></span>
+                <span>Conclusão/Pausa: <b id="detDataFim" style="color: var(--text-main);"></b></span>
+            </div>
+            
+            <div style="background: #1e1e1e; padding: 25px; color: white; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 30px !important;">
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-lime);">Tempo Total Dedicado</span>
+                <div style="font-size: 32px; font-weight: 900; font-family: monospace;" id="detTempoTotal">00:00:00</div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Histórico de Execução</h3>
+                <div id="listaHistorico" style="max-height: 150px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="comentarios-section">
+                <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--text-muted);">Mural e Atualizações</h3>
                 
-                <div style="padding: 30px 40px; max-height: 65vh; overflow-y: auto;">
-                    
-                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 20px; display: flex; gap: 15px;">
-                        <span>Início: <b id="detDataInicio" style="color: var(--text-main);"></b></span>
-                        <span>Conclusão/Pausa: <b id="detDataFim" style="color: var(--text-main);"></b></span>
-                    </div>
-                    
-                    <div style="background: #1e1e1e; padding: 25px; color: white; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 30px !important;">
-                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-lime);">Tempo Total Dedicado</span>
-                        <div style="font-size: 32px; font-weight: 900; font-family: monospace;" id="detTempoTotal">00:00:00</div>
-                    </div>
-
-                    <div style="margin-bottom: 15px;">
-                        <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Histórico de Execução</h3>
-                        <div id="listaHistorico" style="max-height: 150px; overflow-y: auto;"></div>
-                    </div>
-
-                    <div class="comentarios-section">
-                        <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--text-muted);">Mural e Atualizações</h3>
-                        <div class="comentarios-lista" id="listaComentarios"></div>
-                        <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
-                            <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização principal..."></textarea>
-                            <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar Comentário"><span class="material-symbols-rounded">send</span></button>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div style="padding: 30px 40px; background: #fcfcfc; border-left: 1px solid #e4e4e7; display: flex; flex-direction: column;">
-                    <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--text-muted);">Descrição / Anotações</h3>
-                    <textarea id="detAnotacoes" class="input-item" style="flex-grow: 1; min-height: 300px; resize: none; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.5; padding: 20px; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px !important; margin-bottom: 15px;" placeholder="Cole links de drives, descreva o escopo, requisitos do cliente..."></textarea>
-                    
-                    <button class="btn-acao" id="btnSalvarAnotacoes" style="width: 100%; justify-content: center; padding: 15px;" onclick="salvarAnotacoes()">SALVAR ANOTAÇÕES</button>
+                <div class="comentarios-lista" id="listaComentarios"></div>
+                
+                <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
+                    <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização principal..."></textarea>
+                    <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar Comentário"><span class="material-symbols-rounded">send</span></button>
                 </div>
             </div>
 
-            <div style="padding: 20px 40px; border-top: 1px solid #e4e4e7; display: flex; gap: 10px; background: #fff;">
+            <div style="display: flex; gap: 10px; width: 100%; margin-top: 25px;">
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #f4f4f5; color: var(--text-main); border: 1px solid #d4d4d8;" onclick="abrirModalEdicao(projIdEmFoco, event)">EDITAR PROJETO</button>
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
             </div>
-
         </div>
     </div>
 
@@ -646,18 +603,11 @@
         const cfg = WORKSPACES[QUADRO_ATUAL] || WORKSPACES['geral'];
 
         let projetosGlobais = [];
-        let tarefasGlobais = []; 
         let projIdEmFoco = null;
         let timerInterval = null;
         let activeTimerData = null;
         
         let visaoAtual = 'kanban'; 
-        let mesCalendarioAtual = new Date(); 
-
-        function getHojeISO() {
-            const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-            return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
-        }
 
         function showToast(msg, type = 'default') {
             const container = document.getElementById('toastContainer');
@@ -678,9 +628,10 @@
             document.getElementById('modalEditarProjeto').style.display = 'none';
             if(projIdEmFoco) { document.getElementById('modalDetalhes').style.display = 'flex'; }
         }
-        function fecharModalFundoEdicao(event) { if(event.target.id === 'modalEditarProjeto') fecharModalEdicao(); }
-        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
-        function fecharModalFundo(event, id) { if(event.target.id === id) fecharModal(id); }
+
+        function fecharModalFundoEdicao(event) {
+            if(event.target.id === 'modalEditarProjeto') { fecharModalEdicao(); }
+        }
 
         function mudarVisao(novaVisao) {
             visaoAtual = novaVisao;
@@ -700,9 +651,6 @@
             const selectArea = document.getElementById('projArea');
             selectArea.innerHTML = cfg.areasPermitidas.map(a => `<option value="${a}">${a}</option>`).join('');
 
-            const mdAtiv = document.getElementById('mdAtividadeSelect');
-            mdAtiv.innerHTML = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
-
             const board = document.getElementById('boardDinamico');
             board.innerHTML = '';
             cfg.colunas.forEach(col => {
@@ -717,9 +665,6 @@
                 </div>`;
                 board.insertAdjacentHTML('beforeend', html);
             });
-            
-            document.getElementById('mdDataFiltro').value = getHojeISO();
-            document.getElementById('mdDataNovaTarefa').value = getHojeISO();
         }
 
         function atualizarDropdownsFiltro(projetosWorkspace) {
@@ -735,14 +680,6 @@
             const valR = selectResp.value;
             selectResp.innerHTML = '<option value="">Todos os Responsáveis</option>' + responsaveis.map(r => `<option value="${r}">${r}</option>`).join('');
             selectResp.value = valR;
-
-            const selectMdProj = document.getElementById('mdProjetoSelect');
-            const meusProjs = projetosWorkspace.filter(p => p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase() && p.status !== 'Finalizado' && p.status !== 'Cancelado');
-            if(meusProjs.length > 0) {
-                selectMdProj.innerHTML = meusProjs.map(p => `<option value="${p.id}">${p.nome_projeto}</option>`).join('');
-            } else {
-                selectMdProj.innerHTML = '<option value="">Nenhum projeto ativo para si</option>';
-            }
         }
 
         function limparFiltros() {
@@ -755,10 +692,123 @@
             renderizarProjetos();
         }
 
-        async function carregarProjetosETarefas() {
-            await carregarProjetos();
-            await carregarTarefasGlobais();
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        function fecharModalFundo(event, id) { if(event.target.id === id) fecharModal(id); }
+        
+        function abrirModalProjeto() {
+            document.getElementById('projEmpresa').value = '';
+            document.getElementById('projNome').value = '';
+            document.getElementById('projPrazo').value = '';
+            document.getElementById('projScrum').checked = false;
+            document.getElementById('modalFormProjeto').style.display = 'flex';
+        }
+
+        function abrirModalEdicao(id, event) {
+            if(event) event.stopPropagation(); 
+            const proj = projetosGlobais.find(p => p.id === id);
+            if(!proj) return;
+            
+            fecharModal('modalDetalhes'); 
+
+            document.getElementById('editProjId').value = proj.id;
+            document.getElementById('editProjEmpresa').value = proj.empresa;
+            document.getElementById('editProjNome').value = proj.nome_projeto;
+            document.getElementById('editProjResp').value = proj.responsavel;
+            document.getElementById('editProjScrum').checked = proj.is_scrum || false;
+            
+            let prazoFormatado = '';
+            if(proj.prazo_data) prazoFormatado = proj.prazo_data.split('T')[0];
+            document.getElementById('editProjPrazo').value = prazoFormatado;
+            
+            document.getElementById('modalEditarProjeto').style.display = 'flex';
+        }
+
+        async function salvarEdicaoProjeto() {
+            const id = document.getElementById('editProjId').value;
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.innerText = "SALVANDO..."; btn.disabled = true;
+
+            const dados = {
+                empresa: document.getElementById('editProjEmpresa').value,
+                nome_projeto: document.getElementById('editProjNome').value,
+                responsavel: document.getElementById('editProjResp').value,
+                prazo_data: document.getElementById('editProjPrazo').value || null,
+                is_scrum: document.getElementById('editProjScrum').checked
+            };
+
+            try {
+                await fetch(`/api/projetos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+                await carregarProjetos();
+                fecharModalEdicao(); 
+                showToast("Projeto atualizado com sucesso", "success");
+            } catch(e) { showToast("Erro ao editar projeto", "error"); } 
+            finally { btn.innerText = "SALVAR ALTERAÇÕES"; btn.disabled = false; }
+        }
+
+        function permitirSoltar(ev) { ev.preventDefault(); }
+        function entrarDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+        function sairDrop(ev) { ev.currentTarget.classList.remove('drag-over'); }
+        function arrastarCard(ev) { 
+            if(activeTimerData && activeTimerData.id === ev.target.id) { 
+                ev.preventDefault(); showToast("Pare o timer ativo antes de mover o card.", "error"); return; 
+            }
+            ev.dataTransfer.setData("text", ev.target.id); 
+            setTimeout(() => ev.target.classList.add('dragging'), 0); 
+            ev.stopPropagation(); 
+        }
+        function finalizarArrasto(ev) { ev.target.classList.remove('dragging'); }
+        
+        async function soltarCard(ev) {
+            ev.preventDefault();
+            var id = ev.dataTransfer.getData("text");
+            var card = document.getElementById(id);
+            var destino = ev.currentTarget;
+            destino.classList.remove('drag-over');
+            
+            if(destino) { destino.appendChild(card); }
+            atualizarContadores();
+
+            const colunaContainer = destino.closest('.kanban-column');
+            const novoStatus = colunaContainer.getAttribute('data-status');
+            
+            try {
+                await fetch(`/api/projetos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+            } catch (error) { 
+                console.error("Erro ao mover card", error); 
+                showToast("Erro de conexão ao mover o card.", "error");
+            }
+        }
+
+        // --- MÁGICA: ALTERAR STATUS DIRETO NA LISTA ---
+        async function alterarStatusLista(projetoId, novoStatus) {
+            showToast("Atualizando status...", "default");
+            
+            // Atualiza visualmente na hora (Optimistic UI) para não precisar piscar a tela inteira
+            const proj = projetosGlobais.find(p => p.id === projetoId);
+            if(proj) proj.status = novoStatus;
             renderizarProjetos();
+
+            try {
+                await fetch(`/api/projetos/${projetoId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                showToast("Status alterado com sucesso", "success");
+            } catch (error) { 
+                console.error(error);
+                showToast("Erro ao mudar status no servidor", "error");
+            }
+        }
+
+        function atualizarContadores() {
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.querySelector('.col-count').innerText = col.querySelectorAll('.card').length;
+            });
         }
 
         async function carregarProjetos() {
@@ -766,116 +816,68 @@
                 const res = await fetch('/api/projetos');
                 if (res.status === 401) { window.location.href = '/login'; return; }
                 const data = await res.json();
-                if(data.status === 'sucesso') { projetosGlobais = data.projetos; }
-            } catch(e) { console.error("Erro ao puxar projetos", e); }
+                if(data.status === 'sucesso') {
+                    projetosGlobais = data.projetos;
+                    renderizarProjetos();
+                }
+            } catch(e) { console.error("Erro ao puxar dados", e); }
         }
 
-        async function carregarTarefasGlobais() {
+        async function carregarNotificacoes() {
             try {
-                const res = await fetch('/api/planejamento/todos');
+                const res = await fetch('/api/notificacoes');
                 const data = await res.json();
-                if(data.status === 'sucesso') { tarefasGlobais = data.tarefas; }
-            } catch(e) { console.error("Erro ao puxar tarefas", e); }
-        }
+                if(data.status === 'sucesso') {
+                    const container = document.getElementById('listaNotificacoesDropdown');
+                    const sino = document.getElementById('sinoNotificacoes');
 
-        function toggleMeuDia() {
-            const panel = document.getElementById('meuDiaPanel');
-            const isOpen = panel.classList.contains('open');
-            if(isOpen) {
-                panel.classList.remove('open');
-            } else {
-                panel.classList.add('open');
-                carregarTarefasMeuDia();
-            }
-        }
+                    if(data.notificacoes && data.notificacoes.length > 0) {
+                        sino.innerText = data.notificacoes.length;
+                        sino.style.display = 'flex';
 
-        function carregarTarefasMeuDia() {
-            const dataFiltro = document.getElementById('mdDataFiltro').value;
-            const container = document.getElementById('mdListaTarefas');
-            
-            const tarefasDoDia = tarefasGlobais.filter(t => t.data_planejada === dataFiltro && t.colaborador === USUARIO_LOGADO);
-            
-            if(tarefasDoDia.length > 0) {
-                container.innerHTML = tarefasDoDia.map(t => {
-                    const proj = projetosGlobais.find(p => p.id === t.projeto_id);
-                    const nomeProj = proj ? proj.nome_projeto : 'Projeto Removido';
-                    const areaProj = proj ? proj.area : 'Geral';
-                    const isConcluida = t.status === 'Concluído';
-                    
-                    return `
-                    <div class="md-task-card ${isConcluida ? 'concluida' : ''}" id="task-${t.id}">
-                        <div class="md-checkbox" onclick="alterarStatusTarefa('${t.id}', '${isConcluida ? 'Pendente' : 'Concluído'}')">
-                            ${isConcluida ? '<span class="material-symbols-rounded" style="font-size:16px;">check</span>' : ''}
-                        </div>
-                        <div class="md-task-info">
-                            <span class="md-task-title">${t.atividade}</span>
-                            <span class="md-task-proj">${nomeProj}</span>
-                        </div>
-                        <div class="md-play-btn" title="Iniciar Atividade" onclick="iniciarTimerDireto('${t.projeto_id}', '${nomeProj}', '${areaProj}', '${t.atividade}', ${proj ? proj.tempo_total_segundos : 0})">
-                            <span class="material-symbols-rounded" style="font-size:20px;">play_arrow</span>
-                        </div>
-                    </div>
-                    `;
-                }).join('');
-            } else {
-                container.innerHTML = '<p style="text-align:center; font-size:12px; color:#999; margin-top:20px;">Nenhuma tarefa planeada para este dia.</p>';
-            }
-        }
-
-        async function adicionarTarefaDia() {
-            const projeto_id = document.getElementById('mdProjetoSelect').value;
-            const atividade = document.getElementById('mdAtividadeSelect').value;
-            const data_planejada = document.getElementById('mdDataNovaTarefa').value;
-            
-            if(!projeto_id || !atividade || !data_planejada) { showToast("Preencha todos os campos.", "error"); return; }
-
-            try {
-                await fetch('/api/planejamento', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ projeto_id, atividade, data_planejada })
-                });
-                await carregarTarefasGlobais();
-                document.getElementById('mdDataFiltro').value = data_planejada; 
-                carregarTarefasMeuDia();
-                if(visaoAtual === 'calendario') renderizarProjetos();
-                showToast("Tarefa agendada com sucesso!", "success");
-            } catch(e) {
-                showToast("Erro ao agendar tarefa.", "error");
-            }
-        }
-
-        async function alterarStatusTarefa(id, novoStatus) {
-            const taskCard = document.getElementById('task-' + id);
-            if(taskCard) {
-                if(novoStatus === 'Concluído') {
-                    taskCard.classList.add('concluida');
-                    taskCard.querySelector('.md-checkbox').innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;">check</span>';
-                } else {
-                    taskCard.classList.remove('concluida');
-                    taskCard.querySelector('.md-checkbox').innerHTML = '';
+                        container.innerHTML = data.notificacoes.map(n => `
+                            <div class="notification-item" onclick="abrirModalPeloSino('${n.projeto_id}')">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                    <span class="notif-autor">${n.autor} comentou:</span>
+                                    <span class="notif-data">${new Date(n.criado_em).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <span class="notif-projeto">${n.nome_projeto}</span>
+                                <span class="notif-texto">"${n.texto}"</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        sino.style.display = 'none';
+                        container.innerHTML = `<div class="notif-empty">Você não tem novas notificações pendentes.</div>`;
+                    }
                 }
-            }
-            const calCard = document.getElementById('cal-task-' + id);
-            if(calCard) {
-                if(novoStatus === 'Concluído') {
-                    calCard.classList.add('concluida');
-                    calCard.querySelector('.cal-task-check').innerHTML = '<span class="material-symbols-rounded" style="font-size:10px;">check</span>';
-                    const pb = calCard.querySelector('.cal-task-play'); if (pb) pb.style.display = 'none';
-                } else {
-                    calCard.classList.remove('concluida');
-                    calCard.querySelector('.cal-task-check').innerHTML = '';
-                    const pb = calCard.querySelector('.cal-task-play'); if (pb) pb.style.display = 'flex';
-                }
-            }
+            } catch(e) { console.error("Erro no sino:", e); }
+        }
 
-            try {
-                await fetch(`/api/planejamento/${id}`, {
-                    method: 'PUT', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ status: novoStatus })
-                });
-                const tGlobal = tarefasGlobais.find(t => t.id == id);
-                if (tGlobal) tGlobal.status = novoStatus;
-            } catch(e) { showToast("Erro ao atualizar tarefa", "error"); }
+        function toggleDropdownNotificacoes() {
+            const dp = document.getElementById('dropdownNotificacoes');
+            dp.style.display = dp.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function abrirModalPeloSino(projetoId) {
+            document.getElementById('dropdownNotificacoes').style.display = 'none';
+            abrirDetalhes(projetoId, { target: document.createElement('div') }); 
+        }
+
+        function calcularDias(dataInicio, dataConclusao) {
+            if(!dataInicio) return 0;
+            const inicio = new Date(dataInicio);
+            const fim = dataConclusao ? new Date(dataConclusao) : new Date();
+            const dias = Math.floor(Math.abs(fim - inicio) / (1000 * 60 * 60 * 24));
+            return dias < 0 ? 0 : dias;
+        }
+
+        function formatarSegundosTick(segundos) {
+            let val = Number(segundos);
+            if (isNaN(val)) val = 0; 
+            const h = Math.floor(val / 3600);
+            const m = Math.floor((val % 3600) / 60);
+            const s = Math.floor(val % 60);
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
         function renderizarProjetos() {
@@ -921,9 +923,11 @@
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
 
-            if (visaoAtual === 'kanban') { renderizarKanban(projetosFiltrados); } 
-            else if (visaoAtual === 'lista') { renderizarLista(projetosFiltrados); } 
-            else if (visaoAtual === 'calendario') { renderizarCalendario(projetosFiltrados); }
+            if (visaoAtual === 'kanban') {
+                renderizarKanban(projetosFiltrados);
+            } else if (visaoAtual === 'lista') {
+                renderizarLista(projetosFiltrados);
+            }
             
             carregarNotificacoes(); 
             if(activeTimerData) iniciarRelogioVisual();
@@ -940,10 +944,12 @@
 
                 let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
+                
                 let htmlBolinha = hasUnread ? `<div class="notification-dot" title="Mensagens novas!"></div>` : '';
 
                 let isRodando = activeTimerData && activeTimerData.id === p.id && !activeTimerData.paused;
                 let isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
+                
                 let displayTempo = formatarSegundosTick(p.tempo_total_segundos || 0);
                 let options = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
 
@@ -956,7 +962,7 @@
                 
                 if (p.is_scrum) arrayBadges.push(`<span class="dias-aberto" style="background: #3b82f6; margin-bottom: 0;">SCRUM</span>`);
 
-                if (p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
+                if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
                     const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
                     const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
                     const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
@@ -1021,91 +1027,17 @@
             atualizarContadores();
         }
 
-        function mudarMes(delta) { mesCalendarioAtual.setMonth(mesCalendarioAtual.getMonth() + delta); renderizarProjetos(); }
-        function irParaHoje() { mesCalendarioAtual = new Date(); renderizarProjetos(); }
-
-        function renderizarCalendario(projetosFiltrados) {
-            const grid = document.querySelector('.calendar-grid');
-            const cells = grid.querySelectorAll('.cal-cell');
-            cells.forEach(c => c.remove());
-
-            const ano = mesCalendarioAtual.getFullYear();
-            const mes = mesCalendarioAtual.getMonth();
-            const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-            document.getElementById('calMonthTitle').innerText = `${nomesMeses[mes]} ${ano}`;
-
-            const primeiroDiaDoMes = new Date(ano, mes, 1).getDay();
-            const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-            const hojeLocal = getHojeISO();
-            const filtroResp = document.getElementById('filtroResp').value;
-
-            for(let i = 0; i < primeiroDiaDoMes; i++) {
-                grid.insertAdjacentHTML('beforeend', '<div class="cal-cell" style="background:transparent; border-color:transparent; box-shadow:none;"></div>');
-            }
-
-            for(let dia = 1; dia <= diasNoMes; dia++) {
-                const dataStringCell = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-                const isHoje = dataStringCell === hojeLocal;
-                
-                let htmlPills = '';
-                const projsDoDia = projetosFiltrados.filter(p => {
-                    if(!p.prazo_data) return false;
-                    return p.prazo_data.split('T')[0] === dataStringCell && p.status !== 'Finalizado' && p.status !== 'Cancelado';
-                });
-
-                projsDoDia.forEach(p => {
-                    const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
-                    const isAtrasado = (dataStringCell < hojeLocal);
-                    const pillCor = isAtrasado ? '#ef4444' : colInfo.cor;
-
-                    htmlPills += `
-                        <div class="cal-proj-pill" style="background: ${pillCor};" onclick="abrirDetalhes('${p.id}', event)">
-                            <span style="font-weight: 800;">${p.nome_projeto}</span>
-                            <span style="font-size: 8px; font-weight: 500; text-transform: uppercase;">${p.responsavel}</span>
-                        </div>
-                    `;
-                });
-
-                let tarefasDoDia = tarefasGlobais.filter(t => t.data_planejada === dataStringCell);
-                if (filtroResp) { tarefasDoDia = tarefasDoDia.filter(t => t.colaborador === filtroResp); }
-
-                let htmlTarefas = tarefasDoDia.map(t => {
-                    const isConcluida = t.status === 'Concluído';
-                    const proj = projetosGlobais.find(p => p.id === t.projeto_id);
-                    const nomeProj = proj ? proj.nome_projeto : 'Removido';
-                    const primeiroNome = t.colaborador.split(' ')[0];
-                    
-                    return `
-                    <div class="cal-task-item ${isConcluida ? 'concluida' : ''}" id="cal-task-${t.id}">
-                        <div class="cal-task-check" onclick="alterarStatusTarefa('${t.id}', '${isConcluida ? 'Pendente' : 'Concluído'}')">
-                            ${isConcluida ? '<span class="material-symbols-rounded" style="font-size:10px;">check</span>' : ''}
-                        </div>
-                        <div class="cal-task-content" title="${t.atividade} - ${nomeProj}">
-                            <strong>${primeiroNome}:</strong> ${t.atividade}
-                        </div>
-                        <div class="cal-task-play" style="display: ${isConcluida ? 'none' : 'flex'}" onclick="iniciarTimerDireto('${t.projeto_id}', '${nomeProj}', '${proj ? proj.area : ''}', '${t.atividade}', ${proj ? proj.tempo_total_segundos : 0})">
-                            <span class="material-symbols-rounded" style="font-size:14px;">play_arrow</span>
-                        </div>
-                    </div>`;
-                }).join('');
-
-                grid.insertAdjacentHTML('beforeend', `
-                    <div class="cal-cell ${isHoje ? 'today' : ''}">
-                        <div class="cal-date-number">${dia}</div>
-                        <div style="display:flex; flex-direction:column; gap:4px;">${htmlPills}</div>
-                        ${htmlTarefas ? `<div class="cal-tasks-area">${htmlTarefas}</div>` : ''}
-                    </div>
-                `);
-            }
-        }
-
         function renderizarLista(projetosFiltrados) {
             const tbody = document.getElementById('listBodyDinamico');
             tbody.innerHTML = '';
+
             projetosFiltrados.forEach(p => {
                 let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
                 let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
+
                 const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
+                const corStatus = colInfo.cor;
+
                 const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
 
                 let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
@@ -1115,47 +1047,78 @@
                     const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
                     dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
                     const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
+                    
                     const strData = new Date(p.prazo_data).toLocaleDateString('pt-BR');
-                    if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) { prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`; }
-                    else if (p.status === 'Finalizado' || p.status === 'Cancelado') { prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`; }
-                    else { prazoHtml = `<span>${strData}</span>`; }
+                    if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) {
+                        prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`;
+                    } else if (p.status === 'Finalizado' || p.status === 'Cancelado') {
+                        prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`;
+                    } else {
+                        prazoHtml = `<span>${strData}</span>`;
+                    }
                 }
 
                 let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
+                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
+
+                // A MÁGICA DO STATUS EDITÁVEL (PÍLULA)
                 let optionsStatus = cfg.colunas.map(c => `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`).join('');
-                let htmlStatusPill = `<select class="status-pill-select" style="background-color: ${colInfo.cor};" onclick="event.stopPropagation()" onchange="alterarStatusLista('${p.id}', this.value)">${optionsStatus}</select>`;
+                let htmlStatusPill = `
+                    <select class="status-pill-select" style="background-color: ${corStatus};" 
+                        onclick="event.stopPropagation()" 
+                        onchange="alterarStatusLista('${p.id}', this.value)">
+                        ${optionsStatus}
+                    </select>
+                `;
 
                 let html = `
                     <tr onclick="abrirDetalhes('${p.id}', event)">
-                        <td style="font-weight: 800;">${p.nome_projeto} ${bolinhaHtml}</td>
+                        <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
                         <td>${htmlStatusPill}</td>
                         <td style="color: var(--text-muted);">${p.empresa}</td>
-                        <td><div style="display:flex; align-items:center;"><div class="list-avatar">${iniciais}</div>${p.responsavel}</div></td>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <div class="list-avatar">${iniciais}</div>
+                                ${p.responsavel}
+                            </div>
+                        </td>
                         <td>${prazoHtml}</td>
-                        <td style="font-family: monospace; font-size: 14px; color: var(--primary-purple); font-weight: 900;">${formatarSegundosTick(p.tempo_total_segundos || 0)}</td>
-                    </tr>`;
+                        <td style="font-family: monospace; font-size: 14px; color: var(--primary-purple); font-weight: 900;">
+                            ${formatarSegundosTick(p.tempo_total_segundos || 0)}
+                        </td>
+                    </tr>
+                `;
                 tbody.insertAdjacentHTML('beforeend', html);
             });
         }
 
-        async function alterarStatusLista(projetoId, novoStatus) {
-            showToast("Atualizando status...", "default");
-            const proj = projetosGlobais.find(p => p.id === projetoId);
-            if(proj) proj.status = novoStatus;
-            renderizarProjetos();
-            try {
-                await fetch(`/api/projetos/${projetoId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: novoStatus }) });
-                showToast("Status alterado com sucesso", "success");
-            } catch (error) { showToast("Erro ao mudar status", "error"); }
-        }
 
         async function salvarProjeto() {
             const btn = document.getElementById('btnSalvarProjeto');
             btn.innerText = "CRIANDO..."; btn.disabled = true;
-            const dados = { empresa: document.getElementById('projEmpresa').value, nome_projeto: document.getElementById('projNome').value, area: document.getElementById('projArea').value, responsavel: document.getElementById('projResp').value, prazo_data: document.getElementById('projPrazo').value || null, is_scrum: document.getElementById('projScrum').checked, status_inicial: cfg.statusInicial };
-            if(!dados.empresa || !dados.nome_projeto) { showToast("Preencha Empresa e Nome do projeto.", "error"); btn.innerText = "CRIAR PROJETO"; btn.disabled = false; return; }
-            try { await fetch('/api/projetos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) }); await carregarProjetosETarefas(); fecharModal('modalFormProjeto'); showToast("Projeto criado", "success"); } 
-            catch(e) { showToast("Erro ao criar projeto", "error"); } finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
+
+            const dados = {
+                empresa: document.getElementById('projEmpresa').value,
+                nome_projeto: document.getElementById('projNome').value,
+                area: document.getElementById('projArea').value,
+                responsavel: document.getElementById('projResp').value,
+                prazo_data: document.getElementById('projPrazo').value || null,
+                is_scrum: document.getElementById('projScrum').checked,
+                status_inicial: cfg.statusInicial 
+            };
+
+            if(!dados.empresa || !dados.nome_projeto) {
+                showToast("Preencha Empresa e Nome do projeto.", "error"); 
+                btn.innerText = "CRIAR PROJETO"; btn.disabled = false; return;
+            }
+
+            try {
+                await fetch('/api/projetos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+                await carregarProjetos();
+                fecharModal('modalFormProjeto'); 
+                showToast("Projeto criado com sucesso", "success");
+            } catch(e) { showToast("Erro ao criar projeto", "error"); } 
+            finally { btn.innerText = "CRIAR PROJETO"; btn.disabled = false; }
         }
 
         function checarTimerSalvo() {
@@ -1165,17 +1128,21 @@
         }
 
         function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
-            const selectAtiv = document.getElementById(`select-${id}`);
-            const tarefaEscolhida = selectAtiv ? selectAtiv.value : null;
-            if(!tarefaEscolhida) { showToast("Selecione uma atividade antes de iniciar o timer.", "error"); return; }
-            iniciarTimerDireto(id, nomeProjeto, areaProjeto, tarefaEscolhida, baseSegundos);
-        }
+            if (activeTimerData && activeTimerData.id === id) {
+                if(activeTimerData.paused) togglePauseTimer(); else pararTimer();
+                return;
+            }
+            if (activeTimerData && activeTimerData.id !== id) { showToast(`Você já tem um timer ativo em outro projeto. Finalize-o primeiro!`, "error"); return; }
 
-        function iniciarTimerDireto(id, nomeProjeto, areaProjeto, tarefaEscolhida, baseSegundos) {
-            if (activeTimerData && activeTimerData.id === id) { if(activeTimerData.paused) togglePauseTimer(); else pararTimer(); return; }
-            if (activeTimerData && activeTimerData.id !== id) { showToast(`Você já tem um timer ativo. Finalize-o primeiro!`, "error"); return; }
+            const selectAtiv = document.getElementById(`select-${id}`);
+            const tarefaEscolhida = selectAtiv.value;
+            if(!tarefaEscolhida) { showToast("Selecione uma atividade antes de iniciar o timer.", "error"); return; }
             const proj = projetosGlobais.find(p => p.id === id);
-            activeTimerData = { id: id, nome: nomeProjeto, area: areaProjeto, tarefa: tarefaEscolhida, colaborador: proj ? proj.responsavel : USUARIO_LOGADO, baseSegundosOriginal: baseSegundos, sessaoAtualSegundos: 0, startTime: Date.now(), isoInicio: new Date().toISOString(), paused: false };
+
+            activeTimerData = {
+                id: id, nome: nomeProjeto, area: areaProjeto, tarefa: tarefaEscolhida, colaborador: proj.responsavel,
+                baseSegundosOriginal: baseSegundos, sessaoAtualSegundos: 0, startTime: Date.now(), isoInicio: new Date().toISOString(), paused: false
+            };
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
             iniciarRelogioVisual();
         }
@@ -1188,9 +1155,11 @@
                 iniciarRelogioVisual();
             } else {
                 clearInterval(timerInterval); activeTimerData.paused = true;
-                activeTimerData.sessaoAtualSegundos += Math.floor((Date.now() - activeTimerData.startTime) / 1000); activeTimerData.startTime = null; 
+                const decorridoAgora = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                activeTimerData.sessaoAtualSegundos += decorridoAgora; activeTimerData.startTime = null; 
                 document.getElementById('iconPauseResume').innerText = 'play_arrow'; document.getElementById('btnPauseResume').style.backgroundColor = 'var(--accent-lime)';
-                const btn = document.getElementById(`btn-${activeTimerData.id}`); if(btn) { btn.classList.remove('parar'); btn.style.backgroundColor = '#f59e0b'; btn.innerHTML = `<span class="material-symbols-rounded">pause</span>`; }
+                const btn = document.getElementById(`btn-${activeTimerData.id}`);
+                if(btn) { btn.classList.remove('parar'); btn.style.backgroundColor = '#f59e0b'; btn.innerHTML = `<span class="material-symbols-rounded">pause</span>`; }
                 const disp = document.getElementById(`disp-${activeTimerData.id}`); if(disp) disp.classList.remove('ativo');
             }
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
@@ -1208,11 +1177,13 @@
             document.getElementById('iconPauseResume').innerText = 'pause'; document.getElementById('btnPauseResume').style.backgroundColor = '#f59e0b';
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + Math.floor((Date.now() - activeTimerData.startTime) / 1000));
+                const decorridoAgora = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + decorridoAgora);
                 document.getElementById('fpTempo').innerText = tempoTela;
                 const disp = document.getElementById(`disp-${activeTimerData.id}`);
                 if (disp) { disp.innerText = tempoTela; disp.classList.add('ativo');
-                    const btn = document.getElementById(`btn-${activeTimerData.id}`); if(btn) { btn.classList.add('parar'); btn.style.backgroundColor = ''; btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`; }
+                    const btn = document.getElementById(`btn-${activeTimerData.id}`);
+                    if(btn) { btn.classList.add('parar'); btn.style.backgroundColor = ''; btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`; }
                     const sel = document.getElementById(`select-${activeTimerData.id}`); if(sel) { sel.value = activeTimerData.tarefa; sel.disabled = true; }
                 }
             }, 1000);
@@ -1230,119 +1201,228 @@
             if(btn) { btn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span>`; btn.classList.remove('parar'); btn.style.backgroundColor = ''; const disp = document.getElementById(`disp-${dadosPraSalvar.id}`); if(disp) disp.classList.remove('ativo'); const sel = document.getElementById(`select-${dadosPraSalvar.id}`); if(sel) sel.disabled = false; }
 
             try {
-                await fetch(`/api/projetos/${dadosPraSalvar.id}/timer`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tempo_segundos: dadosPraSalvar.tempoFinalSessao, descricao_tarefa: dadosPraSalvar.tarefa, colaborador: dadosPraSalvar.colaborador, data_inicio_atividade: dadosPraSalvar.isoInicio, data_fim_atividade: new Date().toISOString() }) });
-                await carregarProjetosETarefas(); 
-            } catch(e) { showToast("Erro ao salvar tempo", "error"); }
+                const req = await fetch(`/api/projetos/${dadosPraSalvar.id}/timer`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ tempo_segundos: dadosPraSalvar.tempoFinalSessao, descricao_tarefa: dadosPraSalvar.tarefa, colaborador: dadosPraSalvar.colaborador, data_inicio_atividade: dadosPraSalvar.isoInicio, data_fim_atividade: new Date().toISOString() })
+                });
+                if (!req.ok) showToast("Erro ao salvar registro de tempo no banco.", "error");
+                await carregarProjetos(); 
+            } catch(e) { showToast("Erro de conexão ao salvar tempo.", "error"); }
         }
 
         async function carregarComentarios(projetoId) {
             const container = document.getElementById('listaComentarios');
-            container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando...</p>';
+            container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando atualizações...</p>';
             try {
-                const res = await fetch(`/api/projetos/${projetoId}/comentarios`); const data = await res.json();
+                const res = await fetch(`/api/projetos/${projetoId}/comentarios`);
+                const data = await res.json();
+                
                 if (data.comentarios && data.comentarios.length > 0) {
-                    const principais = data.comentarios.filter(c => !c.parent_id); const filhos = data.comentarios.filter(c => c.parent_id);
+                    const principais = data.comentarios.filter(c => !c.parent_id);
+                    const filhos = data.comentarios.filter(c => c.parent_id);
+
                     let html = '';
-                    principais.forEach(pai => { html += criarHtmlComentario(pai, false); const respostasDoPai = filhos.filter(f => f.parent_id === pai.id); respostasDoPai.forEach(filho => { html += criarHtmlComentario(filho, true); }); });
-                    container.innerHTML = html; container.scrollTop = container.scrollHeight;
-                } else { container.innerHTML = '<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem atualizações.</p>'; }
-            } catch (e) { container.innerHTML = '<p style="font-size: 12px; color: #ef4444;">Erro ao carregar comentários.</p>'; }
+                    principais.forEach(pai => {
+                        html += criarHtmlComentario(pai, false);
+                        const respostasDoPai = filhos.filter(f => f.parent_id === pai.id);
+                        respostasDoPai.forEach(filho => {
+                            html += criarHtmlComentario(filho, true);
+                        });
+                    });
+                    
+                    container.innerHTML = html;
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = '<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem novidades por aqui. Seja o primeiro a comentar!</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="font-size: 12px; color: #ef4444;">Erro ao carregar comentários.</p>';
+            }
         }
 
         function criarHtmlComentario(c, isResposta) {
             const proj = projetosGlobais.find(p => p.id === c.projeto_id);
+            
             const isMeuProjeto = (proj && proj.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
             const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && c.autor.trim().toLowerCase() !== USUARIO_LOGADO.trim().toLowerCase());
+            
             const classeCaixa = isResposta ? 'chat-bubble resposta' : 'chat-bubble';
             const highlightClass = isUnread ? 'unread-highlight' : '';
             const iniciais = c.autor.substring(0,2).toUpperCase();
+            
             const btnCienteHTML = isUnread ? `<button class="btn-ciente" onclick="marcarComoLido(${c.id}, this)"><span class="material-symbols-rounded" style="font-size: 12px;">done_all</span> Ciente</button>` : '';
 
             return `
                 <div class="comentario-thread" id="thread-${c.id}">
-                    <div style="display: flex; gap: 12px;"><div class="avatar-circle">${iniciais}</div><div class="${classeCaixa} ${highlightClass}"><div class="comentario-header"><span class="comentario-autor">${c.autor}</span><span class="comentario-data">${new Date(c.criado_em).toLocaleString('pt-BR')}</span></div><div class="comentario-texto" id="texto-comentario-${c.id}">${c.texto}</div><div class="comentario-acoes">${!isResposta ? `<button class="btn-comentario-acao" onclick="abrirCaixaResposta(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">reply</span> Responder</button>` : ''}<button class="btn-comentario-acao" onclick="abrirEdicaoComentario(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">edit</span> Editar</button>${btnCienteHTML}</div></div></div><div id="caixa-resposta-${c.id}" style="display: none; margin-left: 46px; margin-top: 5px;"></div>
-                </div>`;
+                    <div style="display: flex; gap: 12px;">
+                        <div class="avatar-circle">${iniciais}</div>
+                        <div class="${classeCaixa} ${highlightClass}">
+                            <div class="comentario-header">
+                                <span class="comentario-autor">${c.autor}</span>
+                                <span class="comentario-data">${new Date(c.criado_em).toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div class="comentario-texto" id="texto-comentario-${c.id}">${c.texto}</div>
+                            
+                            <div class="comentario-acoes">
+                                ${!isResposta ? `<button class="btn-comentario-acao" onclick="abrirCaixaResposta(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">reply</span> Responder</button>` : ''}
+                                <button class="btn-comentario-acao" onclick="abrirEdicaoComentario(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">edit</span> Editar</button>
+                                ${btnCienteHTML}
+                            </div>
+                        </div>
+                    </div>
+                    <div id="caixa-resposta-${c.id}" style="display: none; margin-left: 46px; margin-top: 5px;"></div>
+                </div>
+            `;
         }
 
         async function marcarComoLido(comentarioId, btnElement) {
-            btnElement.innerHTML = '...'; btnElement.disabled = true;
-            try { await fetch(`/api/comentarios/${comentarioId}/lido`, { method: 'PUT' }); const bubble = btnElement.closest('.chat-bubble'); if(bubble) { bubble.classList.remove('unread-highlight'); btnElement.remove(); } const card = document.getElementById(projIdEmFoco); if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); } carregarNotificacoes(); } catch(e) {}
+            btnElement.innerHTML = `<span class="material-symbols-rounded" style="font-size: 12px;">hourglass_empty</span>...`;
+            btnElement.disabled = true;
+            try {
+                await fetch(`/api/comentarios/${comentarioId}/lido`, { method: 'PUT' });
+                
+                const bubble = btnElement.closest('.chat-bubble');
+                if(bubble) { bubble.classList.remove('unread-highlight'); btnElement.remove(); }
+                
+                const card = document.getElementById(projIdEmFoco);
+                if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); }
+                
+                carregarNotificacoes(); 
+            } catch(e) { showToast("Erro ao marcar como lido", "error"); }
         }
 
         async function salvarComentario(parentId = null) {
-            const inputId = parentId ? `resposta-texto-${parentId}` : 'novoComentarioTexto'; const textoInput = document.getElementById(inputId); const texto = textoInput.value.trim();
-            if (!texto || !projIdEmFoco) return; textoInput.disabled = true;
-            try { await fetch(`/api/projetos/${projIdEmFoco}/comentarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: texto, parent_id: parentId }) }); textoInput.value = ''; const card = document.getElementById(projIdEmFoco); if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); } carregarNotificacoes(); await carregarComentarios(projIdEmFoco); } catch (e) { showToast("Erro", "error"); } finally { textoInput.disabled = false; }
+            const inputId = parentId ? `resposta-texto-${parentId}` : 'novoComentarioTexto';
+            const textoInput = document.getElementById(inputId);
+            const texto = textoInput.value.trim();
+            if (!texto || !projIdEmFoco) return;
+
+            textoInput.disabled = true;
+            
+            try {
+                await fetch(`/api/projetos/${projIdEmFoco}/comentarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: texto, parent_id: parentId })
+                });
+                textoInput.value = '';
+                
+                const card = document.getElementById(projIdEmFoco);
+                if(card) { const dot = card.querySelector('.notification-dot'); if(dot) dot.remove(); }
+                carregarNotificacoes(); 
+                
+                await carregarComentarios(projIdEmFoco);
+            } catch (e) {
+                showToast("Erro ao publicar atualização.", "error");
+            } finally {
+                textoInput.disabled = false;
+            }
         }
 
         function abrirCaixaResposta(parentId) {
             const divResposta = document.getElementById(`caixa-resposta-${parentId}`);
             if (divResposta.style.display === 'block') { divResposta.style.display = 'none'; return; }
-            divResposta.innerHTML = `<div style="background: var(--glass-bg); padding: 10px; border-radius: 12px !important; border-left: 3px solid var(--primary-purple);"><textarea id="resposta-texto-${parentId}" class="comentario-textarea" placeholder="Digite sua resposta..." style="width: 100%; border-bottom: 1px solid #d4d4d8; margin-bottom: 8px; border-radius: 0 !important;"></textarea><div class="botoes-form-comentario" style="margin-top:0;"><button class="btn-cancelar-edicao" onclick="document.getElementById('caixa-resposta-${parentId}').style.display='none'">Cancelar</button><button class="btn-enviar-comentario" style="width: auto; height: auto; border-radius: 50px !important; padding: 6px 12px; font-size: 11px;" onclick="salvarComentario(${parentId})">Responder</button></div></div>`;
-            divResposta.style.display = 'block'; document.getElementById(`resposta-texto-${parentId}`).focus();
+            
+            divResposta.innerHTML = `
+                <div style="background: var(--glass-bg); padding: 10px; border-radius: 12px !important; border-left: 3px solid var(--primary-purple);">
+                    <textarea id="resposta-texto-${parentId}" class="comentario-textarea" placeholder="Digite sua resposta..." style="width: 100%; border-bottom: 1px solid #d4d4d8; margin-bottom: 8px; border-radius: 0 !important;"></textarea>
+                    <div class="botoes-form-comentario" style="margin-top:0;">
+                        <button class="btn-cancelar-edicao" onclick="document.getElementById('caixa-resposta-${parentId}').style.display='none'">Cancelar</button>
+                        <button class="btn-enviar-comentario" style="width: auto; height: auto; border-radius: 50px !important; padding: 6px 12px; font-size: 11px;" onclick="salvarComentario(${parentId})">Responder</button>
+                    </div>
+                </div>
+            `;
+            divResposta.style.display = 'block';
+            document.getElementById(`resposta-texto-${parentId}`).focus();
         }
 
         function abrirEdicaoComentario(id) {
-            const divTexto = document.getElementById(`texto-comentario-${id}`); const textoAtual = divTexto.innerText;
-            divTexto.innerHTML = `<div style="margin-top: 5px;"><textarea id="edicao-texto-${id}" class="comentario-textarea" style="width: 100%; border: 1px solid var(--primary-purple); border-radius: 8px !important; background: #fff;">${textoAtual}</textarea><div class="botoes-form-comentario"><button class="btn-cancelar-edicao" onclick="carregarComentarios(projIdEmFoco)">Cancelar</button><button class="btn-enviar-comentario" style="width: auto; height: auto; border-radius: 50px !important; padding: 6px 12px; font-size: 11px;" onclick="salvarEdicaoComentario(${id})">Salvar</button></div></div>`;
+            const divTexto = document.getElementById(`texto-comentario-${id}`);
+            const textoAtual = divTexto.innerText;
+            
+            divTexto.innerHTML = `
+                <div style="margin-top: 5px;">
+                    <textarea id="edicao-texto-${id}" class="comentario-textarea" style="width: 100%; border: 1px solid var(--primary-purple); border-radius: 8px !important; background: #fff;">${textoAtual}</textarea>
+                    <div class="botoes-form-comentario">
+                        <button class="btn-cancelar-edicao" onclick="carregarComentarios(projIdEmFoco)">Cancelar</button>
+                        <button class="btn-enviar-comentario" style="width: auto; height: auto; border-radius: 50px !important; padding: 6px 12px; font-size: 11px;" onclick="salvarEdicaoComentario(${id})">Salvar</button>
+                    </div>
+                </div>
+            `;
         }
 
         async function salvarEdicaoComentario(id) {
-            const textarea = document.getElementById(`edicao-texto-${id}`); const novoTexto = textarea.value.trim();
-            if (!novoTexto) return; textarea.disabled = true;
-            try { await fetch(`/api/comentarios/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: novoTexto }) }); await carregarComentarios(projIdEmFoco); } catch(e) { showToast("Erro", "error"); textarea.disabled = false; }
-        }
-
-        // NOVO: SALVAR ANOTAÇÕES
-        async function salvarAnotacoes() {
-            const btn = document.getElementById('btnSalvarAnotacoes');
-            const txt = document.getElementById('detAnotacoes').value;
-            btn.innerText = "SALVANDO..."; btn.disabled = true;
+            const textarea = document.getElementById(`edicao-texto-${id}`);
+            const novoTexto = textarea.value.trim();
+            if (!novoTexto) return;
+            
+            textarea.disabled = true;
 
             try {
-                await fetch(`/api/projetos/${projIdEmFoco}`, {
-                    method: 'PUT', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ anotacoes: txt })
+                await fetch(`/api/comentarios/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: novoTexto })
                 });
-                const proj = projetosGlobais.find(p => p.id === projIdEmFoco);
-                if (proj) proj.anotacoes = txt;
-                showToast("Anotações salvas com sucesso!", "success");
+                await carregarComentarios(projIdEmFoco);
+                showToast("Comentário editado.", "success");
             } catch(e) {
-                showToast("Erro ao salvar anotações.", "error");
-            } finally {
-                btn.innerText = "SALVAR ANOTAÇÕES"; btn.disabled = false;
+                showToast("Erro ao salvar edição.", "error");
+                textarea.disabled = false;
             }
         }
 
         async function abrirDetalhes(id, event) {
-            if(event && (event.target.closest('select') || event.target.closest('.md-checkbox') || event.target.closest('.cal-task-check') || event.target.closest('.md-play-btn') || event.target.closest('.cal-task-play') || event.target.closest('button') || event.target.closest('.comentario-acoes'))) return;
-            projIdEmFoco = id; const proj = projetosGlobais.find(p => p.id === id);
+            if(event && (event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes'))) return;
+
+            projIdEmFoco = id;
+            const proj = projetosGlobais.find(p => p.id === id);
             
-            document.getElementById('detArea').innerText = proj.area; 
-            document.getElementById('detNome').innerText = proj.nome_projeto; 
-            document.getElementById('detTempoTotal').innerText = formatarSegundosTick(proj.tempo_total_segundos || 0); 
-            document.getElementById('detDataInicio').innerText = proj.data_inicio ? new Date(proj.data_inicio).toLocaleDateString('pt-BR') : '-'; 
+            document.getElementById('detArea').innerText = proj.area;
+            document.getElementById('detNome').innerText = proj.nome_projeto;
+            document.getElementById('detTempoTotal').innerText = formatarSegundosTick(proj.tempo_total_segundos || 0);
+
+            document.getElementById('detDataInicio').innerText = proj.data_inicio ? new Date(proj.data_inicio).toLocaleDateString('pt-BR') : '-';
             document.getElementById('detDataFim').innerText = proj.data_conclusao ? new Date(proj.data_conclusao).toLocaleDateString('pt-BR') : 'Em aberto';
-            
-            // NOVO: Puxa as anotações guardadas para o modal
-            document.getElementById('detAnotacoes').value = proj.anotacoes || '';
 
             document.getElementById('modalDetalhes').style.display = 'flex';
+
+            const res = await fetch(`/api/projetos/${id}/historico`);
+            const data = await res.json();
+            const container = document.getElementById('listaHistorico');
             
-            const res = await fetch(`/api/projetos/${id}/historico`); const data = await res.json(); const container = document.getElementById('listaHistorico');
-            if (data.historico && data.historico.length > 0) { container.innerHTML = data.historico.map(h => `<div class="historico-item"><div class="historico-info"><span style="font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${h.descricao_tarefa}</span><span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">${new Date(h.criado_em).toLocaleDateString('pt-BR')} • ${h.colaborador}</span></div><span style="font-family: monospace; font-size: 16px; font-weight: 900; color: var(--primary-purple);">${formatarSegundosTick(h.tempo_segundos)}</span></div>`).join(''); } else { container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registos.</p>'; }
+            if (data.historico && data.historico.length > 0) {
+                container.innerHTML = data.historico.map(h => {
+                    return `
+                    <div class="historico-item">
+                        <div class="historico-info">
+                            <span style="font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${h.descricao_tarefa}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
+                                ${new Date(h.criado_em).toLocaleDateString('pt-BR')} • ${h.colaborador}
+                            </span>
+                        </div>
+                        <span style="font-family: monospace; font-size: 16px; font-weight: 900; color: var(--primary-purple);">${formatarSegundosTick(h.tempo_segundos)}</span>
+                    </div>`;
+                }).join('');
+            } else {
+                container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registros.</p>';
+            }
+
             carregarComentarios(id);
         }
 
         async function excluirProjeto() {
-            if(!confirm("Tem certeza que deseja excluir?")) return;
-            await fetch(`/api/projetos/${projIdEmFoco}`, { method: 'DELETE' }); fecharModal('modalDetalhes'); carregarProjetosETarefas(); showToast("Excluído", "success");
+            if(!confirm("Tem certeza que deseja excluir este projeto para sempre?")) return;
+            await fetch(`/api/projetos/${projIdEmFoco}`, { method: 'DELETE' });
+            fecharModal('modalDetalhes');
+            carregarProjetos();
+            showToast("Projeto excluído.", "success");
         }
 
         window.onload = () => {
             montarWorkspace();
             checarTimerSalvo(); 
-            carregarProjetosETarefas(); 
+            carregarProjetos();
         };
     </script>
 </body>
