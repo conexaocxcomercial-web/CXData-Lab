@@ -58,35 +58,25 @@ def listar_projetos():
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = res_projetos.data
         
-        # 1. Busca os tempos com LOOP de PAGINAÇÃO (Fura o bloqueio de 1000 linhas do Supabase)
+        # 1. Busca os tempos
+        res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
         tempos_agrupados = {}
-        offset = 0
-        while True:
-            # Puxa de 1000 em 1000 linhas
-            res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").range(offset, offset + 999).execute()
-            for log in res_tempo.data:
-                # BLINDAGEM: Força o ID a ser string para evitar incompatibilidade
-                pid = str(log.get('projeto_id', ''))
-                segundos = log.get('tempo_segundos')
-                if segundos is None: segundos = 0
-                tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + segundos
-            
-            # Se a busca trouxe menos de 1000, significa que chegou no fim da tabela
-            if len(res_tempo.data) < 1000:
-                break
-            offset += 1000
+        for log in res_tempo.data:
+            # BLINDAGEM: Força o ID a ser string para evitar incompatibilidade
+            pid = str(log['projeto_id'])
+            tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + log['tempo_segundos']
             
         # 2. Busca notificações não lidas
         res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
         unread_counts = {}
         for c in res_unread.data:
             # BLINDAGEM: Força o ID a ser string
-            pid = str(c.get('projeto_id', ''))
+            pid = str(c['projeto_id'])
             unread_counts[pid] = unread_counts.get(pid, 0) + 1
             
         # 3. Consolida os dados nos projetos
         for p in projetos:
-            pid_str = str(p.get('id', '')) # Garante que está buscando a string correta
+            pid_str = str(p['id']) # Garante que está buscando a string correta
             p['tempo_total_segundos'] = tempos_agrupados.get(pid_str, 0)
             p['qtd_nao_lidos'] = unread_counts.get(pid_str, 0)
             
@@ -157,9 +147,6 @@ def atualizar_projeto(projeto_id):
         if "nome_projeto" in dados: atualizacao["nome_projeto"] = dados.get("nome_projeto")
         if "prazo_data" in dados: atualizacao["prazo_data"] = dados.get("prazo_data") if dados.get("prazo_data") else None
         if "is_scrum" in dados: atualizacao["is_scrum"] = bool(dados.get("is_scrum"))
-        
-        # --- GRAVAÇÃO DAS ANOTAÇÕES DA NOVA ABA LATERAL ---
-        if "anotacoes" in dados: atualizacao["anotacoes"] = dados.get("anotacoes")
         
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
@@ -317,57 +304,6 @@ def marcar_comentario_lido(comentario_id):
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
-
-# --- API PLANEJAMENTO DIÁRIO E MENSAL ---
-
-@app.route('/api/planejamento/<data>', methods=['GET'])
-def get_planejamento(data):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    usuario = session.get('usuario_nome')
-    try:
-        res = supabase.table("planejamento_diario").select("*").eq("colaborador", usuario).eq("data_planejada", data).order("criado_em", desc=False).execute()
-        return jsonify({"status": "sucesso", "tarefas": res.data}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/planejamento/todos', methods=['GET'])
-def get_todas_tarefas_planejamento():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    try:
-        res = supabase.table("planejamento_diario").select("*").order("criado_em", desc=False).execute()
-        return jsonify({"status": "sucesso", "tarefas": res.data}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/planejamento', methods=['POST'])
-def criar_tarefa_planejamento():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    dados = request.json
-    try:
-        nova_tarefa = {
-            "projeto_id": dados.get("projeto_id"),
-            "colaborador": session.get('usuario_nome'),
-            "atividade": dados.get("atividade"),
-            "data_planejada": dados.get("data_planejada"),
-            "status": "Pendente"
-        }
-        supabase.table("planejamento_diario").insert(nova_tarefa).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/planejamento/<tarefa_id>', methods=['PUT', 'DELETE'])
-def gerenciar_tarefa_planejamento(tarefa_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    try:
-        if request.method == 'PUT':
-            dados = request.json
-            supabase.table("planejamento_diario").update({"status": dados.get("status")}).eq("id", tarefa_id).execute()
-        elif request.method == 'DELETE':
-            supabase.table("planejamento_diario").delete().eq("id", tarefa_id).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
