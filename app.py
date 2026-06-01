@@ -58,25 +58,33 @@ def listar_projetos():
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = res_projetos.data
         
-        # 1. Busca os tempos
-        res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
+        # 1. Busca os tempos com LOOP de PAGINAÇÃO (Fura o bloqueio de 1000 linhas do Supabase)
         tempos_agrupados = {}
-        for log in res_tempo.data:
-            # BLINDAGEM: Força o ID a ser string para evitar incompatibilidade
-            pid = str(log['projeto_id'])
-            tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + log['tempo_segundos']
+        offset = 0
+        while True:
+            # Puxa de 1000 em 1000 linhas
+            res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").range(offset, offset + 999).execute()
+            for log in res_tempo.data:
+                pid = str(log.get('projeto_id', ''))
+                segundos = log.get('tempo_segundos')
+                if segundos is None: segundos = 0
+                tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + segundos
+            
+            # Se a busca trouxe menos de 1000, significa que chegou no fim da tabela
+            if len(res_tempo.data) < 1000:
+                break
+            offset += 1000
             
         # 2. Busca notificações não lidas
         res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
         unread_counts = {}
         for c in res_unread.data:
-            # BLINDAGEM: Força o ID a ser string
-            pid = str(c['projeto_id'])
+            pid = str(c.get('projeto_id', ''))
             unread_counts[pid] = unread_counts.get(pid, 0) + 1
             
         # 3. Consolida os dados nos projetos
         for p in projetos:
-            pid_str = str(p['id']) # Garante que está buscando a string correta
+            pid_str = str(p.get('id', ''))
             p['tempo_total_segundos'] = tempos_agrupados.get(pid_str, 0)
             p['qtd_nao_lidos'] = unread_counts.get(pid_str, 0)
             
@@ -209,11 +217,9 @@ def get_notificacoes():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     usuario = session.get('usuario_nome')
     try:
-        # 1. Busca todos os projetos do banco
         res_projetos = supabase.table('projetos').select('id, nome_projeto, responsavel').execute()
         projetos_do_usuario = {}
         
-        # Filtra na unha (Python) para evitar erro de maiúscula/minúscula/espaço
         for p in res_projetos.data:
             if p['responsavel'] and p['responsavel'].strip().lower() == usuario.strip().lower():
                 projetos_do_usuario[p['id']] = p['nome_projeto']
@@ -222,20 +228,15 @@ def get_notificacoes():
             return jsonify({"status": "sucesso", "notificacoes": []}), 200
 
         proj_ids = list(projetos_do_usuario.keys())
-        
-        # 2. Busca comentários não lidos apenas desses projetos
         res_comentarios = supabase.table('comentarios').select('*').in_('projeto_id', proj_ids).eq('lido_pelo_responsavel', False).execute()
         
         notificacoes = []
         for c in res_comentarios.data:
-            # Não notifica se o autor for você mesmo
             if c['autor'].strip().lower() != usuario.strip().lower():
                 c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
                 notificacoes.append(c)
 
-        # 3. Ordena para os mais novos ficarem no topo
         notificacoes.sort(key=lambda x: x['criado_em'], reverse=True)
-        
         return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro em Notificacoes: {str(e)}")
@@ -276,7 +277,6 @@ def adicionar_comentario(projeto_id):
         }
         supabase.table("comentarios").insert(novo_comentario).execute()
         
-        # Baixa Automática!
         if autor.strip().lower() == responsavel_projeto.strip().lower():
             supabase.table("comentarios").update({"lido_pelo_responsavel": True}).eq("projeto_id", projeto_id).eq("lido_pelo_responsavel", False).execute()
             
