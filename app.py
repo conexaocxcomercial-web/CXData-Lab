@@ -148,6 +148,9 @@ def atualizar_projeto(projeto_id):
         if "prazo_data" in dados: atualizacao["prazo_data"] = dados.get("prazo_data") if dados.get("prazo_data") else None
         if "is_scrum" in dados: atualizacao["is_scrum"] = bool(dados.get("is_scrum"))
         
+        # --- GRAVAÇÃO DAS ANOTAÇÕES ---
+        if "anotacoes" in dados: atualizacao["anotacoes"] = dados.get("anotacoes")
+        
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
