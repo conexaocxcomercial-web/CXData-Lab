@@ -71,6 +71,18 @@
 
         .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
 
+        .view-switcher { 
+            display: flex; gap: 20px; padding: 0 40px 15px 40px; 
+            border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
+        }
+        .view-tab { 
+            font-size: 13px; font-weight: 800; color: var(--text-muted); 
+            cursor: pointer; padding-bottom: 10px; border-bottom: 3px solid transparent; 
+            transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase;
+        }
+        .view-tab:hover { color: var(--primary-purple); }
+        .view-tab.active { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
+
         .filter-bar { padding: 0 40px 15px 40px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .filter-input { 
             padding: 10px 20px; font-size: 12px; font-weight: 600; color: var(--text-main);
@@ -108,6 +120,39 @@
         .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
 
         .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
+
+        /* LIST VIEW BOARD APRIMORADO */
+        .list-view-container { padding: 0 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
+        .list-table { width: 100%; border-collapse: collapse; min-width: 900px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        .list-table th { text-align: left; padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e4e4e7; background: rgba(255,255,255,0.8);}
+        .list-table td { padding: 15px 20px; font-size: 13px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid #f4f4f5; vertical-align: middle; transition: 0.2s; cursor: pointer; }
+        
+        /* Fundo branco ao passar o mouse (sem a barra roxa) */
+        .list-table tr:hover td { background-color: #ffffff; }
+        
+        .list-avatar { width: 28px; height: 28px; min-width: 28px; background: var(--light-purple); color: var(--primary-purple); font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; margin-right: 10px;}
+
+        /* PÍLULA DE STATUS INTERATIVA (SELECT) */
+        .status-pill-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 50px !important;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            color: white;
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: 0.2s;
+        }
+        .status-pill-select:hover { transform: scale(1.05); }
+        .status-pill-select option { background: white; color: var(--text-main); font-weight: 600; text-transform: none; }
 
         .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
         .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
@@ -217,7 +262,7 @@
         .btn-cancelar-edicao:hover { background: #f4f4f5; }
         .botoes-form-comentario { display: flex; gap: 8px; justify-content: flex-end; width: 100%; margin-top: 10px;}
 
-        /* NOVO: TOASTS PREMIUM */
+        /* TOASTS PREMIUM */
         .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); color: white; padding: 12px 24px; border-radius: 50px !important; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; pointer-events: auto;}
         .toast.error { background: rgba(239, 68, 68, 0.95); }
@@ -257,8 +302,7 @@
             <span>Central de Notificações</span>
             <button class="btn-comentario-acao" onclick="toggleDropdownNotificacoes()" style="font-size: 20px; color: var(--text-main);">&times;</button>
         </div>
-        <div class="notifications-body" id="listaNotificacoesDropdown">
-            </div>
+        <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
 
     <div class="command-bar">
@@ -271,8 +315,13 @@
         </button>
     </div>
 
+    <div class="view-switcher">
+        <div class="view-tab active" onclick="mudarVisao('kanban')" id="tab-kanban"><span class="material-symbols-rounded" style="font-size: 18px;">view_kanban</span> Kanban</div>
+        <div class="view-tab" onclick="mudarVisao('lista')" id="tab-lista"><span class="material-symbols-rounded" style="font-size: 18px;">format_list_bulleted</span> Lista</div>
+        <div class="view-tab" onclick="showToast('A visão calendário será liberada em breve!', 'default')" id="tab-calendario"><span class="material-symbols-rounded" style="font-size: 18px;">calendar_month</span> Calendário</div>
+    </div>
+
     <div class="filter-bar">
-        
         <select id="filtroOrdenacao" class="filter-input" onchange="renderizarProjetos()">
             <option value="padrao">Ordenar por: Criação</option>
             <option value="az">A-Z (Nome do Projeto)</option>
@@ -305,6 +354,25 @@
     </div>
 
     <div class="kanban-board" id="boardDinamico"></div>
+
+    <div class="list-view-container" id="listViewDinamico">
+        <table class="list-table">
+            <thead>
+                <tr>
+                    <th>Projeto</th>
+                    <th>Status</th>
+                    <th>Cliente / Empresa</th>
+                    <th>Responsável</th>
+                    <th>Prazo</th>
+                    <th>Tempo Investido</th>
+                </tr>
+            </thead>
+            <tbody id="listBodyDinamico"></tbody>
+        </table>
+    </div>
+
+    <div class="list-view-container" id="calendarViewDinamico"></div>
+
 
     <div id="floatingPlayer" class="floating-player" style="display: none;">
         <div class="fp-info">
@@ -355,6 +423,7 @@
                     <option value="Alisson Maciel">Alisson Maciel</option>
                     <option value="Juliete Cadete">Juliete Cadete</option>
                     <option value="Ana Medeiros">Ana Medeiros</option>
+                    <option value="Thallya Rodrigues">Thallya Rodrigues</option>
                 </select>
             </div>
             <div class="input-group">
@@ -400,6 +469,7 @@
                     <option value="Alisson Maciel">Alisson Maciel</option>
                     <option value="Juliete Cadete">Juliete Cadete</option>
                     <option value="Ana Medeiros">Ana Medeiros</option>
+                    <option value="Thallya Rodrigues">Thallya Rodrigues</option>
                 </select>
             </div>
             <div class="input-group">
@@ -461,7 +531,6 @@
                     
                     <button class="btn-acao" id="btnSalvarAnotacoes" style="width: 100%; justify-content: center; padding: 15px;" onclick="salvarAnotacoes()">SALVAR ANOTAÇÕES</button>
                 </div>
-
             </div>
 
             <div style="padding: 20px 40px; border-top: 1px solid #e4e4e7; display: flex; gap: 10px; background: #fff;">
@@ -548,6 +617,8 @@
         let projIdEmFoco = null;
         let timerInterval = null;
         let activeTimerData = null;
+        
+        let visaoAtual = 'kanban'; 
 
         function showToast(msg, type = 'default') {
             const container = document.getElementById('toastContainer');
@@ -571,6 +642,18 @@
 
         function fecharModalFundoEdicao(event) {
             if(event.target.id === 'modalEditarProjeto') { fecharModalEdicao(); }
+        }
+
+        function mudarVisao(novaVisao) {
+            visaoAtual = novaVisao;
+            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${novaVisao}`).classList.add('active');
+            
+            document.getElementById('boardDinamico').style.display = novaVisao === 'kanban' ? 'flex' : 'none';
+            document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'block' : 'none';
+            document.getElementById('calendarViewDinamico').style.display = novaVisao === 'calendario' ? 'block' : 'none';
+            
+            renderizarProjetos();
         }
 
         function montarWorkspace() {
@@ -711,6 +794,28 @@
             }
         }
 
+        // --- MÁGICA: ALTERAR STATUS DIRETO NA LISTA ---
+        async function alterarStatusLista(projetoId, novoStatus) {
+            showToast("Atualizando status...", "default");
+            
+            // Atualiza visualmente na hora (Optimistic UI) para não precisar piscar a tela inteira
+            const proj = projetosGlobais.find(p => p.id === projetoId);
+            if(proj) proj.status = novoStatus;
+            renderizarProjetos();
+
+            try {
+                await fetch(`/api/projetos/${projetoId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                showToast("Status alterado com sucesso", "success");
+            } catch (error) { 
+                console.error(error);
+                showToast("Erro ao mudar status no servidor", "error");
+            }
+        }
+
         function atualizarContadores() {
             document.querySelectorAll('.kanban-column').forEach(col => {
                 col.querySelector('.col-count').innerText = col.querySelectorAll('.card').length;
@@ -787,8 +892,6 @@
         }
 
         function renderizarProjetos() {
-            document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
-            
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
             atualizarDropdownsFiltro(projetosFiltrados);
 
@@ -830,6 +933,19 @@
             const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
             const badgeContador = document.getElementById('contadorAbertos');
             if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
+
+            if (visaoAtual === 'kanban') {
+                renderizarKanban(projetosFiltrados);
+            } else if (visaoAtual === 'lista') {
+                renderizarLista(projetosFiltrados);
+            }
+            
+            carregarNotificacoes(); 
+            if(activeTimerData) iniciarRelogioVisual();
+        }
+
+        function renderizarKanban(projetosFiltrados) {
+            document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
 
             projetosFiltrados.forEach(p => {
                 let statusCard = cfg.colunas.find(c => c.id === p.status) ? p.status : cfg.colunas[0].id;
@@ -920,11 +1036,73 @@
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
             atualizarContadores();
-            
-            carregarNotificacoes(); 
-            
-            if(activeTimerData) iniciarRelogioVisual();
         }
+
+        function renderizarLista(projetosFiltrados) {
+            const tbody = document.getElementById('listBodyDinamico');
+            tbody.innerHTML = '';
+
+            projetosFiltrados.forEach(p => {
+                let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
+                let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
+
+                const colInfo = cfg.colunas.find(c => c.id === p.status) || cfg.colunas[0];
+                const corStatus = colInfo.cor;
+
+                const iniciais = p.responsavel ? p.responsavel.substring(0,2).toUpperCase() : 'ND';
+
+                let prazoHtml = '<span style="color: var(--text-muted);">-</span>';
+                if (p.prazo_data) {
+                    const partes = p.prazo_data.split('T')[0].split('-');
+                    const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
+                    const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
+                    dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
+                    const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
+                    
+                    const strData = new Date(p.prazo_data).toLocaleDateString('pt-BR');
+                    if (p.status !== 'Finalizado' && p.status !== 'Cancelado' && diffDias < 0) {
+                        prazoHtml = `<span style="color: #ef4444; font-weight: 800;">${strData} (Atrasado)</span>`;
+                    } else if (p.status === 'Finalizado' || p.status === 'Cancelado') {
+                        prazoHtml = `<span style="color: var(--text-muted); text-decoration: line-through;">${strData}</span>`;
+                    } else {
+                        prazoHtml = `<span>${strData}</span>`;
+                    }
+                }
+
+                let bolinhaHtml = hasUnread ? `<span style="display:inline-block; width:8px; height:8px; background:var(--accent-pink); border-radius:50%; margin-left:8px; animation: pulse-dot 2s infinite;"></span>` : '';
+                let badgeScrum = p.is_scrum ? `<span class="badge-scrum" style="margin-right:10px;">SCRUM</span>` : '';
+
+                // A MÁGICA DO STATUS EDITÁVEL (PÍLULA)
+                let optionsStatus = cfg.colunas.map(c => `<option value="${c.id}" ${c.id === p.status ? 'selected' : ''}>${c.nome}</option>`).join('');
+                let htmlStatusPill = `
+                    <select class="status-pill-select" style="background-color: ${corStatus};" 
+                        onclick="event.stopPropagation()" 
+                        onchange="alterarStatusLista('${p.id}', this.value)">
+                        ${optionsStatus}
+                    </select>
+                `;
+
+                let html = `
+                    <tr onclick="abrirDetalhes('${p.id}', event)">
+                        <td style="font-weight: 800;">${badgeScrum}${p.nome_projeto} ${bolinhaHtml}</td>
+                        <td>${htmlStatusPill}</td>
+                        <td style="color: var(--text-muted);">${p.empresa}</td>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <div class="list-avatar">${iniciais}</div>
+                                ${p.responsavel}
+                            </div>
+                        </td>
+                        <td>${prazoHtml}</td>
+                        <td style="font-family: monospace; font-size: 14px; color: var(--primary-purple); font-weight: 900;">
+                            ${formatarSegundosTick(p.tempo_total_segundos || 0)}
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
 
         async function salvarProjeto() {
             const btn = document.getElementById('btnSalvarProjeto');
@@ -1205,7 +1383,7 @@
             }
         }
 
-        // NOVO: SALVAR ANOTAÇÕES
+        // NOVO: Função para gravar as anotações
         async function salvarAnotacoes() {
             const btn = document.getElementById('btnSalvarAnotacoes');
             const txt = document.getElementById('detAnotacoes').value;
@@ -1239,7 +1417,7 @@
             document.getElementById('detDataInicio').innerText = proj.data_inicio ? new Date(proj.data_inicio).toLocaleDateString('pt-BR') : '-';
             document.getElementById('detDataFim').innerText = proj.data_conclusao ? new Date(proj.data_conclusao).toLocaleDateString('pt-BR') : 'Em aberto';
 
-            // NOVO: Puxa as anotações do banco de dados e coloca na tela
+            // NOVO: Puxa o texto guardado e injeta na textarea da direita
             document.getElementById('detAnotacoes').value = proj.anotacoes || '';
 
             document.getElementById('modalDetalhes').style.display = 'flex';
