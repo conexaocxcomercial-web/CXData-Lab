@@ -19,7 +19,7 @@
         }
 
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 72px; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d4d4d8; }
@@ -197,6 +197,8 @@
 </head>
 <body>
 
+    {% include '_sidebar.html' %}
+
     <!-- TOP BAR -->
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
@@ -204,14 +206,13 @@
             <span style="font-size:13px; font-weight:600; color:var(--text-muted);">Olá, <strong id="nomeUsuario" style="color:var(--text-main);"></strong></span>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
-            <div class="btn-icon-round" onclick="window.location.href='/'" title="Início">
-                <span class="material-symbols-rounded" style="font-size:20px;">home</span>
-            </div>
             <div class="btn-icon-round danger" onclick="window.location.href='/logout'" title="Sair">
                 <span class="material-symbols-rounded" style="font-size:20px;">logout</span>
             </div>
         </div>
     </div>
+
+    {% include '_sidebar.html' %}
 
     <!-- COMMAND BAR -->
     <div class="command-bar">
