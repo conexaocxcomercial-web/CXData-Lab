@@ -963,7 +963,10 @@
                     showToast(editandoId ? 'Atividade atualizada!' : 'Atividade criada!', 'success');
                     fecharModal();
                     await carregarPlanejamentos();
-                } else { showToast('Erro ao salvar atividade.', 'error'); }
+                } else {
+                    const err = await res.json();
+                    showToast(`Erro: ${err.mensagem || 'Falha desconhecida'}`, 'error');
+                }
             } catch(e) { showToast('Erro de conexão.', 'error'); }
             finally { btn.disabled = false; btn.textContent = 'SALVAR'; }
         }
