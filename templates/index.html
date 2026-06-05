@@ -27,7 +27,7 @@
         .hub-header h1 span { color: var(--primary-purple); }
         .hub-header p { color: var(--text-muted); font-size: 16px; font-weight: 500; }
 
-        .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+        .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
 
         .hub-card { 
             background: var(--glass-bg); 
@@ -94,6 +94,13 @@
                 <div class="card-title">Quadro Geral</div>
                 <div class="card-desc">Acompanhe as demandas do comercial, marketing, CX Data e projetos pontuais.</div>
                 <a href="/board/geral" class="btn-entrar">ACESSAR QUADRO</a>
+            </div>
+
+            <div class="hub-card" onclick="window.location.href='/planejamento'">
+                <div class="icon-box" style="background: var(--primary-purple); color: var(--accent-lime);"><span class="material-symbols-rounded">calendar_today</span></div>
+                <div class="card-title">Planejamento</div>
+                <div class="card-desc">Planeje as atividades do dia, semana e mês com visão individual e do time.</div>
+                <a href="/planejamento" class="btn-entrar">ACESSAR</a>
             </div>
         </div>
     </div>
