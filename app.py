@@ -58,13 +58,20 @@ def listar_projetos():
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = res_projetos.data
         
-        # 1. Busca os tempos
-        res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
+        # 1. Busca TODOS os tempos com paginação (Supabase limita 1000/query)
         tempos_agrupados = {}
-        for log in res_tempo.data:
-            # BLINDAGEM: Força o ID a ser string para evitar incompatibilidade
-            pid = str(log['projeto_id'])
-            tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + log['tempo_segundos']
+        page_size = 1000
+        offset = 0
+        while True:
+            res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").range(offset, offset + page_size - 1).execute()
+            if not res_tempo.data:
+                break
+            for log in res_tempo.data:
+                pid = str(log['projeto_id'])
+                tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + (log['tempo_segundos'] or 0)
+            if len(res_tempo.data) < page_size:
+                break
+            offset += page_size
             
         # 2. Busca notificações não lidas
         res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
