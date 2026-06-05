@@ -306,13 +306,15 @@
             </div>
             <div class="input-group">
                 <label>Projeto *</label>
-                <select id="selectProjeto" disabled>
+                <select id="selectProjeto" disabled onchange="carregarAtividadesDoProjetoSelecionado()">
                     <option value="">Selecione o cliente primeiro...</option>
                 </select>
             </div>
             <div class="input-group">
                 <label>Atividade *</label>
-                <textarea id="inputAtividade" placeholder="Descreva a atividade que será realizada..."></textarea>
+                <select id="selectAtividade" disabled>
+                    <option value="">Selecione o projeto primeiro...</option>
+                </select>
             </div>
             <div class="input-group">
                 <label>Data Planejada *</label>
@@ -349,7 +351,6 @@
         // ==========================================
         document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('nomeUsuario').textContent = nomeUsuario;
-            document.getElementById('inputColaborador').value = nomeUsuario;
             atualizarNavTitle();
             atualizarSubtitulo();
             await Promise.all([carregarProjetos(), carregarPlanejamentos()]);
@@ -378,13 +379,26 @@
             } catch(e) { showToast('Erro ao carregar projetos.', 'error'); }
         }
 
+        // Mapa de atividades por área (espelho do projetos.html)
+        const ATIVIDADES_POR_AREA = {
+            'CX Data':      ["Prospecções","Construção de OKR","Geração de leads","Produção de proposta","Reunião de proposta","Reunião de alinhamento","Reunião com cliente","Produção de dashboard","Atualização de base de dados","Construção de automação","Construção de ferramenta","Cobrança","Reunião interna","Reunião com BPO","Construção de dashboard"],
+            'Comercial':    ["Prospecções","Geração de leads","Produção de proposta","Reunião de proposta","Reunião de alinhamento","Reunião com cliente","Cobrança","Reunião interna","Prospecção de parceiros"],
+            'Marketing':    ["Planejamento de conteúdo mensal","Planejamento de atividades (semanal/diário)","Levantamento de orçamentos","Roteiro de vídeos","Blog — criação e publicação de post","Planejamento de campanhas","Planejamento de evento","Edição de material — on","Edição de material — off","Edição de material — Treinamentos","Card de vagas","Postar card de vaga","Edição de vídeo","LinkedIn post","Gravação de stories","Publicar stories","Gravação de vídeo","Qui_Conexão — criação e disparo","E-mail marketing — criação e disparo","Follow up — redes sociais","Follow up — ações de marketing","Relatório de desempenho (métricas + análise)","Reunião interna"],
+            'Adm/Fin':      ["Cobrança","Reunião interna","Levantamento de orçamentos","Reunião com cliente"],
+            'Recrutamento e seleção': ["Abertura de vaga","Entrevista","Hunting","Reunião de onboarding","Reunião com cliente","Produção de relatório","Triagem","Aplicação de testes","Contato com candidato","Contato com cliente"],
+            'RH Estratégico': ["Atividade Estratégica 1","Atividade Estratégica 2"]
+        };
+
         function filtrarProjetosPorCliente() {
             const cliente = document.getElementById('selectCliente').value;
             const selProjeto = document.getElementById('selectProjeto');
+            const selAtiv = document.getElementById('selectAtividade');
 
             if (!cliente) {
                 selProjeto.innerHTML = '<option value="">Selecione o cliente primeiro...</option>';
                 selProjeto.disabled = true;
+                selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+                selAtiv.disabled = true;
                 return;
             }
 
@@ -394,9 +408,36 @@
                 const o = document.createElement('option');
                 o.value = p.id;
                 o.textContent = p.nome_projeto;
+                o.dataset.area = p.area;
                 selProjeto.appendChild(o);
             });
             selProjeto.disabled = false;
+
+            // Limpa atividades ao trocar cliente
+            selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+            selAtiv.disabled = true;
+        }
+
+        function carregarAtividadesDoProjetoSelecionado() {
+            const selProjeto = document.getElementById('selectProjeto');
+            const selAtiv = document.getElementById('selectAtividade');
+            const opt = selProjeto.options[selProjeto.selectedIndex];
+            const area = opt ? opt.dataset.area : null;
+
+            if (!area) {
+                selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+                selAtiv.disabled = true;
+                return;
+            }
+
+            const lista = ATIVIDADES_POR_AREA[area] || [];
+            selAtiv.innerHTML = '<option value="">Selecione a atividade...</option>';
+            lista.forEach(a => {
+                const o = document.createElement('option');
+                o.value = a; o.textContent = a;
+                selAtiv.appendChild(o);
+            });
+            selAtiv.disabled = lista.length === 0;
         }
 
         async function carregarPlanejamentos() {
@@ -857,7 +898,8 @@
             document.getElementById('selectCliente').value = '';
             document.getElementById('selectProjeto').innerHTML = '<option value="">Selecione o cliente primeiro...</option>';
             document.getElementById('selectProjeto').disabled = true;
-            document.getElementById('inputAtividade').value = '';
+            document.getElementById('selectAtividade').innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+            document.getElementById('selectAtividade').disabled = true;
             document.getElementById('inputData').value = HOJE_ISO;
             document.getElementById('modalNovo').classList.add('show');
         }
@@ -870,12 +912,17 @@
             document.getElementById('editandoId').value = item.id;
             document.getElementById('modalTitulo').textContent = 'Editar Atividade';
 
-            // Seta o cliente e filtra projetos
+            // 1. Seta cliente e filtra projetos
             document.getElementById('selectCliente').value = proj.empresa || '';
             filtrarProjetosPorCliente();
-            document.getElementById('selectProjeto').value = item.projeto_id;
 
-            document.getElementById('inputAtividade').value = item.atividade;
+            // 2. Seta projeto e carrega atividades
+            document.getElementById('selectProjeto').value = item.projeto_id;
+            carregarAtividadesDoProjetoSelecionado();
+
+            // 3. Seta atividade
+            document.getElementById('selectAtividade').value = item.atividade;
+
             document.getElementById('inputData').value = item.data_planejada;
             document.getElementById('modalNovo').classList.add('show');
         }
@@ -887,7 +934,7 @@
         async function salvarAtividade() {
             const editandoId = document.getElementById('editandoId').value;
             const projetoId = document.getElementById('selectProjeto').value;
-            const atividade = document.getElementById('inputAtividade').value.trim();
+            const atividade = document.getElementById('selectAtividade').value;
             const data = document.getElementById('inputData').value;
 
             if (!projetoId || !atividade || !data) {
@@ -904,10 +951,10 @@
                     atividade,
                     data_planejada: data,
                     colaborador: nomeUsuario,
-                    status: editandoId ? undefined : 'Planejado'
+                    status: 'Planejado'
                 };
-                // Remove undefined
-                if (!payload.status) delete payload.status;
+                // Na edição, não sobrescreve o status atual
+                if (editandoId) delete payload.status;
 
                 const url = editandoId ? `/api/planejamento/${editandoId}` : '/api/planejamento';
                 const method = editandoId ? 'PUT' : 'POST';
