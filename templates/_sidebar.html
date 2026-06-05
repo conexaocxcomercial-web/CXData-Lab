@@ -23,13 +23,13 @@
     width: 32px; height: 32px; min-width: 32px;
     object-fit: contain; flex-shrink: 0;
 }
-.cxsb-logo-full {
-    height: 22px; width: auto;
-    object-fit: contain;
+.cxsb-brand-text {
+    font-size: 14px; font-weight: 900;
+    color: #1e1e1e; white-space: nowrap;
     opacity: 1; transition: opacity 0.2s;
-    white-space: nowrap;
+    font-family: 'Inter', sans-serif; letter-spacing: -0.3px;
 }
-.cxsidebar.collapsed .cxsb-logo-full { opacity: 0; pointer-events: none; }
+.cxsidebar.collapsed .cxsb-brand-text { opacity: 0; pointer-events: none; }
 
 .cxsb-body { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
 
@@ -89,8 +89,8 @@
 
 <nav class="cxsidebar" id="cxSidebar">
     <div class="cxsb-header">
-        <img src="{{ url_for('static', filename='cx_logos-07 (3).png') }}" alt="Logo" class="cxsb-logo-img cxsb-logo-icon">
-        <img src="{{ url_for('static', filename='cx_logos-11 (24).png') }}" alt="CXData" class="cxsb-logo-img cxsb-logo-full">
+        <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="Logo" class="cxsb-logo-icon">
+        <span class="cxsb-brand-text">CXProjetos</span>
     </div>
     <div class="cxsb-body">
         <div class="cxsb-item" data-path="/" onclick="window.location.href='/'">
