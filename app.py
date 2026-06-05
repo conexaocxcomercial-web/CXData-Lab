@@ -308,5 +308,68 @@ def marcar_comentario_lido(comentario_id):
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
 
+# --- PLANEJAMENTO DIÁRIO ---
+
+@app.route('/planejamento')
+def planejamento():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'))
+
+@app.route('/api/planejamento', methods=['GET'])
+def listar_planejamento():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        res = supabase.table("planejamento_diario").select("*").order("data_planejada", desc=False).order("criado_em", desc=False).execute()
+        return jsonify({"status": "sucesso", "planejamentos": res.data}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no GET Planejamento: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar planejamentos."}), 500
+
+@app.route('/api/planejamento', methods=['POST'])
+def criar_planejamento():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    dados = request.json
+    try:
+        novo = {
+            "projeto_id": dados.get("projeto_id"),
+            "colaborador": dados.get("colaborador"),
+            "atividade": dados.get("atividade"),
+            "data_planejada": dados.get("data_planejada"),
+            "status": dados.get("status", "Planejado")
+        }
+        supabase.table("planejamento_diario").insert(novo).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no POST Planejamento: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao criar atividade."}), 500
+
+@app.route('/api/planejamento/<item_id>', methods=['PUT'])
+def atualizar_planejamento(item_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    dados = request.json
+    try:
+        atualizacao = {}
+        if "projeto_id" in dados: atualizacao["projeto_id"] = dados["projeto_id"]
+        if "atividade" in dados: atualizacao["atividade"] = dados["atividade"]
+        if "data_planejada" in dados: atualizacao["data_planejada"] = dados["data_planejada"]
+        if "colaborador" in dados: atualizacao["colaborador"] = dados["colaborador"]
+        if "status" in dados: atualizacao["status"] = dados["status"]
+        supabase.table("planejamento_diario").update(atualizacao).eq("id", item_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no PUT Planejamento: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao atualizar atividade."}), 500
+
+@app.route('/api/planejamento/<item_id>', methods=['DELETE'])
+def excluir_planejamento(item_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        supabase.table("planejamento_diario").delete().eq("id", item_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir atividade."}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
