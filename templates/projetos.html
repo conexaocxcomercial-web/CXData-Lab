@@ -1429,6 +1429,10 @@
             const container = document.getElementById('listaHistorico');
             
             if (data.historico && data.historico.length > 0) {
+                // Recalcula o total direto dos logs reais — ignora cache
+                const totalReal = data.historico.reduce((soma, h) => soma + (h.tempo_segundos || 0), 0);
+                document.getElementById('detTempoTotal').innerText = formatarSegundosTick(totalReal);
+
                 container.innerHTML = data.historico.map(h => {
                     return `
                     <div class="historico-item">
