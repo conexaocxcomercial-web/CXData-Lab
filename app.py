@@ -41,7 +41,7 @@ def logout():
 def index():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', usuario=session.get('usuario_nome'))
+    return render_template('index.html', usuario=session.get('usuario_nome'), usuario_nome=session.get('usuario_nome'))
 
 @app.route('/board/<nome_quadro>')
 def tela_projetos(nome_quadro):
@@ -307,6 +307,19 @@ def marcar_comentario_lido(comentario_id):
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
+
+@app.route('/api/debug/tempo')
+def debug_tempo():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        res = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
+        return jsonify({
+            "total_registros": len(res.data),
+            "primeiros_5": res.data[:5],
+            "raw": res.data
+        }), 200
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
 
 # --- PLANEJAMENTO DIÁRIO ---
 
