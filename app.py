@@ -338,11 +338,14 @@ def criar_planejamento():
             "data_planejada": dados.get("data_planejada"),
             "status": dados.get("status", "Planejado")
         }
-        supabase.table("planejamento_diario").insert(novo).execute()
+        print(f"[DEBUG] Tentando inserir: {novo}")
+        res = supabase.table("planejamento_diario").insert(novo).execute()
+        print(f"[DEBUG] Resposta Supabase: {res}")
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro no POST Planejamento: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao criar atividade."}), 500
+        erro_msg = str(e)
+        print(f"[CRITICAL] Erro no POST Planejamento: {erro_msg}")
+        return jsonify({"status": "erro", "mensagem": erro_msg}), 500
 
 @app.route('/api/planejamento/<item_id>', methods=['PUT'])
 def atualizar_planejamento(item_id):
