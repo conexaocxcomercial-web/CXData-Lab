@@ -18,7 +18,7 @@
         }
 
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-left: 72px; }
 
         .hub-container { width: 100%; max-width: 1000px; padding: 40px; }
         
@@ -27,7 +27,7 @@
         .hub-header h1 span { color: var(--primary-purple); }
         .hub-header p { color: var(--text-muted); font-size: 16px; font-weight: 500; }
 
-        .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 
         .hub-card { 
             background: var(--glass-bg); 
@@ -68,6 +68,13 @@
 </head>
 <body>
 
+    {% include '_sidebar.html' %}
+
+    <!-- elemento oculto para o script da sidebar ler o nome -->
+    <span id="nomeUsuario" style="display:none;">{{ usuario_nome }}</span>
+
+    {% include '_sidebar.html' %}
+
     <div class="hub-container">
         <div class="hub-header">
             <h1>CX<span>Projetos</span></h1>
@@ -94,13 +101,6 @@
                 <div class="card-title">Quadro Geral</div>
                 <div class="card-desc">Acompanhe as demandas do comercial, marketing, CX Data e projetos pontuais.</div>
                 <a href="/board/geral" class="btn-entrar">ACESSAR QUADRO</a>
-            </div>
-
-            <div class="hub-card" onclick="window.location.href='/planejamento'">
-                <div class="icon-box" style="background: var(--primary-purple); color: var(--accent-lime);"><span class="material-symbols-rounded">calendar_today</span></div>
-                <div class="card-title">Planejamento</div>
-                <div class="card-desc">Planeje as atividades do dia, semana e mês com visão individual e do time.</div>
-                <a href="/planejamento" class="btn-entrar">ACESSAR</a>
             </div>
         </div>
     </div>
