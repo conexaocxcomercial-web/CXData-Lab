@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planejamento | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root {
+            --bg-board: #f4f4f5;
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --text-main: #1e1e1e;
+            --text-muted: #71717a;
+            --primary-purple: #7371ff;
+            --accent-lime: #bef533;
+            --light-purple: #dbbfff;
+            --accent-pink: #ff43c0;
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+
+        /* TOP BAR */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
+            height: 70px; min-height: 70px; flex-shrink: 0;
+            padding: 0 40px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); z-index: 10;
+        }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+        .top-bar-logo:hover { opacity: 0.8; }
+        .btn-icon-round {
+            display: flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
+            border-radius: 50% !important; color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+        }
+        .btn-icon-round:hover { background: #fff; color: var(--text-main); }
+        .btn-icon-round.danger:hover { background: #fee2e2; color: #ef4444; }
+
+        /* COMMAND BAR */
+        .command-bar { padding: 22px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
+        .btn-acao:hover { background-color: var(--text-main); }
+        .btn-acao:disabled { background-color: var(--text-muted); cursor: not-allowed; }
+        .btn-sec { background-color: #f4f4f5; color: var(--text-main); padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; border-radius: 50px !important; }
+        .btn-sec:hover { background: #e4e4e7; }
+
+        /* VIEW SWITCHER */
+        .view-switcher { display: flex; gap: 20px; padding: 0 40px 0 40px; border-bottom: 1px solid #e4e4e7; flex-shrink: 0; }
+        .view-tab { font-size: 12px; font-weight: 800; color: var(--text-muted); cursor: pointer; padding-bottom: 12px; border-bottom: 3px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .view-tab:hover { color: var(--primary-purple); }
+        .view-tab.active { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
+
+        /* FILTER + NAV BAR */
+        .filter-nav-bar { padding: 12px 40px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex-shrink: 0; border-bottom: 1px solid #f0f0f1; }
+        .filter-input { padding: 9px 18px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255, 255, 255, 0.8); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
+        .filter-input:focus { background: #fff; box-shadow: 0 2px 12px rgba(115,113,255,0.1); }
+        .nav-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); border-radius: 50% !important; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
+        .nav-btn:hover { background: #fff; color: var(--text-main); }
+        .nav-title { font-size: 14px; font-weight: 900; letter-spacing: -0.3px; }
+        .btn-hoje-nav { background: var(--primary-purple); color: white; padding: 7px 18px; font-size: 10px; font-weight: 800; border-radius: 50px !important; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-hoje-nav:hover { background: var(--text-main); }
+        .separador-nav { width: 1px; height: 20px; background: #e4e4e7; margin: 0 4px; }
+
+        /* CONTENT */
+        .content-area { flex-grow: 1; overflow: hidden; }
+        .scroll-area { height: 100%; overflow-y: auto; padding: 20px 40px 40px 40px; }
+
+        /* === VIEW: HOJE === */
+        .hoje-section { margin-bottom: 28px; }
+        .colab-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .avatar { width: 32px; height: 32px; min-width: 32px; background: var(--light-purple); color: var(--primary-purple); font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; }
+        .colab-nome { font-size: 14px; font-weight: 900; }
+        .colab-count { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+        /* PLAN CARD */
+        .plan-card {
+            background: var(--glass-bg); backdrop-filter: blur(10px);
+            padding: 16px 18px; margin-bottom: 8px; transition: all 0.2s;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+            display: flex; align-items: center; gap: 14px;
+            border-left: 3px solid #e4e4e7;
+        }
+        .plan-card:hover { background: rgba(255,255,255,0.9); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
+        .plan-card.s-planejado { border-left-color: #d4d4d8; }
+        .plan-card.s-andamento { border-left-color: var(--primary-purple); }
+        .plan-card.s-concluido { border-left-color: #22c55e; }
+        .plan-card.s-nao-realizado { border-left-color: #ef4444; }
+
+        .plan-card-body { flex-grow: 1; min-width: 0; }
+        .pc-empresa { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--primary-purple); letter-spacing: 0.8px; margin-bottom: 2px; }
+        .pc-projeto { font-size: 14px; font-weight: 900; margin-bottom: 3px; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pc-atividade { font-size: 12px; color: var(--text-muted); font-weight: 500; line-height: 1.4; margin-bottom: 10px; }
+        .pc-footer { display: flex; align-items: center; gap: 8px; }
+        .status-select { padding: 5px 12px; font-size: 9px; font-weight: 800; text-transform: uppercase; background: #f4f4f5; border-radius: 50px !important; outline: none; cursor: pointer; transition: 0.2s; color: var(--text-muted); letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
+
+        .plan-card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .btn-play { background-color: var(--accent-lime); color: var(--text-main); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; border-radius: 50% !important; flex-shrink: 0; }
+        .btn-play:hover { transform: scale(1.1); }
+        .btn-play.parar { background-color: var(--accent-pink); color: white; animation: pulse 1.5s infinite; }
+        .btn-play.concluido { background-color: #dcfce7; color: #22c55e; cursor: default; transform: none !important; }
+        .btn-play:disabled { opacity: 0.3; cursor: not-allowed; transform: none; animation: none; }
+        .btn-sm { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; border-radius: 50% !important; }
+        .btn-sm:hover { background: rgba(0,0,0,0.05); color: var(--text-main); }
+        .btn-sm.danger:hover { background: #fee2e2; color: #ef4444; }
+
+        /* === VIEW: SEMANA === */
+        .semana-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; min-height: 100%; }
+        .semana-col { display: flex; flex-direction: column; }
+        .semana-col-header { padding: 10px 12px 14px 12px; text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid transparent; letter-spacing: 0.5px; margin-bottom: 10px; }
+        .semana-col-header.hoje { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
+        .dia-num { font-size: 26px; font-weight: 900; display: block; color: var(--text-main); line-height: 1.1; margin-bottom: 4px; }
+        .semana-col-header.hoje .dia-num { color: var(--primary-purple); }
+        .semana-cards { display: flex; flex-direction: column; gap: 6px; }
+
+        /* PLAN CARD PEQUENO (semana) */
+        .plan-card-sm {
+            background: var(--glass-bg); padding: 10px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s;
+            border-left: 3px solid #e4e4e7; cursor: default;
+        }
+        .plan-card-sm:hover { background: rgba(255,255,255,0.9); }
+        .plan-card-sm.s-planejado { border-left-color: #d4d4d8; }
+        .plan-card-sm.s-andamento { border-left-color: var(--primary-purple); }
+        .plan-card-sm.s-concluido { border-left-color: #22c55e; }
+        .plan-card-sm.s-nao-realizado { border-left-color: #ef4444; }
+        .pcs-projeto { font-size: 11px; font-weight: 900; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pcs-atividade { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
+        .pcs-footer { display: flex; justify-content: space-between; align-items: center; }
+        .avatar-xs { width: 18px; height: 18px; min-width: 18px; background: var(--light-purple); color: var(--primary-purple); font-size: 7px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; }
+        .btn-play-xs { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: var(--accent-lime); color: #1e1e1e; border-radius: 50% !important; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        .btn-play-xs:hover { transform: scale(1.1); }
+        .btn-play-xs.parar { background: var(--accent-pink); color: white; }
+        .semana-empty { padding: 20px 8px; text-align: center; color: #d4d4d8; font-size: 20px; }
+
+        /* === VIEW: MÊS === */
+        .mes-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .mes-dia-header { padding: 10px 8px; text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; background: transparent; }
+        .mes-dia { background: rgba(255,255,255,0.5); padding: 8px 10px; min-height: 85px; cursor: pointer; transition: 0.15s; }
+        .mes-dia:hover { background: rgba(255,255,255,0.95); }
+        .mes-dia.hoje { background: rgba(115,113,255,0.05); outline: 2px solid var(--primary-purple); outline-offset: -2px; }
+        .mes-dia.outro-mes { opacity: 0.35; pointer-events: none; }
+        .mes-dia-num { font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 5px; }
+        .mes-dia.hoje .mes-dia-num { color: var(--primary-purple); font-size: 15px; }
+        .mes-mini-card { font-size: 9px; font-weight: 700; padding: 3px 7px; background: rgba(115,113,255,0.1); color: var(--primary-purple); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 3px !important; }
+        .mes-mini-card.s-concluido { background: #dcfce7; color: #166534; }
+        .mes-mini-card.s-nao-realizado { background: #fee2e2; color: #991b1b; }
+        .mes-mais { font-size: 9px; font-weight: 800; color: var(--text-muted); margin-top: 2px; }
+
+        /* FLOATING PLAYER */
+        .floating-player {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #1e1e1e; color: white; padding: 15px 25px;
+            border-radius: 50px !important; box-shadow: 0 15px 50px rgba(0,0,0,0.25);
+            display: flex; align-items: center; gap: 20px; z-index: 9999; min-width: 400px;
+        }
+        .fp-info { display: flex; flex-direction: column; max-width: 240px; }
+        .fp-area { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; }
+        .fp-nome { font-size: 14px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
+        .fp-tarefa { font-size: 10px; color: #71717a; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fp-timer { font-family: monospace; font-size: 20px; font-weight: 900; color: var(--accent-lime); letter-spacing: 1px; }
+        .fp-btn { width: 36px; height: 36px; border-radius: 50% !important; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #fff; padding: 40px; width: 100%; max-width: 520px; box-shadow: 0 30px 80px rgba(0,0,0,0.1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .modal-title { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+        .input-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+        .input-group label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
+        .input-group input, .input-group select, .input-group textarea { padding: 13px 16px; background: #f9f9f9; outline: none; font-size: 13px; font-weight: 500; color: var(--text-main); border-left: 3px solid transparent; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { background: #fff; border-left-color: var(--primary-purple); }
+        .input-group textarea { resize: none; min-height: 80px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+        /* TOAST */
+        .toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(30,30,30,0.95); backdrop-filter: blur(10px); color: white; padding: 12px 22px; border-radius: 50px !important; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; }
+
+        /* EMPTY */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-state .empty-icon { font-size: 48px; display: block; margin-bottom: 15px; opacity: 0.25; }
+        .empty-state p { font-size: 13px; font-weight: 600; }
+
+        /* ALERTA DIA NÃO ATUAL */
+        .dia-alerta { background: rgba(115,113,255,0.07); padding: 10px 18px; display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 12px; font-weight: 700; color: var(--primary-purple); }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,67,192,0.4); } 50% { box-shadow: 0 0 0 8px rgba(255,67,192,0); } }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:13px; font-weight:600; color:var(--text-muted);">Olá, <strong id="nomeUsuario" style="color:var(--text-main);"></strong></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div class="btn-icon-round" onclick="window.location.href='/'" title="Início">
+                <span class="material-symbols-rounded" style="font-size:20px;">home</span>
+            </div>
+            <div class="btn-icon-round danger" onclick="window.location.href='/logout'" title="Sair">
+                <span class="material-symbols-rounded" style="font-size:20px;">logout</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMAND BAR -->
+    <div class="command-bar">
+        <div>
+            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Planejamento Diário</h2>
+            <p id="subtituloData" style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;"></p>
+        </div>
+        <button class="btn-acao" onclick="abrirModalNovo()">
+            <span class="material-symbols-rounded" style="font-size:17px;">add</span>
+            NOVA ATIVIDADE
+        </button>
+    </div>
+
+    <!-- VIEW SWITCHER -->
+    <div class="view-switcher">
+        <div class="view-tab active" id="tab-hoje" onclick="mudarView('hoje')">
+            <span class="material-symbols-rounded" style="font-size:15px;">today</span>Dia
+        </div>
+        <div class="view-tab" id="tab-semana" onclick="mudarView('semana')">
+            <span class="material-symbols-rounded" style="font-size:15px;">view_week</span>Semana
+        </div>
+        <div class="view-tab" id="tab-mes" onclick="mudarView('mes')">
+            <span class="material-symbols-rounded" style="font-size:15px;">calendar_month</span>Mês
+        </div>
+    </div>
+
+    <!-- FILTER + NAV BAR -->
+    <div class="filter-nav-bar">
+        <div id="navGroup" style="display:flex; align-items:center; gap:8px;">
+            <button class="nav-btn" onclick="navegar(-1)">
+                <span class="material-symbols-rounded" style="font-size:17px;">chevron_left</span>
+            </button>
+            <span class="nav-title" id="navTitle"></span>
+            <button class="nav-btn" onclick="navegar(1)">
+                <span class="material-symbols-rounded" style="font-size:17px;">chevron_right</span>
+            </button>
+            <button class="btn-hoje-nav" onclick="voltarHoje()">Hoje</button>
+            <div class="separador-nav"></div>
+        </div>
+        <select class="filter-input" id="filtroColaborador" onchange="renderizarView()">
+            <option value="">Todos os colaboradores</option>
+        </select>
+        <select class="filter-input" id="filtroStatus" onchange="renderizarView()">
+            <option value="">Todos os status</option>
+            <option value="Planejado">Planejado</option>
+            <option value="Em Andamento">Em Andamento</option>
+            <option value="Concluído">Concluído</option>
+            <option value="Não Realizado">Não Realizado</option>
+        </select>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content-area">
+        <div class="scroll-area" id="scrollArea">
+            <div id="view-hoje"></div>
+            <div id="view-semana" style="display:none;"></div>
+            <div id="view-mes" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- FLOATING PLAYER -->
+    <div id="floatingPlayer" class="floating-player" style="display:none;">
+        <div class="fp-info">
+            <span class="fp-area" id="fpArea"></span>
+            <span class="fp-nome" id="fpNome"></span>
+            <span class="fp-tarefa" id="fpTarefa"></span>
+        </div>
+        <div class="fp-timer" id="fpTempo">00:00:00</div>
+        <button id="btnPauseResume" class="fp-btn" style="background:#f59e0b;" onclick="togglePauseTimer()">
+            <span id="iconPauseResume" class="material-symbols-rounded" style="font-size:18px; color:#1e1e1e;">pause</span>
+        </button>
+        <button class="fp-btn" style="background:var(--accent-pink);" onclick="pararTimer()">
+            <span class="material-symbols-rounded" style="font-size:18px; color:white;">stop</span>
+        </button>
+    </div>
+
+    <!-- MODAL NOVA / EDITAR ATIVIDADE -->
+    <div class="modal-overlay" id="modalNovo">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitulo">Nova Atividade</span>
+                <div class="btn-icon-round" onclick="fecharModal()">
+                    <span class="material-symbols-rounded" style="font-size:18px;">close</span>
+                </div>
+            </div>
+            <input type="hidden" id="editandoId">
+            <div class="input-group">
+                <label>Projeto *</label>
+                <select id="selectProjeto">
+                    <option value="">Carregando projetos...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Atividade *</label>
+                <textarea id="inputAtividade" placeholder="Descreva a atividade que será realizada..."></textarea>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div class="input-group">
+                    <label>Data Planejada *</label>
+                    <input type="date" id="inputData">
+                </div>
+                <div class="input-group">
+                    <label>Status</label>
+                    <select id="inputStatus">
+                        <option value="Planejado">Planejado</option>
+                        <option value="Em Andamento">Em Andamento</option>
+                        <option value="Concluído">Concluído</option>
+                        <option value="Não Realizado">Não Realizado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Colaborador *</label>
+                <input type="text" id="inputColaborador" placeholder="Nome do colaborador">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="fecharModal()">CANCELAR</button>
+                <button class="btn-acao" id="btnSalvar" onclick="salvarAtividade()">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==========================================
+        // ESTADO GLOBAL
+        // ==========================================
+        const _HOJE = new Date();
+        _HOJE.setHours(0, 0, 0, 0);
+        const HOJE_ISO = _HOJE.toISOString().split('T')[0];
+
+        let viewAtual = 'hoje';
+        let dataRef = new Date(_HOJE);
+        let planejamentos = [];
+        let planejamentosMap = {};
+        let projetosGlobal = [];
+        let nomeUsuario = '{{ usuario_nome }}';
+        let activeTimerData = null;
+        let timerInterval = null;
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('nomeUsuario').textContent = nomeUsuario;
+            document.getElementById('inputColaborador').value = nomeUsuario;
+            atualizarNavTitle();
+            atualizarSubtitulo();
+            await Promise.all([carregarProjetos(), carregarPlanejamentos()]);
+            restaurarTimer();
+        });
+
+        // ==========================================
+        // CARREGAR DADOS
+        // ==========================================
+        async function carregarProjetos() {
+            try {
+                const res = await fetch('/api/projetos');
+                const data = await res.json();
+                projetosGlobal = (data.projetos || []).filter(p => p.status !== 'Cancelado');
+                projetosGlobal.sort((a, b) => a.nome_projeto.localeCompare(b.nome_projeto));
+                const sel = document.getElementById('selectProjeto');
+                sel.innerHTML = '<option value="">Selecione um projeto...</option>';
+                projetosGlobal.forEach(p => {
+                    const o = document.createElement('option');
+                    o.value = p.id;
+                    o.textContent = `${p.empresa} — ${p.nome_projeto}`;
+                    sel.appendChild(o);
+                });
+            } catch(e) { showToast('Erro ao carregar projetos.', 'error'); }
+        }
+
+        async function carregarPlanejamentos() {
+            try {
+                const res = await fetch('/api/planejamento');
+                const data = await res.json();
+                planejamentos = data.planejamentos || [];
+                planejamentosMap = {};
+                planejamentos.forEach(p => { planejamentosMap[p.id] = p; });
+
+                // Popula filtro de colaboradores
+                const collabs = [...new Set(planejamentos.map(p => p.colaborador))].sort();
+                const filtro = document.getElementById('filtroColaborador');
+                const valAtual = filtro.value;
+                filtro.innerHTML = '<option value="">Todos os colaboradores</option>';
+                collabs.forEach(c => {
+                    const o = document.createElement('option');
+                    o.value = c; o.textContent = c;
+                    if (c === valAtual) o.selected = true;
+                    filtro.appendChild(o);
+                });
+
+                renderizarView();
+            } catch(e) { showToast('Erro ao carregar planejamentos.', 'error'); }
+        }
+
+        function getDadosFiltrados() {
+            const colab = document.getElementById('filtroColaborador').value;
+            const status = document.getElementById('filtroStatus').value;
+            return planejamentos.filter(p => {
+                if (colab && p.colaborador !== colab) return false;
+                if (status && p.status !== status) return false;
+                return true;
+            });
+        }
+
+        function getProj(id) { return projetosGlobal.find(p => p.id === id) || {}; }
+        function iniciais(nome) {
+            if (!nome) return '?';
+            const p = nome.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : nome.slice(0,2).toUpperCase();
+        }
+        function statusClass(s) {
+            return { 'Planejado': 's-planejado', 'Em Andamento': 's-andamento', 'Concluído': 's-concluido', 'Não Realizado': 's-nao-realizado' }[s] || 's-planejado';
+        }
+        function escH(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        // ==========================================
+        // VIEWS
+        // ==========================================
+        function mudarView(view, resetData = true) {
+            viewAtual = view;
+            if (resetData) dataRef = new Date(_HOJE);
+            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${view}`).classList.add('active');
+            ['hoje','semana','mes'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (v === view) el.style.display = v === 'semana' ? 'block' : 'block';
+                else el.style.display = 'none';
+            });
+            atualizarNavTitle();
+            atualizarSubtitulo();
+            renderizarView();
+        }
+
+        function renderizarView() {
+            const dados = getDadosFiltrados();
+            if (viewAtual === 'hoje') renderHoje(dados);
+            else if (viewAtual === 'semana') renderSemana(dados);
+            else if (viewAtual === 'mes') renderMes(dados);
+        }
+
+        // --- VIEW: DIA ---
+        function renderHoje(dados) {
+            const container = document.getElementById('view-hoje');
+            const diaAlvo = dataRef.toISOString().split('T')[0];
+            const isHojeReal = diaAlvo === HOJE_ISO;
+            const items = dados.filter(p => p.data_planejada === diaAlvo);
+
+            let html = '';
+
+            // Alerta se não é hoje
+            if (!isHojeReal) {
+                const d = new Date(diaAlvo + 'T12:00:00');
+                html += `<div class="dia-alerta">
+                    <span class="material-symbols-rounded" style="font-size:16px;">info</span>
+                    Visualizando ${d.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' })} — play disponível apenas no dia atual.
+                </div>`;
+            }
+
+            if (items.length === 0) {
+                html += `<div class="empty-state">
+                    <span class="material-symbols-rounded empty-icon">event_available</span>
+                    <p>Nenhuma atividade planejada${isHojeReal ? ' para hoje' : ' neste dia'}.</p>
+                </div>`;
+                container.innerHTML = html;
+                return;
+            }
+
+            // Agrupa por colaborador
+            const grupos = {};
+            items.forEach(item => {
+                if (!grupos[item.colaborador]) grupos[item.colaborador] = [];
+                grupos[item.colaborador].push(item);
+            });
+
+            Object.keys(grupos).sort().forEach(colab => {
+                html += `<div class="hoje-section">
+                    <div class="colab-header">
+                        <div class="avatar">${iniciais(colab)}</div>
+                        <span class="colab-nome">${escH(colab)}</span>
+                        <span class="colab-count">${grupos[colab].length} atividade${grupos[colab].length > 1 ? 's' : ''}</span>
+                    </div>`;
+                grupos[colab].forEach(item => { html += buildCardHoje(item, isHojeReal); });
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function buildCardHoje(item, isHojeReal) {
+            const proj = getProj(item.projeto_id);
+            const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
+            const concluido = item.status === 'Concluído';
+            const sc = statusClass(item.status);
+
+            let playBtn = '';
+            if (concluido) {
+                playBtn = `<button class="btn-play concluido" disabled><span class="material-symbols-rounded" style="font-size:18px;">check</span></button>`;
+            } else if (isHojeReal) {
+                if (ativo) {
+                    playBtn = `<button class="btn-play parar" id="playbtn-${item.id}" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:18px;">stop</span></button>`;
+                } else {
+                    const base = proj.tempo_total_segundos || 0;
+                    playBtn = `<button class="btn-play" id="playbtn-${item.id}" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
+                }
+            } else {
+                playBtn = `<button class="btn-play" disabled><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
+            }
+
+            return `<div class="plan-card ${sc}" id="card-${item.id}">
+                <div class="plan-card-body">
+                    <div class="pc-empresa">${escH(proj.empresa||'')}</div>
+                    <div class="pc-projeto">${escH(proj.nome_projeto||'Projeto não encontrado')}</div>
+                    <div class="pc-atividade">${escH(item.atividade)}</div>
+                    <div class="pc-footer">
+                        <select class="status-select" onchange="atualizarStatus('${item.id}', this.value)">
+                            <option value="Planejado" ${item.status==='Planejado'?'selected':''}>Planejado</option>
+                            <option value="Em Andamento" ${item.status==='Em Andamento'?'selected':''}>Em Andamento</option>
+                            <option value="Concluído" ${item.status==='Concluído'?'selected':''}>Concluído</option>
+                            <option value="Não Realizado" ${item.status==='Não Realizado'?'selected':''}>Não Realizado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="plan-card-actions">
+                    ${playBtn}
+                    <button class="btn-sm" onclick="abrirModalEditar('${item.id}')" title="Editar">
+                        <span class="material-symbols-rounded" style="font-size:15px;">edit</span>
+                    </button>
+                    <button class="btn-sm danger" onclick="excluirAtividade('${item.id}')" title="Excluir">
+                        <span class="material-symbols-rounded" style="font-size:15px;">delete</span>
+                    </button>
+                </div>
+            </div>`;
+        }
+
+        // --- VIEW: SEMANA ---
+        function renderSemana(dados) {
+            const container = document.getElementById('view-semana');
+            const ini = getInicioSemana(dataRef);
+
+            let html = `<div class="semana-grid">`;
+            for (let i = 0; i < 7; i++) {
+                const dia = new Date(ini);
+                dia.setDate(ini.getDate() + i);
+                const diaISO = dia.toISOString().split('T')[0];
+                const eHoje = diaISO === HOJE_ISO;
+                const items = dados.filter(p => p.data_planejada === diaISO);
+                const nomeDia = dia.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.','').toUpperCase();
+
+                html += `<div class="semana-col">
+                    <div class="semana-col-header ${eHoje ? 'hoje' : ''}" onclick="irParaDia('${diaISO}')" style="cursor:pointer;" title="Ver detalhe do dia">
+                        <span class="dia-num">${dia.getDate()}</span>
+                        ${nomeDia}
+                    </div>
+                    <div class="semana-cards">`;
+
+                if (items.length === 0) {
+                    html += `<div class="semana-empty">·</div>`;
+                } else {
+                    items.forEach(item => {
+                        const proj = getProj(item.projeto_id);
+                        const sc = statusClass(item.status);
+                        const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
+                        let playXs = '';
+                        if (eHoje && item.status !== 'Concluído') {
+                            if (ativo) {
+                                playXs = `<button class="btn-play-xs parar" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:13px;">stop</span></button>`;
+                            } else {
+                                const base = proj.tempo_total_segundos || 0;
+                                playXs = `<button class="btn-play-xs" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:13px;">play_arrow</span></button>`;
+                            }
+                        } else if (item.status === 'Concluído') {
+                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#22c55e;">check_circle</span>`;
+                        }
+                        html += `<div class="plan-card-sm ${sc}" title="${escH(item.atividade)} — ${escH(item.colaborador)}">
+                            <div class="pcs-projeto">${escH(proj.nome_projeto||'—')}</div>
+                            <div class="pcs-atividade">${escH(item.atividade)}</div>
+                            <div class="pcs-footer">
+                                <div class="avatar-xs">${iniciais(item.colaborador)}</div>
+                                ${playXs}
+                            </div>
+                        </div>`;
+                    });
+                }
+                html += `</div></div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- VIEW: MÊS ---
+        function renderMes(dados) {
+            const container = document.getElementById('view-mes');
+            const ano = dataRef.getFullYear();
+            const mes = dataRef.getMonth();
+            const primeiroDia = new Date(ano, mes, 1);
+            const iniGrid = new Date(primeiroDia);
+            iniGrid.setDate(primeiroDia.getDate() - ((primeiroDia.getDay() + 6) % 7));
+
+            let html = `<div class="mes-grid">`;
+            ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d => {
+                html += `<div class="mes-dia-header">${d}</div>`;
+            });
+
+            for (let i = 0; i < 42; i++) {
+                const dia = new Date(iniGrid);
+                dia.setDate(iniGrid.getDate() + i);
+                const diaISO = dia.toISOString().split('T')[0];
+                const eHoje = diaISO === HOJE_ISO;
+                const outroMes = dia.getMonth() !== mes;
+                const items = dados.filter(p => p.data_planejada === diaISO);
+
+                html += `<div class="mes-dia ${eHoje?'hoje':''} ${outroMes?'outro-mes':''}" onclick="irParaDia('${diaISO}')">
+                    <div class="mes-dia-num">${dia.getDate()}</div>`;
+
+                items.slice(0,2).forEach(item => {
+                    const proj = getProj(item.projeto_id);
+                    const sc = item.status === 'Concluído' ? 's-concluido' : item.status === 'Não Realizado' ? 's-nao-realizado' : '';
+                    html += `<div class="mes-mini-card ${sc}">${escH(proj.nome_projeto || item.atividade)}</div>`;
+                });
+                if (items.length > 2) html += `<div class="mes-mais">+${items.length - 2} mais</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function irParaDia(diaISO) {
+            dataRef = new Date(diaISO + 'T12:00:00');
+            mudarView('hoje', false);
+        }
+
+        // ==========================================
+        // NAVEGAÇÃO
+        // ==========================================
+        function navegar(dir) {
+            if (viewAtual === 'hoje') {
+                dataRef.setDate(dataRef.getDate() + dir);
+            } else if (viewAtual === 'semana') {
+                dataRef.setDate(dataRef.getDate() + (dir * 7));
+            } else if (viewAtual === 'mes') {
+                dataRef.setMonth(dataRef.getMonth() + dir);
+            }
+            atualizarNavTitle();
+            atualizarSubtitulo();
+            renderizarView();
+        }
+
+        function voltarHoje() {
+            dataRef = new Date(_HOJE);
+            atualizarNavTitle();
+            atualizarSubtitulo();
+            renderizarView();
+        }
+
+        function getInicioSemana(data) {
+            const d = new Date(data);
+            const dia = d.getDay();
+            d.setDate(d.getDate() - ((dia === 0) ? 6 : dia - 1));
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        function atualizarNavTitle() {
+            const el = document.getElementById('navTitle');
+            if (viewAtual === 'hoje') {
+                const diaAlvo = dataRef.toISOString().split('T')[0];
+                if (diaAlvo === HOJE_ISO) {
+                    el.textContent = 'Hoje';
+                } else {
+                    el.textContent = new Date(diaAlvo + 'T12:00:00').toLocaleDateString('pt-BR', { day:'numeric', month:'short' });
+                }
+            } else if (viewAtual === 'semana') {
+                const ini = getInicioSemana(dataRef);
+                const fim = new Date(ini); fim.setDate(ini.getDate() + 6);
+                el.textContent = `${ini.toLocaleDateString('pt-BR', { day:'numeric', month:'short' })} – ${fim.toLocaleDateString('pt-BR', { day:'numeric', month:'short' })}`;
+            } else if (viewAtual === 'mes') {
+                const n = dataRef.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+                el.textContent = n.charAt(0).toUpperCase() + n.slice(1);
+            }
+        }
+
+        function atualizarSubtitulo() {
+            const el = document.getElementById('subtituloData');
+            const diaAlvo = dataRef.toISOString().split('T')[0];
+            if (viewAtual === 'hoje') {
+                const d = new Date(diaAlvo + 'T12:00:00');
+                el.textContent = d.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+            } else if (viewAtual === 'semana') {
+                const ini = getInicioSemana(dataRef);
+                const fim = new Date(ini); fim.setDate(ini.getDate() + 6);
+                el.textContent = `${ini.toLocaleDateString('pt-BR', { day:'numeric', month:'short' })} — ${fim.toLocaleDateString('pt-BR', { day:'numeric', month:'short', year:'numeric' })}`;
+            } else if (viewAtual === 'mes') {
+                const n = dataRef.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+                el.textContent = n.charAt(0).toUpperCase() + n.slice(1);
+            }
+        }
+
+        // ==========================================
+        // TIMER (compatível com projetos.html)
+        // ==========================================
+        function iniciarTimerPlan(planId, projetoId, nomeProjeto, areaProjeto, atividade, colaborador, baseSegundos) {
+            if (activeTimerData) {
+                showToast('Você já tem um timer ativo! Finalize-o primeiro.', 'error');
+                return;
+            }
+            activeTimerData = {
+                id: projetoId, planId: planId,
+                nome: nomeProjeto, area: areaProjeto,
+                tarefa: atividade, colaborador: colaborador,
+                baseSegundosOriginal: baseSegundos,
+                sessaoAtualSegundos: 0, startTime: Date.now(),
+                isoInicio: new Date().toISOString(), paused: false
+            };
+            localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+            iniciarRelogioVisual();
+            atualizarStatus(planId, 'Em Andamento', false);
+        }
+
+        function togglePauseTimer() {
+            if (!activeTimerData) return;
+            if (activeTimerData.paused) {
+                activeTimerData.paused = false;
+                activeTimerData.startTime = Date.now();
+                document.getElementById('iconPauseResume').innerText = 'pause';
+                document.getElementById('btnPauseResume').style.background = '#f59e0b';
+                iniciarRelogioVisual();
+            } else {
+                clearInterval(timerInterval);
+                activeTimerData.paused = true;
+                const dec = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                activeTimerData.sessaoAtualSegundos += dec;
+                activeTimerData.startTime = null;
+                document.getElementById('iconPauseResume').innerText = 'play_arrow';
+                document.getElementById('btnPauseResume').style.background = 'var(--accent-lime)';
+                document.getElementById('iconPauseResume').style.color = '#1e1e1e';
+            }
+            localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+        }
+
+        function iniciarRelogioVisual() {
+            if (!activeTimerData) return;
+            const fp = document.getElementById('floatingPlayer');
+            fp.style.display = 'flex';
+            document.getElementById('fpArea').textContent = activeTimerData.area;
+            document.getElementById('fpNome').textContent = activeTimerData.nome;
+            document.getElementById('fpTarefa').textContent = activeTimerData.tarefa;
+            document.getElementById('iconPauseResume').innerText = 'pause';
+            document.getElementById('btnPauseResume').style.background = '#f59e0b';
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const dec = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                const total = activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + dec;
+                document.getElementById('fpTempo').textContent = fmtSeg(total);
+
+                // Atualiza botão play no card se visível
+                const btn = document.getElementById(`playbtn-${activeTimerData.planId}`);
+                if (btn) {
+                    btn.className = 'btn-play parar';
+                    btn.innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;">stop</span>`;
+                    btn.onclick = () => pararTimer();
+                }
+            }, 1000);
+        }
+
+        async function pararTimer() {
+            if (!activeTimerData) return;
+            clearInterval(timerInterval);
+            let tempoFinal = activeTimerData.sessaoAtualSegundos;
+            if (!activeTimerData.paused) tempoFinal += Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+            const salvar = { ...activeTimerData, tempoFinal };
+            const planId = activeTimerData.planId;
+
+            localStorage.removeItem('cxdata_timer_ativo');
+            activeTimerData = null;
+            document.getElementById('floatingPlayer').style.display = 'none';
+
+            try {
+                const req = await fetch(`/api/projetos/${salvar.id}/timer`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tempo_segundos: salvar.tempoFinal,
+                        descricao_tarefa: salvar.tarefa,
+                        colaborador: salvar.colaborador,
+                        data_inicio_atividade: salvar.isoInicio,
+                        data_fim_atividade: new Date().toISOString()
+                    })
+                });
+                if (req.ok) {
+                    showToast(`${fmtSeg(salvar.tempoFinal)} registrado com sucesso!`, 'success');
+                    await atualizarStatus(planId, 'Concluído', true);
+                } else {
+                    showToast('Erro ao salvar registro de tempo.', 'error');
+                    await carregarPlanejamentos();
+                }
+            } catch(e) {
+                showToast('Erro de conexão ao salvar tempo.', 'error');
+                await carregarPlanejamentos();
+            }
+        }
+
+        function restaurarTimer() {
+            const saved = localStorage.getItem('cxdata_timer_ativo');
+            if (!saved) return;
+            try {
+                activeTimerData = JSON.parse(saved);
+                if (activeTimerData && !activeTimerData.paused && activeTimerData.startTime) {
+                    const dec = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                    activeTimerData.sessaoAtualSegundos += dec;
+                    activeTimerData.startTime = Date.now();
+                    localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+                }
+                if (activeTimerData) iniciarRelogioVisual();
+            } catch(e) { localStorage.removeItem('cxdata_timer_ativo'); }
+        }
+
+        // ==========================================
+        // CRUD
+        // ==========================================
+        function abrirModalNovo() {
+            document.getElementById('editandoId').value = '';
+            document.getElementById('modalTitulo').textContent = 'Nova Atividade';
+            document.getElementById('selectProjeto').value = '';
+            document.getElementById('inputAtividade').value = '';
+            document.getElementById('inputData').value = HOJE_ISO;
+            document.getElementById('inputColaborador').value = nomeUsuario;
+            document.getElementById('inputStatus').value = 'Planejado';
+            document.getElementById('modalNovo').classList.add('show');
+        }
+
+        function abrirModalEditar(itemId) {
+            const item = planejamentosMap[itemId];
+            if (!item) return;
+            document.getElementById('editandoId').value = item.id;
+            document.getElementById('modalTitulo').textContent = 'Editar Atividade';
+            document.getElementById('selectProjeto').value = item.projeto_id;
+            document.getElementById('inputAtividade').value = item.atividade;
+            document.getElementById('inputData').value = item.data_planejada;
+            document.getElementById('inputColaborador').value = item.colaborador;
+            document.getElementById('inputStatus').value = item.status;
+            document.getElementById('modalNovo').classList.add('show');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalNovo').classList.remove('show');
+        }
+
+        async function salvarAtividade() {
+            const editandoId = document.getElementById('editandoId').value;
+            const projetoId = document.getElementById('selectProjeto').value;
+            const atividade = document.getElementById('inputAtividade').value.trim();
+            const data = document.getElementById('inputData').value;
+            const colaborador = document.getElementById('inputColaborador').value.trim();
+            const status = document.getElementById('inputStatus').value;
+
+            if (!projetoId || !atividade || !data || !colaborador) {
+                showToast('Preencha todos os campos obrigatórios.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSalvar');
+            btn.disabled = true; btn.textContent = 'SALVANDO...';
+
+            try {
+                const payload = { projeto_id: projetoId, atividade, data_planejada: data, colaborador, status };
+                const url = editandoId ? `/api/planejamento/${editandoId}` : '/api/planejamento';
+                const method = editandoId ? 'PUT' : 'POST';
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (res.ok) {
+                    showToast(editandoId ? 'Atividade atualizada!' : 'Atividade criada!', 'success');
+                    fecharModal();
+                    await carregarPlanejamentos();
+                } else { showToast('Erro ao salvar atividade.', 'error'); }
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'SALVAR'; }
+        }
+
+        async function atualizarStatus(itemId, novoStatus, recarregar = true) {
+            try {
+                await fetch(`/api/planejamento/${itemId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                // Atualiza local imediatamente
+                if (planejamentosMap[itemId]) {
+                    planejamentosMap[itemId].status = novoStatus;
+                    const idx = planejamentos.findIndex(p => String(p.id) === String(itemId));
+                    if (idx !== -1) planejamentos[idx].status = novoStatus;
+                }
+                if (recarregar) await carregarPlanejamentos();
+                else renderizarView();
+            } catch(e) { showToast('Erro ao atualizar status.', 'error'); }
+        }
+
+        async function excluirAtividade(itemId) {
+            if (!confirm('Deseja excluir esta atividade?')) return;
+            try {
+                const res = await fetch(`/api/planejamento/${itemId}`, { method: 'DELETE' });
+                if (res.ok) { showToast('Atividade excluída.', 'success'); await carregarPlanejamentos(); }
+                else showToast('Erro ao excluir.', 'error');
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+
+        // ==========================================
+        // UTILS
+        // ==========================================
+        function fmtSeg(s) {
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sg = s % 60;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sg).padStart(2,'0')}`;
+        }
+
+        function showToast(msg, tipo = 'success') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast`;
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px; color:${tipo==='success'?'var(--accent-lime)':'var(--accent-pink)'};">${tipo==='success'?'check_circle':'error'}</span>${msg}`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 3500);
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('modalNovo').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
+    </script>
+</body>
+</html>
