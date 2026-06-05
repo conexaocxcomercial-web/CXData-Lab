@@ -1,0 +1,72 @@
+<style>
+    .cxsidebar {
+        position: fixed; left: 0; top: 0; bottom: 0;
+        width: 72px; background: #1e1e1e; z-index: 100;
+        display: flex; flex-direction: column; align-items: center;
+    }
+    .cxsb-brand {
+        height: 70px; width: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; font-weight: 900; color: #bef533;
+        letter-spacing: -0.5px; font-family: 'Inter', sans-serif;
+        border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+    }
+    .cxsb-items {
+        display: flex; flex-direction: column;
+        width: 100%; padding: 10px 0; gap: 2px; flex-grow: 1; overflow-y: auto;
+    }
+    .cxsb-item {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 14px 6px 10px 6px; gap: 5px;
+        cursor: pointer; transition: all 0.2s;
+        color: #52525b; border-left: 3px solid transparent;
+    }
+    .cxsb-item:hover { color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.04); }
+    .cxsb-item.active { color: #bef533; border-left-color: #bef533; background: rgba(190,245,51,0.06); }
+    .cxsb-item .material-symbols-rounded { font-size: 22px; }
+    .cxsb-label {
+        font-size: 9px; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 0.4px; font-family: 'Inter', sans-serif; text-align: center; line-height: 1.2;
+    }
+    .cxsb-divider { width: 30px; height: 1px; background: rgba(255,255,255,0.06); margin: 6px auto; }
+</style>
+
+<nav class="cxsidebar">
+    <div class="cxsb-brand">CX</div>
+    <div class="cxsb-items">
+        <div class="cxsb-item" data-path="/" onclick="window.location.href='/'">
+            <span class="material-symbols-rounded">home</span>
+            <span class="cxsb-label">Hub</span>
+        </div>
+        <div class="cxsb-divider"></div>
+        <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
+            <span class="material-symbols-rounded">psychology</span>
+            <span class="cxsb-label">RH Est.</span>
+        </div>
+        <div class="cxsb-item" data-path="/board/recrutamento" onclick="window.location.href='/board/recrutamento'">
+            <span class="material-symbols-rounded">group_add</span>
+            <span class="cxsb-label">R&S</span>
+        </div>
+        <div class="cxsb-item" data-path="/board/geral" onclick="window.location.href='/board/geral'">
+            <span class="material-symbols-rounded">dashboard</span>
+            <span class="cxsb-label">Geral</span>
+        </div>
+        <div class="cxsb-divider"></div>
+        <div class="cxsb-item" data-path="/planejamento" onclick="window.location.href='/planejamento'">
+            <span class="material-symbols-rounded">calendar_today</span>
+            <span class="cxsb-label">Planejar</span>
+        </div>
+    </div>
+</nav>
+
+<script>
+    (function() {
+        var curr = window.location.pathname;
+        document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
+            var path = item.getAttribute('data-path');
+            var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
+            if (match) item.classList.add('active');
+        });
+    })();
+</script>
