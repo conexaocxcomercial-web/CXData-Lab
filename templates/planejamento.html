@@ -299,33 +299,24 @@
             </div>
             <input type="hidden" id="editandoId">
             <div class="input-group">
+                <label>Cliente *</label>
+                <select id="selectCliente" onchange="filtrarProjetosPorCliente()">
+                    <option value="">Selecione um cliente...</option>
+                </select>
+            </div>
+            <div class="input-group">
                 <label>Projeto *</label>
-                <select id="selectProjeto">
-                    <option value="">Carregando projetos...</option>
+                <select id="selectProjeto" disabled>
+                    <option value="">Selecione o cliente primeiro...</option>
                 </select>
             </div>
             <div class="input-group">
                 <label>Atividade *</label>
                 <textarea id="inputAtividade" placeholder="Descreva a atividade que será realizada..."></textarea>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-                <div class="input-group">
-                    <label>Data Planejada *</label>
-                    <input type="date" id="inputData">
-                </div>
-                <div class="input-group">
-                    <label>Status</label>
-                    <select id="inputStatus">
-                        <option value="Planejado">Planejado</option>
-                        <option value="Em Andamento">Em Andamento</option>
-                        <option value="Concluído">Concluído</option>
-                        <option value="Não Realizado">Não Realizado</option>
-                    </select>
-                </div>
-            </div>
             <div class="input-group">
-                <label>Colaborador *</label>
-                <input type="text" id="inputColaborador" placeholder="Nome do colaborador">
+                <label>Data Planejada *</label>
+                <input type="date" id="inputData">
             </div>
             <div class="modal-footer">
                 <button class="btn-sec" onclick="fecharModal()">CANCELAR</button>
@@ -374,15 +365,38 @@
                 const data = await res.json();
                 projetosGlobal = (data.projetos || []).filter(p => p.status !== 'Cancelado');
                 projetosGlobal.sort((a, b) => a.nome_projeto.localeCompare(b.nome_projeto));
-                const sel = document.getElementById('selectProjeto');
-                sel.innerHTML = '<option value="">Selecione um projeto...</option>';
-                projetosGlobal.forEach(p => {
+
+                // Popula select de clientes (empresas únicas)
+                const clientes = [...new Set(projetosGlobal.map(p => p.empresa).filter(Boolean))].sort();
+                const selCliente = document.getElementById('selectCliente');
+                selCliente.innerHTML = '<option value="">Selecione um cliente...</option>';
+                clientes.forEach(c => {
                     const o = document.createElement('option');
-                    o.value = p.id;
-                    o.textContent = `${p.empresa} — ${p.nome_projeto}`;
-                    sel.appendChild(o);
+                    o.value = c; o.textContent = c;
+                    selCliente.appendChild(o);
                 });
             } catch(e) { showToast('Erro ao carregar projetos.', 'error'); }
+        }
+
+        function filtrarProjetosPorCliente() {
+            const cliente = document.getElementById('selectCliente').value;
+            const selProjeto = document.getElementById('selectProjeto');
+
+            if (!cliente) {
+                selProjeto.innerHTML = '<option value="">Selecione o cliente primeiro...</option>';
+                selProjeto.disabled = true;
+                return;
+            }
+
+            const filtrados = projetosGlobal.filter(p => p.empresa === cliente);
+            selProjeto.innerHTML = '<option value="">Selecione um projeto...</option>';
+            filtrados.forEach(p => {
+                const o = document.createElement('option');
+                o.value = p.id;
+                o.textContent = p.nome_projeto;
+                selProjeto.appendChild(o);
+            });
+            selProjeto.disabled = false;
         }
 
         async function carregarPlanejamentos() {
@@ -840,24 +854,29 @@
         function abrirModalNovo() {
             document.getElementById('editandoId').value = '';
             document.getElementById('modalTitulo').textContent = 'Nova Atividade';
-            document.getElementById('selectProjeto').value = '';
+            document.getElementById('selectCliente').value = '';
+            document.getElementById('selectProjeto').innerHTML = '<option value="">Selecione o cliente primeiro...</option>';
+            document.getElementById('selectProjeto').disabled = true;
             document.getElementById('inputAtividade').value = '';
             document.getElementById('inputData').value = HOJE_ISO;
-            document.getElementById('inputColaborador').value = nomeUsuario;
-            document.getElementById('inputStatus').value = 'Planejado';
             document.getElementById('modalNovo').classList.add('show');
         }
 
         function abrirModalEditar(itemId) {
             const item = planejamentosMap[itemId];
             if (!item) return;
+            const proj = getProj(item.projeto_id);
+
             document.getElementById('editandoId').value = item.id;
             document.getElementById('modalTitulo').textContent = 'Editar Atividade';
+
+            // Seta o cliente e filtra projetos
+            document.getElementById('selectCliente').value = proj.empresa || '';
+            filtrarProjetosPorCliente();
             document.getElementById('selectProjeto').value = item.projeto_id;
+
             document.getElementById('inputAtividade').value = item.atividade;
             document.getElementById('inputData').value = item.data_planejada;
-            document.getElementById('inputColaborador').value = item.colaborador;
-            document.getElementById('inputStatus').value = item.status;
             document.getElementById('modalNovo').classList.add('show');
         }
 
@@ -870,10 +889,8 @@
             const projetoId = document.getElementById('selectProjeto').value;
             const atividade = document.getElementById('inputAtividade').value.trim();
             const data = document.getElementById('inputData').value;
-            const colaborador = document.getElementById('inputColaborador').value.trim();
-            const status = document.getElementById('inputStatus').value;
 
-            if (!projetoId || !atividade || !data || !colaborador) {
+            if (!projetoId || !atividade || !data) {
                 showToast('Preencha todos os campos obrigatórios.', 'error');
                 return;
             }
@@ -882,7 +899,16 @@
             btn.disabled = true; btn.textContent = 'SALVANDO...';
 
             try {
-                const payload = { projeto_id: projetoId, atividade, data_planejada: data, colaborador, status };
+                const payload = {
+                    projeto_id: projetoId,
+                    atividade,
+                    data_planejada: data,
+                    colaborador: nomeUsuario,
+                    status: editandoId ? undefined : 'Planejado'
+                };
+                // Remove undefined
+                if (!payload.status) delete payload.status;
+
                 const url = editandoId ? `/api/planejamento/${editandoId}` : '/api/planejamento';
                 const method = editandoId ? 'PUT' : 'POST';
                 const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
