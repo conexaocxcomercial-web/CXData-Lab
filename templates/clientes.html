@@ -40,17 +40,18 @@
         .scroll-area { flex-grow: 1; overflow-y: auto; padding: 6px 40px 40px 40px; }
 
         /* GRID DE CLIENTES */
-        .clientes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
-        .cliente-card { background: var(--glass-bg); backdrop-filter: blur(10px); padding: 22px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 14px; }
-        .cliente-card:hover { background: rgba(255,255,255,0.95); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(115,113,255,0.12); }
-        .cliente-card-top { display: flex; align-items: center; gap: 12px; }
-        .cliente-avatar { width: 46px; height: 46px; min-width: 46px; background: var(--text-main); color: var(--accent-lime); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; border-radius: 12px !important; }
-        .cliente-nome { font-size: 15px; font-weight: 900; letter-spacing: -0.3px; line-height: 1.2; }
-        .cliente-local { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
-        .cliente-stats { display: flex; gap: 10px; }
-        .cliente-stat { flex: 1; background: rgba(255,255,255,0.5); padding: 10px; text-align: center; border-radius: 8px !important; }
-        .cliente-stat-num { font-size: 20px; font-weight: 900; color: var(--primary-purple); }
-        .cliente-stat-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 2px; }
+        .clientes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .cliente-card { background: #fff; border: 1px solid #f0f0f1; padding: 20px; cursor: pointer; transition: all 0.18s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .cliente-card:hover { border-color: #dbd9ff; transform: translateY(-3px); box-shadow: 0 12px 28px rgba(115,113,255,0.10); }
+        .cliente-card-top { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+        .cliente-avatar { width: 46px; height: 46px; min-width: 46px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; border-radius: 12px !important; }
+        .cliente-nome { font-size: 15px; font-weight: 800; line-height: 1.2; letter-spacing: -0.3px; }
+        .cliente-local { font-size: 11px; color: #a1a1aa; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+        .cliente-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid #f4f4f5; }
+        .cliente-projs { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+        .cliente-projs b { color: var(--text-main); font-weight: 800; }
+        .pill-ativos { font-size: 11px; font-weight: 800; padding: 4px 11px; border-radius: 20px !important; background: #EEEDFE; color: #3C3489; }
+        .pill-ativos.zero { background: #f1f0e8; color: #5f5e5a; }
 
         /* INPUTS MODAL */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
@@ -216,6 +217,17 @@
         function fmtTempo(s){ const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); if(h>0) return `${h}h ${m}min`; if(m>0) return `${m}min`; return `${s}s`; }
         function fmtData(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('pt-BR'); }
 
+        const PALETA = [
+            ['#EEEDFE','#3C3489'], ['#E1F5EE','#0F6E56'], ['#FAECE7','#993C1D'],
+            ['#FBEAF0','#993556'], ['#E6F1FB','#185FA5'], ['#EAF3DE','#3B6D11'],
+            ['#FAEEDA','#854F0B']
+        ];
+        function corCliente(nome) {
+            let h = 0;
+            for (let i = 0; i < (nome||'').length; i++) h = nome.charCodeAt(i) + ((h << 5) - h);
+            return PALETA[Math.abs(h) % PALETA.length];
+        }
+
         function renderLista() {
             const busca = document.getElementById('busca').value.toLowerCase();
             const grid = document.getElementById('clientesGrid');
@@ -229,27 +241,28 @@
                 return;
             }
 
-            grid.innerHTML = filtrados.map(c => `
+            grid.innerHTML = filtrados.map(c => {
+                const [bg, fg] = corCliente(c.nome_empresa);
+                const temLocal = c.cidade || c.estado;
+                const ativos = c.qtd_ativos || 0;
+                return `
                 <div class="cliente-card" onclick="abrirMapa('${c.id}')">
                     <div class="cliente-card-top">
-                        <div class="cliente-avatar">${iniciais(c.nome_empresa)}</div>
+                        <div class="cliente-avatar" style="background:${bg}; color:${fg};">${iniciais(c.nome_empresa)}</div>
                         <div style="min-width:0;">
                             <div class="cliente-nome">${escH(c.nome_empresa)}</div>
-                            <div class="cliente-local">${c.cidade ? escH(c.cidade) : 'Sem cidade'}${c.estado ? ' · ' + escH(c.estado) : ''}</div>
+                            <div class="cliente-local">
+                                <span class="material-symbols-rounded" style="font-size:13px;">${temLocal ? 'location_on' : 'location_off'}</span>
+                                ${temLocal ? escH(c.cidade||'') + (c.estado ? ' · ' + escH(c.estado) : '') : 'Sem localização'}
+                            </div>
                         </div>
                     </div>
-                    <div class="cliente-stats">
-                        <div class="cliente-stat">
-                            <div class="cliente-stat-num">${c.qtd_projetos || 0}</div>
-                            <div class="cliente-stat-label">Projetos</div>
-                        </div>
-                        <div class="cliente-stat">
-                            <div class="cliente-stat-num" style="color:#84cc16;">${c.qtd_ativos || 0}</div>
-                            <div class="cliente-stat-label">Ativos</div>
-                        </div>
+                    <div class="cliente-foot">
+                        <span class="cliente-projs"><b>${c.qtd_projetos || 0}</b> projeto${c.qtd_projetos !== 1 ? 's' : ''}</span>
+                        <span class="pill-ativos ${ativos === 0 ? 'zero' : ''}">${ativos} ativo${ativos !== 1 ? 's' : ''}</span>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         // ===== MAPA COMPLETO DO CLIENTE =====
