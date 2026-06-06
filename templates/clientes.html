@@ -34,6 +34,9 @@
         .btn-sec:hover { background: #e4e4e7; }
 
         .search-bar { padding: 0 40px 14px 40px; flex-shrink: 0; }
+        .filtros-bar { padding: 0 40px 16px 40px; display: flex; gap: 12px; flex-shrink: 0; flex-wrap: wrap; }
+        .filtro-select { padding: 9px 18px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255,255,255,0.8); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
+        .filtro-select:focus { background: #fff; box-shadow: 0 2px 12px rgba(115,113,255,0.1); }
         .search-input { width: 100%; max-width: 420px; padding: 12px 20px; font-size: 13px; font-weight: 500; background: rgba(255,255,255,0.8); border-radius: 50px !important; outline: none; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s; }
         .search-input:focus { background: #fff; box-shadow: 0 4px 16px rgba(115,113,255,0.1); }
 
@@ -137,6 +140,29 @@
 
     <!-- VIEW: DETALHE / MAPA -->
     <div id="viewDetalhe" style="display:none; flex-direction:column; flex-grow:1; overflow:hidden;">
+        <div class="command-bar">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div class="btn-icon-round" onclick="voltarLista()" title="Voltar"><span class="material-symbols-rounded" style="font-size:20px;">arrow_back</span></div>
+                <div>
+                    <h2 id="detTituloTopo" style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Cliente</h2>
+                    <p style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;">Mapa completo do cliente</p>
+                </div>
+            </div>
+            <button class="btn-sec" id="btnEditarTopo"><span class="material-symbols-rounded" style="font-size:16px; vertical-align:middle;">edit</span> EDITAR</button>
+        </div>
+        <div class="filtros-bar" id="filtrosBar" style="display:none;">
+            <select class="filtro-select" id="filtroArea" onchange="renderProjetosFiltrados()">
+                <option value="">Todas as áreas</option>
+            </select>
+            <select class="filtro-select" id="filtroResp" onchange="renderProjetosFiltrados()">
+                <option value="">Todos os responsáveis</option>
+            </select>
+            <select class="filtro-select" id="filtroStatusProj" onchange="renderProjetosFiltrados()">
+                <option value="">Todos os status</option>
+                <option value="ativo">Em andamento</option>
+                <option value="finalizado">Finalizados</option>
+            </select>
+        </div>
         <div class="scroll-area" id="detalheContent"></div>
     </div>
 
@@ -266,9 +292,12 @@
         }
 
         // ===== MAPA COMPLETO DO CLIENTE =====
+        let _mapaAtual = null;
+
         async function abrirMapa(clienteId) {
             document.getElementById('viewLista').style.display = 'none';
             document.getElementById('viewDetalhe').style.display = 'flex';
+            document.getElementById('filtrosBar').style.display = 'none';
             const container = document.getElementById('detalheContent');
             container.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">hourglass_top</span><p>Carregando histórico...</p></div>`;
 
@@ -277,50 +306,92 @@
                 const data = await res.json();
                 if (data.status !== 'sucesso') { showToast('Erro ao carregar mapa.', 'error'); voltarLista(); return; }
 
+                _mapaAtual = data;
                 const c = data.cliente;
-                const k = data.kpis;
-                const projetos = data.projetos || [];
-                const ativos = projetos.filter(p => !['Finalizado','Cancelado'].includes(p.status));
-                const finalizados = projetos.filter(p => ['Finalizado','Cancelado'].includes(p.status));
 
-                let metaHtml = '';
-                if (c.cnpj) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">badge</span>${escH(c.cnpj)}</div>`;
-                if (c.cidade || c.estado) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">location_on</span>${escH(c.cidade||'')}${c.estado?' - '+escH(c.estado):''}</div>`;
-                if (c.telefone) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">call</span>${escH(c.telefone)}</div>`;
-                if (c.email) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">mail</span>${escH(c.email)}</div>`;
+                // Topo
+                document.getElementById('detTituloTopo').textContent = c.nome_empresa;
+                document.getElementById('btnEditarTopo').onclick = () => abrirModalEditar(c.id);
 
-                container.innerHTML = `
-                    <div class="btn-voltar" onclick="voltarLista()"><span class="material-symbols-rounded" style="font-size:16px;">arrow_back</span> Voltar para clientes</div>
+                // Popula filtros (área e responsável únicos)
+                const areas = [...new Set(data.projetos.map(p => p.area).filter(Boolean))].sort();
+                const resps = [...new Set(data.projetos.map(p => p.responsavel).filter(Boolean))].sort();
+                const fa = document.getElementById('filtroArea');
+                const fr = document.getElementById('filtroResp');
+                fa.innerHTML = '<option value="">Todas as áreas</option>' + areas.map(a => `<option value="${escH(a)}">${escH(a)}</option>`).join('');
+                fr.innerHTML = '<option value="">Todos os responsáveis</option>' + resps.map(r => `<option value="${escH(r)}">${escH(r)}</option>`).join('');
+                document.getElementById('filtroStatusProj').value = '';
+                document.getElementById('filtrosBar').style.display = data.projetos.length > 0 ? 'flex' : 'none';
 
-                    <div class="det-header">
-                        <div class="det-avatar">${iniciais(c.nome_empresa)}</div>
-                        <div class="det-info" style="flex-grow:1;">
-                            <h2>${escH(c.nome_empresa)}</h2>
-                            <div class="det-meta">${metaHtml || '<span style="font-size:12px;color:#bbb;">Sem dados de contato cadastrados</span>'}</div>
-                        </div>
-                        <button class="btn-sec" onclick="abrirModalEditar('${c.id}')"><span class="material-symbols-rounded" style="font-size:16px; vertical-align:middle;">edit</span> Editar</button>
-                    </div>
-
-                    <div class="kpi-row">
-                        <div class="kpi-card"><div class="kpi-num">${k.total_projetos}</div><div class="kpi-label">Projetos Totais</div></div>
-                        <div class="kpi-card"><div class="kpi-num roxo">${k.ativos}</div><div class="kpi-label">Em Andamento</div></div>
-                        <div class="kpi-card"><div class="kpi-num lime">${k.finalizados}</div><div class="kpi-label">Finalizados</div></div>
-                        <div class="kpi-card"><div class="kpi-num">${fmtTempo(k.tempo_total_segundos)}</div><div class="kpi-label">Tempo Dedicado</div></div>
-                    </div>
-
-                    ${ativos.length > 0 ? `
-                    <div class="secao-titulo"><span class="material-symbols-rounded" style="font-size:16px; color:var(--primary-purple);">bolt</span> Em Andamento (${ativos.length})</div>
-                    ${ativos.map(p => renderProjeto(p, 'ativo')).join('')}
-                    ` : ''}
-
-                    ${finalizados.length > 0 ? `
-                    <div class="secao-titulo"><span class="material-symbols-rounded" style="font-size:16px; color:#22c55e;">check_circle</span> Finalizados (${finalizados.length})</div>
-                    ${finalizados.map(p => renderProjeto(p, 'finalizado')).join('')}
-                    ` : ''}
-
-                    ${projetos.length === 0 ? `<div class="empty-state"><span class="material-symbols-rounded">folder_off</span><p>Nenhum projeto vinculado a este cliente ainda.</p></div>` : ''}
-                `;
+                renderMapaHeader();
+                renderProjetosFiltrados();
             } catch(e) { showToast('Erro de conexão.', 'error'); voltarLista(); }
+        }
+
+        function renderMapaHeader() {
+            const c = _mapaAtual.cliente;
+            const k = _mapaAtual.kpis;
+            const [bg, fg] = corCliente(c.nome_empresa);
+
+            let metaHtml = '';
+            if (c.cnpj) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">badge</span>${escH(c.cnpj)}</div>`;
+            if (c.cidade || c.estado) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">location_on</span>${escH(c.cidade||'')}${c.estado?' - '+escH(c.estado):''}</div>`;
+            if (c.telefone) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">call</span>${escH(c.telefone)}</div>`;
+            if (c.email) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">mail</span>${escH(c.email)}</div>`;
+
+            document.getElementById('detalheContent').innerHTML = `
+                <div class="det-header">
+                    <div class="det-avatar" style="background:${bg}; color:${fg};">${iniciais(c.nome_empresa)}</div>
+                    <div class="det-info" style="flex-grow:1;">
+                        <h2>${escH(c.nome_empresa)}</h2>
+                        <div class="det-meta">${metaHtml || '<span style="font-size:12px;color:#bbb;">Sem dados de contato cadastrados</span>'}</div>
+                    </div>
+                </div>
+                <div class="kpi-row">
+                    <div class="kpi-card"><div class="kpi-num">${k.total_projetos}</div><div class="kpi-label">Projetos Totais</div></div>
+                    <div class="kpi-card"><div class="kpi-num roxo">${k.ativos}</div><div class="kpi-label">Em Andamento</div></div>
+                    <div class="kpi-card"><div class="kpi-num lime">${k.finalizados}</div><div class="kpi-label">Finalizados</div></div>
+                    <div class="kpi-card"><div class="kpi-num">${fmtTempo(k.tempo_total_segundos)}</div><div class="kpi-label">Tempo Dedicado</div></div>
+                </div>
+                <div id="listaProjetos"></div>
+            `;
+        }
+
+        function renderProjetosFiltrados() {
+            if (!_mapaAtual) return;
+            const fArea = document.getElementById('filtroArea').value;
+            const fResp = document.getElementById('filtroResp').value;
+            const fStatus = document.getElementById('filtroStatusProj').value;
+
+            let projetos = _mapaAtual.projetos.filter(p => {
+                if (fArea && p.area !== fArea) return false;
+                if (fResp && p.responsavel !== fResp) return false;
+                const eAtivo = !['Finalizado','Cancelado'].includes(p.status);
+                if (fStatus === 'ativo' && !eAtivo) return false;
+                if (fStatus === 'finalizado' && eAtivo) return false;
+                return true;
+            });
+
+            const ativos = projetos.filter(p => !['Finalizado','Cancelado'].includes(p.status));
+            const finalizados = projetos.filter(p => ['Finalizado','Cancelado'].includes(p.status));
+            const lista = document.getElementById('listaProjetos');
+            if (!lista) return;
+
+            if (projetos.length === 0) {
+                lista.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">filter_alt_off</span><p>Nenhum projeto com esses filtros.</p></div>`;
+                return;
+            }
+
+            let html = '';
+            if (ativos.length > 0) {
+                html += `<div class="secao-titulo"><span class="material-symbols-rounded" style="font-size:16px; color:var(--primary-purple);">bolt</span> Em Andamento (${ativos.length})</div>`;
+                html += ativos.map(p => renderProjeto(p, 'ativo')).join('');
+            }
+            if (finalizados.length > 0) {
+                html += `<div class="secao-titulo"><span class="material-symbols-rounded" style="font-size:16px; color:#22c55e;">check_circle</span> Finalizados (${finalizados.length})</div>`;
+                html += finalizados.map(p => renderProjeto(p, 'finalizado')).join('');
+            }
+            lista.innerHTML = html;
         }
 
         function renderProjeto(p, tipo) {
@@ -341,7 +412,9 @@
 
         function voltarLista() {
             document.getElementById('viewDetalhe').style.display = 'none';
+            document.getElementById('filtrosBar').style.display = 'none';
             document.getElementById('viewLista').style.display = 'flex';
+            _mapaAtual = null;
             carregarClientes();
         }
 
