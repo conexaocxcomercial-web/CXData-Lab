@@ -333,22 +333,27 @@ def listar_clientes():
         clientes = res.data
 
         # Conta projetos por cliente (para a listagem)
-        res_proj = supabase.table("projetos").select("cliente_id, status").execute()
+        res_proj = supabase.table("projetos").select("cliente_id, status, area, responsavel").execute()
         contagem = {}
         for p in res_proj.data:
             cid = p.get("cliente_id")
             if not cid: continue
             cid = str(cid)
             if cid not in contagem:
-                contagem[cid] = {"total": 0, "ativos": 0}
+                contagem[cid] = {"total": 0, "ativos": 0, "areas": set(), "responsaveis": set()}
             contagem[cid]["total"] += 1
             if p.get("status") not in ["Finalizado", "Cancelado"]:
                 contagem[cid]["ativos"] += 1
+            if p.get("area"): contagem[cid]["areas"].add(p["area"])
+            if p.get("responsavel"): contagem[cid]["responsaveis"].add(p["responsavel"])
 
         for c in clientes:
             cid = str(c["id"])
-            c["qtd_projetos"] = contagem.get(cid, {}).get("total", 0)
-            c["qtd_ativos"] = contagem.get(cid, {}).get("ativos", 0)
+            dados_c = contagem.get(cid, {})
+            c["qtd_projetos"] = dados_c.get("total", 0)
+            c["qtd_ativos"] = dados_c.get("ativos", 0)
+            c["areas"] = sorted(list(dados_c.get("areas", set())))
+            c["responsaveis"] = sorted(list(dados_c.get("responsaveis", set())))
 
         return jsonify({"status": "sucesso", "clientes": clientes}), 200
     except Exception as e:
