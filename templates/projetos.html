@@ -1605,7 +1605,27 @@
             checarTimerSalvo(); 
             carregarProjetos();
             carregarClientesSelect();
+            abrirProjetoViaURL();
         };
+
+        async function abrirProjetoViaURL() {
+            const params = new URLSearchParams(window.location.search);
+            const projetoId = params.get('projeto');
+            if (!projetoId) return;
+            // Aguarda os projetos carregarem antes de abrir
+            let tentativas = 0;
+            const intervalo = setInterval(() => {
+                tentativas++;
+                if (projetosGlobais && projetosGlobais.length > 0) {
+                    clearInterval(intervalo);
+                    abrirDetalhes(projetoId, { target: document.createElement('div') });
+                    // Limpa o param da URL sem recarregar
+                    window.history.replaceState({}, '', window.location.pathname);
+                } else if (tentativas > 40) {
+                    clearInterval(intervalo);
+                }
+            }, 100);
+        }
     </script>
 </body>
 </html>
