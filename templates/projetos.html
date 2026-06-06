@@ -403,14 +403,10 @@
             
             <div class="input-group">
                 <label>Cliente</label>
-                <select id="projClienteId" class="input-item" onchange="onClienteChange()"></select>
-                <div id="novoClienteBox" style="display:none; margin-top:10px; padding:14px; background:#f9f9f9; border-left:3px solid var(--primary-purple);">
-                    <input type="text" id="novoClienteNome" class="input-item" placeholder="Nome do novo cliente" style="margin-bottom:8px;">
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn-acao" style="padding:8px 16px; font-size:11px;" onclick="cadastrarClienteRapido()">CADASTRAR</button>
-                        <button class="btn-acao" style="padding:8px 16px; font-size:11px; background:#e4e4e7; color:var(--text-main);" onclick="cancelarNovoCliente()">CANCELAR</button>
-                    </div>
-                    <p style="font-size:10px; color:var(--text-muted); margin-top:8px;">Dica: complete os dados depois na tela de Clientes.</p>
+                <div id="clienteCombo" style="position:relative;">
+                    <input type="text" id="clienteBusca" class="input-item" placeholder="🔍 Buscar cliente..." autocomplete="off" oninput="filtrarClientesCombo()" onfocus="abrirDropdownClientes()">
+                    <input type="hidden" id="projClienteId">
+                    <div id="clienteDropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; box-shadow:0 12px 40px rgba(0,0,0,0.15); max-height:280px; overflow-y:auto; z-index:50; border:1px solid #f0f0f1;"></div>
                 </div>
             </div>
             <div class="input-group">
@@ -447,6 +443,47 @@
             </div>
             
             <button class="btn-acao" id="btnSalvarProjeto" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarProjeto()">CRIAR PROJETO</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalNovoCliente" onclick="fecharModalFundo(event, 'modalNovoCliente')" style="z-index:1100;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Novo Cliente</h2>
+                <button class="close-btn" onclick="fecharModal('modalNovoCliente')">X</button>
+            </div>
+            <div class="input-group">
+                <label>Nome da Empresa *</label>
+                <input type="text" id="ncNome" class="input-item" placeholder="Ex: Conexão CX">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div class="input-group">
+                    <label>CNPJ</label>
+                    <input type="text" id="ncCnpj" class="input-item" placeholder="00.000.000/0000-00">
+                </div>
+                <div class="input-group">
+                    <label>Telefone (WhatsApp)</label>
+                    <input type="text" id="ncTelefone" class="input-item" placeholder="(00) 00000-0000">
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px;">
+                <div class="input-group">
+                    <label>Cidade</label>
+                    <input type="text" id="ncCidade" class="input-item" placeholder="Natal">
+                </div>
+                <div class="input-group">
+                    <label>Estado</label>
+                    <select id="ncEstado" class="input-item">
+                        <option value="">—</option>
+                        <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>E-mail</label>
+                <input type="email" id="ncEmail" class="input-item" placeholder="contato@empresa.com.br">
+            </div>
+            <button class="btn-acao" id="btnSalvarNovoCliente" style="width:100%; justify-content:center; margin-top:10px; padding:18px;" onclick="salvarNovoClienteCompleto()">CADASTRAR CLIENTE</button>
         </div>
     </div>
 
@@ -724,69 +761,91 @@
                 const data = await res.json();
                 clientesGlobais = data.clientes || [];
                 clientesGlobais.sort((a,b) => a.nome_empresa.localeCompare(b.nome_empresa));
-                popularSelectClientes();
             } catch(e) { console.error('Erro ao carregar clientes', e); }
         }
 
-        function popularSelectClientes(selecionarId) {
-            const sel = document.getElementById('projClienteId');
-            if (!sel) return;
-            sel.innerHTML = '<option value="">Selecione um cliente...</option>';
-            clientesGlobais.forEach(c => {
-                const o = document.createElement('option');
-                o.value = c.id;
-                o.textContent = c.nome_empresa;
-                sel.appendChild(o);
-            });
-            const optNovo = document.createElement('option');
-            optNovo.value = '__novo__';
-            optNovo.textContent = '+ Cadastrar novo cliente';
-            optNovo.style.fontWeight = '800';
-            optNovo.style.color = '#7371ff';
-            sel.appendChild(optNovo);
-            if (selecionarId) sel.value = selecionarId;
+        function abrirDropdownClientes() {
+            filtrarClientesCombo();
         }
 
-        function onClienteChange() {
-            const sel = document.getElementById('projClienteId');
-            const box = document.getElementById('novoClienteBox');
-            if (sel.value === '__novo__') {
-                box.style.display = 'block';
-                document.getElementById('novoClienteNome').focus();
+        function filtrarClientesCombo() {
+            const termo = document.getElementById('clienteBusca').value.toLowerCase();
+            const dd = document.getElementById('clienteDropdown');
+            const filtrados = clientesGlobais.filter(c => c.nome_empresa.toLowerCase().includes(termo));
+
+            let html = `<div onclick="abrirModalNovoClienteCompleto()" style="padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:var(--primary-purple); border-bottom:1px solid #f0f0f1; position:sticky; top:0; background:#fff;">
+                <span class="material-symbols-rounded" style="font-size:18px;">add_circle</span> Cadastrar novo cliente
+            </div>`;
+
+            if (filtrados.length === 0) {
+                html += `<div style="padding:14px 16px; font-size:12px; color:#a1a1aa;">Nenhum cliente encontrado.</div>`;
             } else {
-                box.style.display = 'none';
+                html += filtrados.map(c => `
+                    <div onclick="selecionarCliente('${c.id}', '${c.nome_empresa.replace(/'/g, "\\'")}')" style="padding:11px 16px; cursor:pointer; font-size:13px; font-weight:600; transition:0.15s; display:flex; align-items:center; justify-content:space-between;" onmouseover="this.style.background='#f4f4f5'" onmouseout="this.style.background='#fff'">
+                        <span>${c.nome_empresa}</span>
+                        <span style="font-size:10px; color:#a1a1aa; font-weight:700;">${c.qtd_projetos || 0} proj.</span>
+                    </div>`).join('');
             }
+            dd.innerHTML = html;
+            dd.style.display = 'block';
         }
 
-        function cancelarNovoCliente() {
-            document.getElementById('novoClienteBox').style.display = 'none';
-            document.getElementById('novoClienteNome').value = '';
-            document.getElementById('projClienteId').value = '';
+        function selecionarCliente(id, nome) {
+            document.getElementById('projClienteId').value = id;
+            document.getElementById('clienteBusca').value = nome;
+            document.getElementById('clienteDropdown').style.display = 'none';
         }
 
-        async function cadastrarClienteRapido() {
-            const nome = document.getElementById('novoClienteNome').value.trim();
-            if (!nome) { showToast('Digite o nome do cliente.', 'error'); return; }
+        // Fecha dropdown ao clicar fora
+        document.addEventListener('click', function(e) {
+            const combo = document.getElementById('clienteCombo');
+            if (combo && !combo.contains(e.target)) {
+                document.getElementById('clienteDropdown').style.display = 'none';
+            }
+        });
+
+        // ===== MODAL COMPLETO DE NOVO CLIENTE =====
+        function abrirModalNovoClienteCompleto() {
+            document.getElementById('clienteDropdown').style.display = 'none';
+            ['ncNome','ncCnpj','ncTelefone','ncCidade','ncEmail'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('ncEstado').value = '';
+            // pré-preenche com o que já foi digitado na busca
+            const buscaAtual = document.getElementById('clienteBusca').value.trim();
+            if (buscaAtual) document.getElementById('ncNome').value = buscaAtual;
+            document.getElementById('modalNovoCliente').style.display = 'flex';
+        }
+
+        async function salvarNovoClienteCompleto() {
+            const nome = document.getElementById('ncNome').value.trim();
+            if (!nome) { showToast('Informe o nome da empresa.', 'error'); return; }
+            const btn = document.getElementById('btnSalvarNovoCliente');
+            btn.innerText = 'CADASTRANDO...'; btn.disabled = true;
             try {
-                const res = await fetch('/api/clientes', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ nome_empresa: nome })
-                });
+                const payload = {
+                    nome_empresa: nome,
+                    cnpj: document.getElementById('ncCnpj').value.trim(),
+                    telefone: document.getElementById('ncTelefone').value.trim(),
+                    cidade: document.getElementById('ncCidade').value.trim(),
+                    estado: document.getElementById('ncEstado').value,
+                    email: document.getElementById('ncEmail').value.trim()
+                };
+                const res = await fetch('/api/clientes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const data = await res.json();
                 if (res.ok && data.cliente) {
                     clientesGlobais.push(data.cliente);
                     clientesGlobais.sort((a,b) => a.nome_empresa.localeCompare(b.nome_empresa));
-                    popularSelectClientes(data.cliente.id);
-                    document.getElementById('novoClienteBox').style.display = 'none';
-                    document.getElementById('novoClienteNome').value = '';
-                    showToast('Cliente cadastrado!', 'success');
-                } else { showToast('Erro ao cadastrar cliente.', 'error'); }
+                    selecionarCliente(data.cliente.id, data.cliente.nome_empresa);
+                    fecharModal('modalNovoCliente');
+                    showToast('Cliente cadastrado e selecionado!', 'success');
+                } else { showToast('Erro: ' + (data.mensagem || 'falha'), 'error'); }
             } catch(e) { showToast('Erro de conexão.', 'error'); }
+            finally { btn.innerText = 'CADASTRAR CLIENTE'; btn.disabled = false; }
         }
 
         function abrirModalProjeto() {
             document.getElementById('projClienteId').value = '';
-            document.getElementById('novoClienteBox').style.display = 'none';
+            document.getElementById('clienteBusca').value = '';
+            document.getElementById('clienteDropdown').style.display = 'none';
             document.getElementById('projNome').value = '';
             document.getElementById('projPrazo').value = '';
             document.getElementById('projScrum').checked = false;
