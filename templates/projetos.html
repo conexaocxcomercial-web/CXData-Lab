@@ -20,7 +20,7 @@
         }
 
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 220px; transition: padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d4d4d8; }
@@ -402,8 +402,16 @@
             </div>
             
             <div class="input-group">
-                <label>Empresa / Cliente / Vaga</label>
-                <input type="text" id="projEmpresa" class="input-item" required>
+                <label>Cliente</label>
+                <select id="projClienteId" class="input-item" onchange="onClienteChange()"></select>
+                <div id="novoClienteBox" style="display:none; margin-top:10px; padding:14px; background:#f9f9f9; border-left:3px solid var(--primary-purple);">
+                    <input type="text" id="novoClienteNome" class="input-item" placeholder="Nome do novo cliente" style="margin-bottom:8px;">
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-acao" style="padding:8px 16px; font-size:11px;" onclick="cadastrarClienteRapido()">CADASTRAR</button>
+                        <button class="btn-acao" style="padding:8px 16px; font-size:11px; background:#e4e4e7; color:var(--text-main);" onclick="cancelarNovoCliente()">CANCELAR</button>
+                    </div>
+                    <p style="font-size:10px; color:var(--text-muted); margin-top:8px;">Dica: complete os dados depois na tela de Clientes.</p>
+                </div>
             </div>
             <div class="input-group">
                 <label>Nome do Projeto</label>
@@ -708,8 +716,77 @@
         function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
         function fecharModalFundo(event, id) { if(event.target.id === id) fecharModal(id); }
         
+        let clientesGlobais = [];
+
+        async function carregarClientesSelect() {
+            try {
+                const res = await fetch('/api/clientes');
+                const data = await res.json();
+                clientesGlobais = data.clientes || [];
+                clientesGlobais.sort((a,b) => a.nome_empresa.localeCompare(b.nome_empresa));
+                popularSelectClientes();
+            } catch(e) { console.error('Erro ao carregar clientes', e); }
+        }
+
+        function popularSelectClientes(selecionarId) {
+            const sel = document.getElementById('projClienteId');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Selecione um cliente...</option>';
+            clientesGlobais.forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.id;
+                o.textContent = c.nome_empresa;
+                sel.appendChild(o);
+            });
+            const optNovo = document.createElement('option');
+            optNovo.value = '__novo__';
+            optNovo.textContent = '+ Cadastrar novo cliente';
+            optNovo.style.fontWeight = '800';
+            optNovo.style.color = '#7371ff';
+            sel.appendChild(optNovo);
+            if (selecionarId) sel.value = selecionarId;
+        }
+
+        function onClienteChange() {
+            const sel = document.getElementById('projClienteId');
+            const box = document.getElementById('novoClienteBox');
+            if (sel.value === '__novo__') {
+                box.style.display = 'block';
+                document.getElementById('novoClienteNome').focus();
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        function cancelarNovoCliente() {
+            document.getElementById('novoClienteBox').style.display = 'none';
+            document.getElementById('novoClienteNome').value = '';
+            document.getElementById('projClienteId').value = '';
+        }
+
+        async function cadastrarClienteRapido() {
+            const nome = document.getElementById('novoClienteNome').value.trim();
+            if (!nome) { showToast('Digite o nome do cliente.', 'error'); return; }
+            try {
+                const res = await fetch('/api/clientes', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ nome_empresa: nome })
+                });
+                const data = await res.json();
+                if (res.ok && data.cliente) {
+                    clientesGlobais.push(data.cliente);
+                    clientesGlobais.sort((a,b) => a.nome_empresa.localeCompare(b.nome_empresa));
+                    popularSelectClientes(data.cliente.id);
+                    document.getElementById('novoClienteBox').style.display = 'none';
+                    document.getElementById('novoClienteNome').value = '';
+                    showToast('Cliente cadastrado!', 'success');
+                } else { showToast('Erro ao cadastrar cliente.', 'error'); }
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+
         function abrirModalProjeto() {
-            document.getElementById('projEmpresa').value = '';
+            document.getElementById('projClienteId').value = '';
+            document.getElementById('novoClienteBox').style.display = 'none';
             document.getElementById('projNome').value = '';
             document.getElementById('projPrazo').value = '';
             document.getElementById('projScrum').checked = false;
@@ -1110,8 +1187,12 @@
             const btn = document.getElementById('btnSalvarProjeto');
             btn.innerText = "CRIANDO..."; btn.disabled = true;
 
+            const clienteId = document.getElementById('projClienteId').value;
+            const clienteObj = clientesGlobais.find(c => String(c.id) === String(clienteId));
+
             const dados = {
-                empresa: document.getElementById('projEmpresa').value,
+                cliente_id: clienteId && clienteId !== '__novo__' ? clienteId : null,
+                empresa: clienteObj ? clienteObj.nome_empresa : '',
                 nome_projeto: document.getElementById('projNome').value,
                 area: document.getElementById('projArea').value,
                 responsavel: document.getElementById('projResp').value,
@@ -1120,8 +1201,8 @@
                 status_inicial: cfg.statusInicial 
             };
 
-            if(!dados.empresa || !dados.nome_projeto) {
-                showToast("Preencha Empresa e Nome do projeto.", "error"); 
+            if(!dados.cliente_id || !dados.nome_projeto) {
+                showToast("Selecione o Cliente e informe o Nome do projeto.", "error"); 
                 btn.innerText = "CRIAR PROJETO"; btn.disabled = false; return;
             }
 
@@ -1464,6 +1545,7 @@
             montarWorkspace();
             checarTimerSalvo(); 
             carregarProjetos();
+            carregarClientesSelect();
         };
     </script>
 </body>
