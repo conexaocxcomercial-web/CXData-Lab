@@ -1,21 +1,24 @@
 <style>
 .cxsidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
-    width: 220px;
+    width: 68px;
     background: #ffffff;
     border-right: 1px solid #f0f0f1;
     z-index: 100;
     display: flex; flex-direction: column;
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    box-shadow: 2px 0 12px rgba(0,0,0,0.03);
+    box-shadow: 2px 0 12px rgba(0,0,0,0.02);
 }
-.cxsidebar.collapsed { width: 68px; }
+.cxsidebar:hover {
+    width: 230px;
+    box-shadow: 8px 0 40px rgba(0,0,0,0.10);
+}
 
 .cxsb-header {
     height: 70px; min-height: 70px;
     display: flex; align-items: center;
-    padding: 0 14px; gap: 10px;
+    padding: 0 16px; gap: 12px;
     border-bottom: 1px solid #f4f4f5;
     overflow: hidden;
 }
@@ -26,65 +29,39 @@
 .cxsb-brand-text {
     font-size: 14px; font-weight: 900;
     color: #1e1e1e; white-space: nowrap;
-    opacity: 1; transition: opacity 0.2s;
+    opacity: 0; transition: opacity 0.2s 0.05s;
     font-family: 'Inter', sans-serif; letter-spacing: -0.3px;
 }
-.cxsidebar.collapsed .cxsb-brand-text { opacity: 0; pointer-events: none; }
+.cxsidebar:hover .cxsb-brand-text { opacity: 1; }
 
-.cxsb-body { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
+.cxsb-body { padding: 12px 12px; display: flex; flex-direction: column; gap: 3px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
 
 .cxsb-section {
     font-size: 9px; font-weight: 800;
     text-transform: uppercase; letter-spacing: 0.8px;
-    color: #d4d4d8; padding: 10px 10px 4px 10px;
+    color: #c4c4c8; padding: 12px 10px 4px 10px;
     white-space: nowrap; overflow: hidden;
-    height: auto; transition: height 0.25s, opacity 0.2s, padding 0.25s;
+    opacity: 0; transition: opacity 0.2s;
     font-family: 'Inter', sans-serif;
 }
-.cxsidebar.collapsed .cxsb-section { height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+.cxsidebar:hover .cxsb-section { opacity: 1; }
 
 .cxsb-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px;
-    border-radius: 8px !important;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 10px;
+    border-radius: 10px !important;
     cursor: pointer; transition: background 0.15s, color 0.15s;
     color: #71717a; white-space: nowrap;
-    min-height: 40px; position: relative;
+    min-height: 42px; position: relative;
     font-family: 'Inter', sans-serif;
 }
 .cxsb-item:hover { background: #f4f4f5; color: #1e1e1e; }
 .cxsb-item.active { background: #f0efff; color: #7371ff; }
-.cxsb-item .material-symbols-rounded { font-size: 20px; min-width: 20px; flex-shrink: 0; }
-.cxsb-item-label { font-size: 12px; font-weight: 700; transition: opacity 0.2s; }
-.cxsidebar.collapsed .cxsb-item-label { opacity: 0; pointer-events: none; }
+.cxsb-item .material-symbols-rounded { font-size: 22px; min-width: 22px; flex-shrink: 0; }
+.cxsb-item-label { font-size: 13px; font-weight: 700; opacity: 0; transition: opacity 0.2s 0.05s; }
+.cxsidebar:hover .cxsb-item-label { opacity: 1; }
 
-.cxsb-divider { height: 1px; background: #f4f4f5; margin: 5px 10px; flex-shrink: 0; }
-
-.cxsb-footer { padding: 8px; border-top: 1px solid #f4f4f5; flex-shrink: 0; }
-.cxsb-toggle {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px; border-radius: 8px !important;
-    cursor: pointer; transition: background 0.15s, color 0.15s;
-    color: #a1a1aa; white-space: nowrap;
-    font-family: 'Inter', sans-serif;
-}
-.cxsb-toggle:hover { background: #f4f4f5; color: #1e1e1e; }
-.cxsb-toggle-icon { font-size: 20px; min-width: 20px; transition: transform 0.25s; flex-shrink: 0; }
-.cxsidebar.collapsed .cxsb-toggle-icon { transform: rotate(180deg); }
-.cxsb-toggle-label { font-size: 12px; font-weight: 700; transition: opacity 0.2s; }
-.cxsidebar.collapsed .cxsb-toggle-label { opacity: 0; pointer-events: none; }
-
-.cxsb-tooltip {
-    position: absolute; left: calc(100% + 10px); top: 50%;
-    transform: translateY(-50%);
-    background: #1e1e1e; color: #fff;
-    padding: 5px 10px; border-radius: 6px !important;
-    font-size: 11px; font-weight: 700;
-    white-space: nowrap; pointer-events: none;
-    opacity: 0; transition: opacity 0.15s;
-    z-index: 200; font-family: 'Inter', sans-serif;
-}
-.cxsidebar.collapsed .cxsb-item:hover .cxsb-tooltip { opacity: 1; }
+.cxsb-divider { height: 1px; background: #f4f4f5; margin: 6px 10px; flex-shrink: 0; }
 </style>
 
 <nav class="cxsidebar" id="cxSidebar">
@@ -96,65 +73,41 @@
         <div class="cxsb-item" data-path="/" onclick="window.location.href='/'">
             <span class="material-symbols-rounded">home</span>
             <span class="cxsb-item-label">Hub</span>
-            <span class="cxsb-tooltip">Hub</span>
         </div>
-        <div class="cxsb-divider"></div>
+
         <div class="cxsb-section">Quadros</div>
         <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
             <span class="material-symbols-rounded">psychology</span>
             <span class="cxsb-item-label">RH Estratégico</span>
-            <span class="cxsb-tooltip">RH Estratégico</span>
         </div>
         <div class="cxsb-item" data-path="/board/recrutamento" onclick="window.location.href='/board/recrutamento'">
             <span class="material-symbols-rounded">group_add</span>
             <span class="cxsb-item-label">R&S</span>
-            <span class="cxsb-tooltip">R&S</span>
         </div>
         <div class="cxsb-item" data-path="/board/geral" onclick="window.location.href='/board/geral'">
             <span class="material-symbols-rounded">dashboard</span>
             <span class="cxsb-item-label">Geral</span>
-            <span class="cxsb-tooltip">Geral</span>
         </div>
-        <div class="cxsb-divider"></div>
-        <div class="cxsb-section">Produtividade</div>
+
+        <div class="cxsb-section">Gestão</div>
+        <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
+            <span class="material-symbols-rounded">apartment</span>
+            <span class="cxsb-item-label">Clientes</span>
+        </div>
         <div class="cxsb-item" data-path="/planejamento" onclick="window.location.href='/planejamento'">
             <span class="material-symbols-rounded">calendar_today</span>
             <span class="cxsb-item-label">Planejamento</span>
-            <span class="cxsb-tooltip">Planejamento</span>
-        </div>
-    </div>
-    <div class="cxsb-footer">
-        <div class="cxsb-toggle" onclick="toggleCxSidebar()">
-            <span class="material-symbols-rounded cxsb-toggle-icon">chevron_left</span>
-            <span class="cxsb-toggle-label">Recolher</span>
         </div>
     </div>
 </nav>
 
 <script>
 (function() {
-    var sidebar = document.getElementById('cxSidebar');
     var curr = window.location.pathname;
-
     document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
         var path = item.getAttribute('data-path');
         var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
         if (match) item.classList.add('active');
     });
-
-    if (localStorage.getItem('cxSidebarCollapsed') === 'true') {
-        sidebar.classList.add('collapsed');
-        document.body.style.paddingLeft = '68px';
-    } else {
-        document.body.style.paddingLeft = '220px';
-    }
 })();
-
-function toggleCxSidebar() {
-    var sidebar = document.getElementById('cxSidebar');
-    sidebar.classList.toggle('collapsed');
-    var collapsed = sidebar.classList.contains('collapsed');
-    document.body.style.paddingLeft = collapsed ? '68px' : '220px';
-    localStorage.setItem('cxSidebarCollapsed', collapsed);
-}
 </script>
