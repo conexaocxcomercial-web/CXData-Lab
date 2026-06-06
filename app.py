@@ -99,6 +99,7 @@ def criar_projeto():
     try:
         novo_projeto = {
             "empresa": dados.get("empresa"),
+            "cliente_id": dados.get("cliente_id"),
             "nome_projeto": dados.get("nome_projeto"),
             "area": dados.get("area", "Geral"),
             "responsavel": dados.get("responsavel", "Não definido"),
@@ -151,6 +152,7 @@ def atualizar_projeto(projeto_id):
         if "area" in dados: atualizacao["area"] = dados.get("area")
         if "responsavel" in dados: atualizacao["responsavel"] = dados.get("responsavel")
         if "empresa" in dados: atualizacao["empresa"] = dados.get("empresa")
+        if "cliente_id" in dados: atualizacao["cliente_id"] = dados.get("cliente_id")
         if "nome_projeto" in dados: atualizacao["nome_projeto"] = dados.get("nome_projeto")
         if "prazo_data" in dados: atualizacao["prazo_data"] = dados.get("prazo_data") if dados.get("prazo_data") else None
         if "is_scrum" in dados: atualizacao["is_scrum"] = bool(dados.get("is_scrum"))
@@ -315,18 +317,155 @@ def marcar_comentario_lido(comentario_id):
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
 
-@app.route('/api/debug/tempo')
-def debug_tempo():
+# --- CLIENTES ---
+
+@app.route('/clientes')
+def clientes_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('clientes.html', usuario_nome=session.get('usuario_nome'))
+
+@app.route('/api/clientes', methods=['GET'])
+def listar_clientes():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
-        res = supabase.table("time_logs").select("projeto_id, tempo_segundos").execute()
+        res = supabase.table("clientes").select("*").order("nome_empresa", desc=False).execute()
+        clientes = res.data
+
+        # Conta projetos por cliente (para a listagem)
+        res_proj = supabase.table("projetos").select("cliente_id, status").execute()
+        contagem = {}
+        for p in res_proj.data:
+            cid = p.get("cliente_id")
+            if not cid: continue
+            cid = str(cid)
+            if cid not in contagem:
+                contagem[cid] = {"total": 0, "ativos": 0}
+            contagem[cid]["total"] += 1
+            if p.get("status") not in ["Finalizado", "Cancelado"]:
+                contagem[cid]["ativos"] += 1
+
+        for c in clientes:
+            cid = str(c["id"])
+            c["qtd_projetos"] = contagem.get(cid, {}).get("total", 0)
+            c["qtd_ativos"] = contagem.get(cid, {}).get("ativos", 0)
+
+        return jsonify({"status": "sucesso", "clientes": clientes}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no GET Clientes: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar clientes."}), 500
+
+@app.route('/api/clientes', methods=['POST'])
+def criar_cliente():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    dados = request.json
+    try:
+        novo = {
+            "nome_empresa": dados.get("nome_empresa"),
+            "cnpj": dados.get("cnpj"),
+            "cidade": dados.get("cidade"),
+            "estado": dados.get("estado"),
+            "telefone": dados.get("telefone"),
+            "email": dados.get("email")
+        }
+        res = supabase.table("clientes").insert(novo).execute()
+        return jsonify({"status": "sucesso", "cliente": res.data[0] if res.data else None}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no POST Cliente: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/clientes/<cliente_id>', methods=['PUT'])
+def atualizar_cliente(cliente_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    dados = request.json
+    try:
+        atualizacao = {}
+        for campo in ["nome_empresa", "cnpj", "cidade", "estado", "telefone", "email"]:
+            if campo in dados:
+                atualizacao[campo] = dados[campo]
+
+        supabase.table("clientes").update(atualizacao).eq("id", cliente_id).execute()
+
+        # Se mudou o nome, sincroniza o campo legado "empresa" nos projetos
+        if "nome_empresa" in atualizacao:
+            supabase.table("projetos").update({"empresa": atualizacao["nome_empresa"]}).eq("cliente_id", cliente_id).execute()
+
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no PUT Cliente: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/clientes/<cliente_id>', methods=['DELETE'])
+def excluir_cliente(cliente_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        # Não deixa excluir se houver projetos vinculados
+        res_proj = supabase.table("projetos").select("id").eq("cliente_id", cliente_id).execute()
+        if res_proj.data and len(res_proj.data) > 0:
+            return jsonify({"status": "erro", "mensagem": f"Cliente tem {len(res_proj.data)} projeto(s) vinculado(s). Não pode ser excluído."}), 400
+
+        supabase.table("clientes").delete().eq("id", cliente_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/clientes/<cliente_id>/mapa', methods=['GET'])
+def mapa_cliente(cliente_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    try:
+        # Dados do cliente
+        res_cli = supabase.table("clientes").select("*").eq("id", cliente_id).execute()
+        if not res_cli.data:
+            return jsonify({"status": "erro", "mensagem": "Cliente não encontrado."}), 404
+        cliente = res_cli.data[0]
+
+        # Projetos do cliente
+        res_proj = supabase.table("projetos").select("*").eq("cliente_id", cliente_id).execute()
+        projetos = res_proj.data
+
+        # Tempo dedicado por projeto (paginação para superar limite de 1000)
+        ids_projetos = [str(p["id"]) for p in projetos]
+        tempos = {}
+        if ids_projetos:
+            page_size = 1000
+            offset = 0
+            while True:
+                res_t = supabase.table("time_logs").select("projeto_id, tempo_segundos").in_("projeto_id", ids_projetos).range(offset, offset + page_size - 1).execute()
+                if not res_t.data:
+                    break
+                for log in res_t.data:
+                    pid = str(log["projeto_id"])
+                    tempos[pid] = tempos.get(pid, 0) + (log["tempo_segundos"] or 0)
+                if len(res_t.data) < page_size:
+                    break
+                offset += page_size
+
+        # Consolida
+        tempo_total_cliente = 0
+        for p in projetos:
+            pid = str(p["id"])
+            p["tempo_total_segundos"] = tempos.get(pid, 0)
+            tempo_total_cliente += p["tempo_total_segundos"]
+
+        # KPIs
+        finalizados = [p for p in projetos if p.get("status") in ["Finalizado", "Cancelado"]]
+        ativos = [p for p in projetos if p.get("status") not in ["Finalizado", "Cancelado"]]
+
         return jsonify({
-            "total_registros": len(res.data),
-            "primeiros_5": res.data[:5],
-            "raw": res.data
+            "status": "sucesso",
+            "cliente": cliente,
+            "projetos": projetos,
+            "kpis": {
+                "total_projetos": len(projetos),
+                "ativos": len(ativos),
+                "finalizados": len(finalizados),
+                "tempo_total_segundos": tempo_total_cliente
+            }
         }), 200
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        print(f"[CRITICAL] Erro no mapa do cliente: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
 
 # --- PLANEJAMENTO DIÁRIO ---
 
