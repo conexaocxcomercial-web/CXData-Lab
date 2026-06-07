@@ -72,11 +72,7 @@
 <body>
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
-        <span style="font-size:13px; font-weight:600; color:var(--text-muted);">Olá, <strong id="nomeUsuario" style="color:var(--text-main);"></strong></span>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div class="btn-icon-round" onclick="window.location.href='/'" title="Início"><span class="material-symbols-rounded" style="font-size:20px;">home</span></div>
-            <div class="btn-icon-round danger" onclick="window.location.href='/logout'" title="Sair"><span class="material-symbols-rounded" style="font-size:20px;">logout</span></div>
-        </div>
+        {% include '_usermenu.html' %}
     </div>
 
     {% include '_sidebar.html' %}
@@ -163,7 +159,7 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('nomeUsuario').textContent = nomeUsuario;
+            var _nu = document.getElementById('nomeUsuario'); if(_nu) _nu.textContent = nomeUsuario;
             atualizarHint();
             carregarUsuarios();
         });
