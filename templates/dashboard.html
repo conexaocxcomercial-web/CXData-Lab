@@ -67,6 +67,32 @@
         .ativ-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; }
 
         .empty-mini { text-align: center; padding: 40px 20px; color: #c4c4c8; font-size: 12px; font-weight: 600; }
+
+        /* Toggle de fluxo */
+        .toggle-fluxo { display: flex; gap: 4px; background: #f4f4f5; padding: 4px; border-radius: 50px !important; }
+        .toggle-opt { padding: 7px 16px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 50px !important; color: var(--text-muted); transition: 0.2s; }
+        .toggle-opt.active { background: #fff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+        /* Lista de ocupação */
+        .ocup-item { padding: 13px 0; border-bottom: 1px solid #f4f4f5; }
+        .ocup-item:last-child { border-bottom: none; }
+        .ocup-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+        .ocup-nome { font-size: 13px; font-weight: 700; }
+        .ocup-pct { font-size: 14px; font-weight: 900; font-family: monospace; }
+        .ocup-track { height: 10px; background: #f4f4f5; border-radius: 20px !important; overflow: hidden; }
+        .ocup-fill { height: 100%; border-radius: 20px !important; transition: width 0.5s ease; }
+        .ocup-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 5px; }
+
+        /* Projetos atrasados */
+        .atraso-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f4f4f5; }
+        .atraso-item:last-child { border-bottom: none; }
+        .atraso-dias { width: 56px; min-width: 56px; text-align: center; padding: 8px 4px; background: #fef2f2; border-radius: 12px !important; }
+        .atraso-dias-num { font-size: 18px; font-weight: 900; color: #ef4444; line-height: 1; }
+        .atraso-dias-label { font-size: 8px; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
+        .atraso-info { flex-grow: 1; min-width: 0; }
+        .atraso-nome { font-size: 14px; font-weight: 800; }
+        .atraso-meta { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
+        .atraso-prazo { font-size: 11px; font-weight: 800; color: #ef4444; white-space: nowrap; }
         .loading-screen { position: fixed; inset: 0; background: var(--bg-board); display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 16px; }
         .spinner-big { width: 36px; height: 36px; border: 3px solid #e4e4e7; border-top-color: var(--primary-purple); border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -133,10 +159,47 @@
             </div>
         </div>
 
-        <div class="chart-card full">
+        <div class="chart-card full" style="margin-bottom:16px;">
             <div class="chart-title"><span class="material-symbols-rounded">format_list_bulleted</span> Principais Atividades</div>
             <div class="chart-sub">As tarefas que mais consomem tempo na operação</div>
             <div id="topAtividades"></div>
+        </div>
+
+        <!-- FLUXO DE NOVOS PROJETOS -->
+        <div class="chart-card full" style="margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <div class="chart-title"><span class="material-symbols-rounded">rocket_launch</span> Fluxo de Novos Projetos</div>
+                    <div class="chart-sub">Ritmo de abertura de projetos ao longo do tempo</div>
+                </div>
+                <div class="toggle-fluxo">
+                    <div class="toggle-opt active" id="fluxo-mes" onclick="setFluxo('mes')">Anual (por mês)</div>
+                    <div class="toggle-opt" id="fluxo-dia" onclick="setFluxo('dia')">Mensal (por dia)</div>
+                </div>
+            </div>
+            <div class="chart-wrap tall" style="margin-top:14px;"><canvas id="chartFluxo"></canvas></div>
+        </div>
+
+        <div class="charts-grid">
+            <!-- OCUPAÇÃO POR COLABORADOR -->
+            <div class="chart-card">
+                <div class="chart-title"><span class="material-symbols-rounded">battery_charging_full</span> Ocupação por Colaborador</div>
+                <div class="chart-sub" id="ocupacaoSub">% das horas úteis registradas no timer (8h/dia)</div>
+                <div id="ocupacaoLista"></div>
+            </div>
+            <!-- PROJETOS EM ANDAMENTO POR COLABORADOR -->
+            <div class="chart-card">
+                <div class="chart-title"><span class="material-symbols-rounded">account_tree</span> Carga de Projetos Ativos</div>
+                <div class="chart-sub">Projetos em andamento por colaborador</div>
+                <div class="chart-wrap" style="height:300px;"><canvas id="chartCargaColab"></canvas></div>
+            </div>
+        </div>
+
+        <!-- PROJETOS ATRASADOS -->
+        <div class="chart-card full">
+            <div class="chart-title"><span class="material-symbols-rounded" style="color:#ef4444;">warning</span> Projetos Atrasados</div>
+            <div class="chart-sub">Projetos ativos com prazo vencido, ordenados pela gravidade do atraso</div>
+            <div id="listaAtrasados"></div>
         </div>
     </div>
 
@@ -149,6 +212,8 @@
         let nomeUsuario = '{{ usuario_nome }}';
         let charts = {};
         let filtrosCarregados = false;
+        let fluxoModo = 'mes';
+        let dadosFluxo = { mes: [], dia: [] };
 
         document.addEventListener('DOMContentLoaded', () => carregar());
 
@@ -192,6 +257,14 @@
                 renderRankColaboradores(data.ranking_colaboradores);
                 renderRankClientes(data.top_clientes);
                 renderAtividades(data.top_atividades);
+
+                // Novos indicadores
+                dadosFluxo.mes = data.fluxo_mensal || [];
+                dadosFluxo.dia = data.fluxo_diario || [];
+                renderFluxo();
+                renderOcupacao(data.ocupacao, data.dias_uteis);
+                renderCargaColab(data.proj_por_colab);
+                renderAtrasados(data.lista_atrasados);
 
                 document.getElementById('loadingScreen').style.display = 'none';
             } catch(e) {
@@ -328,6 +401,105 @@
                         <span class="ativ-tempo">${fmtH(a.segundos)}</span>
                     </div>
                     <div class="ativ-meta">${a.qtd} ${a.qtd === 1 ? 'registro' : 'registros'}</div>
+                </div>`).join('');
+        }
+
+        // ===== FLUXO DE NOVOS PROJETOS =====
+        function setFluxo(modo) {
+            fluxoModo = modo;
+            document.getElementById('fluxo-mes').classList.toggle('active', modo === 'mes');
+            document.getElementById('fluxo-dia').classList.toggle('active', modo === 'dia');
+            renderFluxo();
+        }
+
+        function renderFluxo() {
+            const dados = dadosFluxo[fluxoModo];
+            if (charts.fluxo) charts.fluxo.destroy();
+            const ctx = document.getElementById('chartFluxo');
+            if (!dados || dados.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Sem projetos no período.</div>'; return; }
+
+            const labels = dados.map(d => {
+                if (fluxoModo === 'mes') {
+                    const [a, m] = d.periodo.split('-');
+                    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+                    return `${meses[parseInt(m)-1]}/${a.slice(2)}`;
+                } else {
+                    const p = d.periodo.split('-');
+                    return `${p[2]}/${p[1]}`;
+                }
+            });
+            const valores = dados.map(d => d.qtd);
+
+            charts.fluxo = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Novos projetos', data: valores, backgroundColor: '#bef533', borderRadius: 8, maxBarThickness: 50, hoverBackgroundColor: '#7371ff' }] },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + (c.parsed.y === 1 ? ' projeto' : ' projetos') } } },
+                    scales: { y: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, precision: 0 }, grid: { color: '#f4f4f5' } }, x: { ticks: { font: { family: 'Inter', size: 11, weight: '700' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 15 }, grid: { display: false } } } }
+            });
+        }
+
+        // ===== OCUPAÇÃO POR COLABORADOR =====
+        function renderOcupacao(ocupacao, diasUteis) {
+            const c = document.getElementById('ocupacaoLista');
+            document.getElementById('ocupacaoSub').textContent = `% das horas úteis registradas no timer (8h/dia · ${diasUteis} dias úteis no período)`;
+            if (!ocupacao || ocupacao.length === 0) { c.innerHTML = '<div class="empty-mini">Sem registros de tempo.</div>'; return; }
+            c.innerHTML = ocupacao.map(o => {
+                const pct = o.percentual;
+                let cor = '#ef4444'; // baixo
+                if (pct >= 70) cor = '#22c55e'; // bom
+                else if (pct >= 40) cor = '#f59e0b'; // médio
+                const larguraBarra = Math.min(pct, 100);
+                return `
+                <div class="ocup-item">
+                    <div class="ocup-top">
+                        <span class="ocup-nome">${escH(o.nome)}</span>
+                        <span class="ocup-pct" style="color:${cor};">${pct}%</span>
+                    </div>
+                    <div class="ocup-track"><div class="ocup-fill" style="width:${larguraBarra}%; background:${cor};"></div></div>
+                    <div class="ocup-meta">${fmtH(o.segundos)} registradas de ${fmtH(o.esperado_segundos)} esperadas</div>
+                </div>`;
+            }).join('');
+        }
+
+        // ===== CARGA DE PROJETOS ATIVOS POR COLABORADOR =====
+        function renderCargaColab(dados) {
+            if (charts.carga) charts.carga.destroy();
+            const ctx = document.getElementById('chartCargaColab');
+            if (!dados || dados.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Nenhum projeto ativo.</div>'; return; }
+            const labels = dados.map(d => d.nome);
+            const valores = dados.map(d => d.qtd);
+            charts.carga = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ data: valores, backgroundColor: '#7371ff', borderRadius: 8, maxBarThickness: 36 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x + (c.parsed.x === 1 ? ' projeto ativo' : ' projetos ativos') } } },
+                    scales: { x: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, precision: 0 }, grid: { color: '#f4f4f5' } }, y: { ticks: { font: { family: 'Inter', size: 11, weight: '700' } }, grid: { display: false } } } }
+            });
+        }
+
+        // ===== PROJETOS ATRASADOS =====
+        function renderAtrasados(lista) {
+            const c = document.getElementById('listaAtrasados');
+            if (!lista || lista.length === 0) {
+                c.innerHTML = '<div class="empty-mini"><span class="material-symbols-rounded" style="font-size:40px; opacity:0.3; display:block; margin-bottom:10px; color:#22c55e;">check_circle</span>Nenhum projeto atrasado. Tudo em dia! 🎉</div>';
+                return;
+            }
+            c.innerHTML = lista.map(p => `
+                <div class="atraso-item">
+                    <div class="atraso-dias">
+                        <div class="atraso-dias-num">${p.dias_atraso}</div>
+                        <div class="atraso-dias-label">${p.dias_atraso === 1 ? 'dia' : 'dias'}</div>
+                    </div>
+                    <div class="atraso-info">
+                        <div class="atraso-nome">${escH(p.nome)}</div>
+                        <div class="atraso-meta">
+                            <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:-2px;">person</span> ${escH(p.responsavel)}</span>
+                            <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:-2px;">category</span> ${escH(p.area)}</span>
+                            <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:-2px;">flag</span> ${escH(p.status)}</span>
+                        </div>
+                    </div>
+                    <div class="atraso-prazo">Prazo: ${new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
                 </div>`).join('');
         }
     </script>
