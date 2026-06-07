@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px;}
+        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+
+        .command-bar { padding: 24px 40px 8px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .filtros-bar { padding: 0 40px 16px 40px; display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+        .filtro-select, .filtro-data { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255,255,255,0.85); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
+        .filtro-select:focus, .filtro-data:focus { background: #fff; box-shadow: 0 2px 12px rgba(115,113,255,0.12); }
+        .btn-limpar-f { padding: 10px 18px; font-size: 11px; font-weight: 800; color: var(--text-muted); background: transparent; cursor: pointer; border-radius: 50px !important; transition: 0.2s; }
+        .btn-limpar-f:hover { background: #fee2e2; color: #ef4444; }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 8px 40px 40px 40px; }
+
+        /* KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 22px; }
+        .kpi-card { background: #fff; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); position: relative; overflow: hidden; transition: 0.2s; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
+        .kpi-card::after { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .kpi-card.roxo::after { background: var(--primary-purple); }
+        .kpi-card.lime::after { background: #84cc16; }
+        .kpi-card.pink::after { background: var(--accent-pink); }
+        .kpi-card.dark::after { background: var(--text-main); }
+        .kpi-card.amber::after { background: #f59e0b; }
+        .kpi-icone { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 11px !important; margin-bottom: 14px; }
+        .kpi-valor { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+        .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px; }
+
+        /* GRIDS DE GRÁFICOS */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .chart-card { background: #fff; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
+        .chart-card.full { grid-column: 1 / -1; }
+        .chart-title { font-size: 13px; font-weight: 900; letter-spacing: -0.2px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .chart-title .material-symbols-rounded { font-size: 18px; color: var(--primary-purple); }
+        .chart-sub { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 18px; }
+        .chart-wrap { position: relative; height: 260px; }
+        .chart-wrap.tall { height: 300px; }
+
+        /* RANKINGS / LISTAS */
+        .rank-item { display: flex; align-items: center; gap: 13px; padding: 11px 0; border-bottom: 1px solid #f4f4f5; }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-pos { width: 24px; height: 24px; min-width: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; border-radius: 8px !important; background: #f4f4f5; color: var(--text-muted); }
+        .rank-pos.top { background: var(--text-main); color: var(--accent-lime); }
+        .rank-nome { flex-grow: 1; font-size: 13px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rank-valor { font-size: 13px; font-weight: 900; color: var(--primary-purple); font-family: monospace; white-space: nowrap; }
+        .rank-bar-track { flex-grow: 1; height: 8px; background: #f4f4f5; border-radius: 20px !important; overflow: hidden; max-width: 120px; }
+        .rank-bar-fill { height: 100%; background: var(--primary-purple); border-radius: 20px !important; }
+
+        .ativ-item { padding: 12px 0; border-bottom: 1px solid #f4f4f5; }
+        .ativ-item:last-child { border-bottom: none; }
+        .ativ-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+        .ativ-nome { font-size: 13px; font-weight: 700; }
+        .ativ-tempo { font-size: 12px; font-weight: 900; color: var(--primary-purple); font-family: monospace; }
+        .ativ-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+
+        .empty-mini { text-align: center; padding: 40px 20px; color: #c4c4c8; font-size: 12px; font-weight: 600; }
+        .loading-screen { position: fixed; inset: 0; background: var(--bg-board); display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 16px; }
+        .spinner-big { width: 36px; height: 36px; border: 3px solid #e4e4e7; border-top-color: var(--primary-purple); border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="command-bar">
+        <div>
+            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Dashboard</h2>
+            <p style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;" id="subtitulo">Visão analítica da operação</p>
+        </div>
+    </div>
+
+    <div class="filtros-bar">
+        <select class="filtro-select" id="fArea" onchange="aplicarFiltros()"><option value="">Todas as áreas</option></select>
+        <select class="filtro-select" id="fResp" onchange="aplicarFiltros()"><option value="">Todos os responsáveis</option></select>
+        <select class="filtro-select" id="fCliente" onchange="aplicarFiltros()"><option value="">Todos os clientes</option></select>
+        <input type="date" class="filtro-data" id="fInicio" onchange="aplicarFiltros()" title="Data inicial">
+        <span style="font-size:11px; color:var(--text-muted); font-weight:700;">até</span>
+        <input type="date" class="filtro-data" id="fFim" onchange="aplicarFiltros()" title="Data final">
+        <span class="btn-limpar-f" onclick="limparFiltros()">Limpar</span>
+    </div>
+
+    <div class="scroll-area">
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title"><span class="material-symbols-rounded">donut_large</span> Projetos por Status</div>
+                <div class="chart-sub">Distribuição atual do portfólio</div>
+                <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><span class="material-symbols-rounded">category</span> Projetos por Área</div>
+                <div class="chart-sub">Volume de trabalho por frente</div>
+                <div class="chart-wrap"><canvas id="chartArea"></canvas></div>
+            </div>
+        </div>
+
+        <div class="chart-card full" style="margin-bottom:16px;">
+            <div class="chart-title"><span class="material-symbols-rounded">show_chart</span> Evolução do Tempo Dedicado</div>
+            <div class="chart-sub">Horas registradas ao longo do tempo (últimos 30 dias com atividade)</div>
+            <div class="chart-wrap tall"><canvas id="chartEvolucao"></canvas></div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title"><span class="material-symbols-rounded">leaderboard</span> Ranking de Colaboradores</div>
+                <div class="chart-sub">Tempo dedicado por pessoa</div>
+                <div id="rankColaboradores"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><span class="material-symbols-rounded">apartment</span> Top Clientes por Tempo</div>
+                <div class="chart-sub">Onde a operação mais investe horas</div>
+                <div id="rankClientes"></div>
+            </div>
+        </div>
+
+        <div class="chart-card full">
+            <div class="chart-title"><span class="material-symbols-rounded">format_list_bulleted</span> Principais Atividades</div>
+            <div class="chart-sub">As tarefas que mais consomem tempo na operação</div>
+            <div id="topAtividades"></div>
+        </div>
+    </div>
+
+    <div class="loading-screen" id="loadingScreen">
+        <div class="spinner-big"></div>
+        <p style="font-size:13px; color:var(--text-muted); font-weight:700;">Analisando dados...</p>
+    </div>
+
+    <script>
+        let nomeUsuario = '{{ usuario_nome }}';
+        let charts = {};
+        let filtrosCarregados = false;
+
+        document.addEventListener('DOMContentLoaded', () => carregar());
+
+        function fmtH(s){ const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); if(h>0) return `${h}h ${m}min`; if(m>0) return `${m}min`; return `${s}s`; }
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function aplicarFiltros() { carregar(); }
+        function limparFiltros() {
+            document.getElementById('fArea').value = '';
+            document.getElementById('fResp').value = '';
+            document.getElementById('fCliente').value = '';
+            document.getElementById('fInicio').value = '';
+            document.getElementById('fFim').value = '';
+            carregar();
+        }
+
+        async function carregar() {
+            const params = new URLSearchParams();
+            const area = document.getElementById('fArea').value;
+            const resp = document.getElementById('fResp').value;
+            const cliente = document.getElementById('fCliente').value;
+            const inicio = document.getElementById('fInicio').value;
+            const fim = document.getElementById('fFim').value;
+            if (area) params.append('area', area);
+            if (resp) params.append('responsavel', resp);
+            if (cliente) params.append('cliente_id', cliente);
+            if (inicio) params.append('inicio', inicio);
+            if (fim) params.append('fim', fim);
+
+            try {
+                const res = await fetch('/api/dashboard?' + params.toString());
+                if (res.status === 403) { document.body.innerHTML = '<div style="padding:60px;text-align:center;font-weight:700;">Acesso restrito a gestores e administradores.</div>'; return; }
+                const data = await res.json();
+                if (data.status !== 'sucesso') { document.getElementById('loadingScreen').style.display = 'none'; return; }
+
+                if (!filtrosCarregados) { popularFiltros(data.filtros); filtrosCarregados = true; }
+                renderKpis(data.kpis);
+                renderStatus(data.por_status);
+                renderArea(data.por_area);
+                renderEvolucao(data.evolucao);
+                renderRankColaboradores(data.ranking_colaboradores);
+                renderRankClientes(data.top_clientes);
+                renderAtividades(data.top_atividades);
+
+                document.getElementById('loadingScreen').style.display = 'none';
+            } catch(e) {
+                console.error(e);
+                document.getElementById('loadingScreen').style.display = 'none';
+            }
+        }
+
+        function popularFiltros(f) {
+            const fa = document.getElementById('fArea');
+            const fr = document.getElementById('fResp');
+            const fc = document.getElementById('fCliente');
+            fa.innerHTML = '<option value="">Todas as áreas</option>' + f.areas.map(a => `<option value="${escH(a)}">${escH(a)}</option>`).join('');
+            fr.innerHTML = '<option value="">Todos os responsáveis</option>' + f.responsaveis.map(r => `<option value="${escH(r)}">${escH(r)}</option>`).join('');
+            fc.innerHTML = '<option value="">Todos os clientes</option>' + f.clientes.map(c => `<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+        }
+
+        function renderKpis(k) {
+            document.getElementById('kpiGrid').innerHTML = `
+                <div class="kpi-card dark">
+                    <div class="kpi-icone" style="background:#f4f4f5; color:var(--text-main);"><span class="material-symbols-rounded">folder_open</span></div>
+                    <div class="kpi-valor">${k.total_projetos}</div>
+                    <div class="kpi-label">Projetos Totais</div>
+                </div>
+                <div class="kpi-card roxo">
+                    <div class="kpi-icone" style="background:#f0efff; color:var(--primary-purple);"><span class="material-symbols-rounded">bolt</span></div>
+                    <div class="kpi-valor" style="color:var(--primary-purple);">${k.ativos}</div>
+                    <div class="kpi-label">Em Andamento</div>
+                </div>
+                <div class="kpi-card lime">
+                    <div class="kpi-icone" style="background:#f1f9e0; color:#65a30d;"><span class="material-symbols-rounded">check_circle</span></div>
+                    <div class="kpi-valor" style="color:#65a30d;">${k.finalizados}</div>
+                    <div class="kpi-label">Finalizados</div>
+                </div>
+                <div class="kpi-card amber">
+                    <div class="kpi-icone" style="background:#fef3c7; color:#d97706;"><span class="material-symbols-rounded">warning</span></div>
+                    <div class="kpi-valor" style="color:#d97706;">${k.atrasados}</div>
+                    <div class="kpi-label">Atrasados</div>
+                </div>
+                <div class="kpi-card pink">
+                    <div class="kpi-icone" style="background:#fce7f3; color:#db2777;"><span class="material-symbols-rounded">schedule</span></div>
+                    <div class="kpi-valor" style="font-size:24px;">${fmtH(k.tempo_total_segundos)}</div>
+                    <div class="kpi-label">Tempo Dedicado</div>
+                </div>
+                <div class="kpi-card dark">
+                    <div class="kpi-icone" style="background:#f4f4f5; color:var(--text-main);"><span class="material-symbols-rounded">timer</span></div>
+                    <div class="kpi-valor">${k.total_sessoes}</div>
+                    <div class="kpi-label">Sessões de Trabalho</div>
+                </div>`;
+        }
+
+        const CORES = ['#7371ff', '#bef533', '#ff43c0', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6', '#f97316'];
+
+        function renderStatus(porStatus) {
+            const labels = Object.keys(porStatus);
+            const valores = Object.values(porStatus);
+            if (charts.status) charts.status.destroy();
+            const ctx = document.getElementById('chartStatus');
+            if (labels.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Sem dados.</div>'; return; }
+            charts.status = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data: valores, backgroundColor: CORES, borderWidth: 0, hoverOffset: 8 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+                    plugins: { legend: { position: 'right', labels: { font: { family: 'Inter', size: 12, weight: '600' }, padding: 14, usePointStyle: true, pointStyle: 'circle' } } } }
+            });
+        }
+
+        function renderArea(porArea) {
+            const labels = Object.keys(porArea);
+            const valores = Object.values(porArea);
+            if (charts.area) charts.area.destroy();
+            const ctx = document.getElementById('chartArea');
+            if (labels.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Sem dados.</div>'; return; }
+            charts.area = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ data: valores, backgroundColor: '#7371ff', borderRadius: 8, barThickness: 'flex', maxBarThickness: 48 }] },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, precision: 0 }, grid: { color: '#f4f4f5' } }, x: { ticks: { font: { family: 'Inter', size: 11, weight: '700' } }, grid: { display: false } } } }
+            });
+        }
+
+        function renderEvolucao(evolucao) {
+            const labels = evolucao.map(e => { const p = e.dia.split('-'); return `${p[2]}/${p[1]}`; });
+            const valores = evolucao.map(e => Math.round(e.segundos / 3600 * 10) / 10);
+            if (charts.evol) charts.evol.destroy();
+            const ctx = document.getElementById('chartEvolucao');
+            if (evolucao.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Nenhuma atividade registrada no período.</div>'; return; }
+            const grad = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            grad.addColorStop(0, 'rgba(115,113,255,0.25)');
+            grad.addColorStop(1, 'rgba(115,113,255,0)');
+            charts.evol = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [{ label: 'Horas', data: valores, borderColor: '#7371ff', backgroundColor: grad, fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#7371ff', pointHoverRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + 'h' } } },
+                    scales: { y: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, callback: v => v + 'h' }, grid: { color: '#f4f4f5' } }, x: { ticks: { font: { family: 'Inter', size: 10, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } } } }
+            });
+        }
+
+        function renderRankColaboradores(ranking) {
+            const c = document.getElementById('rankColaboradores');
+            if (!ranking || ranking.length === 0) { c.innerHTML = '<div class="empty-mini">Sem dados de tempo.</div>'; return; }
+            const max = ranking[0].segundos || 1;
+            c.innerHTML = ranking.slice(0, 8).map((r, i) => `
+                <div class="rank-item">
+                    <div class="rank-pos ${i === 0 ? 'top' : ''}">${i + 1}</div>
+                    <div class="rank-nome">${escH(r.nome)}</div>
+                    <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(r.segundos / max * 100)}%"></div></div>
+                    <div class="rank-valor">${fmtH(r.segundos)}</div>
+                </div>`).join('');
+        }
+
+        function renderRankClientes(top) {
+            const c = document.getElementById('rankClientes');
+            if (!top || top.length === 0) { c.innerHTML = '<div class="empty-mini">Sem dados de tempo.</div>'; return; }
+            const max = top[0].segundos || 1;
+            c.innerHTML = top.map((r, i) => `
+                <div class="rank-item">
+                    <div class="rank-pos ${i === 0 ? 'top' : ''}">${i + 1}</div>
+                    <div class="rank-nome">${escH(r.cliente)}</div>
+                    <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(r.segundos / max * 100)}%; background:var(--accent-pink);"></div></div>
+                    <div class="rank-valor" style="color:var(--accent-pink);">${fmtH(r.segundos)}</div>
+                </div>`).join('');
+        }
+
+        function renderAtividades(top) {
+            const c = document.getElementById('topAtividades');
+            if (!top || top.length === 0) { c.innerHTML = '<div class="empty-mini">Nenhuma atividade registrada.</div>'; return; }
+            c.innerHTML = top.map(a => `
+                <div class="ativ-item">
+                    <div class="ativ-top">
+                        <span class="ativ-nome">${escH(a.atividade)}</span>
+                        <span class="ativ-tempo">${fmtH(a.segundos)}</span>
+                    </div>
+                    <div class="ativ-meta">${a.qtd} ${a.qtd === 1 ? 'registro' : 'registros'}</div>
+                </div>`).join('');
+        }
+    </script>
+</body>
+</html>
