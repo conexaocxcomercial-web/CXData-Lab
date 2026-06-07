@@ -100,20 +100,27 @@ def listar_projetos():
             meu_nome = (session.get('usuario_nome') or '').strip().lower()
             projetos = [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
         
-        # 1. Busca TODOS os tempos com paginação (Supabase limita 1000/query)
+        # 1. Busca os tempos agregados (via VIEW = 1 query só, muito mais rápido)
         tempos_agrupados = {}
-        page_size = 1000
-        offset = 0
-        while True:
-            res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").range(offset, offset + page_size - 1).execute()
-            if not res_tempo.data:
-                break
-            for log in res_tempo.data:
-                pid = str(log['projeto_id'])
-                tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + (log['tempo_segundos'] or 0)
-            if len(res_tempo.data) < page_size:
-                break
-            offset += page_size
+        try:
+            res_tempo = supabase.table("vw_tempo_por_projeto").select("projeto_id, total_segundos").execute()
+            for row in res_tempo.data:
+                tempos_agrupados[str(row['projeto_id'])] = row['total_segundos'] or 0
+        except Exception as erro_view:
+            # FALLBACK: se a view ainda não existir, usa o método antigo (paginação)
+            print(f"[AVISO] View indisponível, usando fallback: {str(erro_view)}")
+            page_size = 1000
+            offset = 0
+            while True:
+                res_tempo = supabase.table("time_logs").select("projeto_id, tempo_segundos").range(offset, offset + page_size - 1).execute()
+                if not res_tempo.data:
+                    break
+                for log in res_tempo.data:
+                    pid = str(log['projeto_id'])
+                    tempos_agrupados[pid] = tempos_agrupados.get(pid, 0) + (log['tempo_segundos'] or 0)
+                if len(res_tempo.data) < page_size:
+                    break
+                offset += page_size
             
         # 2. Busca notificações não lidas
         res_unread = supabase.table("comentarios").select("projeto_id").eq("lido_pelo_responsavel", False).execute()
