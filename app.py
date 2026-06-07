@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from supabase import create_client, Client
 from datetime import datetime
+import bcrypt
+import secrets
+import string
 
 app = Flask(__name__)
 # CHAVE FIXA: Impede que a Vercel derrube o login a cada 5 minutos
@@ -9,6 +12,20 @@ app.secret_key = "cxdata_chave_mestra_oficial_2026_!@"
 URL = "https://udqeheyyhvqlwejdwkbj.supabase.co"
 KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ"
 supabase: Client = create_client(URL, KEY)
+
+# --- HELPERS DE SEGURANÇA ---
+
+def gerar_hash(senha):
+    return bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verificar_hash(senha, hash_armazenado):
+    try:
+        return bcrypt.checkpw(senha.encode('utf-8'), hash_armazenado.encode('utf-8'))
+    except Exception:
+        return False
+
+def is_admin():
+    return session.get('nivel_acesso') == 'admin'
 
 # --- LOGIN E SEGURANÇA ---
 
@@ -19,15 +36,35 @@ def login():
         email = dados.get('email')
         senha = dados.get('senha')
 
-        res = supabase.table("usuarios").select("*").eq("email", email).eq("senha", senha).execute()
+        # Busca o usuário só pelo e-mail
+        res = supabase.table("usuarios").select("*").eq("email", email).execute()
 
-        if res.data:
-            session['usuario_id'] = res.data[0]['id']
-            session['usuario_nome'] = res.data[0]['nome']
+        if not res.data:
+            return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
+
+        usuario = res.data[0]
+        autenticado = False
+
+        # 1. Se já tem hash, valida pelo hash
+        if usuario.get("senha_hash"):
+            autenticado = verificar_hash(senha, usuario["senha_hash"])
+        # 2. Senão, valida pela senha em texto puro (legado) e CONVERTE para hash
+        elif usuario.get("senha") is not None and senha == usuario["senha"]:
+            autenticado = True
+            try:
+                novo_hash = gerar_hash(senha)
+                supabase.table("usuarios").update({"senha_hash": novo_hash}).eq("id", usuario["id"]).execute()
+            except Exception as e:
+                print(f"[AVISO] Falha ao converter senha para hash: {str(e)}")
+
+        if autenticado:
+            session['usuario_id'] = usuario['id']
+            session['usuario_nome'] = usuario['nome']
+            session['nivel_acesso'] = usuario.get('nivel_acesso', 'colaborador')
             return jsonify({"status": "sucesso"}), 200
         else:
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
-    
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -41,13 +78,13 @@ def logout():
 def index():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', usuario=session.get('usuario_nome'), usuario_nome=session.get('usuario_nome'))
+    return render_template('index.html', usuario=session.get('usuario_nome'), usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/board/<nome_quadro>')
 def tela_projetos(nome_quadro):
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'))
+    return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 # --- API PROJETOS ---
 
@@ -57,6 +94,11 @@ def listar_projetos():
     try:
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = res_projetos.data
+
+        # CONTROLE DE ACESSO: colaborador só vê os projetos onde é responsável
+        if session.get('nivel_acesso') == 'colaborador':
+            meu_nome = (session.get('usuario_nome') or '').strip().lower()
+            projetos = [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
         
         # 1. Busca TODOS os tempos com paginação (Supabase limita 1000/query)
         tempos_agrupados = {}
@@ -317,13 +359,102 @@ def marcar_comentario_lido(comentario_id):
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
 
+# --- CONFIGURAÇÕES / USUÁRIOS (somente admin) ---
+
+@app.route('/configuracoes')
+def configuracoes_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not is_admin():
+        return redirect(url_for('index'))
+    return render_template('configuracoes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+
+@app.route('/api/usuarios', methods=['GET'])
+def listar_usuarios():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = supabase.table("usuarios").select("id, nome, email, cargo, nivel_acesso, criado_em").order("nome", desc=False).execute()
+        return jsonify({"status": "sucesso", "usuarios": res.data}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no GET Usuarios: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar usuários."}), 500
+
+@app.route('/api/usuarios', methods=['POST'])
+def criar_usuario():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    try:
+        senha_texto = dados.get("senha")
+        if not senha_texto:
+            return jsonify({"status": "erro", "mensagem": "Senha é obrigatória."}), 400
+
+        novo = {
+            "nome": dados.get("nome"),
+            "email": dados.get("email"),
+            "cargo": dados.get("cargo"),
+            "nivel_acesso": dados.get("nivel_acesso", "colaborador"),
+            "senha": senha_texto,
+            "senha_hash": gerar_hash(senha_texto)
+        }
+        supabase.table("usuarios").insert(novo).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no POST Usuario: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/usuarios/<usuario_id>', methods=['PUT'])
+def atualizar_usuario(usuario_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    try:
+        atualizacao = {}
+        if "nome" in dados: atualizacao["nome"] = dados["nome"]
+        if "email" in dados: atualizacao["email"] = dados["email"]
+        if "cargo" in dados: atualizacao["cargo"] = dados["cargo"]
+        if "nivel_acesso" in dados: atualizacao["nivel_acesso"] = dados["nivel_acesso"]
+        # Se enviou nova senha, atualiza texto + hash
+        if dados.get("senha"):
+            atualizacao["senha"] = dados["senha"]
+            atualizacao["senha_hash"] = gerar_hash(dados["senha"])
+
+        supabase.table("usuarios").update(atualizacao).eq("id", usuario_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no PUT Usuario: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/usuarios/<usuario_id>', methods=['DELETE'])
+def excluir_usuario(usuario_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    # Impede o admin de excluir a si mesmo
+    if str(usuario_id) == str(session.get('usuario_id')):
+        return jsonify({"status": "erro", "mensagem": "Você não pode excluir seu próprio usuário."}), 400
+    try:
+        supabase.table("usuarios").delete().eq("id", usuario_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/usuarios/gerar-senha', methods=['GET'])
+def gerar_senha_aleatoria():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    alfabeto = string.ascii_letters + string.digits
+    senha = ''.join(secrets.choice(alfabeto) for _ in range(10))
+    return jsonify({"senha": senha}), 200
+
+
 # --- CLIENTES ---
 
 @app.route('/clientes')
 def clientes_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('clientes.html', usuario_nome=session.get('usuario_nome'))
+    return render_template('clientes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/clientes', methods=['GET'])
 def listar_clientes():
@@ -478,7 +609,7 @@ def mapa_cliente(cliente_id):
 def planejamento():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'))
+    return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/planejamento', methods=['GET'])
 def listar_planejamento():
