@@ -534,53 +534,54 @@
     </div>
 
     <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
-        <div class="modal-content" style="max-width: 950px; background: white; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
-            
-            <div class="modal-header" style="padding: 30px 40px 10px 40px; margin-bottom: 0; border-bottom: 1px solid #e4e4e7;">
+        <div class="modal-content" style="max-width: 1200px; width: 95%; background: white; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 92vh;">
+
+            <div class="modal-header" style="padding: 24px 36px; margin-bottom: 0; border-bottom: 1px solid #e4e4e7; align-items: flex-start;">
                 <div>
-                    <span id="detArea" style="color: var(--primary-purple); font-size: 12px; font-weight: 800; text-transform: uppercase;"></span>
-                    <h2 id="detNome">Nome do Projeto</h2>
+                    <span id="detArea" style="color: var(--primary-purple); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;"></span>
+                    <h2 id="detNome" style="margin-top: 2px;">Nome do Projeto</h2>
+                    <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 11px; font-weight: 700; background: #f4f4f5; color: var(--text-muted); padding: 5px 12px; border-radius: 20px !important;">
+                            <span class="material-symbols-rounded" style="font-size: 13px; vertical-align: -2px;">play_circle</span>
+                            Início: <b id="detDataInicio" style="color: var(--text-main);"></b>
+                        </span>
+                        <span style="font-size: 11px; font-weight: 700; background: #f4f4f5; color: var(--text-muted); padding: 5px 12px; border-radius: 20px !important;">
+                            <span class="material-symbols-rounded" style="font-size: 13px; vertical-align: -2px;">flag</span>
+                            Conclusão/Pausa: <b id="detDataFim" style="color: var(--text-main);"></b>
+                        </span>
+                    </div>
                 </div>
                 <button class="close-btn" onclick="fecharModal('modalDetalhes')">X</button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr; flex-grow: 1;">
-                
-                <div style="padding: 20px 40px; max-height: 65vh; overflow-y: auto;">
-                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 20px; display: flex; gap: 15px;">
-                        <span>Início: <b id="detDataInicio" style="color: var(--text-main);"></b></span>
-                        <span>Conclusão/Pausa: <b id="detDataFim" style="color: var(--text-main);"></b></span>
-                    </div>
-                    
-                    <div style="background: #1e1e1e; padding: 25px; color: white; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 30px !important;">
-                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-lime);">Tempo Total Dedicado</span>
-                        <div style="font-size: 32px; font-weight: 900; font-family: monospace;" id="detTempoTotal">00:00:00</div>
-                    </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; flex-grow: 1; overflow: hidden;">
 
-                    <div style="margin-bottom: 15px;">
-                        <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; color: var(--text-muted);">Histórico de Execução</h3>
-                        <div id="listaHistorico" style="max-height: 150px; overflow-y: auto;"></div>
+                <div style="padding: 24px 28px; overflow-y: auto; border-right: 1px solid #e4e4e7; display: flex; flex-direction: column;">
+                    <div style="background: #1e1e1e; padding: 20px 22px; color: white; margin-bottom: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 20px !important;">
+                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-lime);">Tempo Total Dedicado</span>
+                        <div style="font-size: 30px; font-weight: 900; font-family: monospace; letter-spacing: 1px;" id="detTempoTotal">00:00:00</div>
                     </div>
+                    <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 12px; color: var(--text-muted); letter-spacing: 0.5px;">Histórico de Execução</h3>
+                    <div id="listaHistorico" style="flex-grow: 1; overflow-y: auto;"></div>
+                </div>
 
-                    <div class="comentarios-section" style="margin-top: 20px; padding-top: 15px;">
-                        <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--text-muted);">Mural e Atualizações</h3>
-                        <div class="comentarios-lista" id="listaComentarios"></div>
-                        <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
-                            <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização principal..."></textarea>
-                            <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar Comentário"><span class="material-symbols-rounded">send</span></button>
-                        </div>
+                <div style="padding: 24px 28px; overflow: hidden; border-right: 1px solid #e4e4e7; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 14px; color: var(--text-muted); letter-spacing: 0.5px;">Mural e Atualizações</h3>
+                    <div class="comentarios-lista" id="listaComentarios" style="flex-grow: 1; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
+                        <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização..."></textarea>
+                        <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar Comentário"><span class="material-symbols-rounded">send</span></button>
                     </div>
                 </div>
 
-                <div style="padding: 20px 40px; background: #fcfcfc; border-left: 1px solid #e4e4e7; display: flex; flex-direction: column;">
-                    <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--text-muted);">Descrição / Anotações</h3>
-                    <textarea id="detAnotacoes" class="input-item" style="flex-grow: 1; min-height: 300px; resize: none; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.5; padding: 20px; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px !important; margin-bottom: 15px;" placeholder="Cole links de drives, descreva o escopo, requisitos do cliente..."></textarea>
-                    
-                    <button class="btn-acao" id="btnSalvarAnotacoes" style="width: 100%; justify-content: center; padding: 15px;" onclick="salvarAnotacoes()">SALVAR ANOTAÇÕES</button>
+                <div style="padding: 24px 28px; background: #fcfcfc; display: flex; flex-direction: column; overflow: hidden;">
+                    <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 14px; color: var(--text-muted); letter-spacing: 0.5px;">Descrição / Anotações</h3>
+                    <textarea id="detAnotacoes" class="input-item" style="flex-grow: 1; min-height: 200px; resize: none; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.6; padding: 18px; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px !important; margin-bottom: 14px;" placeholder="Cole links de drives, descreva o escopo, requisitos do cliente..."></textarea>
+                    <button class="btn-acao" id="btnSalvarAnotacoes" style="width: 100%; justify-content: center; padding: 14px;" onclick="salvarAnotacoes()">SALVAR ANOTAÇÕES</button>
                 </div>
             </div>
 
-            <div style="padding: 20px 40px; border-top: 1px solid #e4e4e7; display: flex; gap: 10px; background: #fff;">
+            <div style="padding: 16px 36px; border-top: 1px solid #e4e4e7; display: flex; gap: 10px; background: #fff;">
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #f4f4f5; color: var(--text-main); border: 1px solid #d4d4d8;" onclick="abrirModalEdicao(projIdEmFoco, event)">EDITAR PROJETO</button>
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
             </div>
