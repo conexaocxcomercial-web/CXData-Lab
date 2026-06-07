@@ -98,6 +98,12 @@
             <span class="material-symbols-rounded">calendar_today</span>
             <span class="cxsb-item-label">Planejamento</span>
         </div>
+        {% if nivel_acesso == 'admin' %}
+        <div class="cxsb-item" data-path="/configuracoes" onclick="window.location.href='/configuracoes'">
+            <span class="material-symbols-rounded">settings</span>
+            <span class="cxsb-item-label">Configurações</span>
+        </div>
+        {% endif %}
     </div>
 </nav>
 
