@@ -42,6 +42,16 @@
         .brand-headline .lime { color: var(--accent-lime); }
         .brand-sub { font-size: 15px; color: rgba(255,255,255,0.55); font-weight: 500; line-height: 1.7; max-width: 400px; }
 
+        /* Cards flutuantes decorativos */
+        .float-cards { position: relative; z-index: 2; margin: 36px 0; display: flex; flex-direction: column; gap: 12px; max-width: 360px; }
+        .float-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); padding: 14px 16px; border-radius: 14px; display: flex; align-items: center; gap: 14px; backdrop-filter: blur(10px); }
+        .float-card .fc-ico { width: 36px; height: 36px; min-width: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .float-card .fc-txt { flex-grow: 1; }
+        .float-card .fc-title { font-size: 12px; font-weight: 800; color: #fff; }
+        .float-card .fc-bar { height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 7px; overflow: hidden; }
+        .float-card .fc-fill { height: 100%; border-radius: 10px; }
+        .float-card .fc-time { font-size: 13px; font-weight: 900; font-family: monospace; color: var(--accent-lime); }
+
         .brand-features { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px; }
         .brand-feature { display: flex; align-items: center; gap: 14px; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; }
         .brand-feature .ico { width: 38px; height: 38px; min-width: 38px; background: rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-lime); }
@@ -106,6 +116,21 @@
         <div class="brand-center">
             <div class="brand-headline">Gestão de projetos<br>que <span class="lime">flui</span>.</div>
             <div class="brand-sub">Quadros, timers, planejamento e clientes — tudo em um só lugar. O workspace da sua equipe, do briefing à entrega.</div>
+
+            <div class="float-cards">
+                <div class="float-card">
+                    <div class="fc-ico" style="background:rgba(115,113,255,0.2); color:#a5a3ff;"><span class="material-symbols-rounded" style="font-size:20px;">trending_up</span></div>
+                    <div class="fc-txt">
+                        <div class="fc-title">Recrutamento & Seleção</div>
+                        <div class="fc-bar"><div class="fc-fill" style="width:72%; background:var(--primary-purple);"></div></div>
+                    </div>
+                </div>
+                <div class="float-card">
+                    <div class="fc-ico" style="background:rgba(190,245,51,0.15); color:var(--accent-lime);"><span class="material-symbols-rounded" style="font-size:20px;">timer</span></div>
+                    <div class="fc-txt"><div class="fc-title">Tempo dedicado hoje</div></div>
+                    <div class="fc-time">06:24:18</div>
+                </div>
+            </div>
         </div>
 
         <div class="brand-features">
@@ -135,6 +160,9 @@
                     <input type="password" id="senha" placeholder="••••••••" onkeypress="if(event.key==='Enter') executarLogin()">
                     <button class="toggle-senha" onclick="toggleSenha()" title="Mostrar/ocultar senha"><span class="material-symbols-rounded" id="iconeOlho">visibility</span></button>
                 </div>
+                <div style="text-align:right; margin-top:10px;">
+                    <span onclick="abrirEsqueciSenha()" style="font-size:12px; font-weight:700; color:var(--primary-purple); cursor:pointer;">Esqueci minha senha</span>
+                </div>
             </div>
 
             <button class="btn-entrar" id="btnEntrar" onclick="executarLogin()">
@@ -150,7 +178,23 @@
         </div>
     </div>
 
+    <div id="modalEsqueci" style="display:none; position:fixed; inset:0; background:rgba(30,30,30,0.5); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; max-width:420px; width:90%; padding:40px; border-radius:20px; box-shadow:0 30px 80px rgba(0,0,0,0.2); text-align:center;">
+            <div style="width:60px; height:60px; background:#f0efff; border-radius:18px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                <span class="material-symbols-rounded" style="font-size:30px; color:var(--primary-purple);">lock_reset</span>
+            </div>
+            <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px; margin-bottom:12px;">Recuperar acesso</div>
+            <p style="font-size:14px; color:var(--text-muted); font-weight:500; line-height:1.7; margin-bottom:28px;">
+                Para redefinir sua senha, entre em contato com o administrador da plataforma. Ele poderá gerar uma nova senha de acesso para você nas configurações.
+            </p>
+            <button onclick="fecharEsqueci()" style="width:100%; padding:14px; background:var(--primary-purple); color:#fff; font-weight:800; font-size:13px; border:none; cursor:pointer; border-radius:14px; transition:0.2s;" onmouseover="this.style.background='#1e1e1e'" onmouseout="this.style.background='var(--primary-purple)'">ENTENDI</button>
+        </div>
+    </div>
+
     <script>
+        function abrirEsqueciSenha() { document.getElementById('modalEsqueci').style.display = 'flex'; }
+        function fecharEsqueci() { document.getElementById('modalEsqueci').style.display = 'none'; }
+
         function toggleSenha() {
             const input = document.getElementById('senha');
             const icone = document.getElementById('iconeOlho');
