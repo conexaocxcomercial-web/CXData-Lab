@@ -1,0 +1,84 @@
+<style>
+    .cx-usermenu { position: relative; }
+    .cx-usermenu-trigger {
+        display: flex; align-items: center; gap: 10px;
+        padding: 6px 14px 6px 6px; background: rgba(255,255,255,0.7);
+        border-radius: 50px !important; cursor: pointer; transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+    .cx-usermenu-trigger:hover { background: #fff; border-color: #f0f0f1; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .cx-um-avatar {
+        width: 32px; height: 32px; min-width: 32px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 800; border-radius: 50% !important;
+        background: #1e1e1e; color: #bef533;
+    }
+    .cx-um-nome { font-size: 13px; font-weight: 700; color: #1e1e1e; white-space: nowrap; }
+    .cx-um-chevron { font-size: 18px; color: #a1a1aa; transition: transform 0.2s; }
+    .cx-usermenu.open .cx-um-chevron { transform: rotate(180deg); }
+
+    .cx-um-dropdown {
+        position: absolute; top: calc(100% + 8px); right: 0;
+        background: #fff; min-width: 220px; box-shadow: 0 12px 40px rgba(0,0,0,0.14);
+        border: 1px solid #f0f0f1; border-radius: 14px !important; overflow: hidden;
+        opacity: 0; visibility: hidden; transform: translateY(-6px); transition: all 0.18s; z-index: 500;
+    }
+    .cx-usermenu.open .cx-um-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
+    .cx-um-header { padding: 16px; border-bottom: 1px solid #f4f4f5; display: flex; align-items: center; gap: 12px; }
+    .cx-um-header .cx-um-avatar { width: 40px; height: 40px; min-width: 40px; font-size: 14px; border-radius: 12px !important; }
+    .cx-um-info-nome { font-size: 13px; font-weight: 800; color: #1e1e1e; line-height: 1.2; }
+    .cx-um-info-nivel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #7371ff; margin-top: 2px; }
+    .cx-um-item {
+        display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+        font-size: 13px; font-weight: 600; color: #52525b; cursor: pointer; transition: 0.15s;
+    }
+    .cx-um-item:hover { background: #f4f4f5; color: #1e1e1e; }
+    .cx-um-item.danger { color: #ef4444; }
+    .cx-um-item.danger:hover { background: #fee2e2; }
+    .cx-um-item .material-symbols-rounded { font-size: 19px; }
+</style>
+
+<div class="cx-usermenu" id="cxUserMenu">
+    <div class="cx-usermenu-trigger" onclick="toggleUserMenu(event)">
+        <div class="cx-um-avatar" id="cxUmAvatar"></div>
+        <span class="cx-um-nome">{{ usuario_nome }}</span>
+        <span class="material-symbols-rounded cx-um-chevron">expand_more</span>
+    </div>
+    <div class="cx-um-dropdown">
+        <div class="cx-um-header">
+            <div class="cx-um-avatar" id="cxUmAvatarBig"></div>
+            <div>
+                <div class="cx-um-info-nome">{{ usuario_nome }}</div>
+                <div class="cx-um-info-nivel">{{ nivel_acesso|default('colaborador') }}</div>
+            </div>
+        </div>
+        <div class="cx-um-item" onclick="window.location.href='/'">
+            <span class="material-symbols-rounded">home</span> Hub Principal
+        </div>
+        {% if nivel_acesso == 'admin' %}
+        <div class="cx-um-item" onclick="window.location.href='/configuracoes'">
+            <span class="material-symbols-rounded">settings</span> Configurações
+        </div>
+        {% endif %}
+        <div class="cx-um-item danger" onclick="window.location.href='/logout'">
+            <span class="material-symbols-rounded">logout</span> Sair da plataforma
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        var nome = "{{ usuario_nome }}";
+        function ini(n){ if(!n) return '?'; var p=n.trim().split(' '); return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase(); }
+        var a = document.getElementById('cxUmAvatar'); if(a) a.textContent = ini(nome);
+        var ab = document.getElementById('cxUmAvatarBig'); if(ab) ab.textContent = ini(nome);
+    })();
+    function toggleUserMenu(e) {
+        e.stopPropagation();
+        document.getElementById('cxUserMenu').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+        var menu = document.getElementById('cxUserMenu');
+        if (menu && !menu.contains(e.target)) menu.classList.remove('open');
+    });
+</script>
