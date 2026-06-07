@@ -791,6 +791,71 @@ def dados_dashboard():
         todos_resp = sorted(list(set(p.get("responsavel") for p in res_proj.data if p.get("responsavel") and not p.get("excluido_em"))))
         todos_clientes = sorted([{"id": str(c["id"]), "nome": c["nome_empresa"]} for c in res_cli.data], key=lambda x: x["nome"])
 
+        # ===== 1. PROJETOS ATRASADOS (lista detalhada) =====
+        lista_atrasados = []
+        for p in ativos:
+            prazo = p.get("prazo_data")
+            if prazo and str(prazo)[:10] < hoje:
+                dias_atraso = (datetime.now().date() - datetime.strptime(str(prazo)[:10], "%Y-%m-%d").date()).days
+                lista_atrasados.append({
+                    "nome": p.get("nome_projeto"),
+                    "responsavel": p.get("responsavel") or "—",
+                    "area": p.get("area") or "—",
+                    "prazo": str(prazo)[:10],
+                    "dias_atraso": dias_atraso,
+                    "status": p.get("status")
+                })
+        lista_atrasados = sorted(lista_atrasados, key=lambda x: x["dias_atraso"], reverse=True)
+
+        # ===== 2. FLUXO DE NOVOS PROJETOS (por mês e por dia) =====
+        novos_por_mes = {}
+        novos_por_dia = {}
+        for p in projetos:
+            d = p.get("data_inicio") or p.get("criado_em")
+            if not d: continue
+            dia = str(d)[:10]
+            mes = str(d)[:7]  # YYYY-MM
+            novos_por_mes[mes] = novos_por_mes.get(mes, 0) + 1
+            novos_por_dia[dia] = novos_por_dia.get(dia, 0) + 1
+        fluxo_mensal = sorted([{"periodo": k, "qtd": v} for k, v in novos_por_mes.items()], key=lambda x: x["periodo"])
+        fluxo_diario = sorted([{"periodo": k, "qtd": v} for k, v in novos_por_dia.items()], key=lambda x: x["periodo"])[-31:]
+
+        # ===== 3. % DE OCUPAÇÃO POR COLABORADOR (base: dias úteis × 8h) =====
+        # Determina o período de análise
+        dias_com_log = [str(l.get("data_inicio_atividade") or l.get("criado_em"))[:10] for l in logs if (l.get("data_inicio_atividade") or l.get("criado_em"))]
+        if f_inicio and f_fim:
+            dt_ini = datetime.strptime(f_inicio, "%Y-%m-%d").date()
+            dt_fim = datetime.strptime(f_fim, "%Y-%m-%d").date()
+        elif dias_com_log:
+            dt_ini = datetime.strptime(min(dias_com_log), "%Y-%m-%d").date()
+            dt_fim = datetime.strptime(max(dias_com_log), "%Y-%m-%d").date()
+        else:
+            dt_ini = dt_fim = datetime.now().date()
+
+        # Conta dias úteis (seg-sex) no período
+        dias_uteis = 0
+        d_cursor = dt_ini
+        from datetime import timedelta
+        while d_cursor <= dt_fim:
+            if d_cursor.weekday() < 5:  # 0-4 = seg-sex
+                dias_uteis += 1
+            d_cursor += timedelta(days=1)
+        if dias_uteis == 0: dias_uteis = 1
+
+        segundos_esperados = dias_uteis * 8 * 3600  # 8h por dia útil
+        ocupacao = []
+        for nome, seg in tempo_colab.items():
+            pct = round((seg / segundos_esperados) * 100, 1)
+            ocupacao.append({"nome": nome, "segundos": seg, "percentual": pct, "esperado_segundos": segundos_esperados})
+        ocupacao = sorted(ocupacao, key=lambda x: x["percentual"], reverse=True)
+
+        # ===== 4. PROJETOS EM ANDAMENTO POR COLABORADOR =====
+        andamento_colab = {}
+        for p in ativos:
+            r = p.get("responsavel") or "Não atribuído"
+            andamento_colab[r] = andamento_colab.get(r, 0) + 1
+        proj_por_colab = sorted([{"nome": k, "qtd": v} for k, v in andamento_colab.items()], key=lambda x: x["qtd"], reverse=True)
+
         return jsonify({
             "status": "sucesso",
             "kpis": {
@@ -807,6 +872,12 @@ def dados_dashboard():
             "top_atividades": top_atividades,
             "top_clientes": top_clientes,
             "evolucao": evolucao,
+            "lista_atrasados": lista_atrasados,
+            "fluxo_mensal": fluxo_mensal,
+            "fluxo_diario": fluxo_diario,
+            "ocupacao": ocupacao,
+            "dias_uteis": dias_uteis,
+            "proj_por_colab": proj_por_colab,
             "filtros": {
                 "areas": todas_areas,
                 "responsaveis": todos_resp,
