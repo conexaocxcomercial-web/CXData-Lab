@@ -1178,6 +1178,8 @@
                 </div>`;
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
+            // Sincroniza visualmente o card que tem timer ativo (vindo de outra página/aba)
+            sincronizarCardComTimer();
             atualizarContadores();
         }
 
@@ -1294,6 +1296,35 @@
             const salvo = localStorage.getItem('cxdata_timer_ativo');
             if (salvo) { activeTimerData = JSON.parse(salvo); iniciarRelogioVisual(); } 
             else { document.getElementById('floatingPlayer').style.display = 'none'; }
+        }
+
+        // Garante que o card do projeto com timer ativo mostre o estado correto
+        // mesmo quando o timer foi iniciado em outra página (ex: Planejamento)
+        function sincronizarCardComTimer() {
+            if (!activeTimerData) return;
+            const id = activeTimerData.id;
+            const btn = document.getElementById(`btn-${id}`);
+            const disp = document.getElementById(`disp-${id}`);
+            const sel = document.getElementById(`select-${id}`);
+            if (!btn) return; // o projeto ativo não está visível neste quadro
+
+            if (activeTimerData.paused) {
+                // Pausado: botão âmbar com play, tempo congelado
+                btn.classList.remove('parar');
+                btn.style.backgroundColor = '#f59e0b';
+                btn.innerHTML = `<span class="material-symbols-rounded">pause</span>`;
+                if (disp) {
+                    disp.innerText = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos);
+                    disp.classList.remove('ativo');
+                }
+            } else {
+                // Rodando: botão de parar, tempo acumulando (o setInterval cuida da contagem)
+                btn.classList.add('parar');
+                btn.style.backgroundColor = '';
+                btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
+                if (disp) disp.classList.add('ativo');
+            }
+            if (sel) { sel.value = activeTimerData.tarefa; sel.disabled = true; }
         }
 
         function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
