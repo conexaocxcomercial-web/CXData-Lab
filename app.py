@@ -4,13 +4,16 @@ from datetime import datetime
 import bcrypt
 import secrets
 import string
+import os
 
 app = Flask(__name__)
-# CHAVE FIXA: Impede que a Vercel derrube o login a cada 5 minutos
-app.secret_key = "cxdata_chave_mestra_oficial_2026_!@"
+# CHAVE DE SESSÃO: lê de variável de ambiente, com fallback para não quebrar local
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cxdata_chave_mestra_oficial_2026_!@")
 
-URL = "https://udqeheyyhvqlwejdwkbj.supabase.co"
-KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ"
+# CREDENCIAIS SUPABASE: priorizam variáveis de ambiente (Vercel).
+# O fallback mantém o sistema funcionando caso as env vars ainda não estejam configuradas.
+URL = os.environ.get("SUPABASE_URL", "https://udqeheyyhvqlwejdwkbj.supabase.co")
+KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
 supabase: Client = create_client(URL, KEY)
 
 # --- HELPERS DE SEGURANÇA ---
@@ -93,7 +96,7 @@ def listar_projetos():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
         res_projetos = supabase.table("projetos").select("*").execute()
-        projetos = res_projetos.data
+        projetos = [p for p in res_projetos.data if not p.get("excluido_em")]
 
         # CONTROLE DE ACESSO: colaborador só vê os projetos onde é responsável
         if session.get('nivel_acesso') == 'colaborador':
@@ -219,10 +222,58 @@ def atualizar_projeto(projeto_id):
 def excluir_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
-        supabase.table("projetos").delete().eq("id", projeto_id).execute()
+        # SOFT DELETE: marca como excluído em vez de apagar (vai para a lixeira)
+        supabase.table("projetos").update({"excluido_em": datetime.now().isoformat()}).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir o projeto."}), 500
+
+
+# --- LIXEIRA (somente admin) ---
+
+@app.route('/lixeira')
+def lixeira_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not is_admin():
+        return redirect(url_for('index'))
+    return render_template('lixeira.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+
+@app.route('/api/lixeira', methods=['GET'])
+def listar_lixeira():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res_proj = supabase.table("projetos").select("*").not_.is_("excluido_em", "null").execute()
+        res_cli = supabase.table("clientes").select("*").not_.is_("excluido_em", "null").execute()
+        return jsonify({"status": "sucesso", "projetos": res_proj.data or [], "clientes": res_cli.data or []}), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro na lixeira: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a lixeira."}), 500
+
+@app.route('/api/lixeira/<tipo>/<item_id>/restaurar', methods=['PUT'])
+def restaurar_item(tipo, item_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    tabela = "projetos" if tipo == "projeto" else "clientes" if tipo == "cliente" else None
+    if not tabela: return jsonify({"status": "erro", "mensagem": "Tipo invalido."}), 400
+    try:
+        supabase.table(tabela).update({"excluido_em": None}).eq("id", item_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/lixeira/<tipo>/<item_id>/definitivo', methods=['DELETE'])
+def excluir_definitivo(tipo, item_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    tabela = "projetos" if tipo == "projeto" else "clientes" if tipo == "cliente" else None
+    if not tabela: return jsonify({"status": "erro", "mensagem": "Tipo invalido."}), 400
+    try:
+        supabase.table(tabela).delete().eq("id", item_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 # --- API TIMER ---
 
@@ -468,12 +519,13 @@ def listar_clientes():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
         res = supabase.table("clientes").select("*").order("nome_empresa", desc=False).execute()
-        clientes = res.data
+        clientes = [c for c in res.data if not c.get("excluido_em")]
 
         # Conta projetos por cliente (para a listagem)
-        res_proj = supabase.table("projetos").select("cliente_id, status, area, responsavel").execute()
+        res_proj = supabase.table("projetos").select("cliente_id, status, area, responsavel, excluido_em").execute()
         contagem = {}
         for p in res_proj.data:
+            if p.get("excluido_em"): continue
             cid = p.get("cliente_id")
             if not cid: continue
             cid = str(cid)
@@ -542,12 +594,14 @@ def atualizar_cliente(cliente_id):
 def excluir_cliente(cliente_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
-        # Não deixa excluir se houver projetos vinculados
-        res_proj = supabase.table("projetos").select("id").eq("cliente_id", cliente_id).execute()
-        if res_proj.data and len(res_proj.data) > 0:
-            return jsonify({"status": "erro", "mensagem": f"Cliente tem {len(res_proj.data)} projeto(s) vinculado(s). Não pode ser excluído."}), 400
+        # Não deixa excluir se houver projetos ATIVOS vinculados
+        res_proj = supabase.table("projetos").select("id, excluido_em").eq("cliente_id", cliente_id).execute()
+        ativos = [p for p in res_proj.data if not p.get("excluido_em")]
+        if ativos and len(ativos) > 0:
+            return jsonify({"status": "erro", "mensagem": f"Cliente tem {len(ativos)} projeto(s) vinculado(s). Não pode ser excluído."}), 400
 
-        supabase.table("clientes").delete().eq("id", cliente_id).execute()
+        # SOFT DELETE: vai para a lixeira
+        supabase.table("clientes").update({"excluido_em": datetime.now().isoformat()}).eq("id", cliente_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
@@ -562,9 +616,9 @@ def mapa_cliente(cliente_id):
             return jsonify({"status": "erro", "mensagem": "Cliente não encontrado."}), 404
         cliente = res_cli.data[0]
 
-        # Projetos do cliente
+        # Projetos do cliente (ignora os que estão na lixeira)
         res_proj = supabase.table("projetos").select("*").eq("cliente_id", cliente_id).execute()
-        projetos = res_proj.data
+        projetos = [p for p in res_proj.data if not p.get("excluido_em")]
 
         # Tempo dedicado por projeto (paginação para superar limite de 1000)
         ids_projetos = [str(p["id"]) for p in projetos]
@@ -607,6 +661,160 @@ def mapa_cliente(cliente_id):
         }), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no mapa do cliente: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+
+# --- DASHBOARD / BI (gestor + admin) ---
+
+@app.route('/dashboard')
+def dashboard_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if session.get('nivel_acesso') not in ['admin', 'gestor']:
+        return redirect(url_for('index'))
+    return render_template('dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+
+@app.route('/api/dashboard', methods=['GET'])
+def dados_dashboard():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if session.get('nivel_acesso') not in ['admin', 'gestor']:
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        # Filtros opcionais
+        f_area = request.args.get('area')
+        f_resp = request.args.get('responsavel')
+        f_cliente = request.args.get('cliente_id')
+        f_inicio = request.args.get('inicio')  # YYYY-MM-DD
+        f_fim = request.args.get('fim')
+
+        # Projetos ativos (fora da lixeira)
+        res_proj = supabase.table("projetos").select("*").execute()
+        projetos = [p for p in res_proj.data if not p.get("excluido_em")]
+
+        # Aplica filtros de projeto
+        if f_area: projetos = [p for p in projetos if p.get("area") == f_area]
+        if f_resp: projetos = [p for p in projetos if p.get("responsavel") == f_resp]
+        if f_cliente: projetos = [p for p in projetos if str(p.get("cliente_id")) == str(f_cliente)]
+
+        ids_proj = set(str(p["id"]) for p in projetos)
+
+        # Time logs (paginado) — para tempo, atividades, produtividade
+        logs = []
+        page_size = 1000
+        offset = 0
+        while True:
+            res_t = supabase.table("time_logs").select("*").range(offset, offset + page_size - 1).execute()
+            if not res_t.data: break
+            logs.extend(res_t.data)
+            if len(res_t.data) < page_size: break
+            offset += page_size
+
+        # Filtra logs pelos projetos visíveis e período
+        def log_no_periodo(log):
+            d = log.get("data_inicio_atividade") or log.get("criado_em")
+            if not d: return True
+            dia = str(d)[:10]
+            if f_inicio and dia < f_inicio: return False
+            if f_fim and dia > f_fim: return False
+            return True
+
+        logs = [l for l in logs if str(l.get("projeto_id")) in ids_proj and log_no_periodo(l)]
+
+        # ===== KPIs GERAIS =====
+        total_projetos = len(projetos)
+        ativos = [p for p in projetos if p.get("status") not in ["Finalizado", "Cancelado"]]
+        finalizados = [p for p in projetos if p.get("status") in ["Finalizado", "Cancelado"]]
+        tempo_total = sum((l.get("tempo_segundos") or 0) for l in logs)
+
+        # Projetos atrasados
+        hoje = datetime.now().date().isoformat()
+        atrasados = 0
+        for p in ativos:
+            prazo = p.get("prazo_data")
+            if prazo and str(prazo)[:10] < hoje:
+                atrasados += 1
+
+        # ===== DISTRIBUIÇÃO POR STATUS =====
+        por_status = {}
+        for p in projetos:
+            s = p.get("status") or "Sem status"
+            por_status[s] = por_status.get(s, 0) + 1
+
+        # ===== DISTRIBUIÇÃO POR ÁREA =====
+        por_area = {}
+        for p in projetos:
+            a = p.get("area") or "Sem área"
+            por_area[a] = por_area.get(a, 0) + 1
+
+        # ===== TEMPO POR COLABORADOR =====
+        tempo_colab = {}
+        for l in logs:
+            c = l.get("colaborador") or "Não identificado"
+            tempo_colab[c] = tempo_colab.get(c, 0) + (l.get("tempo_segundos") or 0)
+        ranking_colab = sorted([{"nome": k, "segundos": v} for k, v in tempo_colab.items()], key=lambda x: x["segundos"], reverse=True)
+
+        # ===== PRINCIPAIS ATIVIDADES =====
+        atividades = {}
+        for l in logs:
+            t = (l.get("descricao_tarefa") or "Sem descrição").strip()
+            if t not in atividades:
+                atividades[t] = {"qtd": 0, "segundos": 0}
+            atividades[t]["qtd"] += 1
+            atividades[t]["segundos"] += (l.get("tempo_segundos") or 0)
+        top_atividades = sorted([{"atividade": k, **v} for k, v in atividades.items()], key=lambda x: x["segundos"], reverse=True)[:10]
+
+        # ===== TEMPO POR CLIENTE (top) =====
+        cliente_nomes = {}
+        res_cli = supabase.table("clientes").select("id, nome_empresa").execute()
+        for c in res_cli.data:
+            cliente_nomes[str(c["id"])] = c["nome_empresa"]
+        proj_para_cliente = {str(p["id"]): str(p.get("cliente_id")) for p in projetos}
+        tempo_cliente = {}
+        for l in logs:
+            cid = proj_para_cliente.get(str(l.get("projeto_id")))
+            if not cid or cid == "None": continue
+            nome = cliente_nomes.get(cid, "Desconhecido")
+            tempo_cliente[nome] = tempo_cliente.get(nome, 0) + (l.get("tempo_segundos") or 0)
+        top_clientes = sorted([{"cliente": k, "segundos": v} for k, v in tempo_cliente.items()], key=lambda x: x["segundos"], reverse=True)[:8]
+
+        # ===== EVOLUÇÃO TEMPORAL (tempo por dia, últimos registros) =====
+        tempo_por_dia = {}
+        for l in logs:
+            d = l.get("data_inicio_atividade") or l.get("criado_em")
+            if not d: continue
+            dia = str(d)[:10]
+            tempo_por_dia[dia] = tempo_por_dia.get(dia, 0) + (l.get("tempo_segundos") or 0)
+        evolucao = sorted([{"dia": k, "segundos": v} for k, v in tempo_por_dia.items()], key=lambda x: x["dia"])[-30:]
+
+        # ===== OPÇÕES PARA FILTROS =====
+        todas_areas = sorted(list(set(p.get("area") for p in res_proj.data if p.get("area") and not p.get("excluido_em"))))
+        todos_resp = sorted(list(set(p.get("responsavel") for p in res_proj.data if p.get("responsavel") and not p.get("excluido_em"))))
+        todos_clientes = sorted([{"id": str(c["id"]), "nome": c["nome_empresa"]} for c in res_cli.data], key=lambda x: x["nome"])
+
+        return jsonify({
+            "status": "sucesso",
+            "kpis": {
+                "total_projetos": total_projetos,
+                "ativos": len(ativos),
+                "finalizados": len(finalizados),
+                "atrasados": atrasados,
+                "tempo_total_segundos": tempo_total,
+                "total_sessoes": len(logs)
+            },
+            "por_status": por_status,
+            "por_area": por_area,
+            "ranking_colaboradores": ranking_colab,
+            "top_atividades": top_atividades,
+            "top_clientes": top_clientes,
+            "evolucao": evolucao,
+            "filtros": {
+                "areas": todas_areas,
+                "responsaveis": todos_resp,
+                "clientes": todos_clientes
+            }
+        }), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro no Dashboard: {str(e)}")
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 
