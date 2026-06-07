@@ -89,6 +89,14 @@
             <span class="cxsb-item-label">Geral</span>
         </div>
 
+        {% if nivel_acesso in ['admin', 'gestor'] %}
+        <div class="cxsb-section">Análise</div>
+        <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
+            <span class="material-symbols-rounded">monitoring</span>
+            <span class="cxsb-item-label">Dashboard</span>
+        </div>
+        {% endif %}
+
         <div class="cxsb-section">Gestão</div>
         <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
             <span class="material-symbols-rounded">apartment</span>
@@ -102,6 +110,10 @@
         <div class="cxsb-item" data-path="/configuracoes" onclick="window.location.href='/configuracoes'">
             <span class="material-symbols-rounded">settings</span>
             <span class="cxsb-item-label">Configurações</span>
+        </div>
+        <div class="cxsb-item" data-path="/lixeira" onclick="window.location.href='/lixeira'">
+            <span class="material-symbols-rounded">delete</span>
+            <span class="cxsb-item-label">Lixeira</span>
         </div>
         {% endif %}
     </div>
