@@ -3,73 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | CXProjetos</title>
+    <title>Entrar | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
-        :root { --primary-purple: #7371ff; --accent-lime: #bef533; }
+        :root {
+            --primary-purple: #7371ff;
+            --accent-lime: #bef533;
+            --text-main: #1e1e1e;
+            --text-muted: #71717a;
+        }
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f4f4f5; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        
-        .login-card { 
-            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(16px);
-            padding: 50px; width: 100%; max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.05); text-align: center;
+        body { height: 100vh; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; background: #fff; }
+
+        /* ===== PAINEL ESQUERDO (MARCA) ===== */
+        .brand-panel {
+            background: #1e1e1e; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 56px;
         }
-
-        h1 { font-size: 28px; font-weight: 900; margin-bottom: 10px; letter-spacing: -1px; }
-        h1 span { color: var(--primary-purple); }
-        p { color: #71717a; font-size: 14px; margin-bottom: 30px; font-weight: 500; }
-
-        .input-group { text-align: left; margin-bottom: 20px; }
-        label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #71717a; letter-spacing: 1px; display: block; margin-bottom: 8px; }
-        input { width: 100%; padding: 15px; background: #fff; border: none; outline: none; font-size: 14px; border-left: 3px solid transparent; transition: 0.2s; }
-        input:focus { border-left-color: var(--primary-purple); }
-
-        .btn-login { 
-            width: 100%; padding: 15px; background: var(--primary-purple); color: white;
-            font-weight: 800; border: none; cursor: pointer; border-radius: 50px; 
-            margin-top: 10px; transition: 0.2s;
+        .brand-panel::before {
+            content: ''; position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(115,113,255,0.35) 0%, transparent 70%);
+            top: -200px; right: -200px; border-radius: 50%;
         }
-        .btn-login:hover { background: #1e1e1e; }
-        #mensagemErro { color: #ef4444; font-size: 12px; margin-top: 15px; font-weight: 600; display: none; }
+        .brand-panel::after {
+            content: ''; position: absolute; width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(190,245,51,0.12) 0%, transparent 70%);
+            bottom: -180px; left: -150px; border-radius: 50%;
+        }
+        .brand-logo { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+        .brand-logo img { width: 40px; height: 40px; object-fit: contain; filter: brightness(0) invert(1); }
+        .brand-logo span { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+        .brand-logo span b { color: var(--primary-purple); }
+
+        .brand-center { position: relative; z-index: 2; }
+        .brand-headline { font-size: 44px; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 22px; }
+        .brand-headline .lime { color: var(--accent-lime); }
+        .brand-sub { font-size: 15px; color: rgba(255,255,255,0.55); font-weight: 500; line-height: 1.7; max-width: 400px; }
+
+        .brand-features { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px; }
+        .brand-feature { display: flex; align-items: center; gap: 14px; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; }
+        .brand-feature .ico { width: 38px; height: 38px; min-width: 38px; background: rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-lime); }
+
+        /* ===== PAINEL DIREITO (FORM) ===== */
+        .form-panel { display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .form-wrap { width: 100%; max-width: 380px; }
+        .form-title { font-size: 30px; font-weight: 900; letter-spacing: -1px; color: var(--text-main); margin-bottom: 8px; }
+        .form-sub { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-bottom: 40px; }
+
+        .field { margin-bottom: 20px; }
+        .field label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; display: block; margin-bottom: 10px; }
+        .input-shell { position: relative; display: flex; align-items: center; }
+        .input-shell .ico-left { position: absolute; left: 16px; color: #c4c4c8; font-size: 20px; transition: color 0.2s; pointer-events: none; }
+        .input-shell input {
+            width: 100%; padding: 15px 16px 15px 48px; background: #f7f7f8;
+            border: 2px solid transparent; border-radius: 14px; outline: none;
+            font-size: 14px; font-weight: 500; color: var(--text-main); transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .input-shell input:focus { background: #fff; border-color: var(--primary-purple); }
+        .input-shell input:focus + .ico-left, .input-shell:focus-within .ico-left { color: var(--primary-purple); }
+        .toggle-senha { position: absolute; right: 14px; color: #c4c4c8; cursor: pointer; font-size: 20px; transition: color 0.2s; background: none; border: none; }
+        .toggle-senha:hover { color: var(--text-main); }
+
+        .btn-entrar {
+            width: 100%; padding: 16px; background: var(--primary-purple); color: #fff;
+            font-weight: 800; font-size: 14px; border: none; cursor: pointer; border-radius: 14px;
+            margin-top: 12px; transition: all 0.2s; letter-spacing: 0.3px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-entrar:hover { background: var(--text-main); transform: translateY(-1px); }
+        .btn-entrar:active { transform: translateY(0); }
+        .btn-entrar:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        .erro-msg {
+            display: none; align-items: center; gap: 8px; margin-top: 18px; padding: 12px 16px;
+            background: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 700; border-radius: 12px;
+        }
+        .erro-msg.show { display: flex; }
+
+        .form-footer { text-align: center; margin-top: 32px; font-size: 12px; color: #c4c4c8; font-weight: 600; }
+
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width: 900px) {
+            body { grid-template-columns: 1fr; }
+            .brand-panel { display: none; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <h1>CX<span>Projetos</span></h1>
-        <p>Acesse seu workspace.</p>
-
-        <div class="input-group">
-            <label>E-mail Corporativo</label>
-            <input type="email" id="email" placeholder="nome@cxdata.com.br">
+    <div class="brand-panel">
+        <div class="brand-logo">
+            <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="CX">
+            <span>CX<b>Projetos</b></span>
         </div>
 
-        <div class="input-group">
-            <label>Senha</label>
-            <input type="password" id="senha" placeholder="••••••••">
+        <div class="brand-center">
+            <div class="brand-headline">Gestão de projetos<br>que <span class="lime">flui</span>.</div>
+            <div class="brand-sub">Quadros, timers, planejamento e clientes — tudo em um só lugar. O workspace da sua equipe, do briefing à entrega.</div>
         </div>
 
-        <button class="btn-login" onclick="executarLogin()">ENTRAR NO SISTEMA</button>
-        <div id="mensagemErro">Erro ao fazer login. Verifique seus dados.</div>
+        <div class="brand-features">
+            <div class="brand-feature"><div class="ico"><span class="material-symbols-rounded" style="font-size:20px;">dashboard</span></div> Quadros Kanban por área</div>
+            <div class="brand-feature"><div class="ico"><span class="material-symbols-rounded" style="font-size:20px;">timer</span></div> Controle de tempo por atividade</div>
+            <div class="brand-feature"><div class="ico"><span class="material-symbols-rounded" style="font-size:20px;">insights</span></div> Visão completa de cada cliente</div>
+        </div>
+    </div>
+
+    <div class="form-panel">
+        <div class="form-wrap">
+            <div class="form-title">Bem-vindo de volta</div>
+            <div class="form-sub">Acesse seu workspace para continuar.</div>
+
+            <div class="field">
+                <label>E-mail Corporativo</label>
+                <div class="input-shell">
+                    <span class="material-symbols-rounded ico-left">mail</span>
+                    <input type="email" id="email" placeholder="nome@cxdata.com.br" onkeypress="if(event.key==='Enter') document.getElementById('senha').focus()">
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Senha</label>
+                <div class="input-shell">
+                    <span class="material-symbols-rounded ico-left">lock</span>
+                    <input type="password" id="senha" placeholder="••••••••" onkeypress="if(event.key==='Enter') executarLogin()">
+                    <button class="toggle-senha" onclick="toggleSenha()" title="Mostrar/ocultar senha"><span class="material-symbols-rounded" id="iconeOlho">visibility</span></button>
+                </div>
+            </div>
+
+            <button class="btn-entrar" id="btnEntrar" onclick="executarLogin()">
+                <span id="btnTexto">ENTRAR NO SISTEMA</span>
+            </button>
+
+            <div class="erro-msg" id="mensagemErro">
+                <span class="material-symbols-rounded" style="font-size:16px;">error</span>
+                <span id="erroTexto">E-mail ou senha inválidos.</span>
+            </div>
+
+            <div class="form-footer">CXProjetos · CX Data</div>
+        </div>
     </div>
 
     <script>
+        function toggleSenha() {
+            const input = document.getElementById('senha');
+            const icone = document.getElementById('iconeOlho');
+            if (input.type === 'password') { input.type = 'text'; icone.innerText = 'visibility_off'; }
+            else { input.type = 'password'; icone.innerText = 'visibility'; }
+        }
+
         async function executarLogin() {
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value;
             const msgErro = document.getElementById('mensagemErro');
+            const btn = document.getElementById('btnEntrar');
+            const btnTexto = document.getElementById('btnTexto');
 
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senha })
-            });
+            msgErro.classList.remove('show');
 
-            if (res.ok) {
-                window.location.href = '/';
-            } else {
-                msgErro.style.display = 'block';
+            if (!email || !senha) {
+                document.getElementById('erroTexto').innerText = 'Preencha e-mail e senha.';
+                msgErro.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btnTexto.innerHTML = '<span class="spinner"></span>';
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                if (res.ok) {
+                    btnTexto.innerText = 'ENTRANDO...';
+                    window.location.href = '/';
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    document.getElementById('erroTexto').innerText = data.mensagem || 'E-mail ou senha inválidos.';
+                    msgErro.classList.add('show');
+                    btn.disabled = false;
+                    btnTexto.innerText = 'ENTRAR NO SISTEMA';
+                }
+            } catch(e) {
+                document.getElementById('erroTexto').innerText = 'Erro de conexão. Tente novamente.';
+                msgErro.classList.add('show');
+                btn.disabled = false;
+                btnTexto.innerText = 'ENTRAR NO SISTEMA';
             }
         }
     </script>
