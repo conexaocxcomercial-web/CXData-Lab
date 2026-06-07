@@ -73,7 +73,9 @@
     <!-- elemento oculto para o script da sidebar ler o nome -->
     <span id="nomeUsuario" style="display:none;">{{ usuario_nome }}</span>
 
-    {% include '_sidebar.html' %}
+    <div style="position: fixed; top: 24px; right: 32px; z-index: 50;">
+        {% include '_usermenu.html' %}
+    </div>
 
     <div class="hub-container">
         <div class="hub-header">
