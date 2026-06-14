@@ -892,6 +892,7 @@ def dados_dashboard():
 # --- PLANEJAMENTO DIÁRIO ---
 
 @app.route('/planejamento')
+@app.route('/agenda')
 def planejamento():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
@@ -901,11 +902,61 @@ def planejamento():
 def listar_planejamento():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
+        # 1. PLANEJADO: o que foi cadastrado previamente na agenda
         res = supabase.table("planejamento_diario").select("*").order("data_planejada", desc=False).order("criado_em", desc=False).execute()
-        return jsonify({"status": "sucesso", "planejamentos": res.data}), 200
+        planejados = []
+        for p in res.data:
+            planejados.append({
+                "id": p.get("id"),
+                "origem": "planejado",
+                "projeto_id": p.get("projeto_id"),
+                "colaborador": p.get("colaborador"),
+                "atividade": p.get("atividade"),
+                "data": p.get("data_planejada"),
+                "criado_em": p.get("criado_em"),
+                "tempo_segundos": None
+            })
+
+        # 2. REALIZADO: tudo que teve timer registrado nos quadros (time_logs)
+        # Mapa de projeto -> nome (para exibir contexto)
+        res_proj = supabase.table("projetos").select("id, nome_projeto, area, empresa").execute()
+        mapa_proj = {str(p["id"]): p for p in res_proj.data}
+
+        # Busca time_logs paginado
+        realizados = []
+        page_size = 1000
+        offset = 0
+        while True:
+            res_logs = supabase.table("time_logs").select("*").range(offset, offset + page_size - 1).execute()
+            if not res_logs.data: break
+            for log in res_logs.data:
+                # Data do realizado: usa data_inicio_atividade, senão criado_em
+                data_ref = log.get("data_inicio_atividade") or log.get("criado_em")
+                dia = str(data_ref)[:10] if data_ref else None
+                if not dia: continue
+                proj = mapa_proj.get(str(log.get("projeto_id")), {})
+                realizados.append({
+                    "id": "log_" + str(log.get("id")),
+                    "origem": "realizado",
+                    "projeto_id": log.get("projeto_id"),
+                    "colaborador": log.get("colaborador"),
+                    "atividade": log.get("descricao_tarefa") or "Atividade registrada",
+                    "data": dia,
+                    "criado_em": log.get("criado_em"),
+                    "tempo_segundos": log.get("tempo_segundos") or 0,
+                    "nome_projeto": proj.get("nome_projeto"),
+                    "area": proj.get("area"),
+                    "empresa": proj.get("empresa")
+                })
+            if len(res_logs.data) < page_size: break
+            offset += page_size
+
+        # Junta tudo num só array
+        todos = planejados + realizados
+        return jsonify({"status": "sucesso", "planejamentos": todos}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no GET Planejamento: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar planejamentos."}), 500
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar agenda."}), 500
 
 @app.route('/api/planejamento', methods=['POST'])
 def criar_planejamento():
@@ -917,11 +968,9 @@ def criar_planejamento():
             "colaborador": dados.get("colaborador"),
             "atividade": dados.get("atividade"),
             "data_planejada": dados.get("data_planejada"),
-            "status": dados.get("status", "Planejado")
+            "status": "Planejado"
         }
-        print(f"[DEBUG] Tentando inserir: {novo}")
         res = supabase.table("planejamento_diario").insert(novo).execute()
-        print(f"[DEBUG] Resposta Supabase: {res}")
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         erro_msg = str(e)
