@@ -102,9 +102,9 @@
             <span class="material-symbols-rounded">apartment</span>
             <span class="cxsb-item-label">Clientes</span>
         </div>
-        <div class="cxsb-item" data-path="/planejamento" onclick="window.location.href='/planejamento'">
+        <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
             <span class="material-symbols-rounded">calendar_today</span>
-            <span class="cxsb-item-label">Planejamento</span>
+            <span class="cxsb-item-label">Agenda</span>
         </div>
         {% if nivel_acesso == 'admin' %}
         <div class="cxsb-item" data-path="/configuracoes" onclick="window.location.href='/configuracoes'">
@@ -122,6 +122,8 @@
 <script>
 (function() {
     var curr = window.location.pathname;
+    // Compatibilidade: /planejamento e /agenda apontam para o mesmo item
+    if (curr === '/planejamento') curr = '/agenda';
     document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
         var path = item.getAttribute('data-path');
         var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
