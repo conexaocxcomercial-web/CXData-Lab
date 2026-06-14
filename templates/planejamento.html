@@ -450,8 +450,8 @@
                 planejamentosMap = {};
                 planejamentos.forEach(p => { planejamentosMap[p.id] = p; });
 
-                // Popula filtro de colaboradores
-                const collabs = [...new Set(planejamentos.map(p => p.colaborador))].sort();
+                // Popula filtro de colaboradores (ignora valores nulos/vazios)
+                const collabs = [...new Set(planejamentos.map(p => p.colaborador).filter(Boolean))].sort();
                 const filtro = document.getElementById('filtroColaborador');
                 const valAtual = filtro.value;
                 filtro.innerHTML = '<option value="">Todos os colaboradores</option>';
@@ -509,10 +509,14 @@
         }
 
         function renderizarView() {
-            const dados = getDadosFiltrados();
-            if (viewAtual === 'hoje') renderHoje(dados);
-            else if (viewAtual === 'semana') renderSemana(dados);
-            else if (viewAtual === 'mes') renderMes(dados);
+            try {
+                const dados = getDadosFiltrados();
+                if (viewAtual === 'hoje') renderHoje(dados);
+                else if (viewAtual === 'semana') renderSemana(dados);
+                else if (viewAtual === 'mes') renderMes(dados);
+            } catch (err) {
+                console.error('[Agenda] Erro ao renderizar a view:', err);
+            }
         }
 
         // --- VIEW: DIA ---
@@ -545,8 +549,9 @@
             // Agrupa por colaborador
             const grupos = {};
             items.forEach(item => {
-                if (!grupos[item.colaborador]) grupos[item.colaborador] = [];
-                grupos[item.colaborador].push(item);
+                const colab = item.colaborador || 'Sem responsável';
+                if (!grupos[colab]) grupos[colab] = [];
+                grupos[colab].push(item);
             });
 
             Object.keys(grupos).sort().forEach(colab => {
@@ -616,8 +621,6 @@
                         <span class="material-symbols-rounded" style="font-size:15px;">delete</span>
                     </button>
                 </div>
-            </div>`;
-        }
             </div>`;
         }
 
