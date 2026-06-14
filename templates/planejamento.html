@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planejamento | CXProjetos</title>
+    <title>Agenda | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -91,6 +91,16 @@
         .plan-card.s-andamento { border-left-color: var(--primary-purple); }
         .plan-card.s-concluido { border-left-color: #22c55e; }
         .plan-card.s-nao-realizado { border-left-color: #ef4444; }
+        /* Origem: planejado (roxo) vs realizado (lime/verde-azulado) */
+        .plan-card.card-planejado { border-left-color: #7371ff; }
+        .plan-card.card-realizado { border-left-color: #14b8a6; background: #f6fefb; }
+        .origem-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 50px !important; text-transform: uppercase; letter-spacing: 0.3px; }
+        .origem-tag.planejado { background: #f0efff; color: #4f46e5; }
+        .origem-tag.realizado { background: #ccfbf1; color: #0f766e; }
+        .plan-card-sm.s-realizado { border-left-color: #14b8a6; background: #f6fefb; }
+        .plan-card-sm.s-planejado { border-left-color: #7371ff; }
+        .mes-mini-card.s-realizado { background: #ccfbf1; color: #0f766e; }
+        .mes-mini-card.s-planejado { background: #f0efff; color: #4f46e5; }
 
         .plan-card-body { flex-grow: 1; min-width: 0; }
         .pc-empresa { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--primary-purple); letter-spacing: 0.8px; margin-bottom: 2px; }
@@ -210,7 +220,7 @@
     <!-- COMMAND BAR -->
     <div class="command-bar">
         <div>
-            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Planejamento Diário</h2>
+            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Agenda</h2>
             <p id="subtituloData" style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;"></p>
         </div>
         <button class="btn-acao" onclick="abrirModalNovo()">
@@ -249,11 +259,9 @@
             <option value="">Todos os colaboradores</option>
         </select>
         <select class="filter-input" id="filtroStatus" onchange="renderizarView()">
-            <option value="">Todos os status</option>
-            <option value="Planejado">Planejado</option>
-            <option value="Em Andamento">Em Andamento</option>
-            <option value="Concluído">Concluído</option>
-            <option value="Não Realizado">Não Realizado</option>
+            <option value="">Planejado + Realizado</option>
+            <option value="planejado">Apenas planejado</option>
+            <option value="realizado">Apenas realizado</option>
         </select>
     </div>
 
@@ -460,10 +468,10 @@
 
         function getDadosFiltrados() {
             const colab = document.getElementById('filtroColaborador').value;
-            const status = document.getElementById('filtroStatus').value;
+            const origem = document.getElementById('filtroStatus').value;
             return planejamentos.filter(p => {
                 if (colab && p.colaborador !== colab) return false;
-                if (status && p.status !== status) return false;
+                if (origem && p.origem !== origem) return false;
                 return true;
             });
         }
@@ -512,7 +520,7 @@
             const container = document.getElementById('view-hoje');
             const diaAlvo = dataRef.toISOString().split('T')[0];
             const isHojeReal = diaAlvo === HOJE_ISO;
-            const items = dados.filter(p => p.data_planejada === diaAlvo);
+            const items = dados.filter(p => p.data === diaAlvo);
 
             let html = '';
 
@@ -558,36 +566,46 @@
         function buildCardHoje(item, isHojeReal) {
             const proj = getProj(item.projeto_id);
             const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
-            const concluido = item.status === 'Concluído';
-            const sc = statusClass(item.status);
+            const eRealizado = item.origem === 'realizado';
 
+            // Nome do projeto/empresa: realizado já traz no item; planejado pega do projeto
+            const nomeProj = eRealizado ? (item.nome_projeto || 'Projeto') : (proj.nome_projeto || 'Projeto não encontrado');
+            const empresa = eRealizado ? (item.empresa || '') : (proj.empresa || '');
+
+            // Etiqueta de origem (cor diferencia)
+            const tag = eRealizado
+                ? `<span class="origem-tag realizado"><span class="material-symbols-rounded" style="font-size:12px;">task_alt</span> Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}</span>`
+                : `<span class="origem-tag planejado"><span class="material-symbols-rounded" style="font-size:12px;">event</span> Planejado</span>`;
+
+            // REALIZADO: veio do timer, não tem play/editar/excluir. Só exibe.
+            if (eRealizado) {
+                return `<div class="plan-card card-realizado">
+                    <div class="plan-card-body">
+                        <div class="pc-empresa">${escH(empresa)}</div>
+                        <div class="pc-projeto">${escH(nomeProj)}</div>
+                        <div class="pc-atividade">${escH(item.atividade)}</div>
+                        <div class="pc-footer">${tag}</div>
+                    </div>
+                </div>`;
+            }
+
+            // PLANEJADO: mantém play (timer) + editar + excluir
             let playBtn = '';
-            if (concluido) {
-                playBtn = `<button class="btn-play concluido" disabled><span class="material-symbols-rounded" style="font-size:18px;">check</span></button>`;
+            if (ativo) {
+                playBtn = `<button class="btn-play parar" id="playbtn-${item.id}" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:18px;">stop</span></button>`;
             } else if (isHojeReal) {
-                if (ativo) {
-                    playBtn = `<button class="btn-play parar" id="playbtn-${item.id}" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:18px;">stop</span></button>`;
-                } else {
-                    const base = proj.tempo_total_segundos || 0;
-                    playBtn = `<button class="btn-play" id="playbtn-${item.id}" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
-                }
+                const base = proj.tempo_total_segundos || 0;
+                playBtn = `<button class="btn-play" id="playbtn-${item.id}" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
             } else {
                 playBtn = `<button class="btn-play" disabled><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
             }
 
-            return `<div class="plan-card ${sc}" id="card-${item.id}">
+            return `<div class="plan-card card-planejado" id="card-${item.id}">
                 <div class="plan-card-body">
-                    <div class="pc-empresa">${escH(proj.empresa||'')}</div>
-                    <div class="pc-projeto">${escH(proj.nome_projeto||'Projeto não encontrado')}</div>
+                    <div class="pc-empresa">${escH(empresa)}</div>
+                    <div class="pc-projeto">${escH(nomeProj)}</div>
                     <div class="pc-atividade">${escH(item.atividade)}</div>
-                    <div class="pc-footer">
-                        <select class="status-select" onchange="atualizarStatus('${item.id}', this.value)">
-                            <option value="Planejado" ${item.status==='Planejado'?'selected':''}>Planejado</option>
-                            <option value="Em Andamento" ${item.status==='Em Andamento'?'selected':''}>Em Andamento</option>
-                            <option value="Concluído" ${item.status==='Concluído'?'selected':''}>Concluído</option>
-                            <option value="Não Realizado" ${item.status==='Não Realizado'?'selected':''}>Não Realizado</option>
-                        </select>
-                    </div>
+                    <div class="pc-footer">${tag}</div>
                 </div>
                 <div class="plan-card-actions">
                     ${playBtn}
@@ -598,6 +616,8 @@
                         <span class="material-symbols-rounded" style="font-size:15px;">delete</span>
                     </button>
                 </div>
+            </div>`;
+        }
             </div>`;
         }
 
@@ -612,7 +632,7 @@
                 dia.setDate(ini.getDate() + i);
                 const diaISO = dia.toISOString().split('T')[0];
                 const eHoje = diaISO === HOJE_ISO;
-                const items = dados.filter(p => p.data_planejada === diaISO);
+                const items = dados.filter(p => p.data === diaISO);
                 const nomeDia = dia.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.','').toUpperCase();
 
                 html += `<div class="semana-col">
@@ -626,22 +646,24 @@
                     html += `<div class="semana-empty">·</div>`;
                 } else {
                     items.forEach(item => {
+                        const eRealizado = item.origem === 'realizado';
                         const proj = getProj(item.projeto_id);
-                        const sc = statusClass(item.status);
+                        const nomeProj = eRealizado ? (item.nome_projeto || '—') : (proj.nome_projeto || '—');
+                        const sc = eRealizado ? 's-realizado' : 's-planejado';
                         const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
                         let playXs = '';
-                        if (eHoje && item.status !== 'Concluído') {
+                        if (eRealizado) {
+                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#7371ff;" title="Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}">task_alt</span>`;
+                        } else if (eHoje) {
                             if (ativo) {
                                 playXs = `<button class="btn-play-xs parar" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:13px;">stop</span></button>`;
                             } else {
                                 const base = proj.tempo_total_segundos || 0;
                                 playXs = `<button class="btn-play-xs" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:13px;">play_arrow</span></button>`;
                             }
-                        } else if (item.status === 'Concluído') {
-                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#22c55e;">check_circle</span>`;
                         }
                         html += `<div class="plan-card-sm ${sc}" title="${escH(item.atividade)} — ${escH(item.colaborador)}">
-                            <div class="pcs-projeto">${escH(proj.nome_projeto||'—')}</div>
+                            <div class="pcs-projeto">${escH(nomeProj)}</div>
                             <div class="pcs-atividade">${escH(item.atividade)}</div>
                             <div class="pcs-footer">
                                 <div class="avatar-xs">${iniciais(item.colaborador)}</div>
@@ -676,15 +698,17 @@
                 const diaISO = dia.toISOString().split('T')[0];
                 const eHoje = diaISO === HOJE_ISO;
                 const outroMes = dia.getMonth() !== mes;
-                const items = dados.filter(p => p.data_planejada === diaISO);
+                const items = dados.filter(p => p.data === diaISO);
 
                 html += `<div class="mes-dia ${eHoje?'hoje':''} ${outroMes?'outro-mes':''}" onclick="irParaDia('${diaISO}')">
                     <div class="mes-dia-num">${dia.getDate()}</div>`;
 
                 items.slice(0,2).forEach(item => {
+                    const eRealizado = item.origem === 'realizado';
                     const proj = getProj(item.projeto_id);
-                    const sc = item.status === 'Concluído' ? 's-concluido' : item.status === 'Não Realizado' ? 's-nao-realizado' : '';
-                    html += `<div class="mes-mini-card ${sc}">${escH(proj.nome_projeto || item.atividade)}</div>`;
+                    const nomeProj = eRealizado ? (item.nome_projeto || item.atividade) : (proj.nome_projeto || item.atividade);
+                    const sc = eRealizado ? 's-realizado' : 's-planejado';
+                    html += `<div class="mes-mini-card ${sc}">${escH(nomeProj)}</div>`;
                 });
                 if (items.length > 2) html += `<div class="mes-mais">+${items.length - 2} mais</div>`;
                 html += `</div>`;
@@ -782,7 +806,6 @@
             };
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
             iniciarRelogioVisual();
-            atualizarStatus(planId, 'Em Andamento', false);
         }
 
         function togglePauseTimer() {
@@ -857,7 +880,7 @@
                 });
                 if (req.ok) {
                     showToast(`${fmtSeg(salvar.tempoFinal)} registrado com sucesso!`, 'success');
-                    await atualizarStatus(planId, 'Concluído', true);
+                    await carregarPlanejamentos();
                 } else {
                     showToast('Erro ao salvar registro de tempo.', 'error');
                     await carregarPlanejamentos();
@@ -917,7 +940,7 @@
             // 3. Seta atividade
             document.getElementById('selectAtividade').value = item.atividade;
 
-            document.getElementById('inputData').value = item.data_planejada;
+            document.getElementById('inputData').value = item.data;
             document.getElementById('modalNovo').classList.add('show');
         }
 
@@ -999,6 +1022,14 @@
             const m = Math.floor((s % 3600) / 60);
             const sg = s % 60;
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sg).padStart(2,'0')}`;
+        }
+
+        function fmtTempo(s) {
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            if (h > 0) return `${h}h ${m}min`;
+            if (m > 0) return `${m}min`;
+            return `${s}s`;
         }
 
         function showToast(msg, tipo = 'success') {
