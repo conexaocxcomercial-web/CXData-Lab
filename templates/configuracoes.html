@@ -41,6 +41,21 @@
         .nivel-admin { background: #1e1e1e; color: var(--accent-lime); }
         .nivel-gestor { background: #EEEDFE; color: #3C3489; }
         .nivel-colaborador { background: #f1f0e8; color: #5f5e5a; }
+        .nivel-cliente { background: #ccfbf1; color: #0f766e; }
+        .nivel-personalizado { background: #fef3c7; color: #92400e; }
+        .perm-secao { background: #f9f9fb; border-left: 3px solid var(--primary-purple); padding: 14px 16px; margin-bottom: 14px; }
+        .perm-titulo { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main); display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .perm-titulo .material-symbols-rounded { font-size: 17px; color: var(--primary-purple); }
+        .perm-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .perm-check { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-main); cursor: pointer; padding: 7px 10px; background: #fff; border-radius: 8px !important; transition: 0.15s; }
+        .perm-check:hover { background: #f0efff; }
+        .perm-check input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary-purple); }
+        .input-sel { width: 100%; padding: 11px 14px; background: #fff; outline: none; font-size: 12px; font-weight: 600; color: var(--text-main); border-radius: 8px !important; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .perm-lista { margin-top: 10px; max-height: 200px; overflow-y: auto; background: #fff; border-radius: 8px !important; padding: 6px; }
+        .perm-lista-item { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; padding: 8px 10px; cursor: pointer; border-radius: 6px !important; transition: 0.15s; }
+        .perm-lista-item:hover { background: #f4f4f5; }
+        .perm-lista-item input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary-purple); }
+        .perm-lista-empresa { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); padding: 8px 10px 4px; letter-spacing: 0.3px; }
         .acoes-cell { display: flex; gap: 6px; justify-content: flex-end; }
         .btn-mini { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 8px !important; transition: 0.15s; }
         .btn-mini:hover { background: #f0efff; color: var(--primary-purple); }
@@ -127,9 +142,45 @@
                     <option value="colaborador">Colaborador</option>
                     <option value="gestor">Gestor</option>
                     <option value="admin">Admin</option>
+                    <option value="personalizado">Personalizado</option>
                 </select>
                 <div class="nivel-hint" id="nivelHint"></div>
             </div>
+
+            <!-- PERMISSÕES GRANULARES (só para nível Personalizado) -->
+            <div id="blocoPermissoes" style="display:none;">
+                <div class="perm-secao">
+                    <div class="perm-titulo"><span class="material-symbols-rounded">grid_view</span> Módulos que pode acessar</div>
+                    <div class="perm-checks" id="permModulos">
+                        <label class="perm-check"><input type="checkbox" value="dashboard"> Dashboard</label>
+                        <label class="perm-check"><input type="checkbox" value="recrutamento"> R&amp;S</label>
+                        <label class="perm-check"><input type="checkbox" value="rhestrategico"> RH Estratégico</label>
+                        <label class="perm-check"><input type="checkbox" value="geral"> Geral</label>
+                        <label class="perm-check"><input type="checkbox" value="agenda"> Agenda</label>
+                        <label class="perm-check"><input type="checkbox" value="clientes"> Clientes</label>
+                    </div>
+                </div>
+
+                <div class="perm-secao">
+                    <div class="perm-titulo"><span class="material-symbols-rounded">apartment</span> Clientes que pode ver</div>
+                    <select class="input-sel" id="permClientesModo" onchange="onClientesModoChange()">
+                        <option value="todos">Todos os clientes</option>
+                        <option value="proprios">Apenas os seus (onde é responsável)</option>
+                        <option value="selecionados">Selecionar clientes específicos</option>
+                    </select>
+                    <div id="permClientesLista" class="perm-lista" style="display:none;"></div>
+                </div>
+
+                <div class="perm-secao">
+                    <div class="perm-titulo"><span class="material-symbols-rounded">folder</span> Projetos que pode ver</div>
+                    <select class="input-sel" id="permProjetosModo" onchange="onProjetosModoChange()">
+                        <option value="todos">Todos os projetos (dos clientes acima)</option>
+                        <option value="selecionados">Selecionar projetos específicos</option>
+                    </select>
+                    <div id="permProjetosLista" class="perm-lista" style="display:none;"></div>
+                </div>
+            </div>
+
             <div class="input-group">
                 <label id="labelSenha">Senha *</label>
                 <div class="senha-row">
@@ -151,26 +202,41 @@
     <script>
         let nomeUsuario = '{{ usuario_nome }}';
         let usuarios = [];
+        let listaClientes = [];
+        let listaProjetos = [];
 
         const HINTS = {
             'admin': 'Acesso total: gerencia usuários, todos os projetos e configurações.',
             'gestor': 'Vê e edita todos os projetos de todos os quadros, mas não gerencia usuários.',
-            'colaborador': 'Vê apenas os projetos onde é o responsável.'
+            'colaborador': 'Vê apenas os projetos onde é o responsável.',
+            'personalizado': 'Acesso sob medida: você escolhe os módulos, clientes e projetos que ele pode ver.'
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             var _nu = document.getElementById('nomeUsuario'); if(_nu) _nu.textContent = nomeUsuario;
             atualizarHint();
             carregarUsuarios();
+            carregarClientesEProjetos();
         });
+
+        async function carregarClientesEProjetos() {
+            try {
+                const [rc, rp] = await Promise.all([fetch('/api/clientes'), fetch('/api/projetos-para-selecao')]);
+                const dc = await rc.json();
+                const dp = await rp.json();
+                listaClientes = (dc.clientes || []).sort((a,b) => a.nome_empresa.localeCompare(b.nome_empresa));
+                listaProjetos = dp.projetos || [];
+            } catch(e) { console.error('Erro ao carregar clientes/projetos', e); }
+        }
 
         async function carregarUsuarios() {
             try {
                 const res = await fetch('/api/usuarios');
                 if (res.status === 403) { document.body.innerHTML = '<div style="padding:60px; text-align:center; font-weight:700;">Acesso negado.</div>'; return; }
                 const data = await res.json();
-                usuarios = data.usuarios || [];
-                document.getElementById('subtitulo').textContent = `${usuarios.length} usuário${usuarios.length !== 1 ? 's' : ''} no sistema`;
+                // Tela de Usuários é só para INTERNOS (externos têm módulo próprio)
+                usuarios = (data.usuarios || []).filter(u => (u.tipo_usuario || 'interno') === 'interno');
+                document.getElementById('subtitulo').textContent = `${usuarios.length} usuário${usuarios.length !== 1 ? 's' : ''} interno${usuarios.length !== 1 ? 's' : ''}`;
                 renderUsuarios();
             } catch(e) { showToast('Erro ao carregar usuários.', 'error'); }
         }
@@ -179,7 +245,7 @@
         function corUser(nome){ let h=0; for(let i=0;i<(nome||'').length;i++) h=nome.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
         function iniciais(nome){ if(!nome) return '?'; const p=nome.trim().split(' '); return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():nome.slice(0,2).toUpperCase(); }
         function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-        function nivelLabel(n){ return {admin:'Admin', gestor:'Gestor', colaborador:'Colaborador'}[n] || 'Colaborador'; }
+        function nivelLabel(n){ return {admin:'Admin', gestor:'Gestor', colaborador:'Colaborador', personalizado:'Personalizado'}[n] || 'Colaborador'; }
 
         function renderUsuarios() {
             const body = document.getElementById('usuariosBody');
@@ -217,7 +283,67 @@
 
         function atualizarHint() {
             const nivel = document.getElementById('inpNivel').value;
-            document.getElementById('nivelHint').textContent = HINTS[nivel];
+            document.getElementById('nivelHint').textContent = HINTS[nivel] || '';
+            document.getElementById('blocoPermissoes').style.display = nivel === 'personalizado' ? 'block' : 'none';
+        }
+
+        function onClientesModoChange() {
+            const modo = document.getElementById('permClientesModo').value;
+            const lista = document.getElementById('permClientesLista');
+            if (modo === 'selecionados') {
+                lista.style.display = 'block';
+                renderListaClientes([]);
+            } else {
+                lista.style.display = 'none';
+            }
+        }
+
+        function renderListaClientes(marcados) {
+            const lista = document.getElementById('permClientesLista');
+            const set = new Set((marcados || []).map(String));
+            lista.innerHTML = listaClientes.map(c => `
+                <label class="perm-lista-item">
+                    <input type="checkbox" value="${c.id}" ${set.has(String(c.id)) ? 'checked' : ''}>
+                    ${escH(c.nome_empresa)}
+                </label>`).join('') || '<div class="perm-lista-empresa">Nenhum cliente cadastrado.</div>';
+        }
+
+        function onProjetosModoChange() {
+            const modo = document.getElementById('permProjetosModo').value;
+            const lista = document.getElementById('permProjetosLista');
+            if (modo === 'selecionados') {
+                lista.style.display = 'block';
+                renderListaProjetos([]);
+            } else {
+                lista.style.display = 'none';
+            }
+        }
+
+        function renderListaProjetos(marcados) {
+            const lista = document.getElementById('permProjetosLista');
+            const set = new Set((marcados || []).map(String));
+            // Agrupa por empresa
+            const grupos = {};
+            listaProjetos.forEach(p => {
+                const emp = p.empresa || 'Sem cliente';
+                if (!grupos[emp]) grupos[emp] = [];
+                grupos[emp].push(p);
+            });
+            let html = '';
+            Object.keys(grupos).sort().forEach(emp => {
+                html += `<div class="perm-lista-empresa">${escH(emp)}</div>`;
+                grupos[emp].forEach(p => {
+                    html += `<label class="perm-lista-item">
+                        <input type="checkbox" value="${p.id}" ${set.has(String(p.id)) ? 'checked' : ''}>
+                        ${escH(p.nome)} ${p.area ? `<span style="color:#a1a1aa; font-size:10px;">· ${escH(p.area)}</span>` : ''}
+                    </label>`;
+                });
+            });
+            lista.innerHTML = html || '<div class="perm-lista-empresa">Nenhum projeto disponível.</div>';
+        }
+
+        function coletarMarcados(containerId) {
+            return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(c => c.value);
         }
 
         function abrirModalNovo() {
@@ -228,6 +354,12 @@
             document.getElementById('labelSenha').textContent = 'Senha *';
             document.getElementById('senhaHintEdit').style.display = 'none';
             document.getElementById('btnExcluir').style.display = 'none';
+            // reseta permissões
+            document.querySelectorAll('#permModulos input').forEach(c => c.checked = false);
+            document.getElementById('permClientesModo').value = 'todos';
+            document.getElementById('permProjetosModo').value = 'todos';
+            document.getElementById('permClientesLista').style.display = 'none';
+            document.getElementById('permProjetosLista').style.display = 'none';
             atualizarHint();
             document.getElementById('modalUsuario').classList.add('show');
         }
@@ -245,6 +377,21 @@
             document.getElementById('labelSenha').textContent = 'Nova Senha (opcional)';
             document.getElementById('senhaHintEdit').style.display = 'block';
             document.getElementById('btnExcluir').style.display = 'block';
+
+            // Preenche permissões (se personalizado)
+            const modulos = u.perm_modulos || [];
+            document.querySelectorAll('#permModulos input').forEach(c => c.checked = modulos.includes(c.value));
+            document.getElementById('permClientesModo').value = u.perm_clientes_modo || 'todos';
+            document.getElementById('permProjetosModo').value = u.perm_projetos_modo || 'todos';
+            if ((u.perm_clientes_modo || 'todos') === 'selecionados') {
+                document.getElementById('permClientesLista').style.display = 'block';
+                renderListaClientes(u.perm_clientes_ids || []);
+            } else { document.getElementById('permClientesLista').style.display = 'none'; }
+            if ((u.perm_projetos_modo || 'todos') === 'selecionados') {
+                document.getElementById('permProjetosLista').style.display = 'block';
+                renderListaProjetos(u.perm_projetos_ids || []);
+            } else { document.getElementById('permProjetosLista').style.display = 'none'; }
+
             atualizarHint();
             document.getElementById('modalUsuario').classList.add('show');
         }
@@ -270,9 +417,21 @@
             const payload = {
                 nome, email,
                 cargo: document.getElementById('inpCargo').value.trim(),
-                nivel_acesso: document.getElementById('inpNivel').value
+                nivel_acesso: document.getElementById('inpNivel').value,
+                tipo_usuario: 'interno'
             };
             if (senha) payload.senha = senha;
+
+            // Permissões granulares (só quando personalizado)
+            if (payload.nivel_acesso === 'personalizado') {
+                payload.perm_modulos = coletarMarcados('permModulos');
+                payload.perm_clientes_modo = document.getElementById('permClientesModo').value;
+                payload.perm_clientes_ids = payload.perm_clientes_modo === 'selecionados' ? coletarMarcados('permClientesLista') : [];
+                payload.perm_projetos_modo = document.getElementById('permProjetosModo').value;
+                payload.perm_projetos_ids = payload.perm_projetos_modo === 'selecionados' ? coletarMarcados('permProjetosLista') : [];
+
+                if (payload.perm_modulos.length === 0) { showToast('Selecione ao menos um módulo.', 'error'); return; }
+            }
 
             const btn = document.getElementById('btnSalvar');
             btn.disabled = true; btn.textContent = 'SALVANDO...';
