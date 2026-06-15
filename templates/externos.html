@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários Externos | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+        .command-bar { padding: 24px 40px 14px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
+        .btn-acao:hover { background-color: var(--text-main); }
+        .btn-acao:disabled { background: var(--text-muted); cursor: not-allowed; }
+        .btn-sec { background-color: #f4f4f5; color: var(--text-main); padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; border-radius: 50px !important; display:flex; align-items:center; gap:6px; }
+        .btn-sec:hover { background: #e4e4e7; }
+        .btn-icon-round { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 6px 40px 40px 40px; }
+
+        .user-table { width: 100%; background: #fff; border: 1px solid #f0f0f1; border-collapse: collapse; }
+        .user-table th { text-align: left; padding: 14px 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; border-bottom: 1px solid #f0f0f1; background: #fcfcfc; }
+        .user-table td { padding: 16px 20px; font-size: 13px; border-bottom: 1px solid #f4f4f5; }
+        .user-table tr:last-child td { border-bottom: none; }
+        .user-table tr:hover td { background: #fafafa; }
+        .user-cell { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 38px; height: 38px; min-width: 38px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; border-radius: 10px !important; }
+        .user-nome { font-weight: 800; font-size: 13px; }
+        .user-email { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+        .papel-badge { padding: 4px 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 20px !important; }
+        .papel-editor { background: #EEEDFE; color: #3C3489; }
+        .papel-visualizador { background: #f1f0e8; color: #5f5e5a; }
+        .empresa-tag { font-size: 12px; font-weight: 700; color: var(--text-main); }
+        .acoes-cell { display: flex; gap: 6px; justify-content: flex-end; }
+        .btn-mini { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 8px !important; transition: 0.15s; }
+        .btn-mini:hover { background: #f0efff; color: var(--primary-purple); }
+        .btn-mini.danger:hover { background: #fee2e2; color: #ef4444; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #fff; padding: 40px; width: 100%; max-width: 540px; box-shadow: 0 30px 80px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .modal-title { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+        .input-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+        .input-group label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
+        .input-group input, .input-group select { padding: 13px 16px; background: #f9f9f9; outline: none; font-size: 13px; font-weight: 500; color: var(--text-main); border-left: 3px solid transparent; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .input-group input:focus, .input-group select:focus { background: #fff; border-left-color: var(--primary-purple); }
+        .senha-row { display: flex; gap: 8px; align-items: stretch; }
+        .senha-row input { flex-grow: 1; }
+        .btn-gerar { background: #f0efff; color: var(--primary-purple); padding: 0 16px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; transition: 0.2s; border-radius: 8px !important; }
+        .btn-gerar:hover { background: var(--primary-purple); color: #fff; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+        .papel-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .papel-card { border: 2px solid #f0f0f1; background: #fff; padding: 14px; cursor: pointer; border-radius: 12px !important; transition: 0.2s; }
+        .papel-card:hover { border-color: #dbd9ff; }
+        .papel-card.sel { border-color: var(--primary-purple); background: #f9f9ff; }
+        .papel-card-titulo { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 7px; }
+        .papel-card-desc { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 5px; line-height: 1.4; }
+
+        .perm-secao { background: #f9f9fb; border-left: 3px solid var(--primary-purple); padding: 14px 16px; margin-bottom: 14px; }
+        .perm-titulo { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main); display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .perm-titulo .material-symbols-rounded { font-size: 17px; color: var(--primary-purple); }
+        .perm-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .perm-check { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; cursor: pointer; padding: 7px 10px; background: #fff; border-radius: 8px !important; transition: 0.15s; }
+        .perm-check:hover { background: #f0efff; }
+        .perm-check input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary-purple); }
+        .input-sel { width: 100%; padding: 11px 14px; background: #fff; outline: none; font-size: 12px; font-weight: 600; color: var(--text-main); border-radius: 8px !important; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .perm-lista { margin-top: 10px; max-height: 180px; overflow-y: auto; background: #fff; border-radius: 8px !important; padding: 6px; }
+        .perm-lista-item { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; padding: 8px 10px; cursor: pointer; border-radius: 6px !important; transition: 0.15s; }
+        .perm-lista-item:hover { background: #f4f4f5; }
+        .perm-lista-item input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary-purple); }
+        .perm-lista-empresa { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); padding: 8px 10px 4px; letter-spacing: 0.3px; }
+
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(30,30,30,0.95); color: white; padding: 12px 22px; border-radius: 50px !important; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; }
+        @keyframes slideUp { from { opacity:0; transform: translateY(15px);} to {opacity:1; transform: translateY(0);} }
+        .empty-state { text-align:center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-state .material-symbols-rounded { font-size: 50px; opacity: 0.25; display:block; margin-bottom: 14px; }
+        .info-banner { background: #f0fdfa; border-left: 3px solid #14b8a6; padding: 12px 18px; font-size: 12px; color: #0f766e; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="command-bar">
+        <div>
+            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Usuários Externos</h2>
+            <p style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;" id="subtitulo">Acessos de clientes ao portal</p>
+        </div>
+        <button class="btn-acao" onclick="abrirModalNovo()">
+            <span class="material-symbols-rounded" style="font-size:17px;">person_add</span> NOVO ACESSO EXTERNO
+        </button>
+    </div>
+
+    <div class="scroll-area">
+        <div class="info-banner">
+            <span class="material-symbols-rounded" style="font-size:18px;">info</span>
+            Usuários externos são acessos de clientes. Eles veem apenas os projetos liberados e, conforme o papel, podem só visualizar ou também interagir.
+        </div>
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Empresa (cliente)</th>
+                    <th>Papel</th>
+                    <th style="text-align:right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="externosBody"></tbody>
+        </table>
+        <div id="emptyState"></div>
+    </div>
+
+    <div class="modal-overlay" id="modalExterno">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitulo">Novo Acesso Externo</span>
+                <div class="btn-icon-round" onclick="fecharModal()"><span class="material-symbols-rounded" style="font-size:18px;">close</span></div>
+            </div>
+            <input type="hidden" id="editandoId">
+            <div class="input-group">
+                <label>Nome do Contato *</label>
+                <input type="text" id="inpNome" placeholder="Ex: João da Silva">
+            </div>
+            <div class="input-group">
+                <label>E-mail *</label>
+                <input type="email" id="inpEmail" placeholder="joao@empresacliente.com.br">
+            </div>
+            <div class="input-group">
+                <label>Qual cliente é este usuário? *</label>
+                <select id="inpClienteVinculado" onchange="onClienteVinculadoChange()">
+                    <option value="">Selecione a empresa...</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Papel de acesso *</label>
+                <div class="papel-cards">
+                    <div class="papel-card sel" id="card-visualizador" onclick="selecionarPapel('visualizador')">
+                        <div class="papel-card-titulo"><span class="material-symbols-rounded" style="font-size:16px;">visibility</span> Visualizador</div>
+                        <div class="papel-card-desc">Apenas acompanha. Não interage.</div>
+                    </div>
+                    <div class="papel-card" id="card-editor" onclick="selecionarPapel('editor')">
+                        <div class="papel-card-titulo"><span class="material-symbols-rounded" style="font-size:16px;">edit</span> Editor</div>
+                        <div class="papel-card-desc">Faz tudo que um colaborador faz (timer, status, comentar).</div>
+                    </div>
+                </div>
+                <input type="hidden" id="inpPapel" value="visualizador">
+            </div>
+
+            <div class="perm-secao">
+                <div class="perm-titulo"><span class="material-symbols-rounded">grid_view</span> Módulos que pode usar</div>
+                <div class="perm-checks" id="permModulos">
+                    <label class="perm-check"><input type="checkbox" value="agenda" checked> Agenda</label>
+                    <label class="perm-check"><input type="checkbox" value="recrutamento"> R&amp;S</label>
+                    <label class="perm-check"><input type="checkbox" value="rhestrategico"> RH Estratégico</label>
+                    <label class="perm-check"><input type="checkbox" value="geral"> Geral</label>
+                </div>
+            </div>
+
+            <div class="perm-secao">
+                <div class="perm-titulo"><span class="material-symbols-rounded">folder</span> Projetos que pode ver</div>
+                <select class="input-sel" id="permProjetosModo" onchange="onProjetosModoChange()">
+                    <option value="todos">Todos os projetos do cliente (marcados como visíveis)</option>
+                    <option value="selecionados">Selecionar projetos específicos</option>
+                </select>
+                <div id="permProjetosLista" class="perm-lista" style="display:none;"></div>
+                <span style="font-size:10px; color:var(--text-muted); margin-top:8px;">Lembre-se: o projeto também precisa estar marcado como "Visível para o cliente" no card.</span>
+            </div>
+
+            <div class="input-group">
+                <label id="labelSenha">Senha *</label>
+                <div class="senha-row">
+                    <input type="text" id="inpSenha" placeholder="Senha de acesso">
+                    <div class="btn-gerar" onclick="gerarSenha()"><span class="material-symbols-rounded" style="font-size:15px;">casino</span> GERAR</div>
+                </div>
+                <span id="senhaHintEdit" style="font-size:10px; color:var(--text-muted); display:none;">Deixe em branco para manter a senha atual.</span>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-sec" id="btnExcluir" onclick="excluirExternoModal()" style="display:none; background:#fee2e2; color:#ef4444;">EXCLUIR</button>
+                <button class="btn-sec" onclick="fecharModal()">CANCELAR</button>
+                <button class="btn-acao" id="btnSalvar" onclick="salvarExterno()">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        let nomeUsuario = '{{ usuario_nome }}';
+        let externos = [];
+        let listaClientes = [];
+        let listaProjetos = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarExternos();
+            carregarClientesEProjetos();
+        });
+
+        async function carregarClientesEProjetos() {
+            try {
+                const [rc, rp] = await Promise.all([fetch('/api/clientes'), fetch('/api/projetos-para-selecao')]);
+                const dc = await rc.json();
+                const dp = await rp.json();
+                listaClientes = (dc.clientes || []).sort((a,b)=>a.nome_empresa.localeCompare(b.nome_empresa));
+                listaProjetos = dp.projetos || [];
+                const sel = document.getElementById('inpClienteVinculado');
+                sel.innerHTML = '<option value="">Selecione a empresa...</option>' +
+                    listaClientes.map(c => `<option value="${c.id}">${escH(c.nome_empresa)}</option>`).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function carregarExternos() {
+            try {
+                const res = await fetch('/api/externos');
+                if (res.status === 403) { document.body.innerHTML = '<div style="padding:60px;text-align:center;font-weight:700;">Acesso negado.</div>'; return; }
+                const data = await res.json();
+                externos = data.externos || [];
+                document.getElementById('subtitulo').textContent = `${externos.length} acesso${externos.length!==1?'s':''} externo${externos.length!==1?'s':''}`;
+                render();
+            } catch(e) { showToast('Erro ao carregar.', 'error'); }
+        }
+
+        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11']];
+        function corUser(nome){ let h=0; for(let i=0;i<(nome||'').length;i++) h=nome.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
+        function iniciais(nome){ if(!nome) return '?'; const p=nome.trim().split(' '); return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():nome.slice(0,2).toUpperCase(); }
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function nomeEmpresa(id){ const c = listaClientes.find(x=>String(x.id)===String(id)); return c ? c.nome_empresa : '—'; }
+
+        function render() {
+            const body = document.getElementById('externosBody');
+            const empty = document.getElementById('emptyState');
+            if (externos.length === 0) {
+                body.innerHTML = '';
+                empty.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">badge</span><p>Nenhum acesso externo criado ainda.</p></div>';
+                return;
+            }
+            empty.innerHTML = '';
+            body.innerHTML = externos.map(u => {
+                const [bg,fg] = corUser(u.nome);
+                const papel = u.papel_externo || 'visualizador';
+                return `
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar" style="background:${bg}; color:${fg};">${iniciais(u.nome)}</div>
+                            <div>
+                                <div class="user-nome">${escH(u.nome)}</div>
+                                <div class="user-email">${escH(u.email)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="empresa-tag">${escH(nomeEmpresa(u.cliente_vinculado_id))}</span></td>
+                    <td><span class="papel-badge papel-${papel}">${papel === 'editor' ? 'Editor' : 'Visualizador'}</span></td>
+                    <td>
+                        <div class="acoes-cell">
+                            <div class="btn-mini" onclick='abrirModalEditar("${u.id}")' title="Editar"><span class="material-symbols-rounded" style="font-size:17px;">edit</span></div>
+                            <div class="btn-mini danger" onclick='excluirDireto("${u.id}","${escH(u.nome)}")' title="Excluir"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function selecionarPapel(papel) {
+            document.getElementById('inpPapel').value = papel;
+            document.getElementById('card-visualizador').classList.toggle('sel', papel === 'visualizador');
+            document.getElementById('card-editor').classList.toggle('sel', papel === 'editor');
+        }
+
+        function onClienteVinculadoChange() {
+            // Ao trocar a empresa, atualiza a lista de projetos selecionáveis (só os dela)
+            if (document.getElementById('permProjetosModo').value === 'selecionados') {
+                renderListaProjetos([]);
+            }
+        }
+
+        function onProjetosModoChange() {
+            const modo = document.getElementById('permProjetosModo').value;
+            const lista = document.getElementById('permProjetosLista');
+            if (modo === 'selecionados') { lista.style.display = 'block'; renderListaProjetos([]); }
+            else { lista.style.display = 'none'; }
+        }
+
+        function renderListaProjetos(marcados) {
+            const lista = document.getElementById('permProjetosLista');
+            const clienteId = document.getElementById('inpClienteVinculado').value;
+            const set = new Set((marcados||[]).map(String));
+            // Filtra projetos da empresa selecionada
+            const projs = listaProjetos.filter(p => !clienteId || String(p.cliente_id) === String(clienteId));
+            if (projs.length === 0) {
+                lista.innerHTML = '<div class="perm-lista-empresa">Nenhum projeto desta empresa. Selecione a empresa primeiro.</div>';
+                return;
+            }
+            lista.innerHTML = projs.map(p => `
+                <label class="perm-lista-item">
+                    <input type="checkbox" value="${p.id}" ${set.has(String(p.id))?'checked':''}>
+                    ${escH(p.nome)} ${p.area ? `<span style="color:#a1a1aa; font-size:10px;">· ${escH(p.area)}</span>`:''}
+                </label>`).join('');
+        }
+
+        function coletarMarcados(containerId) {
+            return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(c => c.value);
+        }
+
+        function abrirModalNovo() {
+            document.getElementById('editandoId').value = '';
+            document.getElementById('modalTitulo').textContent = 'Novo Acesso Externo';
+            ['inpNome','inpEmail','inpSenha'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('inpClienteVinculado').value = '';
+            selecionarPapel('visualizador');
+            document.querySelectorAll('#permModulos input').forEach(c => c.checked = c.value === 'agenda');
+            document.getElementById('permProjetosModo').value = 'todos';
+            document.getElementById('permProjetosLista').style.display = 'none';
+            document.getElementById('labelSenha').textContent = 'Senha *';
+            document.getElementById('senhaHintEdit').style.display = 'none';
+            document.getElementById('btnExcluir').style.display = 'none';
+            document.getElementById('modalExterno').classList.add('show');
+        }
+
+        function abrirModalEditar(id) {
+            const u = externos.find(x => String(x.id) === String(id));
+            if (!u) return;
+            document.getElementById('editandoId').value = u.id;
+            document.getElementById('modalTitulo').textContent = 'Editar Acesso Externo';
+            document.getElementById('inpNome').value = u.nome || '';
+            document.getElementById('inpEmail').value = u.email || '';
+            document.getElementById('inpClienteVinculado').value = u.cliente_vinculado_id || '';
+            selecionarPapel(u.papel_externo || 'visualizador');
+            const modulos = u.perm_modulos || [];
+            document.querySelectorAll('#permModulos input').forEach(c => c.checked = modulos.includes(c.value));
+            document.getElementById('permProjetosModo').value = u.perm_projetos_modo || 'todos';
+            if ((u.perm_projetos_modo||'todos') === 'selecionados') {
+                document.getElementById('permProjetosLista').style.display = 'block';
+                renderListaProjetos(u.perm_projetos_ids || []);
+            } else { document.getElementById('permProjetosLista').style.display = 'none'; }
+            document.getElementById('inpSenha').value = '';
+            document.getElementById('labelSenha').textContent = 'Nova Senha (opcional)';
+            document.getElementById('senhaHintEdit').style.display = 'block';
+            document.getElementById('btnExcluir').style.display = 'block';
+            document.getElementById('modalExterno').classList.add('show');
+        }
+
+        function fecharModal(){ document.getElementById('modalExterno').classList.remove('show'); }
+
+        async function gerarSenha() {
+            try {
+                const res = await fetch('/api/usuarios/gerar-senha');
+                const data = await res.json();
+                if (data.senha) { document.getElementById('inpSenha').value = data.senha; showToast('Senha gerada!', 'success'); }
+            } catch(e) { showToast('Erro ao gerar senha.', 'error'); }
+        }
+
+        async function salvarExterno() {
+            const editandoId = document.getElementById('editandoId').value;
+            const nome = document.getElementById('inpNome').value.trim();
+            const email = document.getElementById('inpEmail').value.trim();
+            const senha = document.getElementById('inpSenha').value.trim();
+            const clienteId = document.getElementById('inpClienteVinculado').value;
+            if (!nome || !email) { showToast('Nome e e-mail são obrigatórios.', 'error'); return; }
+            if (!clienteId) { showToast('Selecione qual cliente é este usuário.', 'error'); return; }
+            if (!editandoId && !senha) { showToast('Senha é obrigatória para novo acesso.', 'error'); return; }
+
+            const modulos = coletarMarcados('permModulos');
+            if (modulos.length === 0) { showToast('Selecione ao menos um módulo.', 'error'); return; }
+
+            const projModo = document.getElementById('permProjetosModo').value;
+            const payload = {
+                nome, email,
+                papel_externo: document.getElementById('inpPapel').value,
+                cliente_vinculado_id: clienteId,
+                perm_modulos: modulos,
+                // Externo: o cliente dele já restringe; clientes_modo = selecionados com o próprio cliente
+                perm_clientes_modo: 'selecionados',
+                perm_clientes_ids: [clienteId],
+                perm_projetos_modo: projModo,
+                perm_projetos_ids: projModo === 'selecionados' ? coletarMarcados('permProjetosLista') : []
+            };
+            if (senha) payload.senha = senha;
+
+            const btn = document.getElementById('btnSalvar');
+            btn.disabled = true; btn.textContent = 'SALVANDO...';
+            try {
+                const url = editandoId ? `/api/externos/${editandoId}` : '/api/externos';
+                const method = editandoId ? 'PUT' : 'POST';
+                const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if (res.ok) {
+                    showToast(editandoId ? 'Acesso atualizado!' : 'Acesso criado!', 'success');
+                    fecharModal(); carregarExternos();
+                } else { const err = await res.json(); showToast('Erro: ' + (err.mensagem||'falha'), 'error'); }
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'SALVAR'; }
+        }
+
+        function excluirExternoModal() {
+            const id = document.getElementById('editandoId').value;
+            if (id) executarExclusao(id);
+        }
+        function excluirDireto(id, nome) {
+            if (!confirm(`Excluir o acesso de "${nome}"?`)) return;
+            executarExclusao(id);
+        }
+        async function executarExclusao(id) {
+            try {
+                const res = await fetch(`/api/externos/${id}`, { method: 'DELETE' });
+                if (res.ok) { showToast('Acesso excluído.', 'success'); fecharModal(); carregarExternos(); }
+                else showToast('Erro ao excluir.', 'error');
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+
+        function showToast(msg, tipo='success') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px; color:${tipo==='success'?'var(--accent-lime)':'var(--accent-pink)'};">${tipo==='success'?'check_circle':'error'}</span>${msg}`;
+            c.appendChild(t); setTimeout(() => t.remove(), 3500);
+        }
+
+        document.getElementById('modalExterno').addEventListener('click', function(e){ if(e.target===this) fecharModal(); });
+    </script>
+</body>
+</html>
