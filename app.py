@@ -16,6 +16,16 @@ URL = os.environ.get("SUPABASE_URL", "https://udqeheyyhvqlwejdwkbj.supabase.co")
 KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
 supabase: Client = create_client(URL, KEY)
 
+@app.context_processor
+def injetar_permissoes():
+    """Disponibiliza as permissões do usuário em TODOS os templates,
+    para a sidebar e telas decidirem o que mostrar."""
+    return {
+        "perm_modulos": session.get("perm_modulos") or [],
+        "tipo_usuario": session.get("tipo_usuario", "interno"),
+        "papel_externo": session.get("papel_externo", "visualizador")
+    }
+
 # --- HELPERS DE SEGURANÇA ---
 
 def gerar_hash(senha):
@@ -181,6 +191,9 @@ def index():
 def tela_projetos(nome_quadro):
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
+    # Personalizado/externo: só acessa o quadro se tiver o módulo liberado
+    if (is_personalizado() or is_externo()) and not pode_acessar_modulo(nome_quadro):
+        return redirect(url_for('index'))
     return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 # --- API PROJETOS ---
@@ -532,11 +545,38 @@ def listar_usuarios():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
     try:
-        res = supabase.table("usuarios").select("id, nome, email, cargo, nivel_acesso, cliente_vinculado_id, criado_em").order("nome", desc=False).execute()
+        res = supabase.table("usuarios").select("id, nome, email, cargo, nivel_acesso, tipo_usuario, papel_externo, cliente_vinculado_id, perm_modulos, perm_clientes_modo, perm_clientes_ids, perm_projetos_modo, perm_projetos_ids, criado_em").order("nome", desc=False).execute()
         return jsonify({"status": "sucesso", "usuarios": res.data}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no GET Usuarios: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar usuários."}), 500
+
+def montar_permissoes(dados):
+    """Monta o dict de campos de permissão a salvar, conforme o nível/tipo.
+    Para níveis fixos (admin/gestor/colaborador) limpa as permissões granulares."""
+    nivel = dados.get("nivel_acesso", "colaborador")
+    tipo = dados.get("tipo_usuario", "interno")
+    perms = {}
+
+    # Personalizado (interno) OU qualquer externo: usa as permissões granulares
+    if nivel == "personalizado" or tipo == "externo":
+        perms["perm_modulos"] = dados.get("perm_modulos", [])
+        perms["perm_clientes_modo"] = dados.get("perm_clientes_modo", "todos")
+        perms["perm_clientes_ids"] = dados.get("perm_clientes_ids", [])
+        perms["perm_projetos_modo"] = dados.get("perm_projetos_modo", "todos")
+        perms["perm_projetos_ids"] = dados.get("perm_projetos_ids", [])
+        perms["cliente_vinculado_id"] = dados.get("cliente_vinculado_id")
+        if tipo == "externo":
+            perms["papel_externo"] = dados.get("papel_externo", "visualizador")
+    else:
+        # Níveis fixos: zera as permissões granulares (limpeza)
+        perms["perm_modulos"] = []
+        perms["perm_clientes_modo"] = "todos"
+        perms["perm_clientes_ids"] = []
+        perms["perm_projetos_modo"] = "todos"
+        perms["perm_projetos_ids"] = []
+        perms["cliente_vinculado_id"] = None
+    return perms
 
 @app.route('/api/usuarios', methods=['POST'])
 def criar_usuario():
@@ -553,12 +593,12 @@ def criar_usuario():
             "email": dados.get("email"),
             "cargo": dados.get("cargo"),
             "nivel_acesso": dados.get("nivel_acesso", "colaborador"),
+            "tipo_usuario": dados.get("tipo_usuario", "interno"),
             "senha": senha_texto,
             "senha_hash": gerar_hash(senha_texto)
         }
-        # Vínculo de empresa: só faz sentido para nível cliente
-        if dados.get("nivel_acesso") == "cliente":
-            novo["cliente_vinculado_id"] = dados.get("cliente_vinculado_id")
+        # Permissões granulares (nível personalizado ou usuário externo)
+        novo.update(montar_permissoes(dados))
         supabase.table("usuarios").insert(novo).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
@@ -576,14 +616,9 @@ def atualizar_usuario(usuario_id):
         if "email" in dados: atualizacao["email"] = dados["email"]
         if "cargo" in dados: atualizacao["cargo"] = dados["cargo"]
         if "nivel_acesso" in dados: atualizacao["nivel_acesso"] = dados["nivel_acesso"]
-        # Vínculo de empresa (cliente). Se mudar para não-cliente, limpa o vínculo.
-        if "nivel_acesso" in dados:
-            if dados["nivel_acesso"] == "cliente":
-                atualizacao["cliente_vinculado_id"] = dados.get("cliente_vinculado_id")
-            else:
-                atualizacao["cliente_vinculado_id"] = None
-        elif "cliente_vinculado_id" in dados:
-            atualizacao["cliente_vinculado_id"] = dados["cliente_vinculado_id"]
+        if "tipo_usuario" in dados: atualizacao["tipo_usuario"] = dados["tipo_usuario"]
+        # Permissões granulares
+        atualizacao.update(montar_permissoes(dados))
         # Se enviou nova senha, atualiza texto + hash
         if dados.get("senha"):
             atualizacao["senha"] = dados["senha"]
@@ -616,6 +651,23 @@ def gerar_senha_aleatoria():
     senha = ''.join(secrets.choice(alfabeto) for _ in range(10))
     return jsonify({"senha": senha}), 200
 
+@app.route('/api/projetos-para-selecao', methods=['GET'])
+def projetos_para_selecao():
+    """Lista enxuta de projetos ativos (id, nome, cliente, área) para os
+    seletores de permissão na tela de usuários. Apenas admin."""
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = supabase.table("projetos").select("id, nome_projeto, empresa, area, cliente_id, excluido_em").execute()
+        projetos = [
+            {"id": str(p["id"]), "nome": p.get("nome_projeto"), "empresa": p.get("empresa"), "area": p.get("area"), "cliente_id": str(p.get("cliente_id"))}
+            for p in res.data if not p.get("excluido_em")
+        ]
+        projetos.sort(key=lambda x: (x.get("empresa") or "", x.get("nome") or ""))
+        return jsonify({"status": "sucesso", "projetos": projetos}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
 
 # --- CLIENTES ---
 
@@ -623,8 +675,10 @@ def gerar_senha_aleatoria():
 def clientes_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    if is_cliente():
+    if is_externo():
         return redirect(url_for('planejamento'))
+    if is_personalizado() and not pode_acessar_modulo('clientes'):
+        return redirect(url_for('index'))
     return render_template('clientes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/clientes', methods=['GET'])
@@ -783,14 +837,16 @@ def mapa_cliente(cliente_id):
 def dashboard_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    if session.get('nivel_acesso') not in ['admin', 'gestor']:
+    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or (is_personalizado() and pode_acessar_modulo('dashboard'))
+    if not pode:
         return redirect(url_for('index'))
     return render_template('dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
 
 @app.route('/api/dashboard', methods=['GET'])
 def dados_dashboard():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if session.get('nivel_acesso') not in ['admin', 'gestor']:
+    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or (is_personalizado() and pode_acessar_modulo('dashboard'))
+    if not pode:
         return jsonify({"erro": "Acesso negado"}), 403
     try:
         # Filtros opcionais
