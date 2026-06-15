@@ -277,9 +277,23 @@
         .toast.success { background: rgba(16, 185, 129, 0.95); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+        /* ===== MODO CLIENTE (somente leitura) ===== */
+        /* Esconde botão novo projeto, play/timer dos cards, editar e excluir */
+        body.modo-cliente .btn-acao[onclick*="abrirModalProjeto"],
+        body.modo-cliente .btn-play,
+        body.modo-cliente .floating-player,
+        body.modo-cliente #btnSalvarAnotacoes,
+        body.modo-cliente .card-timer-controls,
+        body.modo-cliente .btn-card-timer { display: none !important; }
+        /* Status vira somente leitura (a pílula select não pode ser trocada) */
+        body.modo-cliente .status-pill-select { pointer-events: none; opacity: 0.95; }
+        /* Anotações em modo leitura */
+        body.modo-cliente #detAnotacoes { background: #f9f9f9 !important; pointer-events: none; }
+        /* Esconde os botões Editar/Excluir do rodapé do modal de detalhes */
+        body.modo-cliente .modal-footer-acoes { display: none !important; }
     </style>
 </head>
-<body>
+<body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
 
     <div id="toastContainer" class="toast-container"></div>
 
@@ -527,7 +541,12 @@
                 <input type="checkbox" id="editProjScrum" onclick="event.stopPropagation()">
                 <label><span class="badge-scrum" style="font-size: 10px;">SCRUM</span> Marcar como projeto ágil (Sprint)</label>
             </div>
-            
+
+            <div class="input-group checkbox-group" onclick="document.getElementById('editProjVisivelCliente').click()" style="background:#f0fdfa; border-left:3px solid #14b8a6; padding:12px 14px;">
+                <input type="checkbox" id="editProjVisivelCliente" onclick="event.stopPropagation()">
+                <label><span class="material-symbols-rounded" style="font-size:15px; vertical-align:-3px; color:#0f766e;">visibility</span> <b>Visível para o cliente</b> — libera este projeto no portal do cliente da empresa</label>
+            </div>
+
             <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
         </div>
     </div>
@@ -580,7 +599,7 @@
                 </div>
             </div>
 
-            <div style="padding: 16px 36px; border-top: 1px solid #e4e4e7; display: flex; gap: 10px; background: #fff;">
+            <div class="modal-footer-acoes" style="padding: 16px 36px; border-top: 1px solid #e4e4e7; display: flex; gap: 10px; background: #fff;">
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #f4f4f5; color: var(--text-main); border: 1px solid #d4d4d8;" onclick="abrirModalEdicao(projIdEmFoco, event)">EDITAR PROJETO</button>
                 <button class="btn-acao" style="flex: 1; justify-content: center; background: #fee2e2; color: #ef4444;" onclick="excluirProjeto()">EXCLUIR PROJETO</button>
             </div>
@@ -589,6 +608,8 @@
 
     <script>
         const QUADRO_ATUAL = "{{ quadro_atual }}";
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
+        const EH_CLIENTE = NIVEL_ACESSO === 'cliente';
         const USUARIO_LOGADO = "{{ usuario_nome }}";
 
         const WORKSPACES = {
@@ -863,6 +884,7 @@
             document.getElementById('editProjNome').value = proj.nome_projeto;
             document.getElementById('editProjResp').value = proj.responsavel;
             document.getElementById('editProjScrum').checked = proj.is_scrum || false;
+            document.getElementById('editProjVisivelCliente').checked = proj.visivel_cliente || false;
             
             let prazoFormatado = '';
             if(proj.prazo_data) prazoFormatado = proj.prazo_data.split('T')[0];
@@ -881,7 +903,8 @@
                 nome_projeto: document.getElementById('editProjNome').value,
                 responsavel: document.getElementById('editProjResp').value,
                 prazo_data: document.getElementById('editProjPrazo').value || null,
-                is_scrum: document.getElementById('editProjScrum').checked
+                is_scrum: document.getElementById('editProjScrum').checked,
+                visivel_cliente: document.getElementById('editProjVisivelCliente').checked
             };
 
             try {
