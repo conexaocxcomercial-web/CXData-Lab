@@ -203,9 +203,18 @@
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,67,192,0.4); } 50% { box-shadow: 0 0 0 8px rgba(255,67,192,0); } }
+        /* ===== MODO CLIENTE (somente leitura) ===== */
+        /* ===== MODO CLIENTE VISUALIZADOR (somente leitura) ===== */
+        body.modo-cliente .btn-acao[onclick*="abrirModalNovo"],
+        body.modo-cliente #filtroColaborador,
+        body.modo-cliente #filtroStatus,
+        body.modo-cliente .btn-play,
+        body.modo-cliente .btn-play-xs,
+        body.modo-cliente .plan-card-actions,
+        body.modo-cliente .floating-player { display: none !important; }
     </style>
 </head>
-<body>
+<body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
 
     {% include '_sidebar.html' %}
 
