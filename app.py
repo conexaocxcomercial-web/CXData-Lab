@@ -30,6 +30,89 @@ def verificar_hash(senha, hash_armazenado):
 def is_admin():
     return session.get('nivel_acesso') == 'admin'
 
+def is_externo():
+    return session.get('tipo_usuario') == 'externo'
+
+def is_cliente():
+    # Mantido por compatibilidade: externo é o antigo "cliente"
+    return is_externo()
+
+def is_personalizado():
+    return session.get('nivel_acesso') == 'personalizado'
+
+def get_perm(chave, padrao=None):
+    """Lê uma permissão da sessão de forma segura."""
+    return session.get(chave, padrao)
+
+def pode_acessar_modulo(modulo):
+    """Verifica se o usuário logado pode acessar um módulo.
+    admin/gestor: tudo. colaborador: quadros + agenda. personalizado/externo: conforme perm_modulos."""
+    nivel = session.get('nivel_acesso')
+    if nivel in ('admin', 'gestor'):
+        return True
+    if nivel == 'colaborador':
+        # Colaborador acessa quadros e agenda (como hoje), mas não dashboard/clientes
+        return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda')
+    # personalizado e externo: usam a lista explícita
+    modulos = session.get('perm_modulos') or []
+    return modulo in modulos
+
+def filtrar_projetos_permitidos(projetos):
+    """Recebe lista de projetos (dicts) e devolve só os que o usuário logado pode ver,
+    combinando as dimensões de cliente e projeto. Não afeta admin/gestor."""
+    nivel = session.get('nivel_acesso')
+
+    # Admin e Gestor veem tudo (comportamento atual preservado)
+    if nivel in ('admin', 'gestor'):
+        return projetos
+
+    # Colaborador: só onde é responsável (comportamento atual preservado)
+    if nivel == 'colaborador':
+        meu_nome = (session.get('usuario_nome') or '').strip().lower()
+        return [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
+
+    # === PERSONALIZADO (interno) e EXTERNO (cliente): lógica granular ===
+    perm_cli_modo = session.get('perm_clientes_modo') or 'todos'
+    perm_cli_ids = set(str(x) for x in (session.get('perm_clientes_ids') or []))
+    perm_proj_modo = session.get('perm_projetos_modo') or 'todos'
+    perm_proj_ids = set(str(x) for x in (session.get('perm_projetos_ids') or []))
+    meu_nome = (session.get('usuario_nome') or '').strip().lower()
+
+    resultado = []
+    for p in projetos:
+        # Dimensão CLIENTE
+        if perm_cli_modo == 'proprios':
+            # "seus" = projetos onde ele é responsável
+            if (p.get('responsavel') or '').strip().lower() != meu_nome:
+                continue
+        elif perm_cli_modo == 'selecionados':
+            if str(p.get('cliente_id')) not in perm_cli_ids:
+                continue
+        # 'todos' não filtra por cliente
+
+        # Dimensão PROJETO
+        if perm_proj_modo == 'selecionados':
+            if str(p.get('id')) not in perm_proj_ids:
+                continue
+        # 'todos' não filtra por projeto
+
+        # Para EXTERNO: além de tudo, o projeto precisa estar marcado como visível
+        if is_externo() and not p.get('visivel_cliente'):
+            continue
+
+        resultado.append(p)
+    return resultado
+
+def projetos_visiveis_cliente():
+    """Compatibilidade: retorna IDs de projetos visíveis para o externo logado."""
+    try:
+        res = supabase.table("projetos").select("*").execute()
+        ativos = [p for p in res.data if not p.get("excluido_em")]
+        permitidos = filtrar_projetos_permitidos(ativos)
+        return [str(p["id"]) for p in permitidos]
+    except Exception:
+        return []
+
 # --- LOGIN E SEGURANÇA ---
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -64,6 +147,14 @@ def login():
             session['usuario_id'] = usuario['id']
             session['usuario_nome'] = usuario['nome']
             session['nivel_acesso'] = usuario.get('nivel_acesso', 'colaborador')
+            session['tipo_usuario'] = usuario.get('tipo_usuario', 'interno')
+            session['papel_externo'] = usuario.get('papel_externo', 'visualizador')
+            session['cliente_vinculado_id'] = usuario.get('cliente_vinculado_id')
+            session['perm_modulos'] = usuario.get('perm_modulos') or []
+            session['perm_clientes_modo'] = usuario.get('perm_clientes_modo') or 'todos'
+            session['perm_clientes_ids'] = usuario.get('perm_clientes_ids') or []
+            session['perm_projetos_modo'] = usuario.get('perm_projetos_modo') or 'todos'
+            session['perm_projetos_ids'] = usuario.get('perm_projetos_ids') or []
             return jsonify({"status": "sucesso"}), 200
         else:
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
@@ -81,6 +172,9 @@ def logout():
 def index():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
+    # Cliente vai direto para a Agenda (portal dele)
+    if is_cliente():
+        return redirect(url_for('planejamento'))
     return render_template('index.html', usuario=session.get('usuario_nome'), usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/board/<nome_quadro>')
@@ -98,10 +192,8 @@ def listar_projetos():
         res_projetos = supabase.table("projetos").select("*").execute()
         projetos = [p for p in res_projetos.data if not p.get("excluido_em")]
 
-        # CONTROLE DE ACESSO: colaborador só vê os projetos onde é responsável
-        if session.get('nivel_acesso') == 'colaborador':
-            meu_nome = (session.get('usuario_nome') or '').strip().lower()
-            projetos = [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
+        # CONTROLE DE ACESSO: função central que cobre todos os níveis
+        projetos = filtrar_projetos_permitidos(projetos)
         
         # 1. Busca os tempos agregados (via VIEW = 1 query só, muito mais rápido)
         tempos_agrupados = {}
@@ -147,6 +239,7 @@ def listar_projetos():
 @app.route('/api/projetos', methods=['POST'])
 def criar_projeto():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if is_cliente(): return jsonify({"erro": "Acesso negado"}), 403
     dados = request.json
     try:
         novo_projeto = {
@@ -170,6 +263,7 @@ def criar_projeto():
 @app.route('/api/projetos/<projeto_id>', methods=['PUT'])
 def atualizar_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if is_cliente(): return jsonify({"erro": "Acesso negado"}), 403
     dados = request.json
     try:
         atualizacao = {}
@@ -208,6 +302,7 @@ def atualizar_projeto(projeto_id):
         if "nome_projeto" in dados: atualizacao["nome_projeto"] = dados.get("nome_projeto")
         if "prazo_data" in dados: atualizacao["prazo_data"] = dados.get("prazo_data") if dados.get("prazo_data") else None
         if "is_scrum" in dados: atualizacao["is_scrum"] = bool(dados.get("is_scrum"))
+        if "visivel_cliente" in dados: atualizacao["visivel_cliente"] = bool(dados.get("visivel_cliente"))
         
         # --- GRAVAÇÃO DAS ANOTAÇÕES ---
         if "anotacoes" in dados: atualizacao["anotacoes"] = dados.get("anotacoes")
@@ -221,6 +316,7 @@ def atualizar_projeto(projeto_id):
 @app.route('/api/projetos/<projeto_id>', methods=['DELETE'])
 def excluir_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if is_cliente(): return jsonify({"erro": "Acesso negado"}), 403
     try:
         # SOFT DELETE: marca como excluído em vez de apagar (vai para a lixeira)
         supabase.table("projetos").update({"excluido_em": datetime.now().isoformat()}).eq("id", projeto_id).execute()
@@ -280,6 +376,7 @@ def excluir_definitivo(tipo, item_id):
 @app.route('/api/projetos/<projeto_id>/timer', methods=['POST'])
 def salvar_tempo(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if is_cliente(): return jsonify({"erro": "Acesso negado"}), 403
     dados = request.json
     try:
         novo_log = {
@@ -366,6 +463,9 @@ def listar_comentarios(projeto_id):
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['POST'])
 def adicionar_comentario(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    # Cliente só pode comentar em projeto liberado para ele
+    if is_cliente() and str(projeto_id) not in set(projetos_visiveis_cliente()):
+        return jsonify({"erro": "Acesso negado"}), 403
     dados = request.json
     texto = dados.get("texto")
     parent_id = dados.get("parent_id", None)
@@ -432,7 +532,7 @@ def listar_usuarios():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
     try:
-        res = supabase.table("usuarios").select("id, nome, email, cargo, nivel_acesso, criado_em").order("nome", desc=False).execute()
+        res = supabase.table("usuarios").select("id, nome, email, cargo, nivel_acesso, cliente_vinculado_id, criado_em").order("nome", desc=False).execute()
         return jsonify({"status": "sucesso", "usuarios": res.data}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no GET Usuarios: {str(e)}")
@@ -456,6 +556,9 @@ def criar_usuario():
             "senha": senha_texto,
             "senha_hash": gerar_hash(senha_texto)
         }
+        # Vínculo de empresa: só faz sentido para nível cliente
+        if dados.get("nivel_acesso") == "cliente":
+            novo["cliente_vinculado_id"] = dados.get("cliente_vinculado_id")
         supabase.table("usuarios").insert(novo).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
@@ -473,6 +576,14 @@ def atualizar_usuario(usuario_id):
         if "email" in dados: atualizacao["email"] = dados["email"]
         if "cargo" in dados: atualizacao["cargo"] = dados["cargo"]
         if "nivel_acesso" in dados: atualizacao["nivel_acesso"] = dados["nivel_acesso"]
+        # Vínculo de empresa (cliente). Se mudar para não-cliente, limpa o vínculo.
+        if "nivel_acesso" in dados:
+            if dados["nivel_acesso"] == "cliente":
+                atualizacao["cliente_vinculado_id"] = dados.get("cliente_vinculado_id")
+            else:
+                atualizacao["cliente_vinculado_id"] = None
+        elif "cliente_vinculado_id" in dados:
+            atualizacao["cliente_vinculado_id"] = dados["cliente_vinculado_id"]
         # Se enviou nova senha, atualiza texto + hash
         if dados.get("senha"):
             atualizacao["senha"] = dados["senha"]
@@ -512,6 +623,8 @@ def gerar_senha_aleatoria():
 def clientes_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
+    if is_cliente():
+        return redirect(url_for('planejamento'))
     return render_template('clientes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/clientes', methods=['GET'])
@@ -902,10 +1015,18 @@ def planejamento():
 def listar_planejamento():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
+        # Se o usuário tem permissões restritas (externo ou personalizado),
+        # a agenda só mostra atividades dos projetos que ele pode ver.
+        filtro_cliente = None
+        if is_externo() or is_personalizado():
+            filtro_cliente = set(projetos_visiveis_cliente())
+
         # 1. PLANEJADO: o que foi cadastrado previamente na agenda
         res = supabase.table("planejamento_diario").select("*").order("data_planejada", desc=False).order("criado_em", desc=False).execute()
         planejados = []
         for p in res.data:
+            if filtro_cliente is not None and str(p.get("projeto_id")) not in filtro_cliente:
+                continue
             planejados.append({
                 "id": p.get("id"),
                 "origem": "planejado",
@@ -918,38 +1039,43 @@ def listar_planejamento():
             })
 
         # 2. REALIZADO: tudo que teve timer registrado nos quadros (time_logs)
-        # Mapa de projeto -> nome (para exibir contexto)
-        res_proj = supabase.table("projetos").select("id, nome_projeto, area, empresa").execute()
-        mapa_proj = {str(p["id"]): p for p in res_proj.data}
-
-        # Busca time_logs paginado
         realizados = []
-        page_size = 1000
-        offset = 0
-        while True:
-            res_logs = supabase.table("time_logs").select("*").range(offset, offset + page_size - 1).execute()
-            if not res_logs.data: break
-            for log in res_logs.data:
-                # Data do realizado: usa data_inicio_atividade, senão criado_em
-                data_ref = log.get("data_inicio_atividade") or log.get("criado_em")
-                dia = str(data_ref)[:10] if data_ref else None
-                if not dia: continue
-                proj = mapa_proj.get(str(log.get("projeto_id")), {})
-                realizados.append({
-                    "id": "log_" + str(log.get("id")),
-                    "origem": "realizado",
-                    "projeto_id": log.get("projeto_id"),
-                    "colaborador": log.get("colaborador"),
-                    "atividade": log.get("descricao_tarefa") or "Atividade registrada",
-                    "data": dia,
-                    "criado_em": log.get("criado_em"),
-                    "tempo_segundos": log.get("tempo_segundos") or 0,
-                    "nome_projeto": proj.get("nome_projeto"),
-                    "area": proj.get("area"),
-                    "empresa": proj.get("empresa")
-                })
-            if len(res_logs.data) < page_size: break
-            offset += page_size
+        try:
+            # Mapa de projeto -> nome (para exibir contexto)
+            res_proj = supabase.table("projetos").select("id, nome_projeto, area, empresa").execute()
+            mapa_proj = {str(p["id"]): p for p in res_proj.data}
+
+            # Busca time_logs paginado
+            page_size = 1000
+            offset = 0
+            while True:
+                res_logs = supabase.table("time_logs").select("*").range(offset, offset + page_size - 1).execute()
+                if not res_logs.data: break
+                for log in res_logs.data:
+                    if filtro_cliente is not None and str(log.get("projeto_id")) not in filtro_cliente:
+                        continue
+                    data_ref = log.get("data_inicio_atividade") or log.get("criado_em")
+                    dia = str(data_ref)[:10] if data_ref else None
+                    if not dia: continue
+                    proj = mapa_proj.get(str(log.get("projeto_id")), {})
+                    realizados.append({
+                        "id": "log_" + str(log.get("id")),
+                        "origem": "realizado",
+                        "projeto_id": log.get("projeto_id"),
+                        "colaborador": log.get("colaborador"),
+                        "atividade": log.get("descricao_tarefa") or "Atividade registrada",
+                        "data": dia,
+                        "criado_em": log.get("criado_em"),
+                        "tempo_segundos": log.get("tempo_segundos") or 0,
+                        "nome_projeto": proj.get("nome_projeto"),
+                        "area": proj.get("area"),
+                        "empresa": proj.get("empresa")
+                    })
+                if len(res_logs.data) < page_size: break
+                offset += page_size
+        except Exception as erro_logs:
+            print(f"[AVISO] Falha ao carregar realizados (time_logs): {str(erro_logs)}")
+            realizados = []
 
         # Junta tudo num só array
         todos = planejados + realizados
@@ -961,6 +1087,7 @@ def listar_planejamento():
 @app.route('/api/planejamento', methods=['POST'])
 def criar_planejamento():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if is_cliente(): return jsonify({"erro": "Acesso negado"}), 403
     dados = request.json
     try:
         novo = {
