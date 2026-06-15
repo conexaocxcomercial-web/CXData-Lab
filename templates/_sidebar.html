@@ -70,26 +70,42 @@
         <span class="cxsb-brand-text">CXProjetos</span>
     </div>
     <div class="cxsb-body">
+        {% set eh_externo = (tipo_usuario == 'externo') %}
+        {% set eh_person = (nivel_acesso == 'personalizado') %}
+        {# Helper: módulo liberado se admin/gestor, ou colaborador (quadros/agenda), ou personalizado com permissão #}
+        {% if eh_externo %}
+        <div class="cxsb-section">Acompanhamento</div>
+        <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
+            <span class="material-symbols-rounded">calendar_today</span>
+            <span class="cxsb-item-label">Agenda do Projeto</span>
+        </div>
+        {% else %}
         <div class="cxsb-item" data-path="/" onclick="window.location.href='/'">
             <span class="material-symbols-rounded">home</span>
             <span class="cxsb-item-label">Hub</span>
         </div>
 
         <div class="cxsb-section">Quadros</div>
+        {% if not eh_person or 'rhestrategico' in perm_modulos %}
         <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
             <span class="material-symbols-rounded">psychology</span>
             <span class="cxsb-item-label">RH Estratégico</span>
         </div>
+        {% endif %}
+        {% if not eh_person or 'recrutamento' in perm_modulos %}
         <div class="cxsb-item" data-path="/board/recrutamento" onclick="window.location.href='/board/recrutamento'">
             <span class="material-symbols-rounded">group_add</span>
             <span class="cxsb-item-label">R&S</span>
         </div>
+        {% endif %}
+        {% if not eh_person or 'geral' in perm_modulos %}
         <div class="cxsb-item" data-path="/board/geral" onclick="window.location.href='/board/geral'">
             <span class="material-symbols-rounded">dashboard</span>
             <span class="cxsb-item-label">Geral</span>
         </div>
+        {% endif %}
 
-        {% if nivel_acesso in ['admin', 'gestor'] %}
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
         <div class="cxsb-section">Análise</div>
         <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
             <span class="material-symbols-rounded">monitoring</span>
@@ -98,14 +114,18 @@
         {% endif %}
 
         <div class="cxsb-section">Gestão</div>
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clientes' in perm_modulos) %}
         <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
             <span class="material-symbols-rounded">apartment</span>
             <span class="cxsb-item-label">Clientes</span>
         </div>
+        {% endif %}
+        {% if not eh_person or 'agenda' in perm_modulos %}
         <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
             <span class="material-symbols-rounded">calendar_today</span>
             <span class="cxsb-item-label">Agenda</span>
         </div>
+        {% endif %}
         {% if nivel_acesso == 'admin' %}
         <div class="cxsb-item" data-path="/configuracoes" onclick="window.location.href='/configuracoes'">
             <span class="material-symbols-rounded">settings</span>
@@ -115,6 +135,7 @@
             <span class="material-symbols-rounded">delete</span>
             <span class="cxsb-item-label">Lixeira</span>
         </div>
+        {% endif %}
         {% endif %}
     </div>
 </nav>
