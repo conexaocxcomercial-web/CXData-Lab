@@ -1174,37 +1174,23 @@ def planejamento():
 def listar_planejamento():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
-        # Se o usuário tem permissões restritas (externo ou personalizado),
-        # a agenda só mostra atividades dos projetos que ele pode ver.
+        from datetime import date
+        hoje_iso = date.today().isoformat()
+
+        # Restrição de visibilidade (externo/personalizado)
         filtro_cliente = None
         if is_externo() or is_personalizado():
             filtro_cliente = set(projetos_visiveis_cliente())
 
-        # 1. PLANEJADO: o que foi cadastrado previamente na agenda
-        res = supabase.table("planejamento_diario").select("*").order("data_planejada", desc=False).order("criado_em", desc=False).execute()
-        planejados = []
-        for p in res.data:
-            if filtro_cliente is not None and str(p.get("projeto_id")) not in filtro_cliente:
-                continue
-            planejados.append({
-                "id": p.get("id"),
-                "origem": "planejado",
-                "projeto_id": p.get("projeto_id"),
-                "colaborador": p.get("colaborador"),
-                "atividade": p.get("atividade"),
-                "data": p.get("data_planejada"),
-                "criado_em": p.get("criado_em"),
-                "tempo_segundos": None
-            })
+        # Mapa de projeto -> contexto (nome, área, empresa)
+        res_proj = supabase.table("projetos").select("id, nome_projeto, area, empresa").execute()
+        mapa_proj = {str(p["id"]): p for p in res_proj.data}
 
-        # 2. REALIZADO: tudo que teve timer registrado nos quadros (time_logs)
-        realizados = []
+        # ===== 1. Carrega os REALIZADOS (time_logs), agrupados por (projeto, dia, colaborador) =====
+        # Guarda o total de tempo e se houve execução para cruzar com o planejado.
+        realizados_idx = {}   # chave (projeto_id, dia, colaborador_lower) -> {tempo, logs...}
+        realizados_lista = [] # todos os logs (para os que não têm planejamento)
         try:
-            # Mapa de projeto -> nome (para exibir contexto)
-            res_proj = supabase.table("projetos").select("id, nome_projeto, area, empresa").execute()
-            mapa_proj = {str(p["id"]): p for p in res_proj.data}
-
-            # Busca time_logs paginado
             page_size = 1000
             offset = 0
             while True:
@@ -1216,29 +1202,95 @@ def listar_planejamento():
                     data_ref = log.get("data_inicio_atividade") or log.get("criado_em")
                     dia = str(data_ref)[:10] if data_ref else None
                     if not dia: continue
-                    proj = mapa_proj.get(str(log.get("projeto_id")), {})
-                    realizados.append({
-                        "id": "log_" + str(log.get("id")),
-                        "origem": "realizado",
-                        "projeto_id": log.get("projeto_id"),
-                        "colaborador": log.get("colaborador"),
-                        "atividade": log.get("descricao_tarefa") or "Atividade registrada",
-                        "data": dia,
-                        "criado_em": log.get("criado_em"),
-                        "tempo_segundos": log.get("tempo_segundos") or 0,
-                        "nome_projeto": proj.get("nome_projeto"),
-                        "area": proj.get("area"),
-                        "empresa": proj.get("empresa")
+                    pid = str(log.get("projeto_id"))
+                    colab = (log.get("colaborador") or "").strip()
+                    chave = (pid, dia, colab.lower())
+                    if chave not in realizados_idx:
+                        realizados_idx[chave] = {"tempo": 0, "colaborador": colab, "projeto_id": pid, "dia": dia}
+                    realizados_idx[chave]["tempo"] += (log.get("tempo_segundos") or 0)
+                    realizados_lista.append({
+                        "projeto_id": pid, "dia": dia, "colaborador": colab,
+                        "tarefa": log.get("descricao_tarefa") or "Atividade registrada",
+                        "tempo": log.get("tempo_segundos") or 0,
+                        "criado_em": log.get("criado_em")
                     })
                 if len(res_logs.data) < page_size: break
                 offset += page_size
         except Exception as erro_logs:
-            print(f"[AVISO] Falha ao carregar realizados (time_logs): {str(erro_logs)}")
-            realizados = []
+            print(f"[AVISO] Falha ao carregar realizados: {str(erro_logs)}")
 
-        # Junta tudo num só array
-        todos = planejados + realizados
-        return jsonify({"status": "sucesso", "planejamentos": todos}), 200
+        # Marca quais chaves de realizado já foram "consumidas" por um planejamento
+        chaves_consumidas = set()
+        itens = []
+
+        # ===== 2. PLANEJADOS: cada um vira UM item, com status cruzado =====
+        res = supabase.table("planejamento_diario").select("*").order("data_planejada", desc=False).order("criado_em", desc=False).execute()
+        for p in res.data:
+            pid = str(p.get("projeto_id"))
+            if filtro_cliente is not None and pid not in filtro_cliente:
+                continue
+            dia = str(p.get("data_planejada"))[:10] if p.get("data_planejada") else None
+            colab = (p.get("colaborador") or "").strip()
+            chave = (pid, dia, colab.lower())
+
+            # Houve execução nesse projeto+dia+colaborador?
+            exec_info = realizados_idx.get(chave)
+            if exec_info:
+                status = "realizado"
+                tempo = exec_info["tempo"]
+                chaves_consumidas.add(chave)
+            else:
+                # Sem execução: se o dia já passou, é não-realizado (vermelho); senão, planejado (cinza)
+                if dia and dia < hoje_iso:
+                    status = "nao_realizado"
+                else:
+                    status = "planejado"
+                tempo = None
+
+            proj = mapa_proj.get(pid, {})
+            itens.append({
+                "id": p.get("id"),
+                "status": status,
+                "origem": "planejado",
+                "projeto_id": p.get("projeto_id"),
+                "colaborador": p.get("colaborador"),
+                "atividade": p.get("atividade"),
+                "data": dia,
+                "criado_em": p.get("criado_em"),
+                "tempo_segundos": tempo,
+                "nome_projeto": proj.get("nome_projeto"),
+                "area": proj.get("area"),
+                "empresa": proj.get("empresa")
+            })
+
+        # ===== 3. REALIZADOS SEM PLANEJAMENTO: timer dado sem ter planejado antes =====
+        # Agrupa por chave para não repetir; só inclui chaves não consumidas por um planejado.
+        vistos = set()
+        for r in realizados_lista:
+            chave = (r["projeto_id"], r["dia"], r["colaborador"].lower())
+            if chave in chaves_consumidas:
+                continue  # já apareceu como planejado->realizado
+            if chave in vistos:
+                continue  # agrupa: um item por projeto+dia+colaborador
+            vistos.add(chave)
+            info = realizados_idx.get(chave, {})
+            proj = mapa_proj.get(r["projeto_id"], {})
+            itens.append({
+                "id": "log_" + r["projeto_id"] + "_" + r["dia"],
+                "status": "realizado",
+                "origem": "realizado",
+                "projeto_id": r["projeto_id"],
+                "colaborador": r["colaborador"],
+                "atividade": r["tarefa"],
+                "data": r["dia"],
+                "criado_em": r["criado_em"],
+                "tempo_segundos": info.get("tempo", r["tempo"]),
+                "nome_projeto": proj.get("nome_projeto"),
+                "area": proj.get("area"),
+                "empresa": proj.get("empresa")
+            })
+
+        return jsonify({"status": "sucesso", "planejamentos": itens}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no GET Planejamento: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar agenda."}), 500
