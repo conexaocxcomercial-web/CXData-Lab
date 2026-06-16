@@ -661,12 +661,13 @@
                 titulo: 'RH Estratégico',
                 areasPermitidas: ['RH Estratégico'],
                 atividades: ["Atividade Estratégica 1", "Atividade Estratégica 2"],
-                statusInicial: 'Onboarding',
+                statusInicial: 'Kick-off',
                 colunas: [
-                    { id: 'Onboarding', nome: 'Onboarding', cor: '#3b82f6' },
+                    { id: 'Kick-off', nome: 'Kick-off', cor: '#3b82f6' },
                     { id: 'Experiência do Colaborador', nome: 'Experiência do Colaborador', cor: '#8b5cf6' },
                     { id: 'Employer Branding', nome: 'Employer Branding', cor: '#f59e0b' },
                     { id: 'R&S', nome: 'R&S', cor: '#06b6d4' },
+                    { id: 'Onboarding Estratégico', nome: 'Onboarding Estratégico', cor: '#0ea5e9' },
                     { id: 'PCCS', nome: 'PCCS', cor: '#ec4899' },
                     { id: 'Gestão de Talentos e Sucessão', nome: 'Gestão de Talentos e Sucessão', cor: '#14b8a6' },
                     { id: 'Gestão do Conhecimento', nome: 'Gestão do Conhecimento', cor: 'var(--primary-purple)' },
@@ -679,7 +680,142 @@
             }
         };
 
-        const cfg = WORKSPACES[QUADRO_ATUAL] || WORKSPACES['geral'];
+        // ===== ATIVIDADES ESPECÍFICAS POR FASE (somente RH Estratégico) =====
+        // Cada coluna tem seu conjunto fechado de atividades.
+        const ATIVIDADES_POR_FASE_RH = {
+            'Kick-off': [
+                'Enviar e-mail de boas-vindas personalizado com apresentação do projeto',
+                'Criar grupo de comunicação dedicado (WhatsApp)',
+                'Apresentação da metodologia de RH estratégico',
+                'Configurar espaço compartilhado (Trello/Conexão RH)',
+                'Montar cronograma macro com ações iniciais',
+                'Reunião de kick-off',
+                'Definição de objetivos e expectativas',
+                'Mapeamento inicial dos stakeholders-chave',
+                'Conhecer os colaboradores e apresentar o escopo do trabalho',
+                'Reunião com o cliente'
+            ],
+            'Experiência do Colaborador': [
+                'Mapear Employee Journey Map do contato ao offboarding',
+                'Identificar principais pontos de dor da jornada',
+                'Realizar entrevistas qualitativas com colaboradores',
+                'Propor rituais de engajamento e cultura',
+                'Reunião para co-criação da jornada ideal',
+                'Apresentação do diagnóstico para diretoria',
+                'Definição conjunta do Programa de EX',
+                'Reunião com o cliente'
+            ],
+            'Employer Branding': [
+                'Criar EVP (Employee Value Proposition)',
+                'Estruturar playbook de marca empregadora',
+                'Mapear canais de atração por perfil',
+                'Reunião para construção do EVP',
+                'Validação do playbook com Diretoria, Marketing/RH',
+                'Revisão trimestral de métricas',
+                'Reunião com o cliente'
+            ],
+            'R&S': [
+                'Redesenhar o processo seletivo end-to-end',
+                'Definir funil de R&S com SLA por etapa',
+                'Acompanhar processos conforme escopo',
+                'Criar provas e estudos de caso por níveis',
+                'Construção de provas específicas para cargos estratégicos',
+                'Análise mensal de SLA',
+                'Análise trimestral de dados relacionados ao funil de R&S',
+                'Implantação de processo em ferramenta de ATS ou Software de gestão de RH',
+                'Reunião com o cliente'
+            ],
+            'Onboarding Estratégico': [
+                'Estruturar Programa Onboarding Técnico específico para cada cargo',
+                'Criar checklist de pré-boarding',
+                'Criar modelos de informativos pré-entrada',
+                'Criar rituais de checkpoint (30/60/90)',
+                'Definir mentores/facilitadores e rituais',
+                'Acompanhamento dos Líderes como integradores e anfitriões',
+                'Análise mensal de pesquisas checkpoints',
+                'Reunião com o cliente'
+            ],
+            'PCCS': [
+                'Coletar informações sobre atividades por cargo',
+                'Criar/Atualizar descrições de cargo detalhadas',
+                'Realizar pesquisa salarial de mercado',
+                'Desenhar organograma atualizado',
+                'Elaborar trilhas de carreira para cada tipo e departamento',
+                'Estruturar faixas salariais (min/mid/max)',
+                'Comunicar nova estrutura internamente',
+                'Revisão anual de mercado',
+                'Reunião com o cliente'
+            ],
+            'Gestão de Talentos e Sucessão': [
+                'Conduzir mapeamento 9box (Perf x Pot)',
+                'Identificar posições críticas e riscos de evasão',
+                'Criar planos de sucessão por posição',
+                'Propor estratégias de retenção personalizadas',
+                'Aplicação de Assessment',
+                'Reunião de Talent Review Semestral',
+                'Definição de PDIs alinhados a objetivos de médio prazo',
+                'Análise de causa raiz (Entrevistas de Desligamento)',
+                'Reunião com o cliente'
+            ],
+            'Gestão do Conhecimento': [
+                'Realizar LNT (Levantamento de Necessidades de Treinamento)',
+                'Mapear conhecimentos críticos/riscos',
+                'Desenhar modelos de documentos para captura de conhecimento',
+                'Conscientizar a equipe sobre a importância da GC',
+                'Recomendar repositório de conhecimento',
+                'Propor plano anual de T&D',
+                'Aprovação do Plano Anual pela diretoria',
+                'Definição de avaliação de efetividade',
+                'Criação de política de versionamento e codificação',
+                'Reunião com o cliente'
+            ],
+            'Gestão de Desempenho': [
+                'Elaborar guia de competências para os ciclos avaliativos',
+                'Desenhar ciclo de avaliação semestral',
+                'Definir framework de AVD e AVE',
+                'Criar formulários de autoavaliação e avaliação 180º',
+                'Capacitar líderes para conversas de feedback e PDI',
+                'Desenhar framework de PDI',
+                'Construir dashboard de desempenho geral',
+                'Implementar rituais de liderança e performance',
+                'Sensibilização sobre o que é GD e seus impactos',
+                'Calibração de avaliações entre áreas',
+                'Análise estratégica de resultados RH',
+                'Reunião com o cliente'
+            ],
+            'Gestão de Clima': [
+                'Criar formulário de PCO completo',
+                'Conscientizar colaboradores sobre o que é PCO e seus impactos',
+                'Aplicar PCO com toda a organização',
+                'Analisar resultados por área e seção',
+                'Apresentar resultados para diretores, líderes e equipe',
+                'Criar plano de ação conforme resultados e prioridades',
+                'Construir dashboard sobre clima organizacional',
+                'Elaborar diagnóstico organizacional detalhado',
+                'Implantação de persona de comunicação via IA',
+                'Definição conjunta de calendário cultural',
+                'Revisão trimestral de indicadores',
+                'Reunião com o cliente'
+            ],
+            'Gestão com Base em Dados': [
+                'Consolidar KPIs em Dashboard de Analytics',
+                'Elaborar relatório mensal para diretoria',
+                'Apresentar plano estratégico próximo ciclo',
+                'Benchmarking semestral com o mercado',
+                'Reunião estratégica trimestral (Data Review)',
+                'Avaliação NPS do serviço prestado',
+                'Planejamento do próximo ciclo de RH',
+                'Reunião com o cliente'
+            ]
+        };
+
+        // Retorna as atividades disponíveis para um projeto, considerando a fase (RH) ou a lista padrão
+        function atividadesDisponiveis(projeto) {
+            if (QUADRO_ATUAL === 'rhestrategico' && projeto && ATIVIDADES_POR_FASE_RH[projeto.status]) {
+                return ATIVIDADES_POR_FASE_RH[projeto.status];
+            }
+            return cfg.atividades || [];
+        }
 
         let projetosGlobais = [];
         let projIdEmFoco = null;
@@ -1128,7 +1264,10 @@
                 let isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
                 
                 let displayTempo = formatarSegundosTick(p.tempo_total_segundos || 0);
-                let options = cfg.atividades.map(a => `<option value="${a}">${a}</option>`).join('');
+                let listaAtiv = atividadesDisponiveis(p);
+                let options = listaAtiv.length > 0
+                    ? listaAtiv.map(a => `<option value="${a}">${a}</option>`).join('')
+                    : '<option value="">Sem atividades nesta fase</option>';
 
                 let btnClass = isRodando ? 'parar' : '';
                 let btnIcon = isRodando ? 'stop' : (isPausado ? 'pause' : 'play_arrow');
