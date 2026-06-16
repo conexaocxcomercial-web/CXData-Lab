@@ -94,13 +94,17 @@
         /* Origem: planejado (roxo) vs realizado (lime/verde-azulado) */
         .plan-card.card-planejado { border-left-color: #7371ff; }
         .plan-card.card-realizado { border-left-color: #14b8a6; background: #f6fefb; }
+        .plan-card.card-naorealizado { border-left-color: #ef4444; background: #fef6f6; }
+        .origem-tag.naorealizado { background: #fee2e2; color: #b91c1c; }
         .origem-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 50px !important; text-transform: uppercase; letter-spacing: 0.3px; }
         .origem-tag.planejado { background: #f0efff; color: #4f46e5; }
         .origem-tag.realizado { background: #ccfbf1; color: #0f766e; }
         .plan-card-sm.s-realizado { border-left-color: #14b8a6; background: #f6fefb; }
         .plan-card-sm.s-planejado { border-left-color: #7371ff; }
+        .plan-card-sm.s-naorealizado { border-left-color: #ef4444; background: #fef6f6; }
         .mes-mini-card.s-realizado { background: #ccfbf1; color: #0f766e; }
         .mes-mini-card.s-planejado { background: #f0efff; color: #4f46e5; }
+        .mes-mini-card.s-naorealizado { background: #fee2e2; color: #b91c1c; }
 
         .plan-card-body { flex-grow: 1; min-width: 0; }
         .pc-empresa { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--primary-purple); letter-spacing: 0.8px; margin-bottom: 2px; }
@@ -580,30 +584,42 @@
         function buildCardHoje(item, isHojeReal) {
             const proj = getProj(item.projeto_id);
             const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
-            const eRealizado = item.origem === 'realizado';
+            // status vem do backend já cruzado: 'planejado' | 'realizado' | 'nao_realizado'
+            const status = item.status || (item.origem === 'realizado' ? 'realizado' : 'planejado');
+            const eRealizado = status === 'realizado';
+            const eNaoRealizado = status === 'nao_realizado';
+            const veioSoDoTimer = item.origem === 'realizado'; // não tem registro em planejamento_diario
 
-            // Nome do projeto/empresa: realizado já traz no item; planejado pega do projeto
-            const nomeProj = eRealizado ? (item.nome_projeto || 'Projeto') : (proj.nome_projeto || 'Projeto não encontrado');
-            const empresa = eRealizado ? (item.empresa || '') : (proj.empresa || '');
+            const nomeProj = item.nome_projeto || proj.nome_projeto || 'Projeto não encontrado';
+            const empresa = item.empresa || proj.empresa || '';
 
-            // Etiqueta de origem (cor diferencia)
-            const tag = eRealizado
-                ? `<span class="origem-tag realizado"><span class="material-symbols-rounded" style="font-size:12px;">task_alt</span> Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}</span>`
-                : `<span class="origem-tag planejado"><span class="material-symbols-rounded" style="font-size:12px;">event</span> Planejado</span>`;
-
-            // REALIZADO: veio do timer, não tem play/editar/excluir. Só exibe.
+            // Etiqueta + cor conforme status
+            let tag, cardClasse;
             if (eRealizado) {
-                return `<div class="plan-card card-realizado">
-                    <div class="plan-card-body">
-                        <div class="pc-empresa">${escH(empresa)}</div>
-                        <div class="pc-projeto">${escH(nomeProj)}</div>
-                        <div class="pc-atividade">${escH(item.atividade)}</div>
-                        <div class="pc-footer">${tag}</div>
-                    </div>
-                </div>`;
+                tag = `<span class="origem-tag realizado"><span class="material-symbols-rounded" style="font-size:12px;">task_alt</span> Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}</span>`;
+                cardClasse = 'card-realizado';
+            } else if (eNaoRealizado) {
+                tag = `<span class="origem-tag naorealizado"><span class="material-symbols-rounded" style="font-size:12px;">cancel</span> Não realizado</span>`;
+                cardClasse = 'card-naorealizado';
+            } else {
+                tag = `<span class="origem-tag planejado"><span class="material-symbols-rounded" style="font-size:12px;">event</span> Planejado</span>`;
+                cardClasse = 'card-planejado';
             }
 
-            // PLANEJADO: mantém play (timer) + editar + excluir
+            // Itens que vieram SÓ do timer (sem planejamento) ou já realizados: sem ações de editar/excluir
+            const corpo = `
+                <div class="plan-card-body">
+                    <div class="pc-empresa">${escH(empresa)}</div>
+                    <div class="pc-projeto">${escH(nomeProj)}</div>
+                    <div class="pc-atividade">${escH(item.atividade)}</div>
+                    <div class="pc-footer">${tag}</div>
+                </div>`;
+
+            if (eRealizado || veioSoDoTimer) {
+                return `<div class="plan-card ${cardClasse}">${corpo}</div>`;
+            }
+
+            // PLANEJADO ou NÃO REALIZADO (ambos têm registro em planejamento_diario): play/editar/excluir
             let playBtn = '';
             if (ativo) {
                 playBtn = `<button class="btn-play parar" id="playbtn-${item.id}" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:18px;">stop</span></button>`;
@@ -614,13 +630,8 @@
                 playBtn = `<button class="btn-play" disabled><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
             }
 
-            return `<div class="plan-card card-planejado" id="card-${item.id}">
-                <div class="plan-card-body">
-                    <div class="pc-empresa">${escH(empresa)}</div>
-                    <div class="pc-projeto">${escH(nomeProj)}</div>
-                    <div class="pc-atividade">${escH(item.atividade)}</div>
-                    <div class="pc-footer">${tag}</div>
-                </div>
+            return `<div class="plan-card ${cardClasse}" id="card-${item.id}">
+                ${corpo}
                 <div class="plan-card-actions">
                     ${playBtn}
                     <button class="btn-sm" onclick="abrirModalEditar('${item.id}')" title="Editar">
@@ -658,15 +669,20 @@
                     html += `<div class="semana-empty">·</div>`;
                 } else {
                     items.forEach(item => {
-                        const eRealizado = item.origem === 'realizado';
+                        const status = item.status || (item.origem === 'realizado' ? 'realizado' : 'planejado');
+                        const eRealizado = status === 'realizado';
+                        const eNaoRealizado = status === 'nao_realizado';
+                        const veioSoDoTimer = item.origem === 'realizado';
                         const proj = getProj(item.projeto_id);
-                        const nomeProj = eRealizado ? (item.nome_projeto || '—') : (proj.nome_projeto || '—');
-                        const sc = eRealizado ? 's-realizado' : 's-planejado';
+                        const nomeProj = item.nome_projeto || proj.nome_projeto || '—';
+                        const sc = eRealizado ? 's-realizado' : eNaoRealizado ? 's-naorealizado' : 's-planejado';
                         const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
                         let playXs = '';
                         if (eRealizado) {
-                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#7371ff;" title="Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}">task_alt</span>`;
-                        } else if (eHoje) {
+                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#14b8a6;" title="Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}">task_alt</span>`;
+                        } else if (eNaoRealizado) {
+                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#ef4444;" title="Não realizado">cancel</span>`;
+                        } else if (eHoje && !veioSoDoTimer) {
                             if (ativo) {
                                 playXs = `<button class="btn-play-xs parar" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:13px;">stop</span></button>`;
                             } else {
@@ -716,10 +732,10 @@
                     <div class="mes-dia-num">${dia.getDate()}</div>`;
 
                 items.slice(0,2).forEach(item => {
-                    const eRealizado = item.origem === 'realizado';
+                    const status = item.status || (item.origem === 'realizado' ? 'realizado' : 'planejado');
                     const proj = getProj(item.projeto_id);
-                    const nomeProj = eRealizado ? (item.nome_projeto || item.atividade) : (proj.nome_projeto || item.atividade);
-                    const sc = eRealizado ? 's-realizado' : 's-planejado';
+                    const nomeProj = item.nome_projeto || proj.nome_projeto || item.atividade;
+                    const sc = status === 'realizado' ? 's-realizado' : status === 'nao_realizado' ? 's-naorealizado' : 's-planejado';
                     html += `<div class="mes-mini-card ${sc}">${escH(nomeProj)}</div>`;
                 });
                 if (items.length > 2) html += `<div class="mes-mais">+${items.length - 2} mais</div>`;
