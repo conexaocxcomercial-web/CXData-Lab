@@ -810,6 +810,8 @@
         };
 
         // Retorna as atividades disponíveis para um projeto, considerando a fase (RH) ou a lista padrão
+        const cfg = WORKSPACES[QUADRO_ATUAL] || WORKSPACES['geral'];
+
         function atividadesDisponiveis(projeto) {
             if (QUADRO_ATUAL === 'rhestrategico' && projeto && ATIVIDADES_POR_FASE_RH[projeto.status]) {
                 return ATIVIDADES_POR_FASE_RH[projeto.status];
