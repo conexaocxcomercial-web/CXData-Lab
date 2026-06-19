@@ -105,12 +105,20 @@
         </div>
         {% endif %}
 
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('dashboard' in perm_modulos or 'okr' in perm_modulos)) %}
         <div class="cxsb-section">Análise</div>
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
         <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
             <span class="material-symbols-rounded">monitoring</span>
             <span class="cxsb-item-label">Dashboard</span>
         </div>
+        {% endif %}
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'okr' in perm_modulos) %}
+        <div class="cxsb-item" data-path="/okr" onclick="window.location.href='/okr'">
+            <span class="material-symbols-rounded">target</span>
+            <span class="cxsb-item-label">OKR</span>
+        </div>
+        {% endif %}
         {% endif %}
 
         <div class="cxsb-section">Gestão</div>
