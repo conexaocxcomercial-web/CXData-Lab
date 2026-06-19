@@ -1348,5 +1348,225 @@ def excluir_planejamento(item_id):
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir atividade."}), 500
 
 
+# ============================================================
+# --- MÓDULO OKR ---
+# ============================================================
+
+def pode_ver_okr():
+    """Admin/gestor sempre; colaborador e personalizado conforme módulo liberado."""
+    nivel = session.get('nivel_acesso')
+    if nivel in ('admin', 'gestor'):
+        return True
+    return pode_acessar_modulo('okr')
+
+@app.route('/okr')
+def okr_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not pode_ver_okr():
+        return redirect(url_for('index'))
+    return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+
+@app.route('/api/okr/arvore', methods=['GET'])
+def okr_arvore():
+    """Retorna a árvore completa de OKR de um cliente: macro, departamentos,
+    e dentro de cada departamento os objetivos -> KRs -> tarefas."""
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    cliente_id = request.args.get('cliente_id')
+    try:
+        # Lista de clientes para o seletor
+        res_clientes = supabase.table("clientes").select("id, nome_empresa").execute()
+        clientes = sorted(
+            [{"id": str(c["id"]), "nome": c.get("nome_empresa")} for c in res_clientes.data if not c.get("excluido_em")],
+            key=lambda x: (x["nome"] or "").lower()
+        )
+
+        if not cliente_id:
+            return jsonify({"status": "sucesso", "clientes": clientes, "macro": None, "departamentos": []}), 200
+
+        # Macro objetivo do cliente
+        res_macro = supabase.table("okr_macro_objetivos").select("*").eq("cliente_id", cliente_id).execute()
+        macro = res_macro.data[0] if res_macro.data else None
+
+        # Departamentos do cliente
+        res_dept = supabase.table("okr_departamentos").select("*").eq("cliente_id", cliente_id).order("nome").execute()
+        departamentos = res_dept.data or []
+
+        # Para cada departamento, carrega objetivos -> KRs -> tarefas
+        dept_ids = [d["id"] for d in departamentos]
+        objetivos_por_dept = {d["id"]: [] for d in departamentos}
+
+        if dept_ids:
+            res_obj = supabase.table("okr_objetivos").select("*").in_("departamento_id", dept_ids).execute()
+            objetivos = res_obj.data or []
+            obj_ids = [o["id"] for o in objetivos]
+
+            krs_por_obj = {o["id"]: [] for o in objetivos}
+            if obj_ids:
+                res_kr = supabase.table("okr_key_results").select("*").in_("objetivo_id", obj_ids).execute()
+                krs = res_kr.data or []
+                kr_ids = [k["id"] for k in krs]
+
+                tarefas_por_kr = {k["id"]: [] for k in krs}
+                if kr_ids:
+                    res_task = supabase.table("okr_tarefas").select("*").in_("kr_id", kr_ids).execute()
+                    for t in (res_task.data or []):
+                        tarefas_por_kr.setdefault(t["kr_id"], []).append(t)
+
+                for k in krs:
+                    k["tarefas"] = tarefas_por_kr.get(k["id"], [])
+                    krs_por_obj.setdefault(k["objetivo_id"], []).append(k)
+
+            for o in objetivos:
+                o["key_results"] = krs_por_obj.get(o["id"], [])
+                objetivos_por_dept.setdefault(o["departamento_id"], []).append(o)
+
+        for d in departamentos:
+            d["objetivos"] = objetivos_por_dept.get(d["id"], [])
+
+        return jsonify({
+            "status": "sucesso",
+            "clientes": clientes,
+            "macro": macro,
+            "departamentos": departamentos
+        }), 200
+    except Exception as e:
+        print(f"[CRITICAL] Erro na árvore OKR: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+# --- MACRO OBJETIVO ---
+@app.route('/api/okr/macro', methods=['POST'])
+def okr_salvar_macro():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    try:
+        macro_id = dados.get("id")
+        cliente_id = dados.get("cliente_id")
+        payload = {"titulo": dados.get("titulo"), "ciclo": dados.get("ciclo")}
+        if macro_id:
+            supabase.table("okr_macro_objetivos").update(payload).eq("id", macro_id).execute()
+        else:
+            # Um macro por cliente
+            existe = supabase.table("okr_macro_objetivos").select("id").eq("cliente_id", cliente_id).execute()
+            if existe.data:
+                supabase.table("okr_macro_objetivos").update(payload).eq("id", existe.data[0]["id"]).execute()
+            else:
+                payload["cliente_id"] = cliente_id
+                supabase.table("okr_macro_objetivos").insert(payload).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+# --- DEPARTAMENTO ---
+@app.route('/api/okr/departamento', methods=['POST'])
+def okr_salvar_departamento():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    try:
+        dept_id = dados.get("id")
+        if dept_id:
+            supabase.table("okr_departamentos").update({"nome": dados.get("nome")}).eq("id", dept_id).execute()
+        else:
+            supabase.table("okr_departamentos").insert({"nome": dados.get("nome"), "cliente_id": dados.get("cliente_id")}).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/okr/departamento/<dept_id>', methods=['DELETE'])
+def okr_excluir_departamento(dept_id):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("okr_departamentos").delete().eq("id", dept_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+# --- OBJETIVO / KR / TAREFA (criar) ---
+@app.route('/api/okr/item', methods=['POST'])
+def okr_criar_item():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    tipo = dados.get("tipo")
+    try:
+        if tipo == "objetivo":
+            # Garante que existe um macro para vincular
+            macro = supabase.table("okr_macro_objetivos").select("id").eq("cliente_id", dados.get("cliente_id")).limit(1).execute()
+            macro_id = macro.data[0]["id"] if macro.data else None
+            supabase.table("okr_objetivos").insert({
+                "titulo": dados.get("titulo"),
+                "departamento_id": dados.get("departamento_id"),
+                "macro_objetivo_id": macro_id
+            }).execute()
+        elif tipo == "kr":
+            supabase.table("okr_key_results").insert({
+                "descricao": dados.get("descricao"),
+                "objetivo_id": dados.get("parent_id"),
+                "valor_meta": float(dados.get("valor_meta") or 0),
+                "valor_atual": float(dados.get("valor_atual") or 0)
+            }).execute()
+        elif tipo == "tarefa":
+            supabase.table("okr_tarefas").insert({
+                "descricao": dados.get("descricao"),
+                "kr_id": dados.get("parent_id"),
+                "responsavel": dados.get("responsavel"),
+                "prazo": dados.get("prazo") or None,
+                "link_entregavel": dados.get("link_entregavel"),
+                "status": "Não iniciado"
+            }).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+# --- OBJETIVO / KR / TAREFA (editar) ---
+@app.route('/api/okr/item', methods=['PUT'])
+def okr_editar_item():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    tipo = dados.get("tipo")
+    item_id = dados.get("id")
+    try:
+        if tipo == "objetivo":
+            supabase.table("okr_objetivos").update({"titulo": dados.get("titulo")}).eq("id", item_id).execute()
+        elif tipo == "kr":
+            supabase.table("okr_key_results").update({
+                "descricao": dados.get("descricao"),
+                "valor_atual": float(dados.get("valor_atual") or 0),
+                "valor_meta": float(dados.get("valor_meta") or 0)
+            }).eq("id", item_id).execute()
+        elif tipo == "tarefa":
+            supabase.table("okr_tarefas").update({
+                "descricao": dados.get("descricao"),
+                "responsavel": dados.get("responsavel"),
+                "prazo": dados.get("prazo") or None,
+                "link_entregavel": dados.get("link_entregavel"),
+                "status": dados.get("status")
+            }).eq("id", item_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+# --- OBJETIVO / KR / TAREFA (excluir) ---
+@app.route('/api/okr/item', methods=['DELETE'])
+def okr_excluir_item():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
+    dados = request.json
+    tipo = dados.get("tipo")
+    item_id = dados.get("id")
+    try:
+        tabela = {"objetivo": "okr_objetivos", "kr": "okr_key_results", "tarefa": "okr_tarefas"}.get(tipo)
+        if tabela:
+            supabase.table(tabela).delete().eq("id", item_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
