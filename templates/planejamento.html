@@ -432,8 +432,16 @@
                 return;
             }
 
-            const filtrados = projetosGlobal.filter(p => p.empresa === cliente);
-            selProjeto.innerHTML = '<option value="">Selecione um projeto...</option>';
+            // Só projetos ativos: exclui finalizados e cancelados (evita listas gigantes)
+            const STATUS_INATIVOS = ['finalizado', 'cancelado', 'concluído', 'concluido', 'arquivado'];
+            const filtrados = projetosGlobal.filter(p => {
+                if (p.empresa !== cliente) return false;
+                const st = (p.status || '').trim().toLowerCase();
+                return !STATUS_INATIVOS.includes(st);
+            });
+            selProjeto.innerHTML = filtrados.length > 0
+                ? '<option value="">Selecione um projeto...</option>'
+                : '<option value="">Nenhum projeto ativo para este cliente</option>';
             filtrados.forEach(p => {
                 const o = document.createElement('option');
                 o.value = p.id;
@@ -442,7 +450,7 @@
                 o.dataset.status = p.status || '';
                 selProjeto.appendChild(o);
             });
-            selProjeto.disabled = false;
+            selProjeto.disabled = filtrados.length === 0;
 
             // Limpa atividades ao trocar cliente
             selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
