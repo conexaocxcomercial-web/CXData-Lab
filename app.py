@@ -1186,10 +1186,14 @@ def listar_planejamento():
         res_proj = supabase.table("projetos").select("id, nome_projeto, area, empresa").execute()
         mapa_proj = {str(p["id"]): p for p in res_proj.data}
 
-        # ===== 1. Carrega os REALIZADOS (time_logs), agrupados por (projeto, dia, colaborador) =====
-        # Guarda o total de tempo e se houve execução para cruzar com o planejado.
-        realizados_idx = {}   # chave (projeto_id, dia, colaborador_lower) -> {tempo, logs...}
-        realizados_lista = [] # todos os logs (para os que não têm planejamento)
+        # ===== 1. Carrega os REALIZADOS (time_logs) =====
+        # Indexado por (projeto, dia, colaborador, atividade) para cruzar com o planejado
+        # exatamente pela mesma atividade. Também mantém um índice mais amplo
+        # (projeto, dia, colaborador) só para somar tempo de realizados avulsos.
+        realizados_idx = {}   # chave (projeto_id, dia, colab_lower, atividade_lower) -> {tempo...}
+        realizados_lista = [] # todos os logs
+        def _norm(s):
+            return (s or "").strip().lower()
         try:
             page_size = 1000
             offset = 0
@@ -1204,13 +1208,14 @@ def listar_planejamento():
                     if not dia: continue
                     pid = str(log.get("projeto_id"))
                     colab = (log.get("colaborador") or "").strip()
-                    chave = (pid, dia, colab.lower())
+                    tarefa = log.get("descricao_tarefa") or "Atividade registrada"
+                    chave = (pid, dia, _norm(colab), _norm(tarefa))
                     if chave not in realizados_idx:
-                        realizados_idx[chave] = {"tempo": 0, "colaborador": colab, "projeto_id": pid, "dia": dia}
+                        realizados_idx[chave] = {"tempo": 0, "colaborador": colab, "projeto_id": pid, "dia": dia, "tarefa": tarefa}
                     realizados_idx[chave]["tempo"] += (log.get("tempo_segundos") or 0)
                     realizados_lista.append({
                         "projeto_id": pid, "dia": dia, "colaborador": colab,
-                        "tarefa": log.get("descricao_tarefa") or "Atividade registrada",
+                        "tarefa": tarefa,
                         "tempo": log.get("tempo_segundos") or 0,
                         "criado_em": log.get("criado_em")
                     })
@@ -1223,7 +1228,7 @@ def listar_planejamento():
         chaves_consumidas = set()
         itens = []
 
-        # ===== 2. PLANEJADOS: cada um vira UM item, com status cruzado =====
+        # ===== 2. PLANEJADOS: cada um vira UM item, com status cruzado pela MESMA atividade =====
         res = supabase.table("planejamento_diario").select("*").order("data_planejada", desc=False).order("criado_em", desc=False).execute()
         for p in res.data:
             pid = str(p.get("projeto_id"))
@@ -1231,9 +1236,10 @@ def listar_planejamento():
                 continue
             dia = str(p.get("data_planejada"))[:10] if p.get("data_planejada") else None
             colab = (p.get("colaborador") or "").strip()
-            chave = (pid, dia, colab.lower())
+            atividade = p.get("atividade") or ""
+            chave = (pid, dia, _norm(colab), _norm(atividade))
 
-            # Houve execução nesse projeto+dia+colaborador?
+            # Houve execução dessa MESMA atividade nesse projeto+dia+colaborador?
             exec_info = realizados_idx.get(chave)
             if exec_info:
                 status = "realizado"
@@ -1263,20 +1269,20 @@ def listar_planejamento():
                 "empresa": proj.get("empresa")
             })
 
-        # ===== 3. REALIZADOS SEM PLANEJAMENTO: timer dado sem ter planejado antes =====
-        # Agrupa por chave para não repetir; só inclui chaves não consumidas por um planejado.
+        # ===== 3. REALIZADOS SEM PLANEJAMENTO: timer dado sem ter planejado aquela atividade =====
+        # Um item por (projeto, dia, colaborador, atividade) que não casou com um planejado.
         vistos = set()
         for r in realizados_lista:
-            chave = (r["projeto_id"], r["dia"], r["colaborador"].lower())
+            chave = (r["projeto_id"], r["dia"], _norm(r["colaborador"]), _norm(r["tarefa"]))
             if chave in chaves_consumidas:
                 continue  # já apareceu como planejado->realizado
             if chave in vistos:
-                continue  # agrupa: um item por projeto+dia+colaborador
+                continue  # agrupa: um item por projeto+dia+colaborador+atividade
             vistos.add(chave)
             info = realizados_idx.get(chave, {})
             proj = mapa_proj.get(r["projeto_id"], {})
             itens.append({
-                "id": "log_" + r["projeto_id"] + "_" + r["dia"],
+                "id": "log_" + r["projeto_id"] + "_" + r["dia"] + "_" + str(abs(hash(_norm(r["tarefa"]))) % 100000),
                 "status": "realizado",
                 "origem": "realizado",
                 "projeto_id": r["projeto_id"],
