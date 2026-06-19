@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKR | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+
+        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+
+        .command-bar { padding: 24px 40px 12px 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-shrink: 0; flex-wrap: wrap; gap: 16px; }
+        .command-bar h2 { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+        .command-bar .sub { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
+        .cliente-sel { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #fff; border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); min-width: 240px; }
+        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
+        .btn-acao:hover { background-color: var(--text-main); }
+        .btn-sec { background: #f4f4f5; color: var(--text-main); padding: 11px 20px; font-weight: 800; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:7px; transition: 0.2s; }
+        .btn-sec:hover { background: #e4e4e7; }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 8px 40px 60px 40px; }
+
+        /* Estado vazio / sem cliente */
+        .empty { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+        .empty .material-symbols-rounded { font-size: 60px; opacity: 0.2; display: block; margin-bottom: 16px; }
+        .empty h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
+        .empty p { font-size: 13px; }
+
+        /* Card do Objetivo Macro */
+        .macro-card { background: linear-gradient(135deg, #1e1e1e 0%, #2d2b4a 100%); color: #fff; padding: 28px 32px; margin-bottom: 24px; position: relative; overflow: hidden; }
+        .macro-card::after { content: ''; position: absolute; top: -40px; right: -20px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(115,113,255,0.35), transparent 70%); }
+        .macro-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-lime); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .macro-titulo { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.2; max-width: 80%; position: relative; z-index: 1; }
+        .macro-meta { display: flex; gap: 28px; margin-top: 20px; position: relative; z-index: 1; }
+        .macro-info-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); }
+        .macro-info-valor { font-size: 18px; font-weight: 800; margin-top: 2px; }
+        .macro-edit { position: absolute; top: 22px; right: 24px; z-index: 2; cursor: pointer; width: 36px; height: 36px; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; border-radius: 50% !important; transition: 0.2s; }
+        .macro-edit:hover { background: rgba(255,255,255,0.25); }
+
+        /* Departamento */
+        .dept { background: #fff; margin-bottom: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); overflow: hidden; }
+        .dept-head { padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.15s; }
+        .dept-head:hover { background: #fafafa; }
+        .dept-head-left { display: flex; align-items: center; gap: 14px; }
+        .dept-chevron { transition: transform 0.2s; color: var(--text-muted); }
+        .dept.aberto .dept-chevron { transform: rotate(90deg); }
+        .dept-nome { font-size: 16px; font-weight: 800; }
+        .dept-badge { font-size: 11px; font-weight: 700; color: var(--text-muted); background: #f4f4f5; padding: 3px 10px; border-radius: 50px !important; }
+        .dept-prog { display: flex; align-items: center; gap: 12px; }
+        .dept-prog-bar { width: 120px; height: 7px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; }
+        .dept-prog-fill { height: 100%; background: var(--primary-purple); border-radius: 50px !important; transition: width 0.4s; }
+        .dept-prog-pct { font-size: 13px; font-weight: 800; min-width: 38px; text-align: right; }
+        .dept-actions { display: flex; gap: 4px; margin-left: 8px; }
+        .btn-mini { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 8px !important; transition: 0.15s; }
+        .btn-mini:hover { background: #f0efff; color: var(--primary-purple); }
+        .btn-mini.danger:hover { background: #fee2e2; color: #ef4444; }
+        .dept-body { display: none; padding: 4px 24px 20px; }
+        .dept.aberto .dept-body { display: block; }
+
+        /* Objetivo do departamento */
+        .obj { border-left: 3px solid #e4e4e7; padding-left: 18px; margin: 16px 0 16px 6px; }
+        .obj-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .obj-titulo { font-size: 14px; font-weight: 700; line-height: 1.45; }
+        .obj-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+        /* Key Result */
+        .kr { background: #f9f9fb; padding: 14px 16px; margin-top: 10px; }
+        .kr-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .kr-desc { font-size: 13px; font-weight: 600; line-height: 1.4; flex-grow: 1; }
+        .kr-prog { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .kr-prog-bar { flex-grow: 1; height: 8px; background: #e8e8ec; border-radius: 50px !important; overflow: hidden; }
+        .kr-prog-fill { height: 100%; border-radius: 50px !important; transition: width 0.4s; }
+        .kr-prog-vals { font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+        .kr-prog-pct { font-size: 13px; font-weight: 800; min-width: 38px; text-align: right; }
+
+        /* Tarefas */
+        .tasks { margin-top: 12px; }
+        .task { display: flex; align-items: center; gap: 12px; padding: 9px 12px; background: #fff; margin-top: 6px; }
+        .task-status-dot { width: 9px; height: 9px; border-radius: 50% !important; flex-shrink: 0; }
+        .task-desc { font-size: 12px; font-weight: 600; flex-grow: 1; line-height: 1.4; }
+        .task-owner { font-size: 11px; font-weight: 700; color: var(--text-muted); background: #f4f4f5; padding: 3px 9px; border-radius: 50px !important; white-space: nowrap; }
+        .task-prazo { font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 3px; }
+        .task-badge { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 50px !important; white-space: nowrap; }
+        .badge-nao-iniciado { background: #f1f0e8; color: #71717a; }
+        .badge-em-andamento { background: #fef3c7; color: #92400e; }
+        .badge-finalizado { background: #ccfbf1; color: #0f766e; }
+        .task-link { color: var(--primary-purple); display: flex; align-items: center; }
+        .task-actions { display: flex; gap: 2px; }
+        .btn-add-inline { font-size: 11px; font-weight: 700; color: var(--primary-purple); cursor: pointer; padding: 7px 12px; display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; transition: 0.15s; }
+        .btn-add-inline:hover { background: #f0efff; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: #fff; padding: 36px; width: 100%; max-width: 500px; box-shadow: 0 30px 80px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-title { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; }
+        .btn-icon-round { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; background: #f4f4f5; border-radius: 50% !important; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .btn-icon-round:hover { background: #e4e4e7; }
+        .input-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+        .input-group label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
+        .input-group input, .input-group select, .input-group textarea { padding: 12px 15px; background: #f9f9f9; outline: none; font-size: 13px; font-weight: 500; color: var(--text-main); border-left: 3px solid transparent; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { background: #fff; border-left-color: var(--primary-purple); }
+        .input-group textarea { resize: vertical; min-height: 70px; }
+        .input-row { display: flex; gap: 12px; }
+        .input-row .input-group { flex: 1; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(30,30,30,0.95); color: white; padding: 12px 22px; border-radius: 50px !important; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; }
+        @keyframes slideUp { from { opacity:0; transform: translateY(15px);} to {opacity:1; transform: translateY(0);} }
+        .loading { text-align: center; padding: 60px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="command-bar">
+        <div>
+            <h2>OKR</h2>
+            <p class="sub">Objetivos e Resultados-Chave por cliente</p>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <select class="cliente-sel" id="selCliente" onchange="trocarCliente()">
+                <option value="">Selecione um cliente...</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="scroll-area" id="conteudo">
+        <div class="empty">
+            <span class="material-symbols-rounded">target</span>
+            <h3>Selecione um cliente</h3>
+            <p>Escolha um cliente acima para ver e gerenciar os OKRs dele.</p>
+        </div>
+    </div>
+
+    <!-- MODAL GENÉRICO -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitulo">Novo</span>
+                <div class="btn-icon-round" onclick="fecharModal()"><span class="material-symbols-rounded" style="font-size:18px;">close</span></div>
+            </div>
+            <div id="modalCorpo"></div>
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="fecharModal()">CANCELAR</button>
+                <button class="btn-acao" id="btnSalvarModal" onclick="salvarModal()">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
+        let clienteAtual = '';
+        let dadosArvore = null;
+        let modalCtx = {};
+
+        document.addEventListener('DOMContentLoaded', carregarInicial);
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+        async function carregarInicial() {
+            try {
+                const res = await fetch('/api/okr/arvore');
+                if (res.status === 403) { document.getElementById('conteudo').innerHTML = '<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                const data = await res.json();
+                const sel = document.getElementById('selCliente');
+                sel.innerHTML = '<option value="">Selecione um cliente...</option>' +
+                    (data.clientes||[]).map(c => `<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+            } catch(e) { showToast('Erro ao carregar clientes.', 'error'); }
+        }
+
+        async function trocarCliente() {
+            clienteAtual = document.getElementById('selCliente').value;
+            if (!clienteAtual) {
+                document.getElementById('conteudo').innerHTML = '<div class="empty"><span class="material-symbols-rounded">target</span><h3>Selecione um cliente</h3><p>Escolha um cliente acima para ver e gerenciar os OKRs dele.</p></div>';
+                return;
+            }
+            await carregarArvore();
+        }
+
+        async function carregarArvore() {
+            document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando OKRs...</div>';
+            try {
+                const res = await fetch('/api/okr/arvore?cliente_id=' + encodeURIComponent(clienteAtual));
+                dadosArvore = await res.json();
+                renderArvore();
+            } catch(e) { showToast('Erro ao carregar OKRs.', 'error'); }
+        }
+
+        function calcKrPct(kr) {
+            const meta = parseFloat(kr.valor_meta) || 0;
+            const atual = parseFloat(kr.valor_atual) || 0;
+            if (meta <= 0) return 0;
+            return Math.min(100, Math.round((atual / meta) * 100));
+        }
+
+        function calcDeptPct(dept) {
+            let krs = [];
+            (dept.objetivos||[]).forEach(o => (o.key_results||[]).forEach(k => krs.push(k)));
+            if (krs.length === 0) return 0;
+            const soma = krs.reduce((acc, k) => acc + calcKrPct(k), 0);
+            return Math.round(soma / krs.length);
+        }
+
+        function corProgresso(pct) {
+            if (pct >= 70) return '#14b8a6';
+            if (pct >= 40) return '#f59e0b';
+            return '#ef4444';
+        }
+
+        function renderArvore() {
+            const c = document.getElementById('conteudo');
+            const macro = dadosArvore.macro;
+            const depts = dadosArvore.departamentos || [];
+            let html = '';
+
+            // Card Macro
+            if (macro) {
+                html += `<div class="macro-card">
+                    <div class="macro-edit" onclick="abrirMacro()"><span class="material-symbols-rounded" style="font-size:18px;">edit</span></div>
+                    <div class="macro-tag"><span class="material-symbols-rounded" style="font-size:13px;">flag</span> Objetivo Macro</div>
+                    <div class="macro-titulo">${escH(macro.titulo)}</div>
+                    <div class="macro-meta">
+                        <div><div class="macro-info-label">Ciclo</div><div class="macro-info-valor">${escH(macro.ciclo || '—')}</div></div>
+                        <div><div class="macro-info-label">Departamentos</div><div class="macro-info-valor">${depts.length}</div></div>
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="macro-card" style="cursor:pointer;" onclick="abrirMacro()">
+                    <div class="macro-tag"><span class="material-symbols-rounded" style="font-size:13px;">flag</span> Objetivo Macro</div>
+                    <div class="macro-titulo" style="opacity:0.6;">Clique para definir o objetivo macro deste cliente</div>
+                </div>`;
+            }
+
+            // Botão adicionar departamento
+            html += `<div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+                <button class="btn-sec" onclick="abrirDept()"><span class="material-symbols-rounded" style="font-size:16px;">add</span> NOVO DEPARTAMENTO</button>
+            </div>`;
+
+            if (depts.length === 0) {
+                html += `<div class="empty"><span class="material-symbols-rounded">domain</span><h3>Nenhum departamento</h3><p>Crie um departamento para começar a estruturar os OKRs.</p></div>`;
+            }
+
+            // Departamentos
+            depts.forEach((dept, idx) => {
+                const pct = calcDeptPct(dept);
+                let nObj = (dept.objetivos||[]).length;
+                html += `<div class="dept" id="dept-${dept.id}">
+                    <div class="dept-head" onclick="toggleDept('${dept.id}')">
+                        <div class="dept-head-left">
+                            <span class="material-symbols-rounded dept-chevron">chevron_right</span>
+                            <span class="dept-nome">${escH(dept.nome)}</span>
+                            <span class="dept-badge">${nObj} objetivo${nObj!==1?'s':''}</span>
+                        </div>
+                        <div class="dept-prog" onclick="event.stopPropagation()">
+                            <div class="dept-prog-bar"><div class="dept-prog-fill" style="width:${pct}%; background:${corProgresso(pct)};"></div></div>
+                            <span class="dept-prog-pct">${pct}%</span>
+                            <div class="dept-actions">
+                                <div class="btn-mini" onclick="abrirDept('${dept.id}','${escH(dept.nome)}')" title="Renomear"><span class="material-symbols-rounded" style="font-size:16px;">edit</span></div>
+                                <div class="btn-mini danger" onclick="excluirItem('departamento','${dept.id}','Excluir o departamento e tudo dentro dele?')" title="Excluir"><span class="material-symbols-rounded" style="font-size:16px;">delete</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dept-body">${renderObjetivos(dept)}</div>
+                </div>`;
+            });
+
+            c.innerHTML = html;
+        }
+
+        function renderObjetivos(dept) {
+            let html = '';
+            (dept.objetivos||[]).forEach(obj => {
+                html += `<div class="obj">
+                    <div class="obj-head">
+                        <div class="obj-titulo">${escH(obj.titulo)}</div>
+                        <div class="obj-actions">
+                            <div class="btn-mini" onclick="abrirObj('${dept.id}','${obj.id}',${JSON.stringify(escH(obj.titulo)).replace(/"/g,'&quot;')})" title="Editar"><span class="material-symbols-rounded" style="font-size:15px;">edit</span></div>
+                            <div class="btn-mini danger" onclick="excluirItem('objetivo','${obj.id}','Excluir este objetivo e seus KRs?')" title="Excluir"><span class="material-symbols-rounded" style="font-size:15px;">delete</span></div>
+                        </div>
+                    </div>`;
+                (obj.key_results||[]).forEach(kr => {
+                    const pct = calcKrPct(kr);
+                    html += `<div class="kr">
+                        <div class="kr-head">
+                            <div class="kr-desc">${escH(kr.descricao)}</div>
+                            <div class="obj-actions">
+                                <div class="btn-mini" onclick='abrirKr("${obj.id}", ${JSON.stringify(kr).replace(/'/g,"&#39;")})' title="Editar"><span class="material-symbols-rounded" style="font-size:15px;">edit</span></div>
+                                <div class="btn-mini danger" onclick="excluirItem('kr','${kr.id}','Excluir este KR e suas tarefas?')" title="Excluir"><span class="material-symbols-rounded" style="font-size:15px;">delete</span></div>
+                            </div>
+                        </div>
+                        <div class="kr-prog">
+                            <div class="kr-prog-bar"><div class="kr-prog-fill" style="width:${pct}%; background:${corProgresso(pct)};"></div></div>
+                            <span class="kr-prog-vals">${fmtNum(kr.valor_atual)} / ${fmtNum(kr.valor_meta)}</span>
+                            <span class="kr-prog-pct" style="color:${corProgresso(pct)};">${pct}%</span>
+                        </div>
+                        <div class="tasks">${renderTarefas(kr)}</div>
+                        <div class="btn-add-inline" onclick="abrirTarefa('${kr.id}')"><span class="material-symbols-rounded" style="font-size:14px;">add</span> Adicionar tarefa</div>
+                    </div>`;
+                });
+                html += `<div class="btn-add-inline" onclick="abrirKr('${obj.id}')"><span class="material-symbols-rounded" style="font-size:14px;">add</span> Adicionar Key Result</div>`;
+                html += `</div>`;
+            });
+            html += `<div class="btn-add-inline" style="margin-left:6px;" onclick="abrirObj('${dept.id}')"><span class="material-symbols-rounded" style="font-size:14px;">add</span> Adicionar objetivo</div>`;
+            return html;
+        }
+
+        function renderTarefas(kr) {
+            let html = '';
+            (kr.tarefas||[]).forEach(t => {
+                const st = t.status || 'Não iniciado';
+                const cls = st === 'Finalizado' ? 'badge-finalizado' : st === 'Em andamento' ? 'badge-em-andamento' : 'badge-nao-iniciado';
+                const dot = st === 'Finalizado' ? '#14b8a6' : st === 'Em andamento' ? '#f59e0b' : '#a1a1aa';
+                html += `<div class="task">
+                    <div class="task-status-dot" style="background:${dot};"></div>
+                    <div class="task-desc">${escH(t.descricao)}</div>
+                    ${t.responsavel ? `<div class="task-owner">${escH(t.responsavel)}</div>` : ''}
+                    ${t.prazo ? `<div class="task-prazo"><span class="material-symbols-rounded" style="font-size:13px;">event</span> ${fmtData(t.prazo)}</div>` : ''}
+                    <div class="task-badge ${cls}">${escH(st)}</div>
+                    ${t.link_entregavel ? `<a class="task-link" href="${escH(t.link_entregavel)}" target="_blank" title="Entregável"><span class="material-symbols-rounded" style="font-size:16px;">link</span></a>` : ''}
+                    <div class="task-actions">
+                        <div class="btn-mini" onclick='abrirTarefa("${kr.id}", ${JSON.stringify(t).replace(/'/g,"&#39;")})' title="Editar"><span class="material-symbols-rounded" style="font-size:15px;">edit</span></div>
+                        <div class="btn-mini danger" onclick="excluirItem('tarefa','${t.id}','Excluir esta tarefa?')" title="Excluir"><span class="material-symbols-rounded" style="font-size:15px;">delete</span></div>
+                    </div>
+                </div>`;
+            });
+            return html;
+        }
+
+        function fmtNum(n) {
+            const v = parseFloat(n) || 0;
+            return v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+        }
+        function fmtData(d) {
+            if (!d) return '';
+            const p = String(d).split('-');
+            return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+        }
+
+        function toggleDept(id) {
+            document.getElementById('dept-' + id).classList.toggle('aberto');
+        }
+
+        // ===== MODAIS =====
+        function abrirMacro() {
+            const m = dadosArvore.macro || {};
+            modalCtx = { tipo: 'macro', id: m.id };
+            document.getElementById('modalTitulo').textContent = 'Objetivo Macro';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div class="input-group"><label>Título do Objetivo Macro</label><textarea id="f_titulo" placeholder="Ex: Atingir R$ 1.5M em vendas">${escH(m.titulo||'')}</textarea></div>
+                <div class="input-group"><label>Ciclo (ano)</label><input type="text" id="f_ciclo" value="${escH(m.ciclo||'2026')}" placeholder="2026"></div>`;
+            abrirModal();
+        }
+
+        function abrirDept(id, nome) {
+            modalCtx = { tipo: 'departamento', id: id || null };
+            document.getElementById('modalTitulo').textContent = id ? 'Renomear Departamento' : 'Novo Departamento';
+            document.getElementById('modalCorpo').innerHTML = `<div class="input-group"><label>Nome do Departamento</label><input type="text" id="f_nome" value="${escH(nome||'')}" placeholder="Ex: Comercial" autofocus></div>`;
+            abrirModal();
+        }
+
+        function abrirObj(deptId, objId, titulo) {
+            modalCtx = { tipo: 'objetivo', id: objId || null, departamento_id: deptId };
+            document.getElementById('modalTitulo').textContent = objId ? 'Editar Objetivo' : 'Novo Objetivo';
+            document.getElementById('modalCorpo').innerHTML = `<div class="input-group"><label>Título do Objetivo</label><textarea id="f_titulo" placeholder="Descreva o objetivo do departamento">${objId ? escH(titulo||'') : ''}</textarea></div>`;
+            abrirModal();
+        }
+
+        function abrirKr(objId, kr) {
+            kr = kr || {};
+            modalCtx = { tipo: 'kr', id: kr.id || null, parent_id: objId };
+            document.getElementById('modalTitulo').textContent = kr.id ? 'Editar Key Result' : 'Novo Key Result';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div class="input-group"><label>Descrição do KR</label><textarea id="f_desc" placeholder="O que será medido">${escH(kr.descricao||'')}</textarea></div>
+                <div class="input-row">
+                    <div class="input-group"><label>Valor Atual</label><input type="number" id="f_atual" value="${kr.valor_atual!=null?kr.valor_atual:0}" step="any"></div>
+                    <div class="input-group"><label>Meta</label><input type="number" id="f_meta" value="${kr.valor_meta!=null?kr.valor_meta:0}" step="any"></div>
+                </div>`;
+            abrirModal();
+        }
+
+        function abrirTarefa(krId, t) {
+            t = t || {};
+            modalCtx = { tipo: 'tarefa', id: t.id || null, parent_id: krId };
+            document.getElementById('modalTitulo').textContent = t.id ? 'Editar Tarefa' : 'Nova Tarefa';
+            const statusOpts = ['Não iniciado','Em andamento','Finalizado'].map(s => `<option value="${s}" ${t.status===s?'selected':''}>${s}</option>`).join('');
+            document.getElementById('modalCorpo').innerHTML = `
+                <div class="input-group"><label>Descrição</label><textarea id="f_desc" placeholder="O que precisa ser feito">${escH(t.descricao||'')}</textarea></div>
+                <div class="input-row">
+                    <div class="input-group"><label>Responsável</label><input type="text" id="f_resp" value="${escH(t.responsavel||'')}" placeholder="Nome"></div>
+                    <div class="input-group"><label>Prazo</label><input type="date" id="f_prazo" value="${t.prazo||''}"></div>
+                </div>
+                ${t.id ? `<div class="input-group"><label>Status</label><select id="f_status">${statusOpts}</select></div>` : ''}
+                <div class="input-group"><label>Link do Entregável (opcional)</label><input type="text" id="f_link" value="${escH(t.link_entregavel||'')}" placeholder="https://..."></div>`;
+            abrirModal();
+        }
+
+        function abrirModal(){ document.getElementById('modal').classList.add('show'); }
+        function fecharModal(){ document.getElementById('modal').classList.remove('show'); }
+
+        async function salvarModal() {
+            const t = modalCtx.tipo;
+            let url = '', method = 'POST', payload = {};
+
+            if (t === 'macro') {
+                url = '/api/okr/macro';
+                payload = { id: modalCtx.id, cliente_id: clienteAtual, titulo: val('f_titulo'), ciclo: val('f_ciclo') };
+                if (!payload.titulo) return showToast('Informe o título.', 'error');
+            } else if (t === 'departamento') {
+                url = '/api/okr/departamento';
+                payload = { id: modalCtx.id, cliente_id: clienteAtual, nome: val('f_nome') };
+                if (!payload.nome) return showToast('Informe o nome.', 'error');
+            } else if (t === 'objetivo') {
+                url = '/api/okr/item'; method = modalCtx.id ? 'PUT' : 'POST';
+                payload = { tipo: 'objetivo', id: modalCtx.id, cliente_id: clienteAtual, departamento_id: modalCtx.departamento_id, titulo: val('f_titulo') };
+                if (!payload.titulo) return showToast('Informe o título.', 'error');
+            } else if (t === 'kr') {
+                url = '/api/okr/item'; method = modalCtx.id ? 'PUT' : 'POST';
+                payload = { tipo: 'kr', id: modalCtx.id, parent_id: modalCtx.parent_id, descricao: val('f_desc'), valor_atual: val('f_atual'), valor_meta: val('f_meta') };
+                if (!payload.descricao) return showToast('Informe a descrição.', 'error');
+            } else if (t === 'tarefa') {
+                url = '/api/okr/item'; method = modalCtx.id ? 'PUT' : 'POST';
+                payload = { tipo: 'tarefa', id: modalCtx.id, parent_id: modalCtx.parent_id, descricao: val('f_desc'), responsavel: val('f_resp'), prazo: val('f_prazo'), link_entregavel: val('f_link'), status: modalCtx.id ? val('f_status') : 'Não iniciado' };
+                if (!payload.descricao) return showToast('Informe a descrição.', 'error');
+            }
+
+            const btn = document.getElementById('btnSalvarModal');
+            btn.disabled = true; btn.textContent = 'SALVANDO...';
+            try {
+                const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if (res.ok) { showToast('Salvo!', 'success'); fecharModal(); carregarArvore(); }
+                else { const e = await res.json(); showToast('Erro: ' + (e.mensagem||'falha'), 'error'); }
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'SALVAR'; }
+        }
+
+        async function excluirItem(tipo, id, msg) {
+            if (!confirm(msg || 'Excluir?')) return;
+            let url, opts;
+            if (tipo === 'departamento') {
+                url = '/api/okr/departamento/' + id; opts = { method: 'DELETE' };
+            } else {
+                url = '/api/okr/item'; opts = { method: 'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tipo, id }) };
+            }
+            try {
+                const res = await fetch(url, opts);
+                if (res.ok) { showToast('Excluído.', 'success'); carregarArvore(); }
+                else showToast('Erro ao excluir.', 'error');
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+
+        function val(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+        function showToast(msg, tipo='success') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px; color:${tipo==='success'?'var(--accent-lime)':'var(--accent-pink)'};">${tipo==='success'?'check_circle':'error'}</span>${msg}`;
+            c.appendChild(t); setTimeout(() => t.remove(), 3500);
+        }
+
+        document.getElementById('modal').addEventListener('click', function(e){ if(e.target===this) fecharModal(); });
+    </script>
+</body>
+</html>
