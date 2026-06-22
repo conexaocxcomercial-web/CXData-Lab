@@ -44,30 +44,27 @@
         .breadcrumb .sep { opacity: 0.4; }
 
         /* ===== NÍVEL 1: HERO DE SAÚDE + GRID DE DEPARTAMENTOS ===== */
-        .hero { display: grid; grid-template-columns: 320px 1fr; gap: 16px; margin-bottom: 22px; }
-        .hero-saude { background: linear-gradient(150deg, #1e1e1e 0%, #2b2950 100%); color: #fff; padding: 26px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
-        .hero-saude::after { content:''; position:absolute; bottom:-50px; right:-30px; width:200px; height:200px; background: radial-gradient(circle, rgba(115,113,255,0.4), transparent 70%); }
-        .hero-saude-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-lime); display:flex; align-items:center; gap:6px; position:relative; z-index:1; }
-        .hero-ring-wrap { display: flex; align-items: center; gap: 18px; margin-top: 18px; position: relative; z-index: 1; }
-        .hero-pct { font-size: 52px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
-        .hero-pct-label { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; margin-top: 4px; }
-        .hero-macro { margin-top: 20px; position: relative; z-index: 1; }
-        .hero-macro-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.45); margin-bottom: 5px; display:flex; align-items:center; gap:6px; }
-        .hero-macro-txt { font-size: 14px; font-weight: 700; line-height: 1.35; cursor: pointer; }
-        .hero-macro-txt:hover { color: var(--accent-lime); }
+        .hero { display: grid; grid-template-columns: 300px 1fr; gap: 14px; margin-bottom: 26px; }
+        /* Saúde do ciclo — claro e minimalista, com anel de progresso */
+        .hero-saude { background: #fff; padding: 24px 26px; display: flex; align-items: center; gap: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
+        .saude-ring { position: relative; width: 92px; height: 92px; flex-shrink: 0; }
+        .saude-ring-pct { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .saude-ring-num { font-size: 24px; font-weight: 900; letter-spacing: -1px; line-height: 1; }
+        .saude-info { min-width: 0; }
+        .saude-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+        .saude-macro-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+        .saude-macro-txt { font-size: 13px; font-weight: 700; line-height: 1.35; cursor: pointer; color: var(--text-main); transition: 0.15s; }
+        .saude-macro-txt:hover { color: var(--primary-purple); }
 
-        .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .stat-card { background: #fff; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); position: relative; overflow: hidden; }
-        .stat-card::after { content:''; position:absolute; top:0; left:0; width:100%; height:3px; }
-        .stat-card.c-green::after { background: var(--green); }
-        .stat-card.c-amber::after { background: var(--amber); }
-        .stat-card.c-red::after { background: var(--red); }
-        .stat-card.c-purple::after { background: var(--primary-purple); }
-        .stat-icon { width: 38px; height: 38px; display:flex; align-items:center; justify-content:center; border-radius: 12px !important; margin-bottom: 14px; }
-        .stat-num { font-size: 30px; font-weight: 900; letter-spacing: -1px; }
-        .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .stat-card { background: #fff; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; }
+        .stat-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .stat-icon { width: 34px; height: 34px; display:flex; align-items:center; justify-content:center; border-radius: 10px !important; flex-shrink: 0; }
+        .stat-icon .material-symbols-rounded { font-size: 19px; }
+        .stat-card-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-num { font-size: 34px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
 
-        .section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin: 6px 0 14px; display: flex; align-items: center; justify-content: space-between; }
+        .section-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin: 4px 0 16px; display: flex; align-items: center; justify-content: space-between; }
 
         /* Grid de cards de departamento */
         .dept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
@@ -333,23 +330,36 @@
             const geral = calcGeralPct();
             const cnt = contar();
 
+            const r = 40, circ = 2 * Math.PI * r, off = circ * (1 - geral/100);
             let html = `<div class="hero">
                 <div class="hero-saude">
-                    <div>
-                        <div class="hero-saude-tag"><span class="material-symbols-rounded" style="font-size:13px;">monitoring</span> Saúde do Ciclo</div>
-                        <div class="hero-ring-wrap">
-                            <div><div class="hero-pct" style="color:${geral>=70?'var(--accent-lime)':geral>=40?'#fbbf24':'#f87171'}">${geral}%</div><div class="hero-pct-label">progresso geral</div></div>
-                        </div>
+                    <div class="saude-ring">
+                        <svg width="92" height="92" viewBox="0 0 92 92">
+                            <circle cx="46" cy="46" r="${r}" fill="none" stroke="#f0f0f1" stroke-width="8"/>
+                            <circle cx="46" cy="46" r="${r}" fill="none" stroke="${cor(geral)}" stroke-width="8" stroke-linecap="round"
+                                stroke-dasharray="${circ}" stroke-dashoffset="${off}" transform="rotate(-90 46 46)" style="transition:stroke-dashoffset 0.6s;"/>
+                        </svg>
+                        <div class="saude-ring-pct"><span class="saude-ring-num" style="color:${cor(geral)};">${geral}%</span></div>
                     </div>
-                    <div class="hero-macro">
-                        <div class="hero-macro-label"><span class="material-symbols-rounded" style="font-size:12px;">flag</span> Objetivo Macro ${macro && macro.ciclo ? '· '+escH(macro.ciclo) : ''}</div>
-                        <div class="hero-macro-txt" onclick="abrirMacro()">${macro && macro.titulo ? escH(macro.titulo) : '<span style="opacity:0.6">Clique para definir o objetivo macro →</span>'}</div>
+                    <div class="saude-info">
+                        <div class="saude-tag">Saúde do Ciclo</div>
+                        <div class="saude-macro-label"><span class="material-symbols-rounded" style="font-size:11px;">flag</span> Objetivo Macro ${macro && macro.ciclo ? '· '+escH(macro.ciclo) : ''}</div>
+                        <div class="saude-macro-txt" onclick="abrirMacro()">${macro && macro.titulo ? escH(macro.titulo) : '<span style="opacity:0.55">Definir objetivo macro →</span>'}</div>
                     </div>
                 </div>
                 <div class="hero-stats">
-                    <div class="stat-card c-purple"><div class="stat-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:var(--primary-purple);">domain</span></div><div class="stat-num">${depts.length}</div><div class="stat-label">Departamentos</div></div>
-                    <div class="stat-card c-purple"><div class="stat-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:var(--primary-purple);">target</span></div><div class="stat-num">${cnt.nObj}</div><div class="stat-label">Objetivos</div></div>
-                    <div class="stat-card ${corClass(geral)}"><div class="stat-icon" style="background:#f4f4f5;"><span class="material-symbols-rounded" style="color:${cor(geral)};">trending_up</span></div><div class="stat-num">${cnt.nKr}</div><div class="stat-label">Key Results</div></div>
+                    <div class="stat-card">
+                        <div class="stat-top"><div class="stat-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:var(--primary-purple);">domain</span></div><span class="stat-card-label">Departamentos</span></div>
+                        <div class="stat-num">${depts.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-top"><div class="stat-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:var(--primary-purple);">target</span></div><span class="stat-card-label">Objetivos</span></div>
+                        <div class="stat-num">${cnt.nObj}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-top"><div class="stat-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:var(--primary-purple);">trending_up</span></div><span class="stat-card-label">Key Results</span></div>
+                        <div class="stat-num">${cnt.nKr}</div>
+                    </div>
                 </div>
             </div>`;
 
