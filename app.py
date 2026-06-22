@@ -1353,18 +1353,77 @@ def excluir_planejamento(item_id):
 # ============================================================
 
 def pode_ver_okr():
-    """Admin/gestor sempre; colaborador e personalizado conforme módulo liberado."""
+    """Admin/gestor sempre; colaborador e personalizado conforme módulo liberado.
+    Externo precisa do módulo 'okr' liberado."""
     nivel = session.get('nivel_acesso')
     if nivel in ('admin', 'gestor'):
         return True
     return pode_acessar_modulo('okr')
 
+def clientes_okr_permitidos():
+    """Retorna a lista de clientes que o usuário logado pode ver no OKR,
+    e se ele tem direito ao seletor.
+    - Externo: travado no cliente vinculado (sem seletor)
+    - Admin/Gestor: todos os clientes (com seletor)
+    - Personalizado: conforme perm_clientes_modo (com seletor filtrado)
+    Retorna (lista_clientes, mostra_seletor, cliente_travado_id)."""
+    res_clientes = supabase.table("clientes").select("id, nome_empresa, excluido_em").execute()
+    todos = sorted(
+        [{"id": str(c["id"]), "nome": c.get("nome_empresa")} for c in res_clientes.data if not c.get("excluido_em")],
+        key=lambda x: (x["nome"] or "").lower()
+    )
+
+    # EXTERNO: travado no cliente vinculado, sem seletor
+    if is_externo():
+        cid = str(session.get('cliente_vinculado_id') or '')
+        meus = [c for c in todos if c["id"] == cid]
+        return meus, False, (cid or None)
+
+    nivel = session.get('nivel_acesso')
+    # ADMIN / GESTOR: todos, com seletor
+    if nivel in ('admin', 'gestor'):
+        return todos, True, None
+
+    # PERSONALIZADO: conforme a permissão de clientes
+    modo = session.get('perm_clientes_modo') or 'todos'
+    if modo == 'todos':
+        return todos, True, None
+    elif modo == 'selecionados':
+        ids = set(str(x) for x in (session.get('perm_clientes_ids') or []))
+        permitidos = [c for c in todos if c["id"] in ids]
+        return permitidos, True, None
+    elif modo == 'proprios':
+        # Clientes dos projetos onde ele é responsável
+        try:
+            meu_nome = (session.get('usuario_nome') or '').strip().lower()
+            res_proj = supabase.table("projetos").select("cliente_id, responsavel, excluido_em").execute()
+            ids_proprios = set()
+            for p in res_proj.data:
+                if p.get("excluido_em"): continue
+                if (p.get("responsavel") or "").strip().lower() == meu_nome and p.get("cliente_id"):
+                    ids_proprios.add(str(p["cliente_id"]))
+            permitidos = [c for c in todos if c["id"] in ids_proprios]
+            return permitidos, True, None
+        except Exception:
+            return [], True, None
+    return todos, True, None
+
 @app.route('/okr')
+@app.route('/okr/gestao')
 def okr_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     if not pode_ver_okr():
         return redirect(url_for('index'))
+    return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+
+@app.route('/okr/dashboard')
+def okr_dashboard_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not pode_ver_okr():
+        return redirect(url_for('index'))
+    # O Dashboard do OKR será construído na próxima fase.
     return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/okr/arvore', methods=['GET'])
@@ -1375,15 +1434,24 @@ def okr_arvore():
     if not pode_ver_okr(): return jsonify({"erro": "Acesso negado"}), 403
     cliente_id = request.args.get('cliente_id')
     try:
-        # Lista de clientes para o seletor
-        res_clientes = supabase.table("clientes").select("id, nome_empresa").execute()
-        clientes = sorted(
-            [{"id": str(c["id"]), "nome": c.get("nome_empresa")} for c in res_clientes.data if not c.get("excluido_em")],
-            key=lambda x: (x["nome"] or "").lower()
-        )
+        # Clientes que ESTE usuário pode ver + se tem seletor
+        clientes, mostra_seletor, cliente_travado = clientes_okr_permitidos()
+
+        # Externo (ou travado): força o cliente vinculado, ignora o que veio na URL
+        if cliente_travado:
+            cliente_id = cliente_travado
+
+        # Se não veio cliente e há um só permitido, já abre nele
+        if not cliente_id and len(clientes) == 1:
+            cliente_id = clientes[0]["id"]
+
+        # Segurança: o cliente pedido tem que estar entre os permitidos
+        ids_permitidos = {c["id"] for c in clientes}
+        if cliente_id and cliente_id not in ids_permitidos:
+            return jsonify({"erro": "Acesso negado a este cliente"}), 403
 
         if not cliente_id:
-            return jsonify({"status": "sucesso", "clientes": clientes, "macro": None, "departamentos": []}), 200
+            return jsonify({"status": "sucesso", "clientes": clientes, "mostra_seletor": mostra_seletor, "macro": None, "departamentos": []}), 200
 
         # Macro objetivo do cliente
         res_macro = supabase.table("okr_macro_objetivos").select("*").eq("cliente_id", cliente_id).execute()
@@ -1428,6 +1496,8 @@ def okr_arvore():
         return jsonify({
             "status": "sucesso",
             "clientes": clientes,
+            "mostra_seletor": mostra_seletor,
+            "cliente_atual": cliente_id,
             "macro": macro,
             "departamentos": departamentos
         }), 200
