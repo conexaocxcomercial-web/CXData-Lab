@@ -62,6 +62,18 @@
 .cxsidebar:hover .cxsb-item-label { opacity: 1; }
 
 .cxsb-divider { height: 1px; background: #f4f4f5; margin: 6px 10px; flex-shrink: 0; }
+
+/* Submenu (OKR) */
+.cxsb-parent { position: relative; }
+.cxsb-caret { font-size: 16px !important; min-width: 16px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s, transform 0.2s; }
+.cxsidebar:hover .cxsb-caret { opacity: 0.6; }
+.cxsb-parent.aberto .cxsb-caret { transform: rotate(180deg); }
+.cxsb-sub { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+.cxsb-sub.aberto { max-height: 120px; }
+.cxsb-subitem { display: flex; align-items: center; gap: 14px; padding: 9px 18px 9px 26px; margin: 1px 8px; cursor: pointer; color: #71717a; transition: 0.15s; border-radius: 10px !important; }
+.cxsb-subitem:hover { background: #f4f4f5; color: #1e1e1e; }
+.cxsb-subitem.active { background: #f0efff; color: #7371ff; }
+.cxsb-subitem .material-symbols-rounded { font-size: 19px; min-width: 19px; flex-shrink: 0; }
 </style>
 
 <nav class="cxsidebar" id="cxSidebar">
@@ -114,9 +126,20 @@
         </div>
         {% endif %}
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'okr' in perm_modulos) %}
-        <div class="cxsb-item" data-path="/okr" onclick="window.location.href='/okr'">
+        <div class="cxsb-item cxsb-parent" id="okrParent" onclick="toggleOkrSub(event)">
             <span class="material-symbols-rounded">target</span>
             <span class="cxsb-item-label">OKR</span>
+            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
+        </div>
+        <div class="cxsb-sub" id="okrSub">
+            <div class="cxsb-subitem" data-path="/okr/gestao" onclick="window.location.href='/okr/gestao'">
+                <span class="material-symbols-rounded">account_tree</span>
+                <span class="cxsb-item-label">Gestão</span>
+            </div>
+            <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="window.location.href='/okr/dashboard'">
+                <span class="material-symbols-rounded">insights</span>
+                <span class="cxsb-item-label">Dashboard</span>
+            </div>
         </div>
         {% endif %}
         {% endif %}
@@ -155,12 +178,28 @@
 <script>
 (function() {
     var curr = window.location.pathname;
-    // Compatibilidade: /planejamento e /agenda apontam para o mesmo item
     if (curr === '/planejamento') curr = '/agenda';
+    if (curr === '/okr') curr = '/okr/gestao';
     document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
         var path = item.getAttribute('data-path');
         var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
         if (match) item.classList.add('active');
     });
+    // Submenu OKR: marca subitem ativo e abre o submenu se estiver numa página de OKR
+    var emOkr = false;
+    document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(sub) {
+        var path = sub.getAttribute('data-path');
+        if (curr === path || curr.startsWith(path + '/')) { sub.classList.add('active'); emOkr = true; }
+    });
+    if (emOkr) {
+        var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
+        if (p) p.classList.add('aberto'); if (s) s.classList.add('aberto');
+    }
 })();
+
+function toggleOkrSub(e) {
+    e.stopPropagation();
+    var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
+    p.classList.toggle('aberto'); s.classList.toggle('aberto');
+}
 </script>
