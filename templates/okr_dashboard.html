@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKR · Dashboard | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0;
+                --green:#14b8a6; --amber:#eab308; --red:#f87171; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+
+        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+
+        .command-bar { padding: 22px 40px 6px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px; }
+        .cb-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .cb-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+        .cb-title .material-symbols-rounded { color: var(--primary-purple); }
+        .cliente-sel { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #fff; border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); min-width: 230px; }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 14px 40px 60px 40px; }
+
+        .empty { text-align: center; padding: 90px 20px; color: var(--text-muted); }
+        .empty .material-symbols-rounded { font-size: 64px; opacity: 0.18; display: block; margin-bottom: 16px; }
+        .empty h3 { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
+        .empty p { font-size: 13px; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+        .loading { text-align: center; padding: 80px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+
+        /* Grid principal */
+        .dash-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+        .card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; }
+        .card-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+        /* Progresso global (destaque) */
+        .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; }
+        .col-6 { grid-column: span 6; } .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
+
+        .global-card { display: flex; flex-direction: column; justify-content: center; }
+        .global-pct { font-size: 64px; font-weight: 900; letter-spacing: -3px; line-height: 1; }
+        .global-bar { height: 12px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; margin-top: 18px; }
+        .global-bar-fill { height: 100%; border-radius: 50px !important; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+
+        /* KPIs simples */
+        .kpi-card { display: flex; flex-direction: column; justify-content: center; }
+        .kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .kpi-icon { width: 38px; height: 38px; display:flex; align-items:center; justify-content:center; border-radius: 11px !important; flex-shrink: 0; }
+        .kpi-icon .material-symbols-rounded { font-size: 20px; }
+        .kpi-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-num { font-size: 42px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .kpi-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
+
+        .chart-wrap { position: relative; height: 240px; }
+        .chart-wrap.tall { height: 320px; }
+
+        /* Legenda rosca */
+        .donut-legend { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+        .leg-item { display: flex; align-items: center; gap: 10px; }
+        .leg-dot { width: 12px; height: 12px; border-radius: 50% !important; flex-shrink: 0; }
+        .leg-txt { font-size: 13px; font-weight: 700; }
+        .leg-num { font-size: 13px; font-weight: 800; margin-left: auto; color: var(--text-muted); }
+        .donut-row { display: flex; gap: 24px; align-items: center; }
+        .donut-box { position: relative; width: 200px; height: 200px; flex-shrink: 0; }
+        .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .donut-center-num { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; }
+        .donut-center-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+
+        /* Ranking de departamentos */
+        .rank-list { display: flex; flex-direction: column; gap: 14px; }
+        .rank-item { display: flex; align-items: center; gap: 14px; }
+        .rank-pos { width: 26px; height: 26px; border-radius: 50% !important; background: #f4f4f5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--text-muted); flex-shrink: 0; }
+        .rank-pos.top { background: var(--primary-purple); color: #fff; }
+        .rank-info { flex-grow: 1; min-width: 0; }
+        .rank-nome { font-size: 13px; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .rank-pct { font-weight: 800; }
+        .rank-bar { height: 7px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; }
+        .rank-bar-fill { height: 100%; border-radius: 50px !important; transition: width 0.8s; }
+
+        /* Lista de alertas (KRs em risco / tarefas atrasadas) */
+        .alert-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
+        .alert-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fafafb; }
+        .alert-icon { width: 32px; height: 32px; border-radius: 9px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .alert-icon .material-symbols-rounded { font-size: 17px; }
+        .alert-body { flex-grow: 1; min-width: 0; }
+        .alert-desc { font-size: 12px; font-weight: 700; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .alert-meta { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-top: 3px; }
+        .alert-val { font-size: 14px; font-weight: 900; flex-shrink: 0; }
+        .alert-vazio { text-align: center; padding: 30px; color: var(--text-muted); font-size: 12px; font-weight: 600; }
+        .alert-vazio .material-symbols-rounded { font-size: 30px; color: var(--green); display: block; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="command-bar">
+        <div class="cb-left">
+            <span class="cb-title"><span class="material-symbols-rounded">insights</span> OKR · Dashboard</span>
+            <select class="cliente-sel" id="selCliente" onchange="trocarCliente()">
+                <option value="">Selecione um cliente...</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="scroll-area" id="conteudo">
+        <div class="empty">
+            <span class="material-symbols-rounded">insights</span>
+            <h3>Selecione um cliente</h3>
+            <p>Escolha um cliente acima para ver o painel de indicadores dos OKRs.</p>
+        </div>
+    </div>
+
+    <script>
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
+        let clienteAtual = '';
+        let dados = null;
+        let charts = {};
+
+        document.addEventListener('DOMContentLoaded', carregarInicial);
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function fmtData(d){ if(!d) return ''; const p=String(d).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; }
+
+        async function carregarInicial() {
+            try {
+                const res = await fetch('/api/okr/arvore');
+                if (res.status === 403) { document.getElementById('conteudo').innerHTML = '<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                const data = await res.json();
+                const mostraSeletor = data.mostra_seletor !== false;
+                const sel = document.getElementById('selCliente');
+                if (!mostraSeletor) {
+                    sel.style.display = 'none';
+                    if (data.cliente_atual || (data.clientes||[]).length === 1) {
+                        clienteAtual = data.cliente_atual || data.clientes[0].id;
+                        await carregar();
+                    } else {
+                        document.getElementById('conteudo').innerHTML = '<div class="empty"><span class="material-symbols-rounded">insights</span><h3>Nenhum OKR vinculado</h3><p>Seu acesso ainda não tem um OKR associado.</p></div>';
+                    }
+                    return;
+                }
+                sel.innerHTML = '<option value="">Selecione um cliente...</option>' +
+                    (data.clientes||[]).map(c => `<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+                if ((data.clientes||[]).length === 1) {
+                    sel.value = data.clientes[0].id; clienteAtual = data.clientes[0].id; await carregar();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function trocarCliente() {
+            clienteAtual = document.getElementById('selCliente').value;
+            if (!clienteAtual) {
+                document.getElementById('conteudo').innerHTML = '<div class="empty"><span class="material-symbols-rounded">insights</span><h3>Selecione um cliente</h3><p>Escolha um cliente acima para ver o painel de indicadores.</p></div>';
+                return;
+            }
+            await carregar();
+        }
+
+        async function carregar() {
+            document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando indicadores...</div>';
+            try {
+                const res = await fetch('/api/okr/arvore?cliente_id=' + encodeURIComponent(clienteAtual));
+                dados = await res.json();
+                render();
+            } catch(e) { console.error(e); }
+        }
+
+        // ===== CÁLCULOS =====
+        function calcKrPct(kr){ const meta=parseFloat(kr.valor_meta)||0, atual=parseFloat(kr.valor_atual)||0; if(meta<=0) return 0; return Math.min(100, Math.round((atual/meta)*100)); }
+        function calcDeptPct(dept){ let krs=[]; (dept.objetivos||[]).forEach(o=>(o.key_results||[]).forEach(k=>krs.push(k))); if(!krs.length) return 0; return Math.round(krs.reduce((a,k)=>a+calcKrPct(k),0)/krs.length); }
+        function cor(pct){ if(pct>=70) return getComputedStyle(document.documentElement).getPropertyValue('--green').trim(); if(pct>=40) return getComputedStyle(document.documentElement).getPropertyValue('--amber').trim(); return getComputedStyle(document.documentElement).getPropertyValue('--red').trim(); }
+
+        function coletar() {
+            const depts = dados.departamentos || [];
+            let nObj=0, nKr=0, nTask=0, st={fin:0, and:0, nao:0};
+            let krsRisco=[], tarefasAtrasadas=[];
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            let somaKrPct=0;
+
+            depts.forEach(d => {
+                (d.objetivos||[]).forEach(o => {
+                    nObj++;
+                    (o.key_results||[]).forEach(k => {
+                        nKr++;
+                        const kp = calcKrPct(k);
+                        somaKrPct += kp;
+                        if (kp < 40) krsRisco.push({desc:k.descricao, pct:kp, dept:d.nome});
+                        (k.tarefas||[]).forEach(t => {
+                            nTask++;
+                            const s = t.status||'Não iniciado';
+                            if (s==='Finalizado') st.fin++;
+                            else if (s==='Em andamento') st.and++;
+                            else st.nao++;
+                            // Atrasada: tem prazo no passado e não finalizada
+                            if (t.prazo && s!=='Finalizado') {
+                                const d2 = new Date(t.prazo+'T00:00:00');
+                                if (d2 < hoje) tarefasAtrasadas.push({desc:t.descricao, prazo:t.prazo, resp:t.responsavel, dept:d.nome});
+                            }
+                        });
+                    });
+                });
+            });
+            const globalPct = nKr>0 ? Math.round(somaKrPct/nKr) : 0;
+            krsRisco.sort((a,b)=>a.pct-b.pct);
+            tarefasAtrasadas.sort((a,b)=>a.prazo.localeCompare(b.prazo));
+            return {depts, nObj, nKr, nTask, st, krsRisco, tarefasAtrasadas, globalPct};
+        }
+
+        function render() {
+            Object.values(charts).forEach(c => { try{c.destroy();}catch(e){} });
+            charts = {};
+            const m = coletar();
+            const macro = dados.macro;
+            const GREEN=cor(80), AMBER=cor(50), RED=cor(20), PURPLE=getComputedStyle(document.documentElement).getPropertyValue('--primary-purple').trim();
+
+            let html = `<div class="dash-grid">`;
+
+            // Linha 1: Progresso Global + KPIs
+            html += `<div class="card col-4 global-card">
+                <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">target</span> Progresso Global</div>
+                <div class="global-pct" style="color:${cor(m.globalPct)};">${m.globalPct}%</div>
+                <div class="global-bar"><div class="global-bar-fill" id="globalBar" style="width:0%; background:${cor(m.globalPct)};"></div></div>
+                ${macro&&macro.titulo?`<div class="kpi-sub" style="margin-top:14px;">${escH(macro.titulo)}</div>`:''}
+            </div>`;
+
+            html += `<div class="card col-2 kpi-card">
+                <div class="kpi-top"><div class="kpi-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:${PURPLE};">trending_up</span></div></div>
+                <div class="kpi-num">${m.nKr}</div><div class="kpi-label">Key Results</div>
+                <div class="kpi-sub">${m.nObj} objetivos · ${m.depts.length} deptos</div>
+            </div>`;
+
+            html += `<div class="card col-2 kpi-card">
+                <div class="kpi-top"><div class="kpi-icon" style="background:#ecfdf5;"><span class="material-symbols-rounded" style="color:${GREEN};">task_alt</span></div></div>
+                <div class="kpi-num" style="color:${GREEN};">${m.st.fin}</div><div class="kpi-label">Tarefas Feitas</div>
+                <div class="kpi-sub">de ${m.nTask} no total</div>
+            </div>`;
+
+            html += `<div class="card col-2 kpi-card">
+                <div class="kpi-top"><div class="kpi-icon" style="background:#fef2f2;"><span class="material-symbols-rounded" style="color:${RED};">warning</span></div></div>
+                <div class="kpi-num" style="color:${m.tarefasAtrasadas.length>0?RED:GREEN};">${m.tarefasAtrasadas.length}</div><div class="kpi-label">Atrasadas</div>
+                <div class="kpi-sub">${m.krsRisco.length} KRs em risco</div>
+            </div>`;
+
+            html += `<div class="card col-2 kpi-card">
+                <div class="kpi-top"><div class="kpi-icon" style="background:#fefce8;"><span class="material-symbols-rounded" style="color:${AMBER};">pace</span></div></div>
+                <div class="kpi-num" style="color:${AMBER};">${m.st.and}</div><div class="kpi-label">Em Andamento</div>
+                <div class="kpi-sub">${m.st.nao} não iniciadas</div>
+            </div>`;
+
+            // Linha 2: Status das tarefas (rosca) + Progresso por departamento (barras)
+            html += `<div class="card col-5">
+                <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">donut_large</span> Status das Tarefas</div>
+                <div class="donut-row">
+                    <div class="donut-box">
+                        <canvas id="donutStatus"></canvas>
+                        <div class="donut-center"><span class="donut-center-num">${m.nTask}</span><span class="donut-center-lbl">tarefas</span></div>
+                    </div>
+                    <div class="donut-legend">
+                        <div class="leg-item"><span class="leg-dot" style="background:${GREEN};"></span><span class="leg-txt">Finalizado</span><span class="leg-num">${m.st.fin}</span></div>
+                        <div class="leg-item"><span class="leg-dot" style="background:${AMBER};"></span><span class="leg-txt">Em andamento</span><span class="leg-num">${m.st.and}</span></div>
+                        <div class="leg-item"><span class="leg-dot" style="background:#d4d4d8;"></span><span class="leg-txt">Não iniciado</span><span class="leg-num">${m.st.nao}</span></div>
+                    </div>
+                </div>
+            </div>`;
+
+            html += `<div class="card col-7">
+                <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">bar_chart</span> Progresso por Departamento</div>
+                <div class="chart-wrap"><canvas id="barDepts"></canvas></div>
+            </div>`;
+
+            // Linha 3: Ranking + Alertas
+            const ranking = m.depts.map(d=>({nome:d.nome, pct:calcDeptPct(d)})).sort((a,b)=>b.pct-a.pct);
+            html += `<div class="card col-5">
+                <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">leaderboard</span> Ranking de Departamentos</div>
+                <div class="rank-list">
+                    ${ranking.map((r,i)=>`<div class="rank-item">
+                        <div class="rank-pos ${i===0?'top':''}">${i+1}</div>
+                        <div class="rank-info">
+                            <div class="rank-nome"><span>${escH(r.nome)}</span><span class="rank-pct" style="color:${cor(r.pct)};">${r.pct}%</span></div>
+                            <div class="rank-bar"><div class="rank-bar-fill" style="width:${r.pct}%; background:${cor(r.pct)};"></div></div>
+                        </div>
+                    </div>`).join('')}
+                </div>
+            </div>`;
+
+            // Alertas: tarefas atrasadas
+            html += `<div class="card col-7">
+                <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">priority_high</span> Tarefas Atrasadas</div>`;
+            if (m.tarefasAtrasadas.length===0) {
+                html += `<div class="alert-vazio"><span class="material-symbols-rounded">check_circle</span> Nenhuma tarefa atrasada. Tudo em dia!</div>`;
+            } else {
+                html += `<div class="alert-list">${m.tarefasAtrasadas.slice(0,30).map(t=>`
+                    <div class="alert-item">
+                        <div class="alert-icon" style="background:#fef2f2;"><span class="material-symbols-rounded" style="color:${RED};">event_busy</span></div>
+                        <div class="alert-body">
+                            <div class="alert-desc">${escH(t.desc)}</div>
+                            <div class="alert-meta">${escH(t.dept)}${t.resp?' · '+escH(t.resp):''}</div>
+                        </div>
+                        <div class="alert-val" style="color:${RED};">${fmtData(t.prazo)}</div>
+                    </div>`).join('')}</div>`;
+            }
+            html += `</div>`;
+
+            html += `</div>`;
+            document.getElementById('conteudo').innerHTML = html;
+
+            // Anima barra global
+            requestAnimationFrame(()=>{ const gb=document.getElementById('globalBar'); if(gb) gb.style.width = m.globalPct+'%'; });
+
+            // Rosca de status
+            const ctxD = document.getElementById('donutStatus');
+            if (ctxD) charts.donut = new Chart(ctxD, {
+                type: 'doughnut',
+                data: { labels:['Finalizado','Em andamento','Não iniciado'], datasets:[{ data:[m.st.fin,m.st.and,m.st.nao], backgroundColor:[GREEN,AMBER,'#d4d4d8'], borderWidth:0 }] },
+                options: { cutout:'72%', plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false }
+            });
+
+            // Barras por departamento
+            const ctxB = document.getElementById('barDepts');
+            if (ctxB) {
+                const labels = m.depts.map(d=>d.nome);
+                const valores = m.depts.map(d=>calcDeptPct(d));
+                const cores = valores.map(v=>cor(v));
+                charts.bar = new Chart(ctxB, {
+                    type: 'bar',
+                    data: { labels, datasets:[{ data:valores, backgroundColor:cores, borderRadius:0, barThickness:'flex', maxBarThickness:34 }] },
+                    options: {
+                        indexAxis: 'y', responsive:true, maintainAspectRatio:false,
+                        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(c)=>c.parsed.x+'%'}} },
+                        scales:{
+                            x:{ min:0, max:100, grid:{color:'#f0f0f1'}, ticks:{callback:v=>v+'%', font:{family:'Inter', size:11}} },
+                            y:{ grid:{display:false}, ticks:{font:{family:'Inter', size:12, weight:'700'}} }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
