@@ -131,16 +131,33 @@
         .kr-item:hover .kr-item-acoes { opacity: 1; }
 
         /* Barra de progresso + valores editáveis inline */
-        .kr-prog-linha { display: flex; align-items: center; gap: 16px; }
-        .kr-prog-track { flex-grow: 1; height: 10px; background: #e8e8ee; border-radius: 50px !important; overflow: hidden; }
-        .kr-prog-bar { height: 100%; border-radius: 50px !important; width: 0; transition: width 0.7s cubic-bezier(0.4,0,0.2,1), background 0.3s; }
-        .kr-vals { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 800; white-space: nowrap; }
-        .kr-val-edit { color: var(--text-main); cursor: text; padding: 3px 8px; border-radius: 7px !important; transition: 0.15s; min-width: 20px; text-align: center; }
-        .kr-val-edit:hover { background: #fff; box-shadow: inset 0 0 0 1.5px var(--primary-purple); }
+        /* KR com anel de progresso (no lugar da barra) */
+        .kr-item-top { display: flex; align-items: center; gap: 16px; margin-bottom: 0; }
+        .kr-ring { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+        .kr-ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; letter-spacing: -0.5px; transition: color 0.3s; }
+        .kr-main { flex-grow: 1; min-width: 0; }
+        .kr-item-desc { font-size: 13px; font-weight: 700; line-height: 1.4; color: var(--text-main); margin-bottom: 8px; }
+        .kr-vals-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+        .kr-val-edit { color: var(--text-main); cursor: text; padding: 3px 9px; border-radius: 7px !important; transition: 0.15s; background: #fff; box-shadow: inset 0 0 0 1px #e4e4e7; }
+        .kr-val-edit:hover { box-shadow: inset 0 0 0 1.5px var(--primary-purple); }
         .kr-val-sep { color: var(--text-muted); font-weight: 600; }
         .kr-val-meta { color: var(--text-muted); }
-        .kr-val-input { font-size: 13px; font-weight: 800; font-family: 'Inter', sans-serif; width: 64px; padding: 3px 8px; border-radius: 7px !important; outline: none; background: #fff; box-shadow: inset 0 0 0 1.5px var(--primary-purple); text-align: center; color: var(--text-main); }
-        .kr-pct { font-size: 17px; font-weight: 900; min-width: 50px; text-align: right; letter-spacing: -0.5px; transition: color 0.3s; }
+        .kr-val-input { font-size: 12px; font-weight: 800; font-family: 'Inter', sans-serif; width: 70px; padding: 3px 9px; border-radius: 7px !important; outline: none; background: #fff; box-shadow: inset 0 0 0 1.5px var(--primary-purple); text-align: center; color: var(--text-main); }
+        .kr-tasks-chip { font-size: 11px; font-weight: 700; color: var(--text-muted); display: inline-flex; align-items: center; gap: 5px; background: #fff; padding: 5px 11px; border-radius: 50px !important; transition: 0.15s; box-shadow: inset 0 0 0 1px #e8e8ee; cursor: pointer; }
+        .kr-tasks-chip:hover { background: var(--primary-purple); color: #fff; box-shadow: none; }
+        .kr-right-col { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .kr-menu-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; border-radius: 8px !important; transition: 0.15s; opacity: 0; }
+        .kr-item:hover .kr-menu-btn { opacity: 1; }
+        .kr-menu-btn:hover { background: #f0efff; color: var(--primary-purple); }
+
+        /* Menu flutuante (ações) */
+        .menu-flutuante { position: fixed; width: 170px; background: #fff; box-shadow: 0 12px 40px rgba(0,0,0,0.15); z-index: 1100; padding: 6px; animation: menuIn 0.15s ease; }
+        @keyframes menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; border-radius: 8px !important; transition: 0.12s; }
+        .menu-item:hover { background: #f4f4f5; }
+        .menu-item.danger { color: #ef4444; }
+        .menu-item.danger:hover { background: #fee2e2; }
+        .menu-item .material-symbols-rounded { font-size: 17px; }
 
         .add-inline { font-size: 12px; font-weight: 700; color: var(--primary-purple); cursor: pointer; padding: 9px 14px; display: inline-flex; align-items: center; gap: 6px; transition: 0.15s; border-radius: 50px !important; }
         .add-inline:hover { background: #f0efff; }
@@ -151,38 +168,48 @@
         /* ===== NÍVEL 3: DRAWER DE TAREFAS ===== */
         .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(30,30,30,0.4); backdrop-filter: blur(3px); z-index: 900; }
         .drawer-overlay.show { display: block; }
-        .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 540px; max-width: 92vw; background: var(--bg-board); box-shadow: -20px 0 60px rgba(0,0,0,0.15); z-index: 901; transform: translateX(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
+        .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 560px; max-width: 94vw; background: var(--bg-board); box-shadow: -20px 0 60px rgba(0,0,0,0.15); z-index: 901; transform: translateX(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
         .drawer.show { transform: translateX(0); }
-        .drawer-head { background: #fff; padding: 26px 28px 22px; flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
-        .drawer-head-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .drawer-kr-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--primary-purple); }
-        .drawer-kr-desc { font-size: 16px; font-weight: 800; line-height: 1.4; }
-        .drawer-kr-prog { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
-        .drawer-kr-bar { flex-grow: 1; height: 9px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; }
-        .drawer-kr-fill { height: 100%; border-radius: 50px !important; }
-        .drawer-kr-pct { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+        .drawer-head { background: #fff; padding: 24px 28px; flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
+        .drawer-head-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+        .drawer-kr-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--primary-purple); display: flex; align-items: center; gap: 6px; }
+        .drawer-kr-row { display: flex; align-items: center; gap: 18px; }
+        .drawer-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+        .drawer-ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; letter-spacing: -0.5px; }
+        .drawer-kr-info { min-width: 0; }
+        .drawer-kr-desc { font-size: 16px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+        .drawer-kr-resumo { font-size: 12px; font-weight: 700; color: var(--text-muted); }
         .drawer-body { flex-grow: 1; overflow-y: auto; padding: 22px 28px 40px; }
-        .drawer-sec-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 14px; display:flex; justify-content: space-between; align-items:center; }
+        .drawer-sec-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 16px; display:flex; justify-content: space-between; align-items:center; }
 
-        .task-card { background: #fff; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.03); }
-        .task-card-top { display: flex; align-items: flex-start; gap: 12px; }
-        .task-check { width: 22px; height: 22px; border-radius: 50% !important; border: 2px solid #d4d4d8 !important; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; margin-top: 1px; }
-        .task-check.done { background: var(--green); border-color: var(--green) !important; }
-        .task-check.doing { border-color: var(--amber) !important; }
-        .task-check .material-symbols-rounded { font-size: 14px; color: #fff; }
-        .task-card-body { flex-grow: 1; min-width: 0; }
-        .task-card-desc { font-size: 13px; font-weight: 600; line-height: 1.4; }
-        .task-card-desc.done { text-decoration: line-through; color: var(--text-muted); }
-        .task-card-meta { display: flex; align-items: center; gap: 10px; margin-top: 9px; flex-wrap: wrap; }
-        .tc-chip { font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
-        .tc-chip .material-symbols-rounded { font-size: 14px; }
-        .tc-owner { background: #f4f4f5; padding: 3px 10px; border-radius: 50px !important; }
-        .task-card-acoes { display: flex; gap: 2px; flex-shrink: 0; }
-        .status-pills { display: flex; gap: 6px; margin-top: 12px; }
-        .status-pill { font-size: 10px; font-weight: 800; padding: 5px 12px; border-radius: 50px !important; cursor: pointer; transition: 0.15s; background: #f4f4f5; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
-        .status-pill.sel-nao { background: #f1f0e8; color: #71717a; box-shadow: inset 0 0 0 2px #71717a33; }
-        .status-pill.sel-and { background: #fef3c7; color: #92400e; box-shadow: inset 0 0 0 2px #92400e33; }
-        .status-pill.sel-fin { background: #dcfce7; color: #166534; box-shadow: inset 0 0 0 2px #16653433; }
+        /* Card de tarefa — visual, status que cicla */
+        .task-card { background: #fff; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 14px; transition: 0.2s; opacity: 0; transform: translateY(6px); animation: krIn 0.3s ease forwards; }
+        .task-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+        /* Botão de status circular que cicla */
+        .task-status { width: 30px; height: 30px; border-radius: 50% !important; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.25s; position: relative; }
+        .task-status.st-nao { background: #f1f0ed; box-shadow: inset 0 0 0 2px #d4d4d8; }
+        .task-status.st-and { background: #fef3c7; box-shadow: inset 0 0 0 2px var(--amber); }
+        .task-status.st-fin { background: var(--green); }
+        .task-status .material-symbols-rounded { font-size: 17px; transition: 0.2s; }
+        .task-status.st-nao .material-symbols-rounded { color: #a1a1aa; opacity: 0; }
+        .task-status.st-and .material-symbols-rounded { color: #b45309; }
+        .task-status.st-fin .material-symbols-rounded { color: #fff; }
+        .task-status:hover { transform: scale(1.08); }
+        .task-body { flex-grow: 1; min-width: 0; }
+        .task-desc { font-size: 13px; font-weight: 700; line-height: 1.4; transition: 0.2s; }
+        .task-desc.done { text-decoration: line-through; color: var(--text-muted); }
+        .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
+        .task-avatar { width: 22px; height: 22px; border-radius: 50% !important; background: var(--primary-purple); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .task-meta-chip { font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+        .task-meta-chip.prazo-prox { color: var(--amber); }
+        .task-meta-chip.prazo-atras { color: var(--red); }
+        .task-meta-chip .material-symbols-rounded { font-size: 13px; }
+        .task-link-btn { color: var(--primary-purple); display: flex; align-items: center; }
+        .task-menu-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; border-radius: 8px !important; transition: 0.15s; flex-shrink: 0; opacity: 0; }
+        .task-card:hover .task-menu-btn { opacity: 1; }
+        .task-menu-btn:hover { background: #f0efff; color: var(--primary-purple); }
+        .drawer-add-task { background: #fff; border: 2px dashed #e4e4e7 !important; padding: 14px; text-align: center; cursor: pointer; color: var(--text-muted); font-size: 12px; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 4px; }
+        .drawer-add-task:hover { border-color: var(--primary-purple) !important; color: var(--primary-purple); background: #fafaff; }
 
         /* ===== MODAL ===== */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
@@ -236,21 +263,23 @@
     <div class="drawer" id="drawer">
         <div class="drawer-head">
             <div class="drawer-head-top">
-                <span class="drawer-kr-tag">Key Result</span>
+                <span class="drawer-kr-tag"><span class="material-symbols-rounded" style="font-size:13px;">trending_up</span> Key Result</span>
                 <div class="btn-icon-round" onclick="fecharDrawer()"><span class="material-symbols-rounded" style="font-size:18px;">close</span></div>
             </div>
-            <div class="drawer-kr-desc" id="drawerKrDesc"></div>
-            <div class="drawer-kr-prog">
-                <div class="drawer-kr-bar"><div class="drawer-kr-fill" id="drawerKrFill"></div></div>
-                <span class="drawer-kr-pct" id="drawerKrPct"></span>
+            <div class="drawer-kr-row">
+                <div class="drawer-ring" id="drawerRing"></div>
+                <div class="drawer-kr-info">
+                    <div class="drawer-kr-desc" id="drawerKrDesc"></div>
+                    <div class="drawer-kr-resumo" id="drawerKrResumo"></div>
+                </div>
             </div>
         </div>
         <div class="drawer-body">
             <div class="drawer-sec-label">
                 <span>Tarefas</span>
-                <span class="add-inline" onclick="abrirTarefa(drawerKrId)"><span class="material-symbols-rounded" style="font-size:15px;">add</span> Nova tarefa</span>
             </div>
             <div id="drawerTasks"></div>
+            <div class="drawer-add-task" onclick="abrirTarefa(drawerKrId)"><span class="material-symbols-rounded" style="font-size:16px;">add</span> Adicionar tarefa</div>
         </div>
     </div>
 
@@ -468,26 +497,31 @@
                 (obj.key_results||[]).forEach(kr => {
                     const kp = calcKrPct(kr);
                     const nt = (kr.tarefas||[]).length;
+                    const ntFin = (kr.tarefas||[]).filter(t => t.status==='Finalizado').length;
                     krDelay += 0.04;
+                    const rr=24, rcirc=2*Math.PI*rr, roff=rcirc*(1-kp/100);
                     html += `<div class="kr-item" style="animation-delay:${krDelay}s" onclick='abrirDrawer(${JSON.stringify(kr).replace(/'/g,"&#39;")})'>
                         <div class="kr-item-top">
-                            <div class="kr-item-desc">${escH(kr.descricao)}</div>
-                            <div class="kr-item-right">
-                                <span class="kr-tasks-chip" onclick='event.stopPropagation(); abrirDrawer(${JSON.stringify(kr).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:13px;">checklist</span> ${nt}</span>
-                                <div class="kr-item-acoes" onclick="event.stopPropagation()">
-                                    <div class="btn-mini" onclick='abrirKr("${obj.id}", ${JSON.stringify(kr).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:15px;">edit</span></div>
-                                    <div class="btn-mini danger" onclick="excluirItem('kr','${kr.id}','Excluir este KR e suas tarefas?')"><span class="material-symbols-rounded" style="font-size:15px;">delete</span></div>
+                            <div class="kr-ring">
+                                <svg width="56" height="56" viewBox="0 0 56 56">
+                                    <circle cx="28" cy="28" r="${rr}" fill="none" stroke="#f0f0f1" stroke-width="5"/>
+                                    <circle cx="28" cy="28" r="${rr}" fill="none" stroke="${cor(kp)}" stroke-width="5" stroke-linecap="round"
+                                        stroke-dasharray="${rcirc}" stroke-dashoffset="${rcirc}" transform="rotate(-90 28 28)" class="kr-ring-anim" data-off="${roff}" style="transition:stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1);"/>
+                                </svg>
+                                <span class="kr-ring-pct" style="color:${cor(kp)};">${kp}%</span>
+                            </div>
+                            <div class="kr-main">
+                                <div class="kr-item-desc">${escH(kr.descricao)}</div>
+                                <div class="kr-vals-inline" onclick="event.stopPropagation()">
+                                    <span class="kr-val-edit" title="Clique para editar" onclick='editarValorKr(this, ${JSON.stringify(kr).replace(/'/g,"&#39;")})'>${fmtNum(kr.valor_atual)}</span>
+                                    <span class="kr-val-sep">/</span>
+                                    <span class="kr-val-meta">${fmtNum(kr.valor_meta)}</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="kr-prog-linha" onclick="event.stopPropagation()">
-                            <div class="kr-prog-track"><div class="kr-prog-bar" data-pct="${kp}" style="background:${cor(kp)};"></div></div>
-                            <div class="kr-vals">
-                                <span class="kr-val-edit" title="Clique para editar o valor atual" onclick='editarValorKr(this, ${JSON.stringify(kr).replace(/'/g,"&#39;")})'>${fmtNum(kr.valor_atual)}</span>
-                                <span class="kr-val-sep">/</span>
-                                <span class="kr-val-meta">${fmtNum(kr.valor_meta)}</span>
+                            <div class="kr-right-col" onclick="event.stopPropagation()">
+                                <span class="kr-tasks-chip" onclick='abrirDrawer(${JSON.stringify(kr).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:13px;">checklist</span> ${ntFin}/${nt}</span>
+                                <div class="kr-menu-btn" onclick='abrirMenuKr(event, "${obj.id}", ${JSON.stringify(kr).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:19px;">more_vert</span></div>
                             </div>
-                            <span class="kr-pct" style="color:${cor(kp)};">${kp}%</span>
                         </div>
                     </div>`;
                 });
@@ -500,12 +534,31 @@
 
             c.innerHTML = html;
 
-            // Anima as barras de progresso: largura 0 -> valor real (movimento sutil)
+            // Anima os anéis de progresso dos KRs (movimento sutil)
             requestAnimationFrame(() => {
-                c.querySelectorAll('.kr-prog-bar').forEach(bar => {
-                    bar.style.width = (bar.dataset.pct || 0) + '%';
+                c.querySelectorAll('.kr-ring-anim').forEach(ring => {
+                    ring.style.strokeDashoffset = ring.dataset.off || 0;
                 });
             });
+        }
+
+        // Menu de ações do KR (editar/excluir)
+        function abrirMenuKr(e, objId, kr) {
+            e.stopPropagation();
+            fecharMenusFlutuantes();
+            const menu = document.createElement('div');
+            menu.className = 'menu-flutuante';
+            menu.innerHTML = `
+                <div class="menu-item" onclick='abrirKr("${objId}", ${JSON.stringify(kr).replace(/'/g,"&#39;")}); fecharMenusFlutuantes();'><span class="material-symbols-rounded">edit</span> Editar KR</div>
+                <div class="menu-item danger" onclick="excluirItem('kr','${kr.id}','Excluir este KR e suas tarefas?'); fecharMenusFlutuantes();"><span class="material-symbols-rounded">delete</span> Excluir KR</div>`;
+            document.body.appendChild(menu);
+            const rect = e.currentTarget.getBoundingClientRect();
+            menu.style.top = (rect.bottom + 6) + 'px';
+            menu.style.left = (rect.right - 170) + 'px';
+            setTimeout(() => document.addEventListener('click', fecharMenusFlutuantes, { once: true }), 0);
+        }
+        function fecharMenusFlutuantes() {
+            document.querySelectorAll('.menu-flutuante').forEach(m => m.remove());
         }
 
         // Edição inline do valor atual do KR
@@ -544,16 +597,27 @@
         function abrirDrawer(kr) {
             drawerKrId = kr.id;
             const pct = calcKrPct(kr);
+            const tarefas = kr.tarefas || [];
+            const nFin = tarefas.filter(t => t.status==='Finalizado').length;
+
+            // Anel do KR no header do drawer
+            const rr=30, rcirc=2*Math.PI*rr, roff=rcirc*(1-pct/100);
+            document.getElementById('drawerRing').innerHTML = `
+                <svg width="72" height="72" viewBox="0 0 72 72">
+                    <circle cx="36" cy="36" r="${rr}" fill="none" stroke="#f0f0f1" stroke-width="6"/>
+                    <circle cx="36" cy="36" r="${rr}" fill="none" stroke="${cor(pct)}" stroke-width="6" stroke-linecap="round"
+                        stroke-dasharray="${rcirc}" stroke-dashoffset="${roff}" transform="rotate(-90 36 36)" style="transition:stroke-dashoffset 0.6s;"/>
+                </svg>
+                <span class="drawer-ring-pct" style="color:${cor(pct)};">${pct}%</span>`;
             document.getElementById('drawerKrDesc').textContent = kr.descricao;
-            document.getElementById('drawerKrFill').style.width = pct + '%';
-            document.getElementById('drawerKrFill').style.background = cor(pct);
-            document.getElementById('drawerKrPct').textContent = pct + '%';
-            document.getElementById('drawerKrPct').style.color = cor(pct);
+            document.getElementById('drawerKrResumo').textContent =
+                `${fmtNum(kr.valor_atual)} de ${fmtNum(kr.valor_meta)}` + (tarefas.length ? ` · ${nFin} de ${tarefas.length} tarefa${tarefas.length!==1?'s':''} concluída${nFin!==1?'s':''}` : '');
             renderDrawerTasks(kr);
             document.getElementById('drawerOverlay').classList.add('show');
             document.getElementById('drawer').classList.add('show');
         }
         function fecharDrawer() {
+            fecharMenusFlutuantes();
             document.getElementById('drawerOverlay').classList.remove('show');
             document.getElementById('drawer').classList.remove('show');
             drawerKrId = null;
@@ -563,39 +627,70 @@
             const cont = document.getElementById('drawerTasks');
             const tarefas = kr.tarefas || [];
             if (!tarefas.length) {
-                cont.innerHTML = `<div class="empty" style="padding:50px 20px;"><span class="material-symbols-rounded">checklist</span><h3>Sem tarefas</h3><p>Adicione tarefas para detalhar como este KR será atingido.</p></div>`;
+                cont.innerHTML = `<div class="empty" style="padding:40px 20px;"><span class="material-symbols-rounded">task_alt</span><h3>Sem tarefas ainda</h3><p>Adicione tarefas para detalhar como este KR será atingido.</p></div>`;
                 return;
             }
-            cont.innerHTML = tarefas.map(t => {
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            cont.innerHTML = tarefas.map((t, i) => {
                 const st = t.status || 'Não iniciado';
-                const checkCls = st==='Finalizado'?'done':st==='Em andamento'?'doing':'';
+                const stCls = st==='Finalizado'?'st-fin':st==='Em andamento'?'st-and':'st-nao';
+                const icon = st==='Finalizado'?'check':st==='Em andamento'?'pace':'radio_button_unchecked';
                 const descCls = st==='Finalizado'?'done':'';
-                return `<div class="task-card">
-                    <div class="task-card-top">
-                        <div class="task-check ${checkCls}" onclick='ciclarStatus(${JSON.stringify(t).replace(/'/g,"&#39;")})' title="Mudar status">${st==='Finalizado'?'<span class="material-symbols-rounded">check</span>':''}</div>
-                        <div class="task-card-body">
-                            <div class="task-card-desc ${descCls}">${escH(t.descricao)}</div>
-                            <div class="task-card-meta">
-                                ${t.responsavel?`<span class="tc-chip tc-owner">${escH(t.responsavel)}</span>`:''}
-                                ${t.prazo?`<span class="tc-chip"><span class="material-symbols-rounded">event</span> ${fmtData(t.prazo)}</span>`:''}
-                                ${t.link_entregavel?`<a class="tc-chip" style="color:var(--primary-purple);" href="${escH(t.link_entregavel)}" target="_blank"><span class="material-symbols-rounded">link</span> Entregável</a>`:''}
-                            </div>
-                            <div class="status-pills">
-                                <span class="status-pill ${st==='Não iniciado'?'sel-nao':''}" onclick='setStatus(${JSON.stringify(t).replace(/'/g,"&#39;")},"Não iniciado")'>Não iniciado</span>
-                                <span class="status-pill ${st==='Em andamento'?'sel-and':''}" onclick='setStatus(${JSON.stringify(t).replace(/'/g,"&#39;")},"Em andamento")'>Em andamento</span>
-                                <span class="status-pill ${st==='Finalizado'?'sel-fin':''}" onclick='setStatus(${JSON.stringify(t).replace(/'/g,"&#39;")},"Finalizado")'>Finalizado</span>
-                            </div>
-                        </div>
-                        <div class="task-card-acoes">
-                            <div class="btn-mini" onclick='abrirTarefa("${kr.id}", ${JSON.stringify(t).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:15px;">edit</span></div>
-                            <div class="btn-mini danger" onclick="excluirItem('tarefa','${t.id}','Excluir esta tarefa?', true)"><span class="material-symbols-rounded" style="font-size:15px;">delete</span></div>
+                // Prazo com destaque
+                let prazoCls = '', prazoTxt = '';
+                if (t.prazo) {
+                    prazoTxt = fmtData(t.prazo);
+                    const d = new Date(t.prazo + 'T00:00:00');
+                    const difDias = Math.round((d - hoje)/86400000);
+                    if (st !== 'Finalizado') {
+                        if (difDias < 0) prazoCls = 'prazo-atras';
+                        else if (difDias <= 3) prazoCls = 'prazo-prox';
+                    }
+                }
+                const inicial = (t.responsavel||'').trim().charAt(0).toUpperCase();
+                return `<div class="task-card" style="animation-delay:${i*0.03}s">
+                    <div class="task-status ${stCls}" onclick='ciclarStatus(${JSON.stringify(t).replace(/'/g,"&#39;")})' title="Clique para mudar o status">
+                        <span class="material-symbols-rounded">${icon}</span>
+                    </div>
+                    <div class="task-body">
+                        <div class="task-desc ${descCls}">${escH(t.descricao)}</div>
+                        <div class="task-meta">
+                            ${t.responsavel?`<span class="task-avatar" title="${escH(t.responsavel)}">${escH(inicial)}</span><span class="task-meta-chip">${escH(t.responsavel)}</span>`:''}
+                            ${t.prazo?`<span class="task-meta-chip ${prazoCls}"><span class="material-symbols-rounded">event</span> ${prazoTxt}</span>`:''}
+                            ${t.link_entregavel?`<a class="task-link-btn" href="${escH(t.link_entregavel)}" target="_blank" title="Abrir entregável"><span class="material-symbols-rounded" style="font-size:16px;">link</span></a>`:''}
                         </div>
                     </div>
+                    <div class="task-menu-btn" onclick='abrirMenuTarefa(event, "${kr.id}", ${JSON.stringify(t).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:18px;">more_vert</span></div>
                 </div>`;
             }).join('');
         }
 
-        // Muda status rápido pelas pílulas
+        // Menu de tarefa: pular pra status específico + editar/excluir
+        function abrirMenuTarefa(e, krId, t) {
+            e.stopPropagation();
+            fecharMenusFlutuantes();
+            const menu = document.createElement('div');
+            menu.className = 'menu-flutuante';
+            menu.style.width = '190px';
+            const mk = (s, lbl, ic) => `<div class="menu-item" onclick='setStatus(${JSON.stringify(t).replace(/'/g,"&#39;")},"${s}"); fecharMenusFlutuantes();'><span class="material-symbols-rounded">${ic}</span> ${lbl}</div>`;
+            menu.innerHTML =
+                mk('Não iniciado','Não iniciado','radio_button_unchecked') +
+                mk('Em andamento','Em andamento','pace') +
+                mk('Finalizado','Finalizado','check_circle') +
+                `<div style="height:1px;background:#f0f0f1;margin:5px 8px;"></div>
+                <div class="menu-item" onclick='abrirTarefa("${krId}", ${JSON.stringify(t).replace(/'/g,"&#39;")}); fecharMenusFlutuantes();'><span class="material-symbols-rounded">edit</span> Editar</div>
+                <div class="menu-item danger" onclick="excluirItem('tarefa','${t.id}','Excluir esta tarefa?', true); fecharMenusFlutuantes();"><span class="material-symbols-rounded">delete</span> Excluir</div>`;
+            document.body.appendChild(menu);
+            const rect = e.currentTarget.getBoundingClientRect();
+            let top = rect.bottom + 6;
+            menu.style.left = (rect.right - 190) + 'px';
+            // Evita sair da tela embaixo
+            if (top + menu.offsetHeight > window.innerHeight) top = rect.top - menu.offsetHeight - 6;
+            menu.style.top = top + 'px';
+            setTimeout(() => document.addEventListener('click', fecharMenusFlutuantes, { once: true }), 0);
+        }
+
+        // Muda status da tarefa
         async function setStatus(t, novo) {
             await fetch('/api/okr/item', { method:'PUT', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ tipo:'tarefa', id:t.id, descricao:t.descricao, responsavel:t.responsavel, prazo:t.prazo, link_entregavel:t.link_entregavel, status:novo })});
