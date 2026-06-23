@@ -149,6 +149,19 @@
         .kr-menu-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; border-radius: 8px !important; transition: 0.15s; opacity: 0; }
         .kr-item:hover .kr-menu-btn { opacity: 1; }
         .kr-menu-btn:hover { background: #f0efff; color: var(--primary-purple); }
+        .kr-chevron { color: var(--text-muted); font-size: 22px !important; transition: transform 0.3s; }
+        .kr-item.expandido { background: #f4f4ff; box-shadow: 0 4px 16px rgba(115,113,255,0.1); }
+        .kr-item.expandido .kr-chevron { transform: rotate(180deg); color: var(--primary-purple); }
+        .kr-item-top { cursor: pointer; }
+
+        /* Área expansível com as tarefas (inline) */
+        .kr-tarefas-wrap { max-height: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1); }
+        .kr-tarefas-inner { padding: 4px 4px 8px; }
+        .tarefas-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 6px 14px; margin-top: 6px; border-top: 1px solid #e8e8ee; }
+        .tarefas-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+        .tarefas-titulo b { color: var(--primary-purple); }
+        .tarefas-vazio { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 24px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-align: center; }
+        .tarefas-vazio .material-symbols-rounded { font-size: 18px; opacity: 0.5; }
 
         /* Menu flutuante (ações) */
         .menu-flutuante { position: fixed; width: 170px; background: #fff; box-shadow: 0 12px 40px rgba(0,0,0,0.15); z-index: 1100; padding: 6px; animation: menuIn 0.15s ease; }
@@ -258,31 +271,6 @@
         </div>
     </div>
 
-    <!-- DRAWER DE TAREFAS (Nível 3) -->
-    <div class="drawer-overlay" id="drawerOverlay" onclick="fecharDrawer()"></div>
-    <div class="drawer" id="drawer">
-        <div class="drawer-head">
-            <div class="drawer-head-top">
-                <span class="drawer-kr-tag"><span class="material-symbols-rounded" style="font-size:13px;">trending_up</span> Key Result</span>
-                <div class="btn-icon-round" onclick="fecharDrawer()"><span class="material-symbols-rounded" style="font-size:18px;">close</span></div>
-            </div>
-            <div class="drawer-kr-row">
-                <div class="drawer-ring" id="drawerRing"></div>
-                <div class="drawer-kr-info">
-                    <div class="drawer-kr-desc" id="drawerKrDesc"></div>
-                    <div class="drawer-kr-resumo" id="drawerKrResumo"></div>
-                </div>
-            </div>
-        </div>
-        <div class="drawer-body">
-            <div class="drawer-sec-label">
-                <span>Tarefas</span>
-            </div>
-            <div id="drawerTasks"></div>
-            <div class="drawer-add-task" onclick="abrirTarefa(drawerKrId)"><span class="material-symbols-rounded" style="font-size:16px;">add</span> Adicionar tarefa</div>
-        </div>
-    </div>
-
     <!-- MODAL GENÉRICO -->
     <div class="modal-overlay" id="modal">
         <div class="modal-box">
@@ -307,7 +295,7 @@
         let modalCtx = {};
         let nivel = 1;              // 1=painel, 2=departamento
         let deptFocadoId = null;
-        let drawerKrId = null;
+        let krAbertoId = null;       // KR expandido inline (só um por vez)
 
         document.addEventListener('DOMContentLoaded', carregarInicial);
 
@@ -500,8 +488,9 @@
                     const ntFin = (kr.tarefas||[]).filter(t => t.status==='Finalizado').length;
                     krDelay += 0.04;
                     const rr=24, rcirc=2*Math.PI*rr, roff=rcirc*(1-kp/100);
-                    html += `<div class="kr-item" style="animation-delay:${krDelay}s" onclick='abrirDrawer(${JSON.stringify(kr).replace(/'/g,"&#39;")})'>
-                        <div class="kr-item-top">
+                    const aberto = (kr.id === krAbertoId);
+                    html += `<div class="kr-item ${aberto?'expandido':''}" id="kritem-${kr.id}" style="animation-delay:${krDelay}s">
+                        <div class="kr-item-top" onclick='toggleKr(${JSON.stringify(kr).replace(/'/g,"&#39;")})'>
                             <div class="kr-ring">
                                 <svg width="56" height="56" viewBox="0 0 56 56">
                                     <circle cx="28" cy="28" r="${rr}" fill="none" stroke="#f0f0f1" stroke-width="5"/>
@@ -518,10 +507,14 @@
                                     <span class="kr-val-meta">${fmtNum(kr.valor_meta)}</span>
                                 </div>
                             </div>
-                            <div class="kr-right-col" onclick="event.stopPropagation()">
-                                <span class="kr-tasks-chip" onclick='abrirDrawer(${JSON.stringify(kr).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:13px;">checklist</span> ${ntFin}/${nt}</span>
+                            <div class="kr-right-col">
+                                <span class="kr-tasks-chip"><span class="material-symbols-rounded" style="font-size:13px;">checklist</span> ${ntFin}/${nt}</span>
                                 <div class="kr-menu-btn" onclick='abrirMenuKr(event, "${obj.id}", ${JSON.stringify(kr).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:19px;">more_vert</span></div>
+                                <span class="kr-chevron material-symbols-rounded">expand_more</span>
                             </div>
+                        </div>
+                        <div class="kr-tarefas-wrap" id="krtarefas-${kr.id}">
+                            <div class="kr-tarefas-inner" id="krtarefas-inner-${kr.id}"></div>
                         </div>
                     </div>`;
                 });
@@ -533,6 +526,18 @@
             html += `<div class="add-obj-faixa" onclick="abrirObj('${dept.id}')"><span class="material-symbols-rounded" style="font-size:18px;">add_circle</span> Adicionar objetivo</div>`;
 
             c.innerHTML = html;
+
+            // Se havia um KR aberto, re-renderiza as tarefas dele e expande
+            if (krAbertoId) {
+                const krAberto = encontrarKr(krAbertoId);
+                if (krAberto) {
+                    renderTarefasInline(krAberto);
+                    const wrap = document.getElementById('krtarefas-' + krAbertoId);
+                    if (wrap) wrap.style.maxHeight = wrap.scrollHeight + 'px';
+                } else {
+                    krAbertoId = null;
+                }
+            }
 
             // Anima os anéis de progresso dos KRs (movimento sutil)
             requestAnimationFrame(() => {
@@ -593,50 +598,68 @@
             render();
         }
 
-        // ===== NÍVEL 3: DRAWER =====
-        function abrirDrawer(kr) {
-            drawerKrId = kr.id;
-            const pct = calcKrPct(kr);
+        function encontrarKr(krId) {
+            let achado = null;
+            const dept = (dadosArvore.departamentos||[]).find(d => d.id === deptFocadoId);
+            if (!dept) return null;
+            (dept.objetivos||[]).forEach(o => (o.key_results||[]).forEach(k => { if (k.id === krId) achado = k; }));
+            return achado;
+        }
+
+        // ===== EXPANSÃO INLINE DAS TAREFAS =====
+        function toggleKr(kr) {
+            const jaAberto = (krAbertoId === kr.id);
+            // Fecha o que estava aberto
+            if (krAbertoId && krAbertoId !== kr.id) {
+                const wrapAnt = document.getElementById('krtarefas-' + krAbertoId);
+                const itemAnt = document.getElementById('kritem-' + krAbertoId);
+                if (wrapAnt) wrapAnt.style.maxHeight = null;
+                if (itemAnt) itemAnt.classList.remove('expandido');
+            }
+            const wrap = document.getElementById('krtarefas-' + kr.id);
+            const item = document.getElementById('kritem-' + kr.id);
+            if (jaAberto) {
+                // Recolhe
+                wrap.style.maxHeight = null;
+                item.classList.remove('expandido');
+                krAbertoId = null;
+            } else {
+                // Expande este
+                krAbertoId = kr.id;
+                item.classList.add('expandido');
+                renderTarefasInline(kr);
+                wrap.style.maxHeight = wrap.scrollHeight + 'px';
+            }
+        }
+
+        // Recalcula a altura do container aberto (após mudanças nas tarefas)
+        function ajustarAlturaKrAberto() {
+            if (!krAbertoId) return;
+            const wrap = document.getElementById('krtarefas-' + krAbertoId);
+            if (wrap) { wrap.style.maxHeight = 'none'; const h = wrap.scrollHeight; wrap.style.maxHeight = h + 'px'; }
+        }
+
+        function renderTarefasInline(kr) {
+            const cont = document.getElementById('krtarefas-inner-' + kr.id);
+            if (!cont) return;
             const tarefas = kr.tarefas || [];
             const nFin = tarefas.filter(t => t.status==='Finalizado').length;
 
-            // Anel do KR no header do drawer
-            const rr=30, rcirc=2*Math.PI*rr, roff=rcirc*(1-pct/100);
-            document.getElementById('drawerRing').innerHTML = `
-                <svg width="72" height="72" viewBox="0 0 72 72">
-                    <circle cx="36" cy="36" r="${rr}" fill="none" stroke="#f0f0f1" stroke-width="6"/>
-                    <circle cx="36" cy="36" r="${rr}" fill="none" stroke="${cor(pct)}" stroke-width="6" stroke-linecap="round"
-                        stroke-dasharray="${rcirc}" stroke-dashoffset="${roff}" transform="rotate(-90 36 36)" style="transition:stroke-dashoffset 0.6s;"/>
-                </svg>
-                <span class="drawer-ring-pct" style="color:${cor(pct)};">${pct}%</span>`;
-            document.getElementById('drawerKrDesc').textContent = kr.descricao;
-            document.getElementById('drawerKrResumo').textContent =
-                `${fmtNum(kr.valor_atual)} de ${fmtNum(kr.valor_meta)}` + (tarefas.length ? ` · ${nFin} de ${tarefas.length} tarefa${tarefas.length!==1?'s':''} concluída${nFin!==1?'s':''}` : '');
-            renderDrawerTasks(kr);
-            document.getElementById('drawerOverlay').classList.add('show');
-            document.getElementById('drawer').classList.add('show');
-        }
-        function fecharDrawer() {
-            fecharMenusFlutuantes();
-            document.getElementById('drawerOverlay').classList.remove('show');
-            document.getElementById('drawer').classList.remove('show');
-            drawerKrId = null;
-        }
+            let header = `<div class="tarefas-header">
+                <span class="tarefas-titulo">Tarefas ${tarefas.length ? `· <b>${nFin}/${tarefas.length}</b> concluídas` : ''}</span>
+                <span class="add-inline" onclick='event.stopPropagation(); abrirTarefa("${kr.id}")'><span class="material-symbols-rounded" style="font-size:15px;">add</span> Nova tarefa</span>
+            </div>`;
 
-        function renderDrawerTasks(kr) {
-            const cont = document.getElementById('drawerTasks');
-            const tarefas = kr.tarefas || [];
             if (!tarefas.length) {
-                cont.innerHTML = `<div class="empty" style="padding:40px 20px;"><span class="material-symbols-rounded">task_alt</span><h3>Sem tarefas ainda</h3><p>Adicione tarefas para detalhar como este KR será atingido.</p></div>`;
+                cont.innerHTML = header + `<div class="tarefas-vazio"><span class="material-symbols-rounded">task_alt</span> Nenhuma tarefa ainda. Adicione a primeira para detalhar este KR.</div>`;
                 return;
             }
             const hoje = new Date(); hoje.setHours(0,0,0,0);
-            cont.innerHTML = tarefas.map((t, i) => {
+            const cards = tarefas.map((t, i) => {
                 const st = t.status || 'Não iniciado';
                 const stCls = st==='Finalizado'?'st-fin':st==='Em andamento'?'st-and':'st-nao';
                 const icon = st==='Finalizado'?'check':st==='Em andamento'?'pace':'radio_button_unchecked';
                 const descCls = st==='Finalizado'?'done':'';
-                // Prazo com destaque
                 let prazoCls = '', prazoTxt = '';
                 if (t.prazo) {
                     prazoTxt = fmtData(t.prazo);
@@ -649,7 +672,7 @@
                 }
                 const inicial = (t.responsavel||'').trim().charAt(0).toUpperCase();
                 return `<div class="task-card" style="animation-delay:${i*0.03}s">
-                    <div class="task-status ${stCls}" onclick='ciclarStatus(${JSON.stringify(t).replace(/'/g,"&#39;")})' title="Clique para mudar o status">
+                    <div class="task-status ${stCls}" onclick='event.stopPropagation(); ciclarStatus(${JSON.stringify(t).replace(/'/g,"&#39;")})' title="Clique para mudar o status">
                         <span class="material-symbols-rounded">${icon}</span>
                     </div>
                     <div class="task-body">
@@ -657,12 +680,13 @@
                         <div class="task-meta">
                             ${t.responsavel?`<span class="task-avatar" title="${escH(t.responsavel)}">${escH(inicial)}</span><span class="task-meta-chip">${escH(t.responsavel)}</span>`:''}
                             ${t.prazo?`<span class="task-meta-chip ${prazoCls}"><span class="material-symbols-rounded">event</span> ${prazoTxt}</span>`:''}
-                            ${t.link_entregavel?`<a class="task-link-btn" href="${escH(t.link_entregavel)}" target="_blank" title="Abrir entregável"><span class="material-symbols-rounded" style="font-size:16px;">link</span></a>`:''}
+                            ${t.link_entregavel?`<a class="task-link-btn" onclick="event.stopPropagation()" href="${escH(t.link_entregavel)}" target="_blank" title="Abrir entregável"><span class="material-symbols-rounded" style="font-size:16px;">link</span></a>`:''}
                         </div>
                     </div>
                     <div class="task-menu-btn" onclick='abrirMenuTarefa(event, "${kr.id}", ${JSON.stringify(t).replace(/'/g,"&#39;")})'><span class="material-symbols-rounded" style="font-size:18px;">more_vert</span></div>
                 </div>`;
             }).join('');
+            cont.innerHTML = header + cards;
         }
 
         // Menu de tarefa: pular pra status específico + editar/excluir
@@ -692,9 +716,10 @@
 
         // Muda status da tarefa
         async function setStatus(t, novo) {
+            fecharMenusFlutuantes();
             await fetch('/api/okr/item', { method:'PUT', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ tipo:'tarefa', id:t.id, descricao:t.descricao, responsavel:t.responsavel, prazo:t.prazo, link_entregavel:t.link_entregavel, status:novo })});
-            await recarregarMantendoDrawer();
+            await recarregarMantendoKr();
         }
         function ciclarStatus(t) {
             const ordem = ['Não iniciado','Em andamento','Finalizado'];
@@ -702,17 +727,11 @@
             setStatus(t, prox);
         }
 
-        async function recarregarMantendoDrawer() {
-            const krId = drawerKrId;
+        // Recarrega os dados mantendo o KR expandido inline (render() reabre sozinho via krAbertoId)
+        async function recarregarMantendoKr() {
             const res = await fetch('/api/okr/arvore?cliente_id=' + encodeURIComponent(clienteAtual));
             dadosArvore = await res.json();
             render();
-            // Reabre o drawer com o KR atualizado
-            if (krId) {
-                let krAtual = null;
-                (dadosArvore.departamentos||[]).forEach(d=>(d.objetivos||[]).forEach(o=>(o.key_results||[]).forEach(k=>{ if(k.id===krId) krAtual=k; })));
-                if (krAtual) abrirDrawer(krAtual);
-            }
         }
 
         // ===== MODAIS =====
@@ -771,20 +790,27 @@
             btn.disabled = true; btn.textContent = 'SALVANDO...';
             try {
                 const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-                if (res.ok) { showToast('Salvo!','success'); fecharModal(); if(drawerKrId) await recarregarMantendoDrawer(); else await carregarArvore(); }
+                if (res.ok) { showToast('Salvo!','success'); fecharModal(); if(nivel===2) await recarregarMantendoKr(); else await carregarArvore(); }
                 else { const e = await res.json(); showToast('Erro: '+(e.mensagem||'falha'),'error'); }
             } catch(e) { showToast('Erro de conexão.','error'); }
             finally { btn.disabled=false; btn.textContent='SALVAR'; }
         }
 
-        async function excluirItem(tipo, id, msg, manterDrawer) {
+        async function excluirItem(tipo, id, msg, manterKr) {
             if (!confirm(msg||'Excluir?')) return;
+            fecharMenusFlutuantes();
             let url, opts;
             if (tipo==='departamento') { url='/api/okr/departamento/'+id; opts={ method:'DELETE' }; }
             else { url='/api/okr/item'; opts={ method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tipo, id }) }; }
             try {
                 const res = await fetch(url, opts);
-                if (res.ok) { showToast('Excluído.','success'); if(manterDrawer && drawerKrId) await recarregarMantendoDrawer(); else { if(tipo==='departamento') voltarPainel(); await carregarArvore(); } }
+                if (res.ok) {
+                    showToast('Excluído.','success');
+                    if (tipo==='departamento') { krAbertoId=null; voltarPainel(); await carregarArvore(); }
+                    else if (tipo==='kr' && id===krAbertoId) { krAbertoId=null; await recarregarMantendoKr(); }
+                    else if (nivel===2) { await recarregarMantendoKr(); }
+                    else { await carregarArvore(); }
+                }
                 else showToast('Erro ao excluir.','error');
             } catch(e) { showToast('Erro de conexão.','error'); }
         }
