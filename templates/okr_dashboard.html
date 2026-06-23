@@ -41,20 +41,23 @@
         .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; }
         .col-6 { grid-column: span 6; } .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
 
-        .global-card { display: flex; flex-direction: column; justify-content: center; min-height: 200px; }
-        .row-graficos { min-height: 380px; }
-        .row-listas { min-height: 360px; }
+        .global-card { display: flex; flex-direction: column; justify-content: center; }
+        .row-graficos { min-height: 340px; }
+        .row-listas { min-height: 320px; }
+
+        /* KPIs em grid 2x2, horizontais (número + texto lado a lado, não quebra) */
+        .kpi-quad { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
+        .kpi-mini { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 22px 24px; display: flex; align-items: center; gap: 18px; }
+        .kpi-mini-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 13px !important; flex-shrink: 0; }
+        .kpi-mini-icon .material-symbols-rounded { font-size: 25px; }
+        .kpi-mini-body { min-width: 0; }
+        .kpi-mini-num { font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .kpi-mini-label { font-size: 12px; font-weight: 800; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 5px; }
+        .kpi-mini-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 3px; }
         .global-pct { font-size: 64px; font-weight: 900; letter-spacing: -3px; line-height: 1; }
         .global-bar { height: 12px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; margin-top: 18px; }
         .global-bar-fill { height: 100%; border-radius: 50px !important; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
 
-        /* KPIs simples */
-        .kpi-card { display: flex; flex-direction: column; justify-content: center; }
-        .kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-        .kpi-icon { width: 42px; height: 42px; display:flex; align-items:center; justify-content:center; border-radius: 12px !important; flex-shrink: 0; }
-        .kpi-icon .material-symbols-rounded { font-size: 22px; }
-        .kpi-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-num { font-size: 46px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
         .kpi-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 8px; }
 
         .chart-wrap { position: relative; height: 300px; flex-grow: 1; }
@@ -224,36 +227,31 @@
 
             let html = `<div class="dash-grid">`;
 
-            // Linha 1: Progresso Global + KPIs
+            // Linha 1: Progresso Global (esquerda) + 4 KPIs em grid 2x2 (direita)
             html += `<div class="card col-4 global-card">
                 <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">target</span> Progresso Global</div>
                 <div class="global-pct" style="color:${cor(m.globalPct)};">${m.globalPct}%</div>
                 <div class="global-bar"><div class="global-bar-fill" id="globalBar" style="width:0%; background:${cor(m.globalPct)};"></div></div>
-                ${macro&&macro.titulo?`<div class="kpi-sub" style="margin-top:14px;">${escH(macro.titulo)}</div>`:''}
+                ${macro&&macro.titulo?`<div class="kpi-sub" style="margin-top:16px; line-height:1.4;">${escH(macro.titulo)}</div>`:''}
             </div>`;
 
-            html += `<div class="card col-2 kpi-card">
-                <div class="kpi-top"><div class="kpi-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:${PURPLE};">trending_up</span></div></div>
-                <div class="kpi-num">${m.nKr}</div><div class="kpi-label">Key Results</div>
-                <div class="kpi-sub">${m.nObj} objetivos · ${m.depts.length} deptos</div>
-            </div>`;
-
-            html += `<div class="card col-2 kpi-card">
-                <div class="kpi-top"><div class="kpi-icon" style="background:#ecfdf5;"><span class="material-symbols-rounded" style="color:${GREEN};">task_alt</span></div></div>
-                <div class="kpi-num" style="color:${GREEN};">${m.st.fin}</div><div class="kpi-label">Tarefas Feitas</div>
-                <div class="kpi-sub">de ${m.nTask} no total</div>
-            </div>`;
-
-            html += `<div class="card col-2 kpi-card">
-                <div class="kpi-top"><div class="kpi-icon" style="background:#fef2f2;"><span class="material-symbols-rounded" style="color:${RED};">warning</span></div></div>
-                <div class="kpi-num" style="color:${m.tarefasAtrasadas.length>0?RED:GREEN};">${m.tarefasAtrasadas.length}</div><div class="kpi-label">Atrasadas</div>
-                <div class="kpi-sub">${m.krsRisco.length} KRs em risco</div>
-            </div>`;
-
-            html += `<div class="card col-2 kpi-card">
-                <div class="kpi-top"><div class="kpi-icon" style="background:#fefce8;"><span class="material-symbols-rounded" style="color:${AMBER};">pace</span></div></div>
-                <div class="kpi-num" style="color:${AMBER};">${m.st.and}</div><div class="kpi-label">Em Andamento</div>
-                <div class="kpi-sub">${m.st.nao} não iniciadas</div>
+            html += `<div class="col-8 kpi-quad">
+                <div class="kpi-mini">
+                    <div class="kpi-mini-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:${PURPLE};">trending_up</span></div>
+                    <div class="kpi-mini-body"><div class="kpi-mini-num">${m.nKr}</div><div class="kpi-mini-label">Key Results</div><div class="kpi-mini-sub">${m.nObj} objetivos · ${m.depts.length} departamentos</div></div>
+                </div>
+                <div class="kpi-mini">
+                    <div class="kpi-mini-icon" style="background:#ecfdf5;"><span class="material-symbols-rounded" style="color:${GREEN};">task_alt</span></div>
+                    <div class="kpi-mini-body"><div class="kpi-mini-num" style="color:${GREEN};">${m.st.fin}</div><div class="kpi-mini-label">Tarefas Feitas</div><div class="kpi-mini-sub">de ${m.nTask} no total</div></div>
+                </div>
+                <div class="kpi-mini">
+                    <div class="kpi-mini-icon" style="background:#fef2f2;"><span class="material-symbols-rounded" style="color:${RED};">warning</span></div>
+                    <div class="kpi-mini-body"><div class="kpi-mini-num" style="color:${m.tarefasAtrasadas.length>0?RED:GREEN};">${m.tarefasAtrasadas.length}</div><div class="kpi-mini-label">Tarefas Atrasadas</div><div class="kpi-mini-sub">${m.krsRisco.length} KRs em risco</div></div>
+                </div>
+                <div class="kpi-mini">
+                    <div class="kpi-mini-icon" style="background:#fefce8;"><span class="material-symbols-rounded" style="color:${AMBER};">pace</span></div>
+                    <div class="kpi-mini-body"><div class="kpi-mini-num" style="color:${AMBER};">${m.st.and}</div><div class="kpi-mini-label">Em Andamento</div><div class="kpi-mini-sub">${m.st.nao} não iniciadas</div></div>
+                </div>
             </div>`;
 
             // Linha 2: Status das tarefas (rosca) + Progresso por departamento (barras)
