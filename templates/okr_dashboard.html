@@ -33,30 +33,32 @@
         .loading { text-align: center; padding: 80px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
 
         /* Grid principal */
-        .dash-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
-        .card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; }
-        .card-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+        .dash-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: stretch; }
+        .card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; display: flex; flex-direction: column; }
+        .card-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
         /* Progresso global (destaque) */
         .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; }
         .col-6 { grid-column: span 6; } .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
 
-        .global-card { display: flex; flex-direction: column; justify-content: center; }
+        .global-card { display: flex; flex-direction: column; justify-content: center; min-height: 200px; }
+        .row-graficos { min-height: 380px; }
+        .row-listas { min-height: 360px; }
         .global-pct { font-size: 64px; font-weight: 900; letter-spacing: -3px; line-height: 1; }
         .global-bar { height: 12px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; margin-top: 18px; }
         .global-bar-fill { height: 100%; border-radius: 50px !important; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
 
         /* KPIs simples */
         .kpi-card { display: flex; flex-direction: column; justify-content: center; }
-        .kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-        .kpi-icon { width: 38px; height: 38px; display:flex; align-items:center; justify-content:center; border-radius: 11px !important; flex-shrink: 0; }
-        .kpi-icon .material-symbols-rounded { font-size: 20px; }
+        .kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .kpi-icon { width: 42px; height: 42px; display:flex; align-items:center; justify-content:center; border-radius: 12px !important; flex-shrink: 0; }
+        .kpi-icon .material-symbols-rounded { font-size: 22px; }
         .kpi-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-num { font-size: 42px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
-        .kpi-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
+        .kpi-num { font-size: 46px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .kpi-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 8px; }
 
-        .chart-wrap { position: relative; height: 240px; }
-        .chart-wrap.tall { height: 320px; }
+        .chart-wrap { position: relative; height: 300px; flex-grow: 1; }
+        .chart-wrap.tall { height: 360px; }
 
         /* Legenda rosca */
         .donut-legend { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
@@ -64,14 +66,14 @@
         .leg-dot { width: 12px; height: 12px; border-radius: 50% !important; flex-shrink: 0; }
         .leg-txt { font-size: 13px; font-weight: 700; }
         .leg-num { font-size: 13px; font-weight: 800; margin-left: auto; color: var(--text-muted); }
-        .donut-row { display: flex; gap: 24px; align-items: center; }
-        .donut-box { position: relative; width: 200px; height: 200px; flex-shrink: 0; }
+        .donut-row { display: flex; gap: 28px; align-items: center; flex-grow: 1; justify-content: center; }
+        .donut-box { position: relative; width: 230px; height: 230px; flex-shrink: 0; }
         .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
         .donut-center-num { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; }
         .donut-center-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
 
         /* Ranking de departamentos */
-        .rank-list { display: flex; flex-direction: column; gap: 14px; }
+        .rank-list { display: flex; flex-direction: column; gap: 14px; flex-grow: 1; justify-content: space-around; }
         .rank-item { display: flex; align-items: center; gap: 14px; }
         .rank-pos { width: 26px; height: 26px; border-radius: 50% !important; background: #f4f4f5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--text-muted); flex-shrink: 0; }
         .rank-pos.top { background: var(--primary-purple); color: #fff; }
@@ -82,7 +84,7 @@
         .rank-bar-fill { height: 100%; border-radius: 50px !important; transition: width 0.8s; }
 
         /* Lista de alertas (KRs em risco / tarefas atrasadas) */
-        .alert-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
+        .alert-list { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; max-height: 340px; }
         .alert-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fafafb; }
         .alert-icon { width: 32px; height: 32px; border-radius: 9px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .alert-icon .material-symbols-rounded { font-size: 17px; }
@@ -255,7 +257,7 @@
             </div>`;
 
             // Linha 2: Status das tarefas (rosca) + Progresso por departamento (barras)
-            html += `<div class="card col-5">
+            html += `<div class="card col-5 row-graficos">
                 <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">donut_large</span> Status das Tarefas</div>
                 <div class="donut-row">
                     <div class="donut-box">
@@ -270,14 +272,14 @@
                 </div>
             </div>`;
 
-            html += `<div class="card col-7">
+            html += `<div class="card col-7 row-graficos">
                 <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">bar_chart</span> Progresso por Departamento</div>
                 <div class="chart-wrap"><canvas id="barDepts"></canvas></div>
             </div>`;
 
             // Linha 3: Ranking + Alertas
             const ranking = m.depts.map(d=>({nome:d.nome, pct:calcDeptPct(d)})).sort((a,b)=>b.pct-a.pct);
-            html += `<div class="card col-5">
+            html += `<div class="card col-5 row-listas">
                 <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">leaderboard</span> Ranking de Departamentos</div>
                 <div class="rank-list">
                     ${ranking.map((r,i)=>`<div class="rank-item">
@@ -291,7 +293,7 @@
             </div>`;
 
             // Alertas: tarefas atrasadas
-            html += `<div class="card col-7">
+            html += `<div class="card col-7 row-listas">
                 <div class="card-title"><span class="material-symbols-rounded" style="font-size:15px;">priority_high</span> Tarefas Atrasadas</div>`;
             if (m.tarefasAtrasadas.length===0) {
                 html += `<div class="alert-vazio"><span class="material-symbols-rounded">check_circle</span> Nenhuma tarefa atrasada. Tudo em dia!</div>`;
