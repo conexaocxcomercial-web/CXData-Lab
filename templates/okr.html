@@ -45,9 +45,9 @@
 
         /* ===== NÍVEL 1: HERO DE SAÚDE + GRID DE DEPARTAMENTOS ===== */
         /* Bloco único do topo: saúde+métricas à esquerda, objetivo à direita */
-        .painel-topo { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); display: grid; grid-template-columns: 1.4fr 1fr; margin-bottom: 28px; }
-        .pt-esq { padding: 28px 32px; display: flex; align-items: center; gap: 30px; }
-        .pt-dir { padding: 28px 32px; border-left: 1px solid #f0f0f1; display: flex; flex-direction: column; justify-content: center; position: relative; cursor: pointer; transition: 0.15s; }
+        .painel-topo { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); display: grid; grid-template-columns: 240px 1fr; margin-bottom: 28px; }
+        .pt-esq { padding: 28px 24px; display: flex; align-items: center; justify-content: center; }
+        .pt-dir { padding: 30px 36px; border-left: 1px solid #f0f0f1; display: flex; flex-direction: column; justify-content: center; position: relative; cursor: pointer; transition: 0.15s; }
         .pt-dir:hover { background: #fafaff; }
 
         .saude-ring { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
@@ -69,7 +69,7 @@
         .macro-blk-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
         .macro-blk-flag { width: 26px; height: 26px; background: #f0efff; display: flex; align-items: center; justify-content: center; border-radius: 8px !important; }
         .macro-blk-flag .material-symbols-rounded { font-size: 15px; color: var(--primary-purple); }
-        .macro-blk-titulo { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.35; color: var(--text-main); }
+        .macro-blk-titulo { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.4; color: var(--text-main); }
         .macro-blk-edit { position: absolute; top: 22px; right: 24px; color: #d4d4d8; transition: 0.15s; }
         .pt-dir:hover .macro-blk-edit { color: var(--primary-purple); }
 
@@ -353,11 +353,6 @@
                                 <div class="saude-ring-pct"><span class="saude-ring-num" style="color:${cor(geral)};">${geral}%</span><span class="saude-ring-sub">do ciclo</span></div>
                             </div>
                             <div class="saude-bloco-label">Saúde do Ciclo</div>
-                        </div>
-                        <div class="metricas">
-                            <div class="metrica"><div class="metrica-icon"><span class="material-symbols-rounded">domain</span></div><span class="metrica-num">${depts.length}</span><span class="metrica-label">Departamentos</span></div>
-                            <div class="metrica"><div class="metrica-icon"><span class="material-symbols-rounded">target</span></div><span class="metrica-num">${cnt.nObj}</span><span class="metrica-label">Objetivos</span></div>
-                            <div class="metrica"><div class="metrica-icon"><span class="material-symbols-rounded">trending_up</span></div><span class="metrica-num">${cnt.nKr}</span><span class="metrica-label">Key Results</span></div>
                         </div>
                     </div>
                     <div class="pt-dir" onclick="abrirMacro()">
