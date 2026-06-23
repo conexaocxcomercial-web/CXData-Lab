@@ -1423,8 +1423,7 @@ def okr_dashboard_page():
         return redirect(url_for('login'))
     if not pode_ver_okr():
         return redirect(url_for('index'))
-    # O Dashboard do OKR será construído na próxima fase.
-    return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+    return render_template('okr_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/okr/arvore', methods=['GET'])
 def okr_arvore():
