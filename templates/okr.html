@@ -44,25 +44,34 @@
         .breadcrumb .sep { opacity: 0.4; }
 
         /* ===== NÍVEL 1: HERO DE SAÚDE + GRID DE DEPARTAMENTOS ===== */
-        .hero { display: grid; grid-template-columns: 340px 1fr; gap: 16px; margin-bottom: 28px; }
-        /* Saúde do ciclo — card claro, amplo, anel grande e bem proporcionado */
-        .hero-saude { background: #fff; padding: 28px 30px; display: flex; align-items: center; gap: 26px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
-        .saude-ring { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
-        .saude-ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-        .saude-ring-num { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
-        .saude-info { min-width: 0; }
-        .saude-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 14px; }
-        .saude-macro-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
-        .saude-macro-txt { font-size: 15px; font-weight: 800; line-height: 1.3; cursor: pointer; color: var(--text-main); transition: 0.15s; letter-spacing: -0.3px; }
-        .saude-macro-txt:hover { color: var(--primary-purple); }
+        /* Faixa de objetivo macro (cabeçalho fino) */
+        .macro-bar { background: linear-gradient(100deg, #1e1e1e, #2b2950); color: #fff; padding: 16px 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.2s; }
+        .macro-bar:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(43,41,80,0.2); }
+        .macro-bar-icon { width: 34px; height: 34px; flex-shrink: 0; background: rgba(190,245,51,0.15); display: flex; align-items: center; justify-content: center; border-radius: 10px !important; }
+        .macro-bar-icon .material-symbols-rounded { font-size: 18px; color: var(--accent-lime); }
+        .macro-bar-content { flex-grow: 1; min-width: 0; }
+        .macro-bar-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,0.5); }
+        .macro-bar-titulo { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; margin-top: 2px; line-height: 1.3; }
+        .macro-bar-edit { flex-shrink: 0; color: rgba(255,255,255,0.4); display: flex; align-items: center; transition: 0.15s; }
+        .macro-bar:hover .macro-bar-edit { color: #fff; }
 
+        .hero { display: grid; grid-template-columns: 280px 1fr; gap: 16px; margin-bottom: 28px; }
+        /* Saúde — anel central, % dentro, rótulo embaixo */
+        .hero-saude { background: #fff; padding: 26px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .saude-ring { position: relative; width: 140px; height: 140px; }
+        .saude-ring-pct { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .saude-ring-num { font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .saude-ring-sub { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 4px; }
+        .saude-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-main); margin-top: 16px; }
+
+        /* Cards de métrica — number-first */
         .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .stat-card { background: #fff; padding: 26px 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
-        .stat-top { display: flex; align-items: center; gap: 11px; margin-bottom: 20px; }
-        .stat-icon { width: 40px; height: 40px; display:flex; align-items:center; justify-content:center; border-radius: 12px !important; flex-shrink: 0; background:#f0efff; }
-        .stat-icon .material-symbols-rounded { font-size: 21px; color: var(--primary-purple); }
-        .stat-card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
-        .stat-num { font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--text-main); }
+        .stat-card { background: #fff; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 20px; }
+        .stat-num { font-size: 54px; font-weight: 900; letter-spacing: -3px; line-height: 0.9; color: var(--text-main); flex-shrink: 0; }
+        .stat-right { display: flex; flex-direction: column; gap: 8px; }
+        .stat-icon { width: 38px; height: 38px; display:flex; align-items:center; justify-content:center; border-radius: 11px !important; background:#f0efff; }
+        .stat-icon .material-symbols-rounded { font-size: 20px; color: var(--primary-purple); }
+        .stat-card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; line-height: 1.3; }
 
         .section-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin: 4px 0 16px; display: flex; align-items: center; justify-content: space-between; }
 
@@ -330,35 +339,40 @@
             const geral = calcGeralPct();
             const cnt = contar();
 
-            const r = 48, circ = 2 * Math.PI * r, off = circ * (1 - geral/100);
-            let html = `<div class="hero">
+            const r = 62, circ = 2 * Math.PI * r, off = circ * (1 - geral/100);
+            let html = `
+                <div class="macro-bar" onclick="abrirMacro()">
+                    <div class="macro-bar-icon"><span class="material-symbols-rounded">flag</span></div>
+                    <div class="macro-bar-content">
+                        <div class="macro-bar-label">Objetivo Macro ${macro && macro.ciclo ? '· '+escH(macro.ciclo) : ''}</div>
+                        <div class="macro-bar-titulo">${macro && macro.titulo ? escH(macro.titulo) : '<span style="opacity:0.6">Clique para definir o objetivo macro do ciclo →</span>'}</div>
+                    </div>
+                    <div class="macro-bar-edit"><span class="material-symbols-rounded" style="font-size:18px;">edit</span></div>
+                </div>
+                <div class="hero">
                 <div class="hero-saude">
                     <div class="saude-ring">
-                        <svg width="110" height="110" viewBox="0 0 110 110">
-                            <circle cx="55" cy="55" r="${r}" fill="none" stroke="#f0f0f1" stroke-width="9"/>
-                            <circle cx="55" cy="55" r="${r}" fill="none" stroke="${cor(geral)}" stroke-width="9" stroke-linecap="round"
-                                stroke-dasharray="${circ}" stroke-dashoffset="${off}" transform="rotate(-90 55 55)" style="transition:stroke-dashoffset 0.6s;"/>
+                        <svg width="140" height="140" viewBox="0 0 140 140">
+                            <circle cx="70" cy="70" r="${r}" fill="none" stroke="#f0f0f1" stroke-width="11"/>
+                            <circle cx="70" cy="70" r="${r}" fill="none" stroke="${cor(geral)}" stroke-width="11" stroke-linecap="round"
+                                stroke-dasharray="${circ}" stroke-dashoffset="${off}" transform="rotate(-90 70 70)" style="transition:stroke-dashoffset 0.6s;"/>
                         </svg>
-                        <div class="saude-ring-pct"><span class="saude-ring-num" style="color:${cor(geral)};">${geral}%</span></div>
+                        <div class="saude-ring-pct"><span class="saude-ring-num" style="color:${cor(geral)};">${geral}%</span><span class="saude-ring-sub">do ciclo</span></div>
                     </div>
-                    <div class="saude-info">
-                        <div class="saude-tag">Saúde do Ciclo</div>
-                        <div class="saude-macro-label"><span class="material-symbols-rounded" style="font-size:11px;">flag</span> Objetivo Macro ${macro && macro.ciclo ? '· '+escH(macro.ciclo) : ''}</div>
-                        <div class="saude-macro-txt" onclick="abrirMacro()">${macro && macro.titulo ? escH(macro.titulo) : '<span style="opacity:0.55">Definir objetivo macro →</span>'}</div>
-                    </div>
+                    <div class="saude-label">Saúde do Ciclo</div>
                 </div>
                 <div class="hero-stats">
                     <div class="stat-card">
-                        <div class="stat-top"><div class="stat-icon"><span class="material-symbols-rounded">domain</span></div><span class="stat-card-label">Departamentos</span></div>
                         <div class="stat-num">${depts.length}</div>
+                        <div class="stat-right"><div class="stat-icon"><span class="material-symbols-rounded">domain</span></div><span class="stat-card-label">Departamentos</span></div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-top"><div class="stat-icon"><span class="material-symbols-rounded">target</span></div><span class="stat-card-label">Objetivos</span></div>
                         <div class="stat-num">${cnt.nObj}</div>
+                        <div class="stat-right"><div class="stat-icon"><span class="material-symbols-rounded">target</span></div><span class="stat-card-label">Objetivos</span></div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-top"><div class="stat-icon"><span class="material-symbols-rounded">trending_up</span></div><span class="stat-card-label">Key Results</span></div>
                         <div class="stat-num">${cnt.nKr}</div>
+                        <div class="stat-right"><div class="stat-icon"><span class="material-symbols-rounded">trending_up</span></div><span class="stat-card-label">Key Results</span></div>
                     </div>
                 </div>
             </div>`;
