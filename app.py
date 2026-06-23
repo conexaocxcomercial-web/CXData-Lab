@@ -1466,19 +1466,19 @@ def okr_arvore():
         objetivos_por_dept = {d["id"]: [] for d in departamentos}
 
         if dept_ids:
-            res_obj = supabase.table("okr_objetivos").select("*").in_("departamento_id", dept_ids).execute()
+            res_obj = supabase.table("okr_objetivos").select("*").in_("departamento_id", dept_ids).order("criado_em").execute()
             objetivos = res_obj.data or []
             obj_ids = [o["id"] for o in objetivos]
 
             krs_por_obj = {o["id"]: [] for o in objetivos}
             if obj_ids:
-                res_kr = supabase.table("okr_key_results").select("*").in_("objetivo_id", obj_ids).execute()
+                res_kr = supabase.table("okr_key_results").select("*").in_("objetivo_id", obj_ids).order("criado_em").execute()
                 krs = res_kr.data or []
                 kr_ids = [k["id"] for k in krs]
 
                 tarefas_por_kr = {k["id"]: [] for k in krs}
                 if kr_ids:
-                    res_task = supabase.table("okr_tarefas").select("*").in_("kr_id", kr_ids).execute()
+                    res_task = supabase.table("okr_tarefas").select("*").in_("kr_id", kr_ids).order("criado_em").execute()
                     for t in (res_task.data or []):
                         tarefas_por_kr.setdefault(t["kr_id"], []).append(t)
 
