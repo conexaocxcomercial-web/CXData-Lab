@@ -575,13 +575,13 @@ def listar_usuarios():
 
 def montar_permissoes(dados):
     """Monta o dict de campos de permissão a salvar, conforme o nível/tipo.
-    Para níveis fixos (admin/gestor/colaborador) limpa as permissões granulares."""
-    nivel = dados.get("nivel_acesso", "colaborador")
+    Para nível admin limpa as permissões (vê tudo)."""
+    nivel = dados.get("nivel_acesso", "comum")
     tipo = dados.get("tipo_usuario", "interno")
     perms = {}
 
-    # Personalizado (interno) OU qualquer externo: usa as permissões granulares
-    if nivel == "personalizado" or tipo == "externo":
+    # Comum/Personalizado (interno) OU qualquer externo: usa a lista de módulos
+    if nivel in ("comum", "personalizado") or tipo == "externo":
         perms["perm_modulos"] = dados.get("perm_modulos", [])
         perms["perm_clientes_modo"] = dados.get("perm_clientes_modo", "todos")
         perms["perm_clientes_ids"] = dados.get("perm_clientes_ids", [])
@@ -591,7 +591,7 @@ def montar_permissoes(dados):
         if tipo == "externo":
             perms["papel_externo"] = dados.get("papel_externo", "visualizador")
     else:
-        # Níveis fixos: zera as permissões granulares (limpeza)
+        # Admin (e gestor legado): vê tudo, sem restrição de módulo
         perms["perm_modulos"] = []
         perms["perm_clientes_modo"] = "todos"
         perms["perm_clientes_ids"] = []
