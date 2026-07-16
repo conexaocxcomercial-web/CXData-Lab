@@ -73,14 +73,15 @@ def get_perm(chave, padrao=None):
 
 def pode_acessar_modulo(modulo):
     """Verifica se o usuário logado pode acessar um módulo.
-    admin/gestor: tudo. colaborador: quadros + agenda. personalizado/externo: conforme perm_modulos."""
+    admin/gestor: tudo. comum: os módulos marcados (perm_modulos), mas vê todos os dados.
+    colaborador (legado): quadros + agenda. personalizado/externo: conforme perm_modulos."""
     nivel = session.get('nivel_acesso')
     if nivel in ('admin', 'gestor'):
         return True
     if nivel == 'colaborador':
-        # Colaborador acessa quadros e agenda (como hoje), mas não dashboard/clientes
+        # Legado: colaborador acessa quadros e agenda
         return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda')
-    # personalizado e externo: usam a lista explícita
+    # comum, personalizado e externo: usam a lista explícita de módulos
     modulos = session.get('perm_modulos') or []
     return modulo in modulos
 
@@ -93,7 +94,11 @@ def filtrar_projetos_permitidos(projetos):
     if nivel in ('admin', 'gestor'):
         return projetos
 
-    # Colaborador: só onde é responsável (comportamento atual preservado)
+    # Comum: vê TODOS os dados (o controle é só de módulos, não de dados)
+    if nivel == 'comum':
+        return projetos
+
+    # Colaborador (legado): só onde é responsável
     if nivel == 'colaborador':
         meu_nome = (session.get('usuario_nome') or '').strip().lower()
         return [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
@@ -940,7 +945,7 @@ def mapa_cliente(cliente_id):
 def dashboard_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or (is_personalizado() and pode_acessar_modulo('dashboard'))
+    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or pode_acessar_modulo('dashboard')
     if not pode:
         return redirect(url_for('index'))
     return render_template('dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
@@ -948,7 +953,7 @@ def dashboard_page():
 @app.route('/api/dashboard', methods=['GET'])
 def dados_dashboard():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or (is_personalizado() and pode_acessar_modulo('dashboard'))
+    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or pode_acessar_modulo('dashboard')
     if not pode:
         return jsonify({"erro": "Acesso negado"}), 403
     try:
@@ -1380,8 +1385,8 @@ def clientes_okr_permitidos():
         return meus, False, (cid or None)
 
     nivel = session.get('nivel_acesso')
-    # ADMIN / GESTOR: todos, com seletor
-    if nivel in ('admin', 'gestor'):
+    # ADMIN / GESTOR / COMUM: todos os clientes, com seletor
+    if nivel in ('admin', 'gestor', 'comum'):
         return todos, True, None
 
     # PERSONALIZADO: conforme a permissão de clientes
