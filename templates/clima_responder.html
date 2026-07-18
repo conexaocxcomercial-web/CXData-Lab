@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Clima</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root { --bg:#f4f4f5; --text:#1e1e1e; --muted:#71717a; --purple:#7371ff; --green:#14b8a6; --red:#f87171; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 0 0 80px; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+
+        .topo { background: #fff; padding: 40px 24px; text-align: center; box-shadow: 0 2px 20px rgba(0,0,0,0.03); }
+        .topo-logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 20px; }
+        .topo-logo span { color: var(--purple); }
+        .topo h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.8px; max-width: 640px; margin: 0 auto 12px; line-height: 1.2; }
+        .topo p { font-size: 14px; color: var(--muted); max-width: 560px; margin: 0 auto; line-height: 1.6; }
+        .anon-badge { display: inline-flex; align-items: center; gap: 7px; background: #e7fbf5; color: var(--green); font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 50px !important; margin-top: 20px; }
+
+        .container { max-width: 680px; margin: 0 auto; padding: 0 20px; }
+        .progress-wrap { position: sticky; top: 0; background: var(--bg); padding: 20px 0 12px; z-index: 10; }
+        .progress-bar { height: 6px; background: #e4e4e7; overflow: hidden; border-radius: 50px !important; }
+        .progress-fill { height: 100%; background: var(--purple); width: 0%; transition: width 0.4s; border-radius: 50px !important; }
+        .progress-txt { font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .secao { background: #fff; padding: 28px; margin-bottom: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
+        .secao-titulo { font-size: 17px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+        .secao-titulo .material-symbols-rounded { color: var(--purple); }
+        .secao-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
+        .lider-contexto { display: inline-block; background: #f0efff; color: var(--purple); font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 50px !important; margin-left: 8px; }
+
+        .pergunta { padding: 18px 0; border-bottom: 1px solid #f4f4f5; }
+        .pergunta:last-child { border-bottom: none; }
+        .perg-label { font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 14px; }
+        .perg-label .obrig { color: var(--red); margin-left: 3px; }
+
+        /* Likert */
+        .likert { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .likert-opt { padding: 12px 6px; text-align: center; background: #f9f9fb; cursor: pointer; transition: 0.15s; font-size: 11px; font-weight: 700; color: var(--muted); line-height: 1.3; user-select: none; }
+        .likert-opt:hover { background: #f0efff; }
+        .likert-opt.sel { background: var(--purple); color: #fff; }
+
+        /* Escala 0-10 */
+        .escala10 { display: flex; gap: 6px; flex-wrap: wrap; }
+        .escala10-opt { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f9f9fb; cursor: pointer; transition: 0.15s; font-size: 14px; font-weight: 800; color: var(--muted); user-select: none; }
+        .escala10-opt:hover { background: #f0efff; }
+        .escala10-opt.sel { background: var(--purple); color: #fff; }
+
+        /* Texto */
+        .texto-resp { width: 100%; padding: 14px; font-size: 14px; background: #f9f9fb; outline: none; font-family: 'Inter', sans-serif; resize: vertical; min-height: 90px; font-weight: 500; line-height: 1.5; }
+        .texto-resp:focus { box-shadow: inset 0 0 0 2px var(--purple); }
+
+        /* Perfil: selects e opções */
+        .opt-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+        .opt-chip { padding: 12px 20px; background: #f9f9fb; cursor: pointer; transition: 0.15s; font-size: 14px; font-weight: 700; color: var(--text); user-select: none; }
+        .opt-chip:hover { background: #f0efff; }
+        .opt-chip.sel { background: var(--purple); color: #fff; }
+        .multi-hint { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+        .btn-enviar { background: var(--purple); color: #fff; width: 100%; padding: 18px; font-size: 15px; font-weight: 800; cursor: pointer; transition: 0.2s; letter-spacing: 0.5px; margin-top: 8px; }
+        .btn-enviar:hover { background: var(--text); }
+        .btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .estado-msg { text-align: center; padding: 100px 24px; }
+        .estado-msg .material-symbols-rounded { font-size: 72px; opacity: 0.2; display: block; margin-bottom: 20px; }
+        .estado-msg h2 { font-size: 22px; font-weight: 900; margin-bottom: 10px; }
+        .estado-msg p { font-size: 14px; color: var(--muted); max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+        .sucesso .material-symbols-rounded { color: var(--green); opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="estado-msg"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <script>
+        const TOKEN = "{{ token }}";
+        let pesquisa = null;
+        let respostas = {};        // pergunta_id (+ '_' + lider_id) -> valor
+        let perfil = { tempo_empresa: null, setor_id: null, lideres: [] };
+        const LIKERT = [['5','Concordo totalmente'],['4','Concordo'],['3','Indiferente'],['2','Discordo'],['1','Discordo totalmente']];
+
+        document.addEventListener('DOMContentLoaded', carregar);
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+        async function carregar() {
+            try {
+                const res = await fetch('/api/clima/publico/' + TOKEN);
+                const data = await res.json();
+                if (data.erro === 'indisponivel' || (data.pesquisa && false)) {
+                    return mostrarIndisponivel(data.status_pesquisa);
+                }
+                if (!res.ok || data.erro) return mostrarIndisponivel();
+                pesquisa = data.pesquisa;
+                render();
+            } catch(e) { mostrarIndisponivel(); }
+        }
+
+        function mostrarIndisponivel(status) {
+            let msg = 'Esta pesquisa não está disponível no momento.';
+            if (status === 'rascunho') msg = 'Esta pesquisa ainda não foi aberta.';
+            if (status === 'encerrada') msg = 'Esta pesquisa já foi encerrada. Obrigado pelo interesse.';
+            document.getElementById('app').innerHTML = `
+                <div class="estado-msg">
+                    <span class="material-symbols-rounded">event_busy</span>
+                    <h2>Indisponível</h2>
+                    <p>${msg}</p>
+                </div>`;
+        }
+
+        function render() {
+            const p = pesquisa;
+            let html = `
+                <div class="topo">
+                    <div class="topo-logo">CX<span>Projetos</span></div>
+                    <h1>${escH(p.titulo)}</h1>
+                    ${p.descricao?`<p>${escH(p.descricao)}</p>`:''}
+                    <div class="anon-badge"><span class="material-symbols-rounded" style="font-size:15px;">lock</span> Resposta 100% anônima</div>
+                </div>
+                <div class="container">
+                    <div class="progress-wrap">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                        <div class="progress-txt" id="progressTxt">Vamos começar</div>
+                    </div>
+                    <div id="perguntasArea"></div>
+                    <button class="btn-enviar" id="btnEnviar" onclick="enviar()">Enviar respostas</button>
+                </div>`;
+            document.getElementById('app').innerHTML = html;
+            renderPerguntas();
+        }
+
+        function renderPerguntas() {
+            const p = pesquisa;
+            const setores = p.setores || [];
+            const lideres = p.lideres || [];
+            let html = '';
+
+            // 1. PERFIL
+            html += `<div class="secao">
+                <div class="secao-titulo"><span class="material-symbols-rounded">badge</span> Sobre você</div>
+                <div class="secao-sub">Essas informações ajudam a entender os resultados por grupo, sem identificar você.</div>
+
+                <div class="pergunta">
+                    <div class="perg-label">Há quanto tempo você está na empresa?<span class="obrig">*</span></div>
+                    <div class="opt-chips" id="tempoChips">
+                        <div class="opt-chip" onclick="selTempo('mais_2', this)">Mais de 2 anos</div>
+                        <div class="opt-chip" onclick="selTempo('menos_2', this)">Menos de 2 anos</div>
+                    </div>
+                </div>`;
+
+            if (setores.length) {
+                html += `<div class="pergunta">
+                    <div class="perg-label">Qual seu setor?<span class="obrig">*</span></div>
+                    <div class="opt-chips" id="setorChips">
+                        ${setores.map(s=>`<div class="opt-chip" onclick="selSetor('${s.id}', this)">${escH(s.nome)}</div>`).join('')}
+                    </div>
+                </div>`;
+            }
+
+            if (lideres.length) {
+                html += `<div class="pergunta">
+                    <div class="perg-label">Quem é a sua liderança?<span class="obrig">*</span></div>
+                    <div class="opt-chips" id="lideresChips">
+                        ${lideres.map(l=>`<div class="opt-chip" onclick="toggleLider('${l.id}', this)">${escH(l.nome)}</div>`).join('')}
+                    </div>
+                    <div class="multi-hint">Você pode marcar mais de uma liderança, se for o caso.</div>
+                </div>`;
+            }
+            html += `</div>`;
+
+            // 2. DIMENSÕES
+            (p.dimensoes || []).forEach(dim => {
+                if (dim.eh_lideranca) {
+                    // Bloco de liderança: repete para cada líder marcado
+                    // Renderizado dinamicamente conforme líderes selecionados (placeholder aqui)
+                    html += `<div id="blocoLideranca_${dim.id}" data-dim='${escH(JSON.stringify(dim))}'></div>`;
+                } else {
+                    html += `<div class="secao">
+                        <div class="secao-titulo"><span class="material-symbols-rounded">quiz</span> ${escH(dim.nome)}</div>
+                        <div>${(dim.perguntas||[]).map(pg => renderPergunta(pg, null)).join('')}</div>
+                    </div>`;
+                }
+            });
+
+            document.getElementById('perguntasArea').innerHTML = html;
+            atualizarProgresso();
+        }
+
+        function renderPergunta(pg, liderId) {
+            const key = pg.id + (liderId?('_'+liderId):'');
+            const obrig = pg.obrigatoria !== false ? '<span class="obrig">*</span>' : '';
+            let campo = '';
+            if (pg.tipo === 'likert') {
+                campo = `<div class="likert">${LIKERT.map(([v,txt])=>`
+                    <div class="likert-opt ${respostas[key]===v?'sel':''}" onclick="setResp('${key}','${v}', this, 'likert')">${txt}</div>`).join('')}</div>`;
+            } else if (pg.tipo === 'escala10') {
+                campo = `<div class="escala10">${Array.from({length:11},(_,i)=>`
+                    <div class="escala10-opt ${respostas[key]===String(i)?'sel':''}" onclick="setResp('${key}','${i}', this, 'escala10')">${i}</div>`).join('')}</div>`;
+            } else {
+                campo = `<textarea class="texto-resp" placeholder="Sua resposta..." oninput="setResp('${key}', this.value, null, 'texto')">${respostas[key]?escH(respostas[key]):''}</textarea>`;
+            }
+            return `<div class="pergunta"><div class="perg-label">${escH(pg.texto)}${obrig}</div>${campo}</div>`;
+        }
+
+        // Renderiza os blocos de liderança conforme líderes marcados
+        function renderBlocosLideranca() {
+            const p = pesquisa;
+            (p.dimensoes || []).filter(d=>d.eh_lideranca).forEach(dim => {
+                const cont = document.getElementById('blocoLideranca_' + dim.id);
+                if (!cont) return;
+                if (!perfil.lideres.length) {
+                    cont.innerHTML = `<div class="secao">
+                        <div class="secao-titulo"><span class="material-symbols-rounded">supervisor_account</span> ${escH(dim.nome)}</div>
+                        <div class="secao-sub">Marque sua liderança na seção "Sobre você" acima para responder esta parte.</div>
+                    </div>`;
+                    return;
+                }
+                let html = '';
+                perfil.lideres.forEach(lid => {
+                    const lider = (p.lideres||[]).find(l=>l.id===lid);
+                    const nome = lider ? lider.nome : '';
+                    html += `<div class="secao">
+                        <div class="secao-titulo"><span class="material-symbols-rounded">supervisor_account</span> ${escH(dim.nome)} <span class="lider-contexto">${escH(nome)}</span></div>
+                        <div class="secao-sub">Responda pensando especificamente nesta liderança.</div>
+                        <div>${(dim.perguntas||[]).map(pg => renderPergunta(pg, lid)).join('')}</div>
+                    </div>`;
+                });
+                cont.innerHTML = html;
+            });
+        }
+
+        // ===== SELEÇÕES DE PERFIL =====
+        function selTempo(val, el) { perfil.tempo_empresa = val; document.querySelectorAll('#tempoChips .opt-chip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); atualizarProgresso(); }
+        function selSetor(val, el) { perfil.setor_id = val; document.querySelectorAll('#setorChips .opt-chip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); atualizarProgresso(); }
+        function toggleLider(val, el) {
+            const idx = perfil.lideres.indexOf(val);
+            if (idx >= 0) { perfil.lideres.splice(idx,1); el.classList.remove('sel'); }
+            else { perfil.lideres.push(val); el.classList.add('sel'); }
+            renderBlocosLideranca();
+            atualizarProgresso();
+        }
+
+        function setResp(key, val, el, tipo) {
+            respostas[key] = val;
+            if (tipo === 'likert' && el) { el.parentElement.querySelectorAll('.likert-opt').forEach(o=>o.classList.remove('sel')); el.classList.add('sel'); }
+            if (tipo === 'escala10' && el) { el.parentElement.querySelectorAll('.escala10-opt').forEach(o=>o.classList.remove('sel')); el.classList.add('sel'); }
+            atualizarProgresso();
+        }
+
+        function atualizarProgresso() {
+            // Conta perguntas obrigatórias respondidas
+            let total = 0, feitas = 0;
+            // perfil
+            total += 1; if (perfil.tempo_empresa) feitas++;
+            if ((pesquisa.setores||[]).length) { total += 1; if (perfil.setor_id) feitas++; }
+            if ((pesquisa.lideres||[]).length) { total += 1; if (perfil.lideres.length) feitas++; }
+            // perguntas
+            (pesquisa.dimensoes||[]).forEach(dim => {
+                if (dim.eh_lideranca) {
+                    perfil.lideres.forEach(lid => {
+                        (dim.perguntas||[]).forEach(pg => { if (pg.obrigatoria!==false){ total++; if (respostas[pg.id+'_'+lid]) feitas++; } });
+                    });
+                } else {
+                    (dim.perguntas||[]).forEach(pg => { if (pg.obrigatoria!==false){ total++; if (respostas[pg.id]) feitas++; } });
+                }
+            });
+            const pct = total>0 ? Math.round((feitas/total)*100) : 0;
+            const fill = document.getElementById('progressFill');
+            const txt = document.getElementById('progressTxt');
+            if (fill) fill.style.width = pct + '%';
+            if (txt) txt.textContent = pct===100 ? 'Tudo pronto para enviar!' : `${feitas} de ${total} respondidas`;
+        }
+
+        // ===== ENVIAR =====
+        async function enviar() {
+            // Validação
+            if (!perfil.tempo_empresa) { alert('Informe seu tempo de empresa.'); window.scrollTo({top:0,behavior:'smooth'}); return; }
+            if ((pesquisa.setores||[]).length && !perfil.setor_id) { alert('Informe seu setor.'); return; }
+            if ((pesquisa.lideres||[]).length && !perfil.lideres.length) { alert('Marque sua liderança.'); return; }
+
+            // Monta itens
+            const itens = [];
+            let faltando = false;
+            (pesquisa.dimensoes||[]).forEach(dim => {
+                if (dim.eh_lideranca) {
+                    perfil.lideres.forEach(lid => {
+                        (dim.perguntas||[]).forEach(pg => {
+                            const key = pg.id + '_' + lid;
+                            const val = respostas[key];
+                            if (pg.obrigatoria!==false && (val===undefined||val==='')) faltando = true;
+                            if (val!==undefined && val!=='') itens.push({ pergunta_id: pg.id, lider_id: lid, valor: val, tipo: pg.tipo });
+                        });
+                    });
+                } else {
+                    (dim.perguntas||[]).forEach(pg => {
+                        const val = respostas[pg.id];
+                        if (pg.obrigatoria!==false && (val===undefined||val==='')) faltando = true;
+                        if (val!==undefined && val!=='') itens.push({ pergunta_id: pg.id, lider_id: null, valor: val, tipo: pg.tipo });
+                    });
+                }
+            });
+            if (faltando) { if(!confirm('Algumas perguntas obrigatórias não foram respondidas. Enviar mesmo assim?')) return; }
+
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true; btn.textContent = 'Enviando...';
+            try {
+                const res = await fetch('/api/clima/publico/' + TOKEN + '/responder', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ tempo_empresa: perfil.tempo_empresa, setor_id: perfil.setor_id, lideres: perfil.lideres, itens })
+                });
+                if (res.ok) { mostrarSucesso(); }
+                else { btn.disabled=false; btn.textContent='Enviar respostas'; alert('Não foi possível enviar. Tente novamente.'); }
+            } catch(e) { btn.disabled=false; btn.textContent='Enviar respostas'; alert('Erro de conexão.'); }
+        }
+
+        function mostrarSucesso() {
+            document.getElementById('app').innerHTML = `
+                <div class="estado-msg sucesso">
+                    <span class="material-symbols-rounded">check_circle</span>
+                    <h2>Resposta enviada!</h2>
+                    <p>Obrigado por participar. Sua opinião é anônima e vai ajudar a construir um ambiente de trabalho melhor.</p>
+                </div>`;
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+    </script>
+</body>
+</html>
