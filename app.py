@@ -1669,8 +1669,7 @@ def clima_dashboard_page():
         return redirect(url_for('login'))
     if not pode_ver_clima():
         return redirect(url_for('index'))
-    # Dashboard do Clima será construído na fase 2
-    return render_template('clima.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
+    return render_template('clima_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
 
 # ===== MODELO BASE =====
 @app.route('/api/clima/modelo', methods=['GET'])
@@ -1835,6 +1834,68 @@ def _clima_montar_dimensoes(pesquisa_id):
     for d in dims:
         d["perguntas"] = pergs.get(d["id"], [])
     return dims
+
+
+@app.route('/api/clima/resultados/<pid>', methods=['GET'])
+def clima_resultados(pid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = supabase.table("clima_pesquisas").select("*").eq("id", pid).execute()
+        if not res.data: return jsonify({"erro": "Não encontrada"}), 404
+        pesquisa = res.data[0]
+        # valida acesso ao cliente
+        clientes, _, _ = clientes_okr_permitidos()
+        if str(pesquisa.get("cliente_id")) not in {c["id"] for c in clientes}:
+            return jsonify({"erro": "Acesso negado"}), 403
+
+        # Dimensões + perguntas
+        dimensoes = _clima_montar_dimensoes(pid)
+        # Mapa pergunta -> {dimensao, tipo, texto}
+        perg_info = {}
+        for d in dimensoes:
+            for pg in d.get("perguntas", []):
+                perg_info[pg["id"]] = {"dimensao_id": d["id"], "tipo": pg["tipo"], "texto": pg["texto"]}
+
+        # Líderes e setores do cliente
+        lid = supabase.table("clima_lideres").select("id, nome, cargo").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
+        lideres = lid.data or []
+        setores = supabase.table("clima_setores").select("id, nome").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
+
+        # Respostas (anônimas) da pesquisa
+        resp = supabase.table("clima_respostas").select("*").eq("pesquisa_id", pid).execute()
+        respostas = resp.data or []
+        resp_ids = [r["id"] for r in respostas]
+
+        # Vínculo resposta -> líderes
+        resp_lideres = {}
+        if resp_ids:
+            rl = supabase.table("clima_resposta_lideres").select("*").in_("resposta_id", resp_ids).execute()
+            for x in (rl.data or []):
+                resp_lideres.setdefault(x["resposta_id"], []).append(x["lider_id"])
+
+        # Itens (respostas de cada pergunta)
+        itens = []
+        if resp_ids:
+            # busca em blocos para evitar limite
+            for i in range(0, len(resp_ids), 50):
+                bloco = resp_ids[i:i+50]
+                it = supabase.table("clima_respostas_itens").select("*").in_("resposta_id", bloco).execute()
+                itens.extend(it.data or [])
+
+        return jsonify({
+            "status": "sucesso",
+            "pesquisa": {"id": pesquisa["id"], "titulo": pesquisa["titulo"], "status": pesquisa["status"], "cliente_id": pesquisa["cliente_id"]},
+            "dimensoes": dimensoes,
+            "lideres": lideres,
+            "setores": setores.data or [],
+            "respostas": respostas,           # cada uma: id, tempo_empresa, setor_id
+            "resposta_lideres": resp_lideres, # resposta_id -> [lider_id]
+            "itens": itens                    # resposta_id, pergunta_id, lider_id, valor_num, valor_texto
+        }), 200
+    except Exception as e:
+        print(f"[ERRO] clima_resultados: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Não foi possível carregar os resultados."}), 500
 
 @app.route('/api/clima/pesquisa/<pid>', methods=['PUT'])
 def clima_pesquisa_atualizar(pid):
