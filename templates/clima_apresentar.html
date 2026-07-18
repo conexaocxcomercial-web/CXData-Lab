@@ -19,6 +19,8 @@
         .stage { position: fixed; inset: 0; }
         .slide { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 5vh 6vw; opacity: 0; transform: scale(0.98) translateY(10px); pointer-events: none; transition: opacity 0.5s ease, transform 0.5s ease; overflow: hidden; }
         .slide.active { opacity: 1; transform: none; pointer-events: auto; }
+        /* conteúdo interno preenche o slide */
+        .slide-inner { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
 
         /* Marca d'água/cabeçalho comum */
         .slide-brand { position: absolute; top: 4vh; left: 6vw; font-size: 1.4vw; font-weight: 800; letter-spacing: -0.5px; }
@@ -224,7 +226,7 @@
             const resps = dados.respostas || [];
             if (s.tipo === 'capa') {
                 const nSet = new Set(resps.map(r=>r.setor_id).filter(Boolean)).size;
-                return `<div class="slide capa" style="position:relative;">
+                return `<div class="slide-inner capa" style="position:relative;">
                     <div class="capa-deco"></div>
                     <div class="capa-logo">CX<span>Projetos</span></div>
                     <div class="capa-eyebrow">Pesquisa de Clima Organizacional</div>
@@ -243,7 +245,7 @@
                 const cor = corIndice(pct);
                 const enps = npsDim(itens,'enps'), npsv = npsDim(itens,'nps');
                 const r=44, c=2*Math.PI*r;
-                return `<div class="slide panorama">
+                return `<div class="slide-inner panorama">
                     <div class="slide-brand">CX<span>Projetos</span></div>
                     <div class="slide-kicker">Panorama geral</div>
                     <div class="pano-gauge">
@@ -272,7 +274,7 @@
                     lista = (dados.lideres||[]).map(x=>{ const its=(dados.itens||[]).filter(i=>String(i.lider_id)===String(x.id)&&ehLikert(i.pergunta_id)); return {nome:x.nome, fav:positivas(its)}; });
                 }
                 lista = lista.filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-                return `<div class="slide rank-full">
+                return `<div class="slide-inner rank-full">
                     <div class="slide-brand">CX<span>Projetos</span></div>
                     <div class="slide-kicker">${isSetor?'Por departamento':'Por liderança'}</div>
                     <div class="slide-head">
@@ -303,7 +305,7 @@
                     if (pg.tipo==='escala10') return dimCardEscala(pg, its);
                     return dimCardTexto(pg, its);
                 }).join('');
-                return `<div class="slide dim-slide">
+                return `<div class="slide-inner dim-slide">
                     <div class="slide-brand">CX<span>Projetos</span></div>
                     <div class="slide-kicker">Dimensão</div>
                     <div class="dim-slide-head">
@@ -318,7 +320,7 @@
             }
             if (s.tipo === 'ia') {
                 const ins = gerarInsights(itens, resps);
-                return `<div class="slide ia-slide">
+                return `<div class="slide-inner ia-slide">
                     <div class="slide-brand">CX<span>Projetos</span></div>
                     <div class="slide-kicker">Análise</div>
                     <div class="slide-head">
@@ -333,7 +335,7 @@
             if (s.tipo === 'fim') {
                 const ids=[]; (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{ if(p.tipo==='likert') ids.push(p.id); }));
                 const pct = positivas(itens.filter(i=>ids.includes(i.pergunta_id))) ?? 0;
-                return `<div class="slide fim">
+                return `<div class="slide-inner fim">
                     <div class="fim-eyebrow">Obrigado</div>
                     <div class="fim-titulo">Clima geral em <span style="color:${corIndice(pct)};">${pct}%</span><br>de respostas positivas</div>
                     <div class="fim-sub">Este panorama é o ponto de partida para construir, juntos, um ambiente de trabalho ainda melhor.</div>
