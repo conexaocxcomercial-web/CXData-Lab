@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clima | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0;
+                --green:#14b8a6; --amber:#eab308; --red:#f87171; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+
+        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+
+        .command-bar { padding: 22px 40px 6px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px; }
+        .cb-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .cb-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+        .cb-title .material-symbols-rounded { color: var(--primary-purple); }
+        .cliente-sel { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #fff; border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); min-width: 230px; }
+        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; white-space: nowrap; }
+        .btn-acao:hover { background-color: var(--text-main); }
+        .btn-sec { background: #fff; color: var(--text-main); padding: 10px 18px; font-weight: 800; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:7px; transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .btn-sec:hover { background: #f4f4f5; }
+        .btn-ghost { background: transparent; color: var(--text-muted); padding: 9px 14px; font-weight: 700; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:6px; transition: 0.15s; }
+        .btn-ghost:hover { background: rgba(0,0,0,0.04); color: var(--text-main); }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 14px 40px 60px 40px; }
+
+        .empty { text-align: center; padding: 90px 20px; color: var(--text-muted); }
+        .empty .material-symbols-rounded { font-size: 64px; opacity: 0.18; display: block; margin-bottom: 16px; }
+        .empty h3 { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
+        .empty p { font-size: 13px; max-width: 380px; margin: 0 auto 20px; line-height: 1.5; }
+        .loading { text-align: center; padding: 80px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; }
+        .breadcrumb .crumb { cursor: pointer; transition: 0.15s; display: flex; align-items: center; gap: 6px; }
+        .breadcrumb .crumb:hover { color: var(--primary-purple); }
+        .breadcrumb .crumb.active { color: var(--text-main); font-weight: 800; cursor: default; }
+        .breadcrumb .sep { opacity: 0.4; }
+
+        /* ===== LISTA DE PESQUISAS ===== */
+        .pesq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+        .pesq-card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; cursor: pointer; transition: 0.18s; display: flex; flex-direction: column; gap: 14px; position: relative; }
+        .pesq-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+        .pesq-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .pesq-titulo { font-size: 16px; font-weight: 800; line-height: 1.3; }
+        .pesq-cliente { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 3px; }
+        .status-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 10px; border-radius: 50px !important; white-space: nowrap; flex-shrink: 0; }
+        .status-rascunho { background: #f4f4f5; color: var(--text-muted); }
+        .status-ativa { background: #e7fbf5; color: var(--green); }
+        .status-encerrada { background: #fef2f2; color: var(--red); }
+        .pesq-foot { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); border-top: 1px solid #f0f0f1; padding-top: 14px; }
+        .pesq-foot .material-symbols-rounded { font-size: 16px; }
+        .pesq-resp-num { color: var(--primary-purple); }
+
+        /* ===== EDITOR DE PESQUISA ===== */
+        .editor-head { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 26px 30px; margin-bottom: 20px; }
+        .editor-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+        .editor-titulo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+        .editor-desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; max-width: 600px; }
+        .editor-acoes { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+
+        .link-box { display: flex; align-items: center; gap: 10px; background: #f9f9fb; padding: 12px 16px; margin-top: 18px; }
+        .link-box input { flex-grow: 1; background: transparent; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; font-family: 'Inter', monospace; }
+        .link-box .material-symbols-rounded { color: var(--primary-purple); }
+
+        /* Abas do editor */
+        .tabs { display: flex; gap: 4px; margin-bottom: 22px; background: #fff; padding: 6px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); width: fit-content; }
+        .tab { padding: 10px 20px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: 0.15s; border-radius: 50px !important; }
+        .tab:hover { color: var(--text-main); }
+        .tab.active { background: var(--primary-purple); color: #fff; }
+
+        /* Dimensões e perguntas */
+        .dim-bloco { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); margin-bottom: 16px; overflow: hidden; }
+        .dim-head { padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #f0f0f1; }
+        .dim-nome { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .dim-lideranca-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: #f0efff; color: var(--primary-purple); padding: 4px 9px; border-radius: 50px !important; }
+        .dim-acoes { display: flex; gap: 6px; }
+        .icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: 0.15s; border-radius: 9px !important; }
+        .icon-btn:hover { background: #f4f4f5; color: var(--text-main); }
+        .icon-btn.danger:hover { background: #fef2f2; color: var(--red); }
+
+        .perg-lista { padding: 8px 0; }
+        .perg-item { padding: 12px 24px; display: flex; align-items: center; gap: 14px; transition: 0.12s; }
+        .perg-item:hover { background: #fafafb; }
+        .perg-tipo-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #f4f4f5; flex-shrink: 0; border-radius: 8px !important; }
+        .perg-tipo-icon .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
+        .perg-texto { flex-grow: 1; font-size: 13px; font-weight: 600; line-height: 1.4; }
+        .perg-tipo-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+        .perg-acoes { display: flex; gap: 4px; opacity: 0; transition: 0.15s; }
+        .perg-item:hover .perg-acoes { opacity: 1; }
+        .add-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--primary-purple); cursor: pointer; padding: 10px 24px; transition: 0.15s; }
+        .add-inline:hover { opacity: 0.7; }
+
+        /* Líderes e setores */
+        .cfg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .cfg-card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; }
+        .cfg-titulo { font-size: 14px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .cfg-titulo .material-symbols-rounded { color: var(--primary-purple); font-size: 19px; }
+        .cfg-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.4; }
+        .chip-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .chip-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: #f9f9fb; }
+        .chip-nome { flex-grow: 1; font-size: 13px; font-weight: 700; }
+        .chip-cargo { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+        .add-row { display: flex; gap: 8px; }
+        .add-row input { flex-grow: 1; padding: 11px 14px; font-size: 13px; background: #f9f9fb; outline: none; font-weight: 600; }
+        .add-row input:focus { box-shadow: inset 0 0 0 2px var(--primary-purple); }
+        .add-row button { background: var(--primary-purple); color: #fff; width: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; }
+        .add-row button:hover { background: var(--text-main); }
+
+        /* Modais */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(20,20,25,0.4); backdrop-filter: blur(3px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #fff; width: 100%; max-width: 500px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-titulo { font-size: 18px; font-weight: 900; margin-bottom: 22px; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 7px; }
+        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px 14px; font-size: 14px; background: #f9f9fb; outline: none; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { box-shadow: inset 0 0 0 2px var(--primary-purple); }
+        .input-group textarea { resize: vertical; min-height: 70px; }
+        .check-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; cursor: pointer; }
+        .check-row input { width: auto; }
+        .check-row label { font-size: 13px; font-weight: 600; color: var(--text-main); text-transform: none; letter-spacing: 0; cursor: pointer; }
+        .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: #fff; padding: 14px 24px; font-size: 13px; font-weight: 700; z-index: 200; opacity: 0; transition: all 0.3s; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--green); }
+        .toast.error { background: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="command-bar">
+        <div class="cb-left">
+            <span class="cb-title"><span class="material-symbols-rounded">mood</span> <span id="tituloBarra">Pesquisa de Clima</span></span>
+            <select class="cliente-sel" id="selCliente" onchange="filtrarPorCliente()" style="display:none;">
+                <option value="">Todos os clientes</option>
+            </select>
+        </div>
+        <div class="cb-left" id="acoesTopo">
+            <button class="btn-sec" onclick="abrirModelo()"><span class="material-symbols-rounded" style="font-size:17px;">tune</span> Modelo base</button>
+            <button class="btn-acao" onclick="abrirNovaPesquisa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Nova pesquisa</button>
+        </div>
+    </div>
+
+    <div class="scroll-area" id="conteudo">
+        <div class="loading">Carregando...</div>
+    </div>
+
+    <!-- MODAL: Nova/Editar Pesquisa -->
+    <div class="modal-overlay" id="modalPesquisa">
+        <div class="modal">
+            <div class="modal-titulo" id="modalPesqTitulo">Nova pesquisa</div>
+            <div class="input-group">
+                <label>Cliente *</label>
+                <select id="pesqCliente"></select>
+            </div>
+            <div class="input-group">
+                <label>Título da pesquisa *</label>
+                <input type="text" id="pesqTitulo" placeholder="Ex: Pesquisa de Clima 2026">
+            </div>
+            <div class="input-group">
+                <label>Descrição (mensagem de abertura)</label>
+                <textarea id="pesqDesc" placeholder="Texto que o colaborador vê ao abrir a pesquisa..."></textarea>
+            </div>
+            <div class="modal-acoes">
+                <button class="btn-ghost" onclick="fecharModal('modalPesquisa')">Cancelar</button>
+                <button class="btn-acao" onclick="salvarPesquisa()">Criar pesquisa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Dimensão -->
+    <div class="modal-overlay" id="modalDimensao">
+        <div class="modal">
+            <div class="modal-titulo" id="modalDimTitulo">Nova dimensão</div>
+            <div class="input-group">
+                <label>Nome da dimensão *</label>
+                <input type="text" id="dimNome" placeholder="Ex: Liderança">
+            </div>
+            <div class="check-row">
+                <input type="checkbox" id="dimLideranca">
+                <label for="dimLideranca">É uma dimensão de liderança (as perguntas se repetem para cada líder marcado)</label>
+            </div>
+            <div class="modal-acoes">
+                <button class="btn-ghost" onclick="fecharModal('modalDimensao')">Cancelar</button>
+                <button class="btn-acao" onclick="salvarDimensao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Pergunta -->
+    <div class="modal-overlay" id="modalPergunta">
+        <div class="modal">
+            <div class="modal-titulo" id="modalPergTitulo">Nova pergunta</div>
+            <div class="input-group">
+                <label>Texto da pergunta *</label>
+                <textarea id="pergTexto" placeholder="Ex: Estou satisfeito com meu ambiente de trabalho"></textarea>
+            </div>
+            <div class="input-group">
+                <label>Tipo de resposta *</label>
+                <select id="pergTipo">
+                    <option value="likert">Escala Likert (Concordo totalmente → Discordo totalmente)</option>
+                    <option value="escala10">Escala 0 a 10 (NPS / nota)</option>
+                    <option value="texto">Resposta aberta (texto)</option>
+                </select>
+            </div>
+            <div class="modal-acoes">
+                <button class="btn-ghost" onclick="fecharModal('modalPergunta')">Cancelar</button>
+                <button class="btn-acao" onclick="salvarPergunta()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
+        let pesquisas = [], clientes = [], mostraSeletor = true;
+        let pesquisaAberta = null;   // objeto da pesquisa em edição
+        let abaAtual = 'perguntas';
+        let modeloAberto = false;
+        let ctxDim = {};             // contexto para modais
+
+        document.addEventListener('DOMContentLoaded', carregarLista);
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function showToast(msg, tipo){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show '+(tipo||''); setTimeout(()=>t.className='toast',2600); }
+        function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
+        function tipoLabel(t){ return {likert:'Likert', escala10:'Escala 0-10', texto:'Aberta', multipla:'Múltipla'}[t]||t; }
+        function tipoIcon(t){ return {likert:'linear_scale', escala10:'pin', texto:'notes', multipla:'checklist'}[t]||'help'; }
+
+        // ===== LISTA DE PESQUISAS =====
+        async function carregarLista() {
+            try {
+                const res = await fetch('/api/clima/pesquisas');
+                if (res.status === 403) { document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                const data = await res.json();
+                pesquisas = data.pesquisas || [];
+                clientes = data.clientes || [];
+                mostraSeletor = data.mostra_seletor !== false;
+                // popula selects de cliente
+                const sc = document.getElementById('selCliente');
+                sc.innerHTML = '<option value="">Todos os clientes</option>' + clientes.map(c=>`<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+                if (mostraSeletor && clientes.length > 1) sc.style.display = 'block';
+                const pc = document.getElementById('pesqCliente');
+                pc.innerHTML = clientes.map(c=>`<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+                renderLista();
+            } catch(e) { console.error(e); document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3></div>'; }
+        }
+
+        function nomeCliente(id){ const c = clientes.find(x=>String(x.id)===String(id)); return c?c.nome:'—'; }
+
+        function renderLista() {
+            pesquisaAberta = null; modeloAberto = false;
+            document.getElementById('acoesTopo').style.display = 'flex';
+            document.getElementById('tituloBarra').textContent = 'Pesquisa de Clima';
+            const filtro = document.getElementById('selCliente').value;
+            let lista = pesquisas;
+            if (filtro) lista = lista.filter(p => String(p.cliente_id)===String(filtro));
+
+            if (!lista.length) {
+                document.getElementById('conteudo').innerHTML = `
+                    <div class="empty">
+                        <span class="material-symbols-rounded">mood</span>
+                        <h3>Nenhuma pesquisa ainda</h3>
+                        <p>Crie a primeira pesquisa de clima. Ela parte do modelo base e você ajusta as perguntas para cada cliente.</p>
+                        <button class="btn-acao" style="margin:0 auto;" onclick="abrirNovaPesquisa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Nova pesquisa</button>
+                    </div>`;
+                return;
+            }
+            const cards = lista.map(p => `
+                <div class="pesq-card" onclick="abrirPesquisa('${p.id}')">
+                    <div class="pesq-card-top">
+                        <div>
+                            <div class="pesq-titulo">${escH(p.titulo)}</div>
+                            <div class="pesq-cliente">${escH(nomeCliente(p.cliente_id))}</div>
+                        </div>
+                        <span class="status-badge status-${p.status}">${p.status}</span>
+                    </div>
+                    <div class="pesq-foot">
+                        <span class="material-symbols-rounded">group</span>
+                        <span class="pesq-resp-num">${p.total_respostas||0}</span> resposta${(p.total_respostas||0)!==1?'s':''}
+                    </div>
+                </div>`).join('');
+            document.getElementById('conteudo').innerHTML = `<div class="pesq-grid">${cards}</div>`;
+        }
+
+        function filtrarPorCliente() { if (!pesquisaAberta) renderLista(); }
+
+        // ===== NOVA PESQUISA =====
+        function abrirNovaPesquisa() {
+            if (!clientes.length) { showToast('Cadastre um cliente antes.', 'error'); return; }
+            document.getElementById('pesqTitulo').value = '';
+            document.getElementById('pesqDesc').value = '';
+            document.getElementById('modalPesquisa').classList.add('show');
+        }
+
+        async function salvarPesquisa() {
+            const cliente_id = document.getElementById('pesqCliente').value;
+            const titulo = document.getElementById('pesqTitulo').value.trim();
+            if (!titulo) { showToast('Informe o título.', 'error'); return; }
+            try {
+                const res = await fetch('/api/clima/pesquisa', { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ cliente_id, titulo, descricao: document.getElementById('pesqDesc').value.trim() }) });
+                const data = await res.json();
+                if (res.ok) { showToast('Pesquisa criada!', 'success'); fecharModal('modalPesquisa'); await carregarLista(); if(data.pesquisa_id) abrirPesquisa(data.pesquisa_id); }
+                else showToast(data.mensagem||'Erro ao criar.', 'error');
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+
+        // ===== ABRIR PESQUISA (EDITOR) =====
+        async function abrirPesquisa(pid) {
+            document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando pesquisa...</div>';
+            try {
+                const res = await fetch('/api/clima/pesquisa/' + pid);
+                const data = await res.json();
+                if (!res.ok) { showToast('Erro ao abrir.', 'error'); return; }
+                pesquisaAberta = data.pesquisa;
+                document.getElementById('acoesTopo').style.display = 'none';
+                document.getElementById('selCliente').style.display = 'none';
+                document.getElementById('tituloBarra').textContent = 'Pesquisa de Clima';
+                abaAtual = 'perguntas';
+                renderEditor();
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+
+        function renderEditor() {
+            const p = pesquisaAberta;
+            const linkCompleto = window.location.origin + '/clima/responder/' + p.token;
+            let html = `
+                <div class="breadcrumb">
+                    <span class="crumb" onclick="renderLista()"><span class="material-symbols-rounded" style="font-size:16px;">arrow_back</span> Pesquisas</span>
+                    <span class="sep">/</span>
+                    <span class="crumb active">${escH(p.titulo)}</span>
+                </div>
+
+                <div class="editor-head">
+                    <div class="editor-head-top">
+                        <div>
+                            <div class="editor-titulo">${escH(p.titulo)}</div>
+                            <div class="editor-desc">${escH(nomeCliente(p.cliente_id))}${p.descricao?' · '+escH(p.descricao):''}</div>
+                        </div>
+                        <div class="editor-acoes">
+                            <span class="status-badge status-${p.status}">${p.status}</span>
+                            ${p.status==='rascunho' ? `<button class="btn-acao" onclick="mudarStatus('ativa')"><span class="material-symbols-rounded" style="font-size:16px;">play_arrow</span> Ativar</button>` : ''}
+                            ${p.status==='ativa' ? `<button class="btn-sec" onclick="mudarStatus('encerrada')"><span class="material-symbols-rounded" style="font-size:16px;">stop</span> Encerrar</button>` : ''}
+                            ${p.status==='encerrada' ? `<button class="btn-sec" onclick="mudarStatus('ativa')"><span class="material-symbols-rounded" style="font-size:16px;">refresh</span> Reabrir</button>` : ''}
+                        </div>
+                    </div>
+                    ${p.status==='ativa' ? `
+                    <div class="link-box">
+                        <span class="material-symbols-rounded">link</span>
+                        <input type="text" id="linkResp" value="${linkCompleto}" readonly onclick="this.select()">
+                        <button class="btn-sec" onclick="copiarLink()"><span class="material-symbols-rounded" style="font-size:15px;">content_copy</span> Copiar</button>
+                    </div>` : `
+                    <div class="editor-desc" style="margin-top:14px; font-style:italic;">Ative a pesquisa para gerar o link de resposta anônimo.</div>`}
+                </div>
+
+                <div class="tabs">
+                    <div class="tab ${abaAtual==='perguntas'?'active':''}" onclick="trocarAba('perguntas')">Perguntas</div>
+                    <div class="tab ${abaAtual==='config'?'active':''}" onclick="trocarAba('config')">Líderes & Setores</div>
+                </div>
+                <div id="abaConteudo"></div>`;
+            document.getElementById('conteudo').innerHTML = html;
+            renderAba();
+        }
+
+        function trocarAba(aba) { abaAtual = aba; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); event.target.classList.add('active'); renderAba(); }
+
+        function renderAba() {
+            if (abaAtual === 'perguntas') renderPerguntas();
+            else renderConfig();
+        }
+
+        // ===== ABA PERGUNTAS =====
+        function renderPerguntas() {
+            const dims = pesquisaAberta.dimensoes || [];
+            let html = '';
+            dims.forEach(d => {
+                const perbs = d.perguntas || [];
+                html += `
+                <div class="dim-bloco">
+                    <div class="dim-head">
+                        <div class="dim-nome">${escH(d.nome)} ${d.eh_lideranca?'<span class="dim-lideranca-tag">Liderança</span>':''}</div>
+                        <div class="dim-acoes">
+                            <div class="icon-btn" onclick="editarDimensao('${d.id}')" title="Editar"><span class="material-symbols-rounded" style="font-size:18px;">edit</span></div>
+                            <div class="icon-btn danger" onclick="excluirDimensao('${d.id}')" title="Excluir"><span class="material-symbols-rounded" style="font-size:18px;">delete</span></div>
+                        </div>
+                    </div>
+                    <div class="perg-lista">
+                        ${perbs.map(pg => `
+                            <div class="perg-item">
+                                <div class="perg-tipo-icon"><span class="material-symbols-rounded">${tipoIcon(pg.tipo)}</span></div>
+                                <div class="perg-texto">${escH(pg.texto)}<div class="perg-tipo-label">${tipoLabel(pg.tipo)}</div></div>
+                                <div class="perg-acoes">
+                                    <div class="icon-btn" onclick="editarPergunta('${d.id}','${pg.id}')" title="Editar"><span class="material-symbols-rounded" style="font-size:17px;">edit</span></div>
+                                    <div class="icon-btn danger" onclick="excluirPergunta('${pg.id}')" title="Excluir"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
+                                </div>
+                            </div>`).join('') || '<div style="padding:14px 24px; font-size:12px; color:var(--text-muted);">Sem perguntas nesta dimensão.</div>'}
+                        <div class="add-inline" onclick="novaPergunta('${d.id}')"><span class="material-symbols-rounded" style="font-size:16px;">add</span> Adicionar pergunta</div>
+                    </div>
+                </div>`;
+            });
+            html += `<button class="btn-sec" style="margin-top:6px;" onclick="novaDimensao()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Adicionar dimensão</button>`;
+            document.getElementById('abaConteudo').innerHTML = html;
+        }
+
+        // ===== ABA CONFIG (líderes e setores) =====
+        function renderConfig() {
+            const lideres = pesquisaAberta.lideres || [];
+            const setores = pesquisaAberta.setores || [];
+            document.getElementById('abaConteudo').innerHTML = `
+                <div class="cfg-grid">
+                    <div class="cfg-card">
+                        <div class="cfg-titulo"><span class="material-symbols-rounded">supervisor_account</span> Lideranças</div>
+                        <div class="cfg-hint">Cadastre os líderes deste cliente. O respondente marca o(s) dele(s), e as perguntas de liderança se repetem para cada um.</div>
+                        <div class="chip-lista">
+                            ${lideres.map(l => `<div class="chip-item">
+                                <span class="chip-nome">${escH(l.nome)}${l.cargo?` <span class="chip-cargo">· ${escH(l.cargo)}</span>`:''}</span>
+                                <div class="icon-btn danger" onclick="excluirLider('${l.id}')"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
+                            </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted); padding:4px 0;">Nenhum líder cadastrado.</div>'}
+                        </div>
+                        <div class="add-row">
+                            <input type="text" id="novoLiderNome" placeholder="Nome do líder" onkeydown="if(event.key==='Enter')addLider()">
+                            <button onclick="addLider()"><span class="material-symbols-rounded" style="font-size:20px;">add</span></button>
+                        </div>
+                    </div>
+                    <div class="cfg-card">
+                        <div class="cfg-titulo"><span class="material-symbols-rounded">domain</span> Setores</div>
+                        <div class="cfg-hint">Os setores/departamentos deste cliente. O respondente escolhe o dele — permite cruzar o clima por área.</div>
+                        <div class="chip-lista">
+                            ${setores.map(s => `<div class="chip-item">
+                                <span class="chip-nome">${escH(s.nome)}</span>
+                                <div class="icon-btn danger" onclick="excluirSetor('${s.id}')"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
+                            </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted); padding:4px 0;">Nenhum setor cadastrado.</div>'}
+                        </div>
+                        <div class="add-row">
+                            <input type="text" id="novoSetorNome" placeholder="Nome do setor" onkeydown="if(event.key==='Enter')addSetor()">
+                            <button onclick="addSetor()"><span class="material-symbols-rounded" style="font-size:20px;">add</span></button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // ===== AÇÕES: STATUS, LINK =====
+        async function mudarStatus(novo) {
+            try {
+                const res = await fetch('/api/clima/pesquisa/' + pesquisaAberta.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: novo }) });
+                if (res.ok) { pesquisaAberta.status = novo; showToast(novo==='ativa'?'Pesquisa ativada!':novo==='encerrada'?'Pesquisa encerrada.':'Atualizado.', 'success'); renderEditor(); }
+                else showToast('Erro ao atualizar.', 'error');
+            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        }
+        function copiarLink() { const el=document.getElementById('linkResp'); el.select(); navigator.clipboard.writeText(el.value).then(()=>showToast('Link copiado!', 'success')); }
+
+        // ===== DIMENSÕES =====
+        function novaDimensao() { ctxDim={modo:'nova'}; document.getElementById('modalDimTitulo').textContent='Nova dimensão'; document.getElementById('dimNome').value=''; document.getElementById('dimLideranca').checked=false; document.getElementById('modalDimensao').classList.add('show'); }
+        function editarDimensao(did) { const d=(pesquisaAberta.dimensoes||[]).find(x=>x.id===did); if(!d)return; ctxDim={modo:'editar', id:did}; document.getElementById('modalDimTitulo').textContent='Editar dimensão'; document.getElementById('dimNome').value=d.nome; document.getElementById('dimLideranca').checked=!!d.eh_lideranca; document.getElementById('modalDimensao').classList.add('show'); }
+        async function salvarDimensao() {
+            const nome=document.getElementById('dimNome').value.trim();
+            if(!nome){ showToast('Informe o nome.', 'error'); return; }
+            const payload={ nome, eh_lideranca: document.getElementById('dimLideranca').checked };
+            if(ctxDim.modo==='editar') payload.id=ctxDim.id; else payload.pesquisa_id=pesquisaAberta.id;
+            try {
+                const res=await fetch('/api/clima/dimensao', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(res.ok){ showToast('Salvo!', 'success'); fecharModal('modalDimensao'); await recarregarPesquisa(); }
+                else showToast('Erro ao salvar.', 'error');
+            } catch(e){ showToast('Erro de conexão.', 'error'); }
+        }
+        async function excluirDimensao(did) {
+            if(!confirm('Excluir esta dimensão e todas as suas perguntas?')) return;
+            try { const res=await fetch('/api/clima/dimensao/'+did, {method:'DELETE'}); if(res.ok){ showToast('Excluída.', 'success'); await recarregarPesquisa(); } } catch(e){ showToast('Erro.', 'error'); }
+        }
+
+        // ===== PERGUNTAS =====
+        function novaPergunta(did) { ctxDim={modo:'nova', dimensao_id:did}; document.getElementById('modalPergTitulo').textContent='Nova pergunta'; document.getElementById('pergTexto').value=''; document.getElementById('pergTipo').value='likert'; document.getElementById('modalPergunta').classList.add('show'); }
+        function editarPergunta(did, pid) {
+            const d=(pesquisaAberta.dimensoes||[]).find(x=>x.id===did); if(!d)return;
+            const pg=(d.perguntas||[]).find(x=>x.id===pid); if(!pg)return;
+            ctxDim={modo:'editar', id:pid}; document.getElementById('modalPergTitulo').textContent='Editar pergunta';
+            document.getElementById('pergTexto').value=pg.texto; document.getElementById('pergTipo').value=pg.tipo;
+            document.getElementById('modalPergunta').classList.add('show');
+        }
+        async function salvarPergunta() {
+            const texto=document.getElementById('pergTexto').value.trim();
+            if(!texto){ showToast('Informe o texto.', 'error'); return; }
+            const payload={ texto, tipo: document.getElementById('pergTipo').value };
+            if(ctxDim.modo==='editar') payload.id=ctxDim.id; else payload.dimensao_id=ctxDim.dimensao_id;
+            try {
+                const res=await fetch('/api/clima/pergunta', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(res.ok){ showToast('Salvo!', 'success'); fecharModal('modalPergunta'); await recarregarPesquisa(); }
+                else showToast('Erro ao salvar.', 'error');
+            } catch(e){ showToast('Erro de conexão.', 'error'); }
+        }
+        async function excluirPergunta(pid) {
+            if(!confirm('Excluir esta pergunta?')) return;
+            try { const res=await fetch('/api/clima/pergunta/'+pid, {method:'DELETE'}); if(res.ok){ showToast('Excluída.', 'success'); await recarregarPesquisa(); } } catch(e){ showToast('Erro.', 'error'); }
+        }
+
+        // ===== LÍDERES E SETORES =====
+        async function addLider() {
+            const nome=document.getElementById('novoLiderNome').value.trim();
+            if(!nome) return;
+            try { const res=await fetch('/api/clima/lider', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ cliente_id: pesquisaAberta.cliente_id, nome })});
+                if(res.ok){ await recarregarPesquisa(); } } catch(e){ showToast('Erro.', 'error'); }
+        }
+        async function excluirLider(lid) {
+            try { const res=await fetch('/api/clima/lider/'+lid, {method:'DELETE'}); if(res.ok){ await recarregarPesquisa(); } } catch(e){ showToast('Erro.', 'error'); }
+        }
+        async function addSetor() {
+            const nome=document.getElementById('novoSetorNome').value.trim();
+            if(!nome) return;
+            try { const res=await fetch('/api/clima/setor', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ cliente_id: pesquisaAberta.cliente_id, nome })});
+                if(res.ok){ await recarregarPesquisa(); } } catch(e){ showToast('Erro.', 'error'); }
+        }
+        async function excluirSetor(sid) {
+            try { const res=await fetch('/api/clima/setor/'+sid, {method:'DELETE'}); if(res.ok){ await recarregarPesquisa(); } } catch(e){ showToast('Erro.', 'error'); }
+        }
+
+        async function recarregarPesquisa() {
+            const res = await fetch('/api/clima/pesquisa/' + pesquisaAberta.id);
+            const data = await res.json();
+            if (res.ok) { pesquisaAberta = data.pesquisa; renderEditor(); }
+        }
+
+        // ===== MODELO BASE =====
+        async function abrirModelo() {
+            modeloAberto = true; pesquisaAberta = null;
+            document.getElementById('acoesTopo').style.display = 'none';
+            document.getElementById('selCliente').style.display = 'none';
+            document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando modelo base...</div>';
+            try {
+                const res = await fetch('/api/clima/modelo');
+                const data = await res.json();
+                renderModelo(data.dimensoes || []);
+            } catch(e) { showToast('Erro ao carregar modelo.', 'error'); }
+        }
+
+        function renderModelo(dims) {
+            let html = `
+                <div class="breadcrumb">
+                    <span class="crumb" onclick="renderLista()"><span class="material-symbols-rounded" style="font-size:16px;">arrow_back</span> Pesquisas</span>
+                    <span class="sep">/</span>
+                    <span class="crumb active">Modelo base</span>
+                </div>
+                <div class="editor-head">
+                    <div class="editor-titulo">Modelo base</div>
+                    <div class="editor-desc">Este é o template mestre. Toda pesquisa nova parte dele. Editar aqui afeta apenas as próximas pesquisas — as já criadas são independentes.</div>
+                </div>`;
+            dims.forEach(d => {
+                html += `
+                <div class="dim-bloco">
+                    <div class="dim-head">
+                        <div class="dim-nome">${escH(d.nome)} ${d.eh_lideranca?'<span class="dim-lideranca-tag">Liderança</span>':''}</div>
+                        <div class="dim-acoes">
+                            <div class="icon-btn" onclick="editarDimModelo('${d.id}')" title="Editar"><span class="material-symbols-rounded" style="font-size:18px;">edit</span></div>
+                            <div class="icon-btn danger" onclick="excluirDimModelo('${d.id}')" title="Excluir"><span class="material-symbols-rounded" style="font-size:18px;">delete</span></div>
+                        </div>
+                    </div>
+                    <div class="perg-lista">
+                        ${(d.perguntas||[]).map(pg => `
+                            <div class="perg-item">
+                                <div class="perg-tipo-icon"><span class="material-symbols-rounded">${tipoIcon(pg.tipo)}</span></div>
+                                <div class="perg-texto">${escH(pg.texto)}<div class="perg-tipo-label">${tipoLabel(pg.tipo)}</div></div>
+                                <div class="perg-acoes">
+                                    <div class="icon-btn" onclick="editarPergModelo('${d.id}','${pg.id}')"><span class="material-symbols-rounded" style="font-size:17px;">edit</span></div>
+                                    <div class="icon-btn danger" onclick="excluirPergModelo('${pg.id}')"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
+                                </div>
+                            </div>`).join('') || '<div style="padding:14px 24px; font-size:12px; color:var(--text-muted);">Sem perguntas.</div>'}
+                        <div class="add-inline" onclick="novaPergModelo('${d.id}')"><span class="material-symbols-rounded" style="font-size:16px;">add</span> Adicionar pergunta</div>
+                    </div>
+                </div>`;
+            });
+            html += `<button class="btn-sec" style="margin-top:6px;" onclick="novaDimModelo()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Adicionar dimensão</button>`;
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        // Modelo: dimensões
+        function novaDimModelo() { ctxDim={modo:'nova', modelo:true}; document.getElementById('modalDimTitulo').textContent='Nova dimensão (modelo)'; document.getElementById('dimNome').value=''; document.getElementById('dimLideranca').checked=false; document.getElementById('modalDimensao').classList.add('show'); }
+        function editarDimModelo(did) { ctxDim={modo:'editar', id:did, modelo:true}; const el=document.getElementById('modalDimTitulo'); el.textContent='Editar dimensão'; fetch('/api/clima/modelo').then(r=>r.json()).then(data=>{ const d=(data.dimensoes||[]).find(x=>x.id===did); if(d){ document.getElementById('dimNome').value=d.nome; document.getElementById('dimLideranca').checked=!!d.eh_lideranca; document.getElementById('modalDimensao').classList.add('show'); } }); }
+        async function excluirDimModelo(did) { if(!confirm('Excluir esta dimensão do modelo base?')) return; const res=await fetch('/api/clima/modelo/dimensao/'+did, {method:'DELETE'}); if(res.ok){ showToast('Excluída.', 'success'); abrirModelo(); } }
+
+        // Modelo: perguntas
+        function novaPergModelo(did) { ctxDim={modo:'nova', dimensao_id:did, modelo:true}; document.getElementById('modalPergTitulo').textContent='Nova pergunta (modelo)'; document.getElementById('pergTexto').value=''; document.getElementById('pergTipo').value='likert'; document.getElementById('modalPergunta').classList.add('show'); }
+        function editarPergModelo(did, pid) { fetch('/api/clima/modelo').then(r=>r.json()).then(data=>{ const d=(data.dimensoes||[]).find(x=>x.id===did); const pg=d&&(d.perguntas||[]).find(x=>x.id===pid); if(pg){ ctxDim={modo:'editar', id:pid, modelo:true}; document.getElementById('modalPergTitulo').textContent='Editar pergunta'; document.getElementById('pergTexto').value=pg.texto; document.getElementById('pergTipo').value=pg.tipo; document.getElementById('modalPergunta').classList.add('show'); } }); }
+        async function excluirPergModelo(pid) { if(!confirm('Excluir esta pergunta do modelo?')) return; const res=await fetch('/api/clima/modelo/pergunta/'+pid, {method:'DELETE'}); if(res.ok){ showToast('Excluída.', 'success'); abrirModelo(); } }
+
+        // Salvamento unificado (detecta se é modelo ou pesquisa via ctxDim.modelo)
+        const _salvarDimensaoOrig = salvarDimensao;
+        salvarDimensao = async function() {
+            if (!ctxDim.modelo) return _salvarDimensaoOrig();
+            const nome=document.getElementById('dimNome').value.trim();
+            if(!nome){ showToast('Informe o nome.', 'error'); return; }
+            const payload={ nome, eh_lideranca: document.getElementById('dimLideranca').checked };
+            if(ctxDim.modo==='editar') payload.id=ctxDim.id;
+            const res=await fetch('/api/clima/modelo/dimensao', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+            if(res.ok){ showToast('Salvo!', 'success'); fecharModal('modalDimensao'); abrirModelo(); } else showToast('Erro.', 'error');
+        };
+        const _salvarPerguntaOrig = salvarPergunta;
+        salvarPergunta = async function() {
+            if (!ctxDim.modelo) return _salvarPerguntaOrig();
+            const texto=document.getElementById('pergTexto').value.trim();
+            if(!texto){ showToast('Informe o texto.', 'error'); return; }
+            const payload={ texto, tipo: document.getElementById('pergTipo').value };
+            if(ctxDim.modo==='editar') payload.id=ctxDim.id; else payload.dimensao_id=ctxDim.dimensao_id;
+            const res=await fetch('/api/clima/modelo/pergunta', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+            if(res.ok){ showToast('Salvo!', 'success'); fecharModal('modalPergunta'); abrirModelo(); } else showToast('Erro.', 'error');
+        };
+    </script>
+</body>
+</html>
