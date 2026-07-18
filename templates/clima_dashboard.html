@@ -182,9 +182,14 @@
                     <div class="dash-title-sub">Resultados e análise da pesquisa</div>
                 </div>
             </div>
-            <select class="pesq-sel" id="selPesquisa" onchange="carregarResultados()">
-                <option value="">Selecione uma pesquisa...</option>
-            </select>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button id="btnApresentar" onclick="abrirApresentacao()" style="display:none; align-items:center; gap:8px; background:var(--purple); color:#fff; font-size:13px; font-weight:700; padding:11px 20px; border-radius:11px !important; cursor:pointer; box-shadow:0 4px 14px rgba(115,113,255,0.3); transition:0.2s; white-space:nowrap;">
+                    <span class="material-symbols-rounded" style="font-size:18px;">slideshow</span> Apresentar
+                </button>
+                <select class="pesq-sel" id="selPesquisa" onchange="carregarResultados()">
+                    <option value="">Selecione uma pesquisa...</option>
+                </select>
+            </div>
         </div>
         <div id="filtrosBar"></div>
     </div>
@@ -228,7 +233,7 @@
         async function carregarResultados() {
             const pid = document.getElementById('selPesquisa').value;
             document.getElementById('filtrosBar').innerHTML = '';
-            if (!pid) { mostrarVazio(); return; }
+            if (!pid) { mostrarVazio(); document.getElementById('btnApresentar').style.display='none'; return; }
             document.getElementById('conteudo').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando resultados...</div>';
             filtros = { setor:'', tempo:'', lider:'' };
             dimsAbertas = {};
@@ -238,7 +243,13 @@
                 if (!res.ok || dados.erro) { document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3></div>'; return; }
                 montarEstrutura();
                 atualizarDados();
+                document.getElementById('btnApresentar').style.display = 'flex';
             } catch(e) { document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
+        }
+
+        function abrirApresentacao() {
+            const pid = document.getElementById('selPesquisa').value;
+            if (pid) window.open('/clima/apresentar/' + pid, '_blank');
         }
 
         function mostrarVazio() {
