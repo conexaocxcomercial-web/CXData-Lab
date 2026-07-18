@@ -317,7 +317,7 @@
                     body: JSON.stringify({ cliente_id, titulo, descricao: document.getElementById('pesqDesc').value.trim() }) });
                 const data = await res.json();
                 if (res.ok) { showToast('Pesquisa criada!', 'success'); fecharModal('modalPesquisa'); await carregarLista(); if(data.pesquisa_id) abrirPesquisa(data.pesquisa_id); }
-                else showToast(data.mensagem||'Erro ao criar.', 'error');
+                else showToast((data.debug || data.mensagem || 'Erro ao criar.'), 'error');
             } catch(e) { showToast('Erro de conexão.', 'error'); }
         }
 
