@@ -1671,6 +1671,14 @@ def clima_dashboard_page():
         return redirect(url_for('index'))
     return render_template('clima_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
 
+@app.route('/clima/apresentar/<pid>')
+def clima_apresentar_page(pid):
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not pode_ver_clima():
+        return redirect(url_for('index'))
+    return render_template('clima_apresentar.html', pesquisa_id=pid, nivel_acesso=session.get('nivel_acesso', 'comum'))
+
 # ===== MODELO BASE =====
 @app.route('/api/clima/modelo', methods=['GET'])
 def clima_modelo_get():
