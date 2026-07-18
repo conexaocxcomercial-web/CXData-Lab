@@ -123,31 +123,38 @@
         .dim-card.aberto .dim-chevron { transform: rotate(180deg); }
 
         .dim-body { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1); }
-        .dim-perguntas { padding: 4px 26px 22px; border-top: 1px solid #f0f0f1; }
+        .dim-perguntas { padding: 20px 26px 26px; border-top: 1px solid #f0f0f1; }
 
-        /* Pergunta Likert no dashboard: barra empilhada de distribuição */
-        .pg-row { padding: 16px 0; border-bottom: 1px solid #f7f7f8; }
-        .pg-row:last-child { border-bottom: none; }
-        .pg-top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 10px; }
-        .pg-texto { font-size: 13px; font-weight: 600; line-height: 1.4; }
-        .pg-fav { font-size: 15px; font-weight: 900; flex-shrink: 0; }
-        .pg-stack { display: flex; height: 26px; overflow: hidden; background: #f4f4f5; }
-        .pg-seg { height: 100%; transition: width 0.6s; position: relative; }
-        .pg-stack-legenda { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
-        .pg-leg { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--text-muted); }
-        .pg-leg-dot { width: 9px; height: 9px; border-radius: 2px !important; }
+        /* Grade de cards de pergunta */
+        .pg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .pg-card { background: #fafafb; padding: 20px 22px; display: flex; flex-direction: column; }
+        .pg-card-full { grid-column: 1 / -1; }
+        .pg-card-titulo { font-size: 13px; font-weight: 700; line-height: 1.4; margin-bottom: 16px; }
+        .badge-tipo { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); background: #eeeef0; padding: 3px 8px; border-radius: 50px !important; margin-left: 6px; white-space: nowrap; }
 
-        /* Pergunta escala10 */
-        .pg-escala { display: flex; align-items: center; gap: 16px; }
-        .pg-escala-num { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; flex-shrink: 0; }
-        .pg-escala-info { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+        /* Donut da pergunta */
+        .pg-donut-row { display: flex; align-items: center; gap: 22px; }
+        .pg-donut { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+        .pg-donut svg path { transition: opacity 0.2s; }
+        .pg-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .pg-donut-num { font-size: 26px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+        .pg-donut-lbl { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-top: 3px; }
+        .pg-legenda { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .pg-leg { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+        .pg-leg-dot { width: 10px; height: 10px; border-radius: 3px !important; flex-shrink: 0; }
+        .pg-leg b { color: var(--text-main); font-weight: 800; margin-left: 2px; }
 
-        /* Pergunta texto: lista de respostas */
-        .pg-textos { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; max-height: 260px; overflow-y: auto; }
-        .pg-texto-item { background: #f9f9fb; padding: 12px 14px; font-size: 12px; line-height: 1.5; color: var(--text-main); border-left: 3px solid #e4e4e7; }
-        .pg-texto-vazio { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 8px 0; }
+        /* Escala 0-10 no card */
+        .pg-escala-wrap { display: flex; align-items: center; gap: 24px; }
+        .pg-escala-big { font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .pg-escala-de { font-size: 16px; font-weight: 700; color: var(--text-muted); letter-spacing: 0; }
+        .pg-escala-meta { display: flex; flex-direction: column; gap: 8px; }
+        .pg-escala-linha { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
 
-        .badge-tipo { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); background: #f4f4f5; padding: 3px 8px; border-radius: 50px !important; }
+        /* Textos abertos */
+        .pg-textos { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+        .pg-texto-item { background: #fff; padding: 11px 14px; font-size: 12px; line-height: 1.5; color: var(--text-main); border-left: 3px solid #e4e4e7; }
+        .pg-texto-vazio { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 6px 0; }
     </style>
 </head>
 <body>
@@ -180,7 +187,8 @@
         let filtros = { setor: '', tempo: '', lider: '' };
         let dimsAbertas = {};          // controle de expansão
         // paleta likert (5=verde forte ... 1=vermelho)
-        const COR5 = '#0d9488', COR4 = '#5eead4', COR3 = '#d4d4d8', COR2 = '#fdba74', COR1 = '#f87171';
+        // Progressão: vermelho forte → vermelho leve → amarelo → verde leve → verde forte
+        const COR1 = '#ef4444', COR2 = '#f9a8a8', COR3 = '#fbe08a', COR4 = '#86e5c8', COR5 = '#10b981';
 
         document.addEventListener('DOMContentLoaded', carregarPesquisas);
 
@@ -342,9 +350,9 @@
                             <circle cx="90" cy="90" r="${rr}" fill="none" stroke="${cor}" stroke-width="12" stroke-linecap="round"
                                 stroke-dasharray="${rc}" stroke-dashoffset="${rc*(1-favGlobal/100)}" transform="rotate(-90 90 90)" style="transition:stroke-dashoffset 1s;"/>
                         </svg>
-                        <div class="fav-ring-num"><span class="fav-ring-pct" style="color:${cor};">${favGlobal}%</span><span class="fav-ring-lbl">Favorabilidade</span></div>
+                        <div class="fav-ring-num"><span class="fav-ring-pct" style="color:${cor};">${favGlobal}%</span><span class="fav-ring-lbl">Positivas</span></div>
                     </div>
-                    <div class="fav-legenda">Percentual de respostas favoráveis (Concordo / Concordo totalmente) em todas as perguntas de escala.</div>
+                    <div class="fav-legenda">Percentual de respostas positivas (Concordo / Concordo totalmente) em todas as perguntas de escala.</div>
                 </div>
                 <div class="grid g-2" style="align-content:stretch;">
                     ${cardNPS('eNPS', 'Recomendaria como lugar para trabalhar', enps, 'sentiment_satisfied')}
@@ -407,11 +415,11 @@
 
             return `<div class="grid g-2" style="margin-bottom:16px;">
                 <div class="card">
-                    <div class="rank-titulo"><span class="material-symbols-rounded">domain</span> Favorabilidade por Departamento</div>
+                    <div class="rank-titulo"><span class="material-symbols-rounded">domain</span> Positivas por Departamento</div>
                     ${rankSetor.length ? `<div class="rank-list">${rankSetor.map((r,i)=>rankItem(r,i)).join('')}</div>` : '<div class="rank-vazio">Sem dados por departamento.</div>'}
                 </div>
                 <div class="card">
-                    <div class="rank-titulo"><span class="material-symbols-rounded">supervisor_account</span> Favorabilidade por Liderança</div>
+                    <div class="rank-titulo"><span class="material-symbols-rounded">supervisor_account</span> Positivas por Liderança</div>
                     ${rankLider.length ? `<div class="rank-list">${rankLider.map((r,i)=>rankItem(r,i)).join('')}</div>` : '<div class="rank-vazio">Sem dados de liderança.</div>'}
                 </div>
             </div>`;
@@ -508,7 +516,7 @@
                     <div class="dim-header" onclick="toggleDim('${dim.id}')">
                         <div class="dim-header-left">
                             <div class="dim-fav-badge" style="background:${cor};">
-                                <span class="n">${fav!==null?fav+'%':'—'}</span><span class="u">Favor.</span>
+                                <span class="n">${fav!==null?fav+'%':'—'}</span><span class="u">Positivas</span>
                             </div>
                             <div class="dim-nome-wrap">
                                 <div class="dim-nome">${escH(dim.nome)} ${dim.eh_lideranca?'<span class="dim-lid-tag">Liderança</span>':''}</div>
@@ -528,12 +536,22 @@
         }
 
         function renderPerguntasDim(dim, itens) {
-            return (dim.perguntas||[]).map(pg => {
+            const cards = (dim.perguntas||[]).map(pg => {
                 const its = itens.filter(it => it.pergunta_id === pg.id);
                 if (pg.tipo === 'likert') return renderPergLikert(pg, its);
                 if (pg.tipo === 'escala10') return renderPergEscala(pg, its);
                 return renderPergTexto(pg, its);
-            }).join('');
+            });
+            return `<div class="pg-grid">${cards.join('')}</div>`;
+        }
+
+        // Desenha um caminho de arco de rosca (donut) em SVG
+        function arcoDonut(cx, cy, rOut, rIn, startAng, endAng) {
+            const p = (r, a) => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
+            const large = (endAng - startAng) > Math.PI ? 1 : 0;
+            const [x1,y1] = p(rOut, startAng), [x2,y2] = p(rOut, endAng);
+            const [x3,y3] = p(rIn, endAng), [x4,y4] = p(rIn, startAng);
+            return `M ${x1} ${y1} A ${rOut} ${rOut} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${rIn} ${rIn} 0 ${large} 0 ${x4} ${y4} Z`;
         }
 
         function renderPergLikert(pg, its) {
@@ -542,31 +560,65 @@
             const total = Object.values(dist).reduce((a,b)=>a+b,0);
             const cores = {5:COR5,4:COR4,3:COR3,2:COR2,1:COR1};
             const labels = {5:'Concordo totalmente',4:'Concordo',3:'Indiferente',2:'Discordo',1:'Discordo totalmente'};
-            const segs = [5,4,3,2,1].map(n => { const w = total?(dist[n]/total*100):0; return w>0?`<div class="pg-seg" style="width:${w}%; background:${cores[n]};" title="${labels[n]}: ${dist[n]}"></div>`:''; }).join('');
-            const legenda = [5,4,3,2,1].filter(n=>dist[n]>0).map(n=>`<div class="pg-leg"><span class="pg-leg-dot" style="background:${cores[n]};"></span>${labels[n]} (${dist[n]})</div>`).join('');
-            return `<div class="pg-row">
-                <div class="pg-top"><div class="pg-texto">${escH(pg.texto)}</div><div class="pg-fav" style="color:${fav!==null?corFav(fav):'#d4d4d8'};">${fav!==null?fav+'%':'—'}</div></div>
-                <div class="pg-stack">${segs||'<div class="pg-seg" style="width:100%; background:#f4f4f5;"></div>'}</div>
-                <div class="pg-stack-legenda">${legenda}</div>
+
+            // Monta os arcos da rosca
+            let arcos = '';
+            if (total > 0) {
+                let ang = -Math.PI/2; // começa no topo
+                [5,4,3,2,1].forEach(n => {
+                    if (dist[n] > 0) {
+                        const frac = dist[n]/total;
+                        const end = ang + frac*2*Math.PI;
+                        arcos += `<path d="${arcoDonut(70,70,62,40,ang,end)}" fill="${cores[n]}"></path>`;
+                        ang = end;
+                    }
+                });
+            } else {
+                arcos = `<circle cx="70" cy="70" r="62" fill="#f4f4f5"/><circle cx="70" cy="70" r="40" fill="#fff"/>`;
+            }
+            const corCentro = fav!==null ? corFav(fav) : '#d4d4d8';
+            // Legenda com % de cada fatia (só as presentes), na ordem lógica
+            const legenda = [5,4,3,2,1].filter(n=>dist[n]>0).map(n => {
+                const pct = Math.round(dist[n]/total*100);
+                return `<div class="pg-leg"><span class="pg-leg-dot" style="background:${cores[n]};"></span>${labels[n]} <b>${pct}%</b></div>`;
+            }).join('');
+
+            return `<div class="pg-card">
+                <div class="pg-card-titulo">${escH(pg.texto)}</div>
+                <div class="pg-donut-row">
+                    <div class="pg-donut">
+                        <svg width="140" height="140" viewBox="0 0 140 140">${arcos}</svg>
+                        <div class="pg-donut-center">
+                            <span class="pg-donut-num" style="color:${corCentro};">${fav!==null?fav+'%':'—'}</span>
+                            <span class="pg-donut-lbl">Positivas</span>
+                        </div>
+                    </div>
+                    <div class="pg-legenda">${legenda||'<span class="pg-texto-vazio">Sem respostas</span>'}</div>
+                </div>
             </div>`;
         }
 
         function renderPergEscala(pg, its) {
             const media = mediaEscala(its);
             const nps = calcNPS(its);
-            return `<div class="pg-row">
-                <div class="pg-top"><div class="pg-texto">${escH(pg.texto)}</div><span class="badge-tipo">Escala 0-10</span></div>
-                <div class="pg-escala">
-                    <div class="pg-escala-num" style="color:${media!==null?corFav(media*10):'#d4d4d8'};">${media!==null?media.toFixed(1):'—'}</div>
-                    <div class="pg-escala-info">média · ${its.filter(i=>i.valor_num!==null).length} respostas${nps!==null?` · NPS ${nps>0?'+':''}${nps}`:''}</div>
+            const nResp = its.filter(i=>i.valor_num!==null).length;
+            const corN = media!==null?corFav(media*10):'#d4d4d8';
+            return `<div class="pg-card">
+                <div class="pg-card-titulo">${escH(pg.texto)}</div>
+                <div class="pg-escala-wrap">
+                    <div class="pg-escala-big" style="color:${corN};">${media!==null?media.toFixed(1):'—'}<span class="pg-escala-de">/10</span></div>
+                    <div class="pg-escala-meta">
+                        <div class="pg-escala-linha"><span class="material-symbols-rounded" style="font-size:15px;">group</span> ${nResp} resposta${nResp!==1?'s':''}</div>
+                        ${nps!==null?`<div class="pg-escala-linha"><span class="material-symbols-rounded" style="font-size:15px;">speed</span> NPS ${nps>0?'+':''}${nps}</div>`:''}
+                    </div>
                 </div>
             </div>`;
         }
 
         function renderPergTexto(pg, its) {
             const textos = its.filter(it => it.valor_texto && it.valor_texto.trim()).map(it => it.valor_texto.trim());
-            return `<div class="pg-row">
-                <div class="pg-top"><div class="pg-texto">${escH(pg.texto)}</div><span class="badge-tipo">${textos.length} resposta${textos.length!==1?'s':''}</span></div>
+            return `<div class="pg-card pg-card-full">
+                <div class="pg-card-titulo">${escH(pg.texto)} <span class="badge-tipo">${textos.length} resposta${textos.length!==1?'s':''}</span></div>
                 <div class="pg-textos">
                     ${textos.length ? textos.map(t=>`<div class="pg-texto-item">${escH(t)}</div>`).join('') : '<div class="pg-texto-vazio">Nenhuma resposta aberta.</div>'}
                 </div>
@@ -577,8 +629,17 @@
             dimsAbertas[did] = !dimsAbertas[did];
             const card = document.getElementById('dimcard-'+did);
             const body = document.getElementById('dimbody-'+did);
-            if (dimsAbertas[did]) { card.classList.add('aberto'); body.style.maxHeight = body.scrollHeight + 'px'; }
-            else { card.classList.remove('aberto'); body.style.maxHeight = null; }
+            if (dimsAbertas[did]) {
+                card.classList.add('aberto');
+                // recalcula em dois frames para garantir que o SVG já tenha layout
+                body.style.maxHeight = 'none';
+                const h = body.scrollHeight;
+                body.style.maxHeight = '0px';
+                requestAnimationFrame(()=>{ body.style.maxHeight = h + 'px'; });
+            } else {
+                card.classList.remove('aberto');
+                body.style.maxHeight = null;
+            }
         }
 
         function animarBarras() {
