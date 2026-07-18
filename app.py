@@ -1798,7 +1798,7 @@ def clima_pesquisa_criar():
         return jsonify({"status": "sucesso", "pesquisa_id": pesquisa_id}), 200
     except Exception as e:
         print(f"[ERRO] clima_pesquisa_criar: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao criar pesquisa.", "debug": str(e)}), 500
+        return jsonify({"status": "erro", "mensagem": "Falha ao criar pesquisa."}), 500
 
 @app.route('/api/clima/pesquisa/<pid>', methods=['GET'])
 def clima_pesquisa_get(pid):
