@@ -142,6 +142,24 @@
             </div>
         </div>
         {% endif %}
+
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clima' in perm_modulos) %}
+        <div class="cxsb-item cxsb-parent" id="climaParent" onclick="toggleClimaSub(event)">
+            <span class="material-symbols-rounded">mood</span>
+            <span class="cxsb-item-label">Clima</span>
+            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
+        </div>
+        <div class="cxsb-sub" id="climaSub">
+            <div class="cxsb-subitem" data-path="/clima/gestao" onclick="window.location.href='/clima/gestao'">
+                <span class="material-symbols-rounded">clarify</span>
+                <span class="cxsb-item-label">Gestão</span>
+            </div>
+            <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="window.location.href='/clima/dashboard'">
+                <span class="material-symbols-rounded">insights</span>
+                <span class="cxsb-item-label">Dashboard</span>
+            </div>
+        </div>
+        {% endif %}
         {% endif %}
 
         <div class="cxsb-section">Gestão</div>
@@ -180,6 +198,7 @@
     var curr = window.location.pathname;
     if (curr === '/planejamento') curr = '/agenda';
     if (curr === '/okr') curr = '/okr/gestao';
+    if (curr === '/clima') curr = '/clima/gestao';
     document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
         var path = item.getAttribute('data-path');
         var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
@@ -195,11 +214,27 @@
         var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
         if (p) p.classList.add('aberto'); if (s) s.classList.add('aberto');
     }
+    // Submenu Clima
+    var emClima = false;
+    document.querySelectorAll('#climaSub .cxsb-subitem[data-path]').forEach(function(sub) {
+        var path = sub.getAttribute('data-path');
+        if (curr === path || curr.startsWith(path + '/')) { sub.classList.add('active'); emClima = true; }
+    });
+    if (emClima) {
+        var pc = document.getElementById('climaParent'), sc = document.getElementById('climaSub');
+        if (pc) pc.classList.add('aberto'); if (sc) sc.classList.add('aberto');
+    }
 })();
 
 function toggleOkrSub(e) {
     e.stopPropagation();
     var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
+    p.classList.toggle('aberto'); s.classList.toggle('aberto');
+}
+
+function toggleClimaSub(e) {
+    e.stopPropagation();
+    var p = document.getElementById('climaParent'), s = document.getElementById('climaSub');
     p.classList.toggle('aberto'); s.classList.toggle('aberto');
 }
 </script>
