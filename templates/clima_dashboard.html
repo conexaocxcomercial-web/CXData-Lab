@@ -6,155 +6,164 @@
     <title>Clima · Dashboard | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0;
-                --green:#14b8a6; --amber:#eab308; --red:#f87171; }
+        :root {
+            --bg-board:#f6f6f7; --surface:#ffffff; --text-main:#18181b; --text-soft:#52525b; --text-muted:#9497a0;
+            --purple:#7371ff; --purple-soft:#f0efff; --line:#ececf0;
+            --lk1:#E5484D; --lk2:#F2A98C; --lk3:#F5D06B; --lk4:#7DD1A6; --lk5:#2FA875;
+        }
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
         body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; } ::-webkit-scrollbar-thumb { background: #d8d8dd; } ::-webkit-scrollbar-track { background: transparent; }
 
-        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
-        .top-bar-logo span { color: var(--primary-purple); }
+        .top-bar { background: rgba(255,255,255,0.85); backdrop-filter: blur(14px); height: 68px; min-height: 68px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 var(--line); z-index: 20; }
+        .top-bar-logo { font-size: 23px; font-weight: 800; letter-spacing: -0.6px; cursor: pointer; }
+        .top-bar-logo span { color: var(--purple); }
 
-        .command-bar { padding: 22px 40px 6px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px; flex-wrap: wrap; }
-        .cb-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
-        .cb-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
-        .cb-title .material-symbols-rounded { color: var(--primary-purple); }
-        .pesq-sel { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #fff; border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); min-width: 220px; }
+        .dash-header { padding: 26px 40px 0; flex-shrink: 0; }
+        .dash-header-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .dash-title-wrap { display: flex; align-items: center; gap: 13px; }
+        .dash-title-icon { width: 40px; height: 40px; background: var(--purple); display: flex; align-items: center; justify-content: center; border-radius: 12px !important; box-shadow: 0 4px 14px rgba(115,113,255,0.28); }
+        .dash-title-icon .material-symbols-rounded { color: #fff; font-size: 22px; }
+        .dash-title { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
+        .dash-title-sub { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 1px; }
+        .pesq-sel { padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--text-main); background: var(--surface); outline: none; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 0 0 1px var(--line); min-width: 260px; border-radius: 11px !important; transition: 0.15s; }
+        .pesq-sel:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px #d4d4d8; }
 
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 8px 40px 60px 40px; }
+        .filtros-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+        .filtro-chip { display: flex; align-items: center; gap: 9px; background: var(--surface); padding: 0 6px 0 15px; border-radius: 11px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); height: 40px; transition: 0.15s; }
+        .filtro-chip:focus-within { box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1.5px var(--purple); }
+        .filtro-chip .material-symbols-rounded { font-size: 17px; color: var(--text-muted); }
+        .filtro-chip label { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+        .filtro-chip select { border: none; background: transparent; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; cursor: pointer; padding: 8px 6px; font-family: 'Inter', sans-serif; max-width: 170px; }
+        .filtro-clear { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--purple); cursor: pointer; padding: 0 12px; height: 40px; border-radius: 11px !important; transition: 0.15s; }
+        .filtro-clear:hover { background: var(--purple-soft); }
+        .filtro-count { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-soft); }
+        .filtro-count b { color: var(--text-main); font-weight: 800; }
+        .filtro-count .dot { width: 7px; height: 7px; background: var(--lk5); border-radius: 50% !important; box-shadow: 0 0 0 3px rgba(47,168,117,0.15); }
 
-        .empty { text-align: center; padding: 90px 20px; color: var(--text-muted); }
-        .empty .material-symbols-rounded { font-size: 64px; opacity: 0.18; display: block; margin-bottom: 16px; }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 0 40px 70px; }
+        .scroll-inner { padding-top: 24px; }
+
+        .empty, .loading { text-align: center; padding: 100px 20px; color: var(--text-muted); }
+        .empty .material-symbols-rounded { font-size: 60px; opacity: 0.2; display: block; margin-bottom: 16px; }
         .empty h3 { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
-        .empty p { font-size: 13px; max-width: 380px; margin: 0 auto; line-height: 1.5; }
-        .loading { text-align: center; padding: 80px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+        .empty p { font-size: 13px; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+        .loading { font-weight: 600; font-size: 13px; }
+        .spinner { width: 30px; height: 30px; border: 3px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: spin 0.7s linear infinite; margin: 0 auto 18px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ===== BARRA DE FILTROS ===== */
-        .filtros { position: sticky; top: 0; z-index: 8; background: var(--bg-board); padding: 12px 0 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-        .filtro-grupo { display: flex; align-items: center; gap: 8px; background: #fff; padding: 8px 8px 8px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
-        .filtro-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        .filtro-sel { padding: 7px 12px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #f4f4f5; outline: none; cursor: pointer; }
-        .filtro-limpar { font-size: 12px; font-weight: 700; color: var(--primary-purple); cursor: pointer; padding: 8px 12px; display: flex; align-items: center; gap: 5px; }
-        .filtro-limpar:hover { opacity: 0.7; }
-        .resp-count { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
-        .resp-count b { color: var(--primary-purple); font-size: 15px; }
+        .secao-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin: 34px 0 18px; }
+        .secao-label.top { margin-top: 4px; }
 
-        /* ===== SEÇÕES ===== */
-        .secao-titulo { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 32px 0 16px; display: flex; align-items: center; gap: 10px; }
-        .secao-titulo::after { content: ''; flex-grow: 1; height: 1px; background: #e4e4e7; }
-        .secao-titulo:first-of-type { margin-top: 8px; }
+        .card { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 16px !important; }
 
-        .card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; }
-        .grid { display: grid; gap: 16px; }
-        .g-3 { grid-template-columns: repeat(3, 1fr); }
-        .g-2 { grid-template-columns: repeat(2, 1fr); }
-        .g-4 { grid-template-columns: repeat(4, 1fr); }
-        .g-hero { grid-template-columns: 320px 1fr; }
+        .hero { display: grid; grid-template-columns: 300px 1fr; gap: 16px; margin-bottom: 16px; }
+        .hero-fav { padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .gauge { position: relative; width: 190px; height: 190px; }
+        .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .gauge-num { font-size: 46px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; }
+        .gauge-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.4px; color: var(--text-muted); margin-top: 5px; }
+        .hero-fav-legenda { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-top: 18px; line-height: 1.5; max-width: 220px; }
 
-        /* Hero: favorabilidade global */
-        .hero-fav { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .fav-ring { position: relative; width: 180px; height: 180px; }
-        .fav-ring-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .fav-ring-pct { font-size: 48px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
-        .fav-ring-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 4px; }
-        .fav-legenda { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 16px; line-height: 1.5; max-width: 240px; }
+        .hero-side { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .mini-kpi { padding: 22px 24px; display: flex; flex-direction: column; justify-content: center; }
+        .mini-kpi-top { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+        .mini-kpi-ico { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px !important; }
+        .mini-kpi-ico .material-symbols-rounded { font-size: 18px; }
+        .mini-kpi-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+        .mini-kpi-num { font-size: 34px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+        .mini-kpi-sub { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-top: 6px; }
+        .part-row { display: flex; gap: 26px; margin-top: 4px; flex-wrap: wrap; }
+        .part-item .n { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+        .part-item .l { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
 
-        /* eNPS / NPS cards */
-        .kpi-nps { display: flex; flex-direction: column; justify-content: center; }
-        .kpi-nps-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .kpi-nps-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 11px !important; }
-        .kpi-nps-icon .material-symbols-rounded { font-size: 19px; }
-        .kpi-nps-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        .kpi-nps-num { font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
-        .kpi-nps-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
+        .rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .rank-card { padding: 24px 26px; }
+        .rank-head { font-size: 13px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 9px; }
+        .rank-head .material-symbols-rounded { font-size: 18px; color: var(--purple); }
+        .rank-list { display: flex; flex-direction: column; gap: 16px; }
+        .rank-row { display: flex; align-items: center; gap: 14px; }
+        .rank-badge { width: 22px; height: 22px; border-radius: 7px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; background: #f1f1f4; color: var(--text-muted); }
+        .rank-badge.g1 { background: var(--purple); color: #fff; }
+        .rank-body { flex-grow: 1; min-width: 0; }
+        .rank-line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+        .rank-nome { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rank-val { font-size: 13px; font-weight: 800; flex-shrink: 0; }
+        .rank-track { height: 6px; background: #f1f1f4; border-radius: 50px !important; overflow: hidden; }
+        .rank-fill { height: 100%; border-radius: 50px !important; transition: width 0.8s cubic-bezier(0.34,1.2,0.64,1); }
+        .rank-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 24px; }
 
-        /* Ranking (departamentos / lideranças) */
-        .rank-titulo { font-size: 13px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
-        .rank-titulo .material-symbols-rounded { font-size: 18px; color: var(--primary-purple); }
-        .rank-list { display: flex; flex-direction: column; gap: 13px; }
-        .rank-item { display: flex; align-items: center; gap: 12px; }
-        .rank-pos { width: 24px; height: 24px; border-radius: 50% !important; background: #f4f4f5; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: var(--text-muted); flex-shrink: 0; }
-        .rank-pos.top { background: var(--primary-purple); color: #fff; }
-        .rank-info { flex-grow: 1; min-width: 0; }
-        .rank-nome { font-size: 13px; font-weight: 700; margin-bottom: 5px; display: flex; justify-content: space-between; gap: 10px; }
-        .rank-nome span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-pct { font-weight: 800; flex-shrink: 0; }
-        .rank-bar { height: 6px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; }
-        .rank-bar-fill { height: 100%; border-radius: 50px !important; transition: width 0.7s; }
-        .rank-vazio { font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px; }
+        .ia-card { background: linear-gradient(140deg, #17171b 0%, #26243f 100%); border-radius: 16px !important; padding: 28px 30px; position: relative; overflow: hidden; margin-bottom: 16px; }
+        .ia-card::before { content:''; position:absolute; top:-80px; right:-40px; width:240px; height:240px; background: radial-gradient(circle, rgba(115,113,255,0.35), transparent 68%); pointer-events:none; }
+        .ia-card::after { content:''; position:absolute; bottom:-100px; left:20%; width:200px; height:200px; background: radial-gradient(circle, rgba(47,168,117,0.14), transparent 70%); pointer-events:none; }
+        .ia-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; position: relative; }
+        .ia-badge { width: 38px; height: 38px; background: linear-gradient(135deg, var(--purple), #9d7bff); display: flex; align-items: center; justify-content: center; border-radius: 11px !important; box-shadow: 0 6px 18px rgba(115,113,255,0.4); }
+        .ia-badge .material-symbols-rounded { font-size: 21px; color: #fff; }
+        .ia-titulo { font-size: 15px; font-weight: 800; color: #fff; }
+        .ia-sub { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 500; margin-top: 1px; }
+        .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; position: relative; }
+        .ia-item { display: flex; gap: 13px; align-items: flex-start; background: rgba(255,255,255,0.04); padding: 15px 17px; border-radius: 12px !important; }
+        .ia-ico { width: 30px; height: 30px; border-radius: 9px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ia-ico .material-symbols-rounded { font-size: 17px; }
+        .ia-pos { background: rgba(47,168,117,0.18); color: #4ade80; }
+        .ia-neg { background: rgba(229,72,77,0.18); color: #ff7a7f; }
+        .ia-neu { background: rgba(115,113,255,0.2); color: #b0aeff; }
+        .ia-txt { font-size: 12.5px; line-height: 1.55; color: rgba(255,255,255,0.82); }
+        .ia-txt b { color: #fff; font-weight: 700; }
 
-        /* Análise por IA */
-        .ia-card { background: linear-gradient(135deg, #1e1e1e 0%, #2d2b52 100%); color: #fff; padding: 28px; position: relative; overflow: hidden; }
-        .ia-card::before { content: ''; position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(115,113,255,0.4) 0%, transparent 70%); }
-        .ia-head { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; position: relative; }
-        .ia-badge { width: 34px; height: 34px; background: var(--primary-purple); display: flex; align-items: center; justify-content: center; border-radius: 10px !important; }
-        .ia-badge .material-symbols-rounded { font-size: 20px; }
-        .ia-titulo { font-size: 15px; font-weight: 800; }
-        .ia-sub { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; }
-        .ia-insights { display: flex; flex-direction: column; gap: 14px; position: relative; }
-        .ia-insight { display: flex; gap: 12px; align-items: flex-start; }
-        .ia-insight-icon { width: 28px; height: 28px; border-radius: 8px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-        .ia-insight-icon .material-symbols-rounded { font-size: 16px; }
-        .ia-pos { background: rgba(20,184,166,0.2); color: #4ade80; }
-        .ia-neg { background: rgba(248,113,113,0.2); color: #f87171; }
-        .ia-neu { background: rgba(115,113,255,0.2); color: #a5a4ff; }
-        .ia-insight-txt { font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.9); }
-        .ia-insight-txt b { color: #fff; font-weight: 700; }
-
-        /* Dimensões */
-        .dim-card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); margin-bottom: 16px; overflow: hidden; }
-        .dim-header { padding: 22px 26px; display: flex; align-items: center; justify-content: space-between; gap: 20px; cursor: pointer; transition: 0.15s; }
-        .dim-header:hover { background: #fafafb; }
-        .dim-header-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
-        .dim-fav-badge { width: 60px; height: 60px; border-radius: 14px !important; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
-        .dim-fav-badge .n { font-size: 20px; font-weight: 900; letter-spacing: -1px; line-height: 1; }
-        .dim-fav-badge .u { font-size: 8px; font-weight: 700; text-transform: uppercase; opacity: 0.85; }
-        .dim-nome-wrap { min-width: 0; }
-        .dim-nome { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-        .dim-lid-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: #f0efff; color: var(--primary-purple); padding: 3px 8px; border-radius: 50px !important; }
-        .dim-meta { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
-        .dim-header-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
-        .dim-mini-bar { width: 160px; height: 8px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; }
-        .dim-mini-fill { height: 100%; border-radius: 50px !important; transition: width 0.7s; }
-        .dim-chevron { color: var(--text-muted); transition: transform 0.3s; }
-        .dim-card.aberto .dim-chevron { transform: rotate(180deg); }
+        .dim { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 16px !important; margin-bottom: 14px; overflow: hidden; transition: box-shadow 0.2s; }
+        .dim.aberto { box-shadow: 0 8px 30px rgba(0,0,0,0.07), 0 0 0 1px var(--line); }
+        .dim-head { padding: 22px 26px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: background 0.15s; }
+        .dim-head:hover { background: #fbfbfc; }
+        .dim-idx { font-size: 12px; font-weight: 800; color: var(--text-muted); width: 22px; flex-shrink: 0; }
+        .dim-info { flex-grow: 1; min-width: 0; }
+        .dim-nome { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; }
+        .dim-lidtag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: var(--purple-soft); color: var(--purple); padding: 3px 9px; border-radius: 50px !important; }
+        .dim-meta { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
+        .dim-score { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+        .dim-bar-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        .dim-pct { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
+        .dim-bar { width: 150px; height: 7px; background: #f1f1f4; border-radius: 50px !important; overflow: hidden; }
+        .dim-bar-fill { height: 100%; border-radius: 50px !important; transition: width 0.9s cubic-bezier(0.34,1.2,0.64,1); }
+        .dim-chevron { color: var(--text-muted); font-size: 24px !important; transition: transform 0.35s; }
+        .dim.aberto .dim-chevron { transform: rotate(180deg); }
 
         .dim-body { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1); }
-        .dim-perguntas { padding: 20px 26px 26px; border-top: 1px solid #f0f0f1; }
+        .dim-perguntas { padding: 6px 26px 26px; }
+        .pg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
 
-        /* Grade de cards de pergunta */
-        .pg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        .pg-card { background: #fafafb; padding: 20px 22px; display: flex; flex-direction: column; }
-        .pg-card-full { grid-column: 1 / -1; }
-        .pg-card-titulo { font-size: 13px; font-weight: 700; line-height: 1.4; margin-bottom: 16px; }
-        .badge-tipo { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); background: #eeeef0; padding: 3px 8px; border-radius: 50px !important; margin-left: 6px; white-space: nowrap; }
-
-        /* Donut da pergunta */
-        .pg-donut-row { display: flex; align-items: center; gap: 22px; }
-        .pg-donut { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
-        .pg-donut svg path { transition: opacity 0.2s; }
-        .pg-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-        .pg-donut-num { font-size: 26px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+        .pg { background: #fbfbfc; border-radius: 14px !important; padding: 22px; box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; }
+        .pg-full { grid-column: 1 / -1; }
+        .pg-titulo { font-size: 13px; font-weight: 700; line-height: 1.45; color: var(--text-main); margin-bottom: 20px; min-height: 38px; }
+        .pg-donut-wrap { display: flex; align-items: center; gap: 22px; }
+        .pg-donut { position: relative; width: 118px; height: 118px; flex-shrink: 0; }
+        .pg-donut svg { transform: rotate(-90deg); }
+        .pg-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .pg-donut-num { font-size: 24px; font-weight: 800; letter-spacing: -1.2px; line-height: 1; color: var(--text-main); }
         .pg-donut-lbl { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-top: 3px; }
-        .pg-legenda { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-        .pg-leg { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-        .pg-leg-dot { width: 10px; height: 10px; border-radius: 3px !important; flex-shrink: 0; }
-        .pg-leg b { color: var(--text-main); font-weight: 800; margin-left: 2px; }
+        .pg-leg { display: flex; flex-direction: column; gap: 9px; min-width: 0; flex-grow: 1; }
+        .pg-leg-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+        .pg-leg-dot { width: 8px; height: 8px; border-radius: 3px !important; flex-shrink: 0; }
+        .pg-leg-nome { color: var(--text-soft); font-weight: 500; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pg-leg-val { font-weight: 800; color: var(--text-main); font-variant-numeric: tabular-nums; }
 
-        /* Escala 0-10 no card */
-        .pg-escala-wrap { display: flex; align-items: center; gap: 24px; }
-        .pg-escala-big { font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
-        .pg-escala-de { font-size: 16px; font-weight: 700; color: var(--text-muted); letter-spacing: 0; }
-        .pg-escala-meta { display: flex; flex-direction: column; gap: 8px; }
-        .pg-escala-linha { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .pg-esc { display: flex; align-items: center; gap: 22px; padding: 4px 0; }
+        .pg-esc-num { font-size: 46px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; }
+        .pg-esc-num small { font-size: 17px; font-weight: 700; color: var(--text-muted); letter-spacing: 0; }
+        .pg-esc-meta { display: flex; flex-direction: column; gap: 9px; }
+        .pg-esc-line { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--text-soft); }
+        .pg-esc-line .material-symbols-rounded { font-size: 15px; color: var(--text-muted); }
 
-        /* Textos abertos */
-        .pg-textos { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
-        .pg-texto-item { background: #fff; padding: 11px 14px; font-size: 12px; line-height: 1.5; color: var(--text-main); border-left: 3px solid #e4e4e7; }
+        .badge-n { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); background: #eeeef1; padding: 3px 9px; border-radius: 50px !important; margin-left: 8px; }
+        .pg-textos { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; padding-right: 4px; }
+        .pg-texto-item { background: var(--surface); padding: 12px 15px; font-size: 12px; line-height: 1.55; color: var(--text-soft); box-shadow: 0 0 0 1px var(--line); border-radius: 9px !important; border-left: 3px solid var(--purple) !important; }
         .pg-texto-vazio { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 6px 0; }
+
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; } .hero-side { grid-template-columns: 1fr; }
+            .rank-grid, .ia-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -164,488 +173,355 @@
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="command-bar">
-        <div class="cb-left">
-            <span class="cb-title"><span class="material-symbols-rounded">insights</span> Clima · Dashboard</span>
+    <div class="dash-header">
+        <div class="dash-header-row">
+            <div class="dash-title-wrap">
+                <div class="dash-title-icon"><span class="material-symbols-rounded">insights</span></div>
+                <div>
+                    <div class="dash-title">Dashboard de Clima</div>
+                    <div class="dash-title-sub">Resultados e análise da pesquisa</div>
+                </div>
+            </div>
             <select class="pesq-sel" id="selPesquisa" onchange="carregarResultados()">
                 <option value="">Selecione uma pesquisa...</option>
             </select>
         </div>
+        <div id="filtrosBar"></div>
     </div>
 
-    <div class="scroll-area" id="conteudo">
-        <div class="empty">
-            <span class="material-symbols-rounded">insights</span>
-            <h3>Selecione uma pesquisa</h3>
-            <p>Escolha uma pesquisa acima para visualizar os resultados, filtros e análise.</p>
+    <div class="scroll-area">
+        <div class="scroll-inner" id="conteudo">
+            <div class="empty">
+                <span class="material-symbols-rounded">insights</span>
+                <h3>Selecione uma pesquisa</h3>
+                <p>Escolha uma pesquisa acima para visualizar os resultados.</p>
+            </div>
         </div>
     </div>
 
     <script>
         const NIVEL_ACESSO = "{{ nivel_acesso }}";
-        let dados = null;              // payload bruto dos resultados
-        let filtros = { setor: '', tempo: '', lider: '' };
-        let dimsAbertas = {};          // controle de expansão
-        // paleta likert (5=verde forte ... 1=vermelho)
-        // Progressão: vermelho forte → vermelho leve → amarelo → verde leve → verde forte
-        const COR1 = '#ef4444', COR2 = '#f9a8a8', COR3 = '#fbe08a', COR4 = '#86e5c8', COR5 = '#10b981';
+        let dados = null;
+        let filtros = { setor:'', tempo:'', lider:'' };
+        let dimsAbertas = {};
+
+        const LK = { 1:'#E5484D', 2:'#F2A98C', 3:'#F5D06B', 4:'#7DD1A6', 5:'#2FA875' };
+        const LK_LABEL = { 5:'Concordo totalmente', 4:'Concordo', 3:'Indiferente', 2:'Discordo', 1:'Discordo totalmente' };
 
         document.addEventListener('DOMContentLoaded', carregarPesquisas);
 
         function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-        function corFav(pct){ if(pct>=75) return '#14b8a6'; if(pct>=50) return '#eab308'; return '#f87171'; }
+        function corIndice(pct){ if(pct===null) return '#d4d4d8'; if(pct>=75) return '#2FA875'; if(pct>=50) return '#F5D06B'; return '#E5484D'; }
 
         async function carregarPesquisas() {
             try {
                 const res = await fetch('/api/clima/pesquisas');
                 if (res.status === 403) { document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
                 const data = await res.json();
-                const pesquisas = (data.pesquisas || []).filter(p => (p.total_respostas||0) > 0 || p.status !== 'rascunho');
-                const sel = document.getElementById('selPesquisa');
                 const clientes = data.clientes || [];
-                function nomeCli(id){ const c = clientes.find(x=>String(x.id)===String(id)); return c?c.nome:''; }
-                sel.innerHTML = '<option value="">Selecione uma pesquisa...</option>' +
+                const nomeCli = (id) => { const c = clientes.find(x=>String(x.id)===String(id)); return c?c.nome:''; };
+                document.getElementById('selPesquisa').innerHTML = '<option value="">Selecione uma pesquisa...</option>' +
                     (data.pesquisas||[]).map(p=>`<option value="${p.id}">${escH(p.titulo)} · ${escH(nomeCli(p.cliente_id))} (${p.total_respostas||0})</option>`).join('');
             } catch(e) { console.error(e); }
         }
 
         async function carregarResultados() {
             const pid = document.getElementById('selPesquisa').value;
-            if (!pid) { document.getElementById('conteudo').innerHTML='<div class="empty"><span class="material-symbols-rounded">insights</span><h3>Selecione uma pesquisa</h3><p>Escolha uma pesquisa acima para visualizar os resultados.</p></div>'; return; }
-            document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando resultados...</div>';
+            document.getElementById('filtrosBar').innerHTML = '';
+            if (!pid) { mostrarVazio(); return; }
+            document.getElementById('conteudo').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando resultados...</div>';
             filtros = { setor:'', tempo:'', lider:'' };
+            dimsAbertas = {};
             try {
                 const res = await fetch('/api/clima/resultados/' + pid);
                 dados = await res.json();
                 if (!res.ok || dados.erro) { document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3></div>'; return; }
-                render();
+                montarEstrutura();
+                atualizarDados();
             } catch(e) { document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
         }
 
-        // ===== FILTRAGEM =====
+        function mostrarVazio() {
+            document.getElementById('conteudo').innerHTML = '<div class="empty"><span class="material-symbols-rounded">insights</span><h3>Selecione uma pesquisa</h3><p>Escolha uma pesquisa acima para visualizar os resultados.</p></div>';
+        }
+
+        function montarFiltros() {
+            const setores = dados.setores || [];
+            const lideres = dados.lideres || [];
+            let html = '';
+            if (setores.length) html += `<div class="filtro-chip"><span class="material-symbols-rounded">domain</span><label>Depto</label><select id="fSetor"><option value="">Todos</option>${setores.map(s=>`<option value="${s.id}">${escH(s.nome)}</option>`).join('')}</select></div>`;
+            html += `<div class="filtro-chip"><span class="material-symbols-rounded">schedule</span><label>Tempo</label><select id="fTempo"><option value="">Todos</option><option value="mais_2">+2 anos</option><option value="menos_2">-2 anos</option></select></div>`;
+            if (lideres.length) html += `<div class="filtro-chip"><span class="material-symbols-rounded">supervisor_account</span><label>Líder</label><select id="fLider"><option value="">Todas</option>${lideres.map(l=>`<option value="${l.id}">${escH(l.nome)}</option>`).join('')}</select></div>`;
+            html += `<div class="filtro-clear" id="fClear" style="display:none;" onclick="limparFiltros()"><span class="material-symbols-rounded" style="font-size:16px;">close</span> Limpar</div>`;
+            html += `<div class="filtro-count"><span class="dot"></span> <span id="respCount"></span></div>`;
+            document.getElementById('filtrosBar').innerHTML = `<div class="filtros-bar">${html}</div>`;
+            const s=document.getElementById('fSetor'), t=document.getElementById('fTempo'), l=document.getElementById('fLider');
+            if(s) s.onchange=()=>{ filtros.setor=s.value; atualizarDados(); };
+            if(t) t.onchange=()=>{ filtros.tempo=t.value; atualizarDados(); };
+            if(l) l.onchange=()=>{ filtros.lider=l.value; atualizarDados(); };
+        }
+        function limparFiltros() {
+            filtros={setor:'',tempo:'',lider:''};
+            ['fSetor','fTempo','fLider'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+            atualizarDados();
+        }
+
         function respostasFiltradas() {
-            let resps = dados.respostas || [];
-            if (filtros.setor) resps = resps.filter(r => String(r.setor_id) === filtros.setor);
-            if (filtros.tempo) resps = resps.filter(r => r.tempo_empresa === filtros.tempo);
-            if (filtros.lider) resps = resps.filter(r => (dados.resposta_lideres[r.id]||[]).map(String).includes(filtros.lider));
-            return resps;
+            let r = dados.respostas || [];
+            if (filtros.setor) r = r.filter(x=>String(x.setor_id)===filtros.setor);
+            if (filtros.tempo) r = r.filter(x=>x.tempo_empresa===filtros.tempo);
+            if (filtros.lider) r = r.filter(x=>(dados.resposta_lideres[x.id]||[]).map(String).includes(filtros.lider));
+            return r;
         }
+        function itensDe(respIds) { const s=new Set(respIds); return (dados.itens||[]).filter(it=>s.has(it.resposta_id)); }
+        function positivas(itens) { const v=itens.filter(i=>i.valor_num!=null).map(i=>Number(i.valor_num)); if(!v.length) return null; return Math.round(v.filter(x=>x>=4).length/v.length*100); }
+        function distrib(itens) { const d={1:0,2:0,3:0,4:0,5:0}; itens.forEach(i=>{ const v=Math.round(Number(i.valor_num)); if(d[v]!=null) d[v]++; }); return d; }
+        function media(itens) { const v=itens.filter(i=>i.valor_num!=null).map(i=>Number(i.valor_num)); if(!v.length) return null; return v.reduce((a,b)=>a+b,0)/v.length; }
+        function nps(itens) { const v=itens.filter(i=>i.valor_num!=null).map(i=>Number(i.valor_num)); if(!v.length) return null; return Math.round((v.filter(x=>x>=9).length - v.filter(x=>x<=6).length)/v.length*100); }
+        function ehLikert(pid){ for(const d of dados.dimensoes) for(const p of (d.perguntas||[])) if(p.id===pid) return p.tipo==='likert'; return false; }
+        function ehLikertNaoLid(pid){ for(const d of dados.dimensoes){ if(d.eh_lideranca) continue; for(const p of (d.perguntas||[])) if(p.id===pid) return p.tipo==='likert'; } return false; }
+        function favDim(dim, itens){ const ids=(dim.perguntas||[]).filter(p=>p.tipo==='likert').map(p=>p.id); return positivas(itens.filter(i=>ids.includes(i.pergunta_id))); }
+        function npsDim(itens, chave){ const dim=(dados.dimensoes||[]).find(d=>(d.nome||'').toLowerCase().replace(/[^a-z]/g,'').includes(chave)); if(!dim) return null; const p=(dim.perguntas||[]).find(x=>x.tipo==='escala10'); if(!p) return null; return nps(itens.filter(i=>i.pergunta_id===p.id)); }
 
-        // Itens que pertencem às respostas filtradas
-        function itensFiltrados(respIds) {
-            const set = new Set(respIds);
-            return (dados.itens||[]).filter(it => set.has(it.resposta_id));
-        }
-
-        // ===== CÁLCULOS =====
-        // Favorabilidade Likert = % de respostas 4 ou 5 (dentre likert respondidas)
-        function calcFavLikert(itens) {
-            const vals = itens.filter(it => it.valor_num !== null && it.valor_num !== undefined).map(it => Number(it.valor_num));
-            if (!vals.length) return null;
-            const fav = vals.filter(v => v >= 4).length;
-            return Math.round((fav / vals.length) * 100);
-        }
-        // Distribuição Likert (contagem por nota 1-5)
-        function distLikert(itens) {
-            const d = {1:0,2:0,3:0,4:0,5:0};
-            itens.forEach(it => { const v = Math.round(Number(it.valor_num)); if (d[v]!==undefined) d[v]++; });
-            return d;
-        }
-        // Média escala 0-10
-        function mediaEscala(itens) {
-            const vals = itens.filter(it => it.valor_num !== null && it.valor_num !== undefined).map(it => Number(it.valor_num));
-            if (!vals.length) return null;
-            return (vals.reduce((a,b)=>a+b,0) / vals.length);
-        }
-        // NPS = %promotores(9-10) - %detratores(0-6)
-        function calcNPS(itens) {
-            const vals = itens.filter(it => it.valor_num !== null && it.valor_num !== undefined).map(it => Number(it.valor_num));
-            if (!vals.length) return null;
-            const prom = vals.filter(v=>v>=9).length, det = vals.filter(v=>v<=6).length;
-            return Math.round(((prom-det)/vals.length)*100);
-        }
-
-        // Perguntas por dimensão
-        function perguntasDimensao(dim) { return dim.perguntas || []; }
-        function itensDaPergunta(itens, pergId) { return itens.filter(it => it.pergunta_id === pergId); }
-
-        // Favorabilidade de uma dimensão (média das perguntas likert dela)
-        function favDimensao(dim, itens) {
-            const likertPerg = (dim.perguntas||[]).filter(p=>p.tipo==='likert').map(p=>p.id);
-            const its = itens.filter(it => likertPerg.includes(it.pergunta_id));
-            return calcFavLikert(its);
-        }
-
-        // ===== RENDER =====
-        function render() {
-            const resps = respostasFiltradas();
-            const respIds = resps.map(r=>r.id);
-            const itens = itensFiltrados(respIds);
-
-            let html = renderFiltros(resps.length);
-
-            if (!resps.length) {
-                html += `<div class="empty" style="padding:60px 20px;"><span class="material-symbols-rounded">filter_alt_off</span><h3>Sem respostas para este filtro</h3><p>Ajuste ou limpe os filtros para ver os resultados.</p></div>`;
-                document.getElementById('conteudo').innerHTML = html;
-                ligarFiltros();
-                return;
-            }
-
-            html += `<div class="secao-titulo">Visão Geral</div>`;
-            html += renderVisaoGeral(itens, resps);
-            html += renderRankings(resps);
-            html += renderIA(itens, resps);
-
-            html += `<div class="secao-titulo">Resultados por Dimensão</div>`;
-            html += renderDimensoes(itens);
-
-            document.getElementById('conteudo').innerHTML = html;
-            ligarFiltros();
-            animarBarras();
-        }
-
-        function renderFiltros(nResp) {
-            const setores = dados.setores || [];
-            const lideres = dados.lideres || [];
-            const temFiltro = filtros.setor || filtros.tempo || filtros.lider;
-            return `<div class="filtros">
-                ${setores.length ? `<div class="filtro-grupo"><span class="filtro-label">Departamento</span>
-                    <select class="filtro-sel" id="fSetor"><option value="">Todos</option>${setores.map(s=>`<option value="${s.id}" ${filtros.setor===String(s.id)?'selected':''}>${escH(s.nome)}</option>`).join('')}</select></div>` : ''}
-                <div class="filtro-grupo"><span class="filtro-label">Tempo</span>
-                    <select class="filtro-sel" id="fTempo"><option value="">Todos</option><option value="mais_2" ${filtros.tempo==='mais_2'?'selected':''}>+2 anos</option><option value="menos_2" ${filtros.tempo==='menos_2'?'selected':''}>-2 anos</option></select></div>
-                ${lideres.length ? `<div class="filtro-grupo"><span class="filtro-label">Liderança</span>
-                    <select class="filtro-sel" id="fLider"><option value="">Todas</option>${lideres.map(l=>`<option value="${l.id}" ${filtros.lider===String(l.id)?'selected':''}>${escH(l.nome)}</option>`).join('')}</select></div>` : ''}
-                ${temFiltro ? `<div class="filtro-limpar" onclick="limparFiltros()"><span class="material-symbols-rounded" style="font-size:16px;">close</span> Limpar filtros</div>` : ''}
-                <div class="resp-count"><span class="material-symbols-rounded" style="font-size:17px;">group</span> <b>${nResp}</b> resposta${nResp!==1?'s':''}</div>
-            </div>`;
-        }
-
-        function ligarFiltros() {
-            const s = document.getElementById('fSetor'), t = document.getElementById('fTempo'), l = document.getElementById('fLider');
-            if (s) s.onchange = () => { filtros.setor = s.value; render(); };
-            if (t) t.onchange = () => { filtros.tempo = t.value; render(); };
-            if (l) l.onchange = () => { filtros.lider = l.value; render(); };
-        }
-        function limparFiltros() { filtros = { setor:'', tempo:'', lider:'' }; render(); }
-
-        // ----- Visão Geral: favorabilidade global + eNPS/NPS -----
-        function renderVisaoGeral(itens, resps) {
-            // favorabilidade global: todas as perguntas likert de dimensões não-liderança e liderança
-            const likertPergIds = [];
-            (dados.dimensoes||[]).forEach(d => (d.perguntas||[]).forEach(p => { if (p.tipo==='likert') likertPergIds.push(p.id); }));
-            const itensLikert = itens.filter(it => likertPergIds.includes(it.pergunta_id));
-            const favGlobal = calcFavLikert(itensLikert) ?? 0;
-
-            // eNPS e NPS: procura dimensões pelo nome
-            const enps = calcNpsPorDimensao(itens, 'enps');
-            const nps = calcNpsPorDimensao(itens, 'nps');
-
-            const cor = corFav(favGlobal);
-            const rr=80, rc=2*Math.PI*rr;
-            return `<div class="grid g-hero" style="margin-bottom:16px;">
-                <div class="card hero-fav">
-                    <div class="fav-ring">
-                        <svg width="180" height="180" viewBox="0 0 180 180">
-                            <circle cx="90" cy="90" r="${rr}" fill="none" stroke="#f0f0f1" stroke-width="12"/>
-                            <circle cx="90" cy="90" r="${rr}" fill="none" stroke="${cor}" stroke-width="12" stroke-linecap="round"
-                                stroke-dasharray="${rc}" stroke-dashoffset="${rc*(1-favGlobal/100)}" transform="rotate(-90 90 90)" style="transition:stroke-dashoffset 1s;"/>
-                        </svg>
-                        <div class="fav-ring-num"><span class="fav-ring-pct" style="color:${cor};">${favGlobal}%</span><span class="fav-ring-lbl">Positivas</span></div>
+        function montarEstrutura() {
+            montarFiltros();
+            document.getElementById('conteudo').innerHTML = `
+                <div class="secao-label top">Visão geral</div>
+                <div class="hero">
+                    <div class="card hero-fav">
+                        <div class="gauge" id="gauge"></div>
+                        <div class="hero-fav-legenda">Percentual de respostas positivas (Concordo e Concordo totalmente) em todas as perguntas de escala.</div>
                     </div>
-                    <div class="fav-legenda">Percentual de respostas positivas (Concordo / Concordo totalmente) em todas as perguntas de escala.</div>
+                    <div class="hero-side" id="heroSide"></div>
                 </div>
-                <div class="grid g-2" style="align-content:stretch;">
-                    ${cardNPS('eNPS', 'Recomendaria como lugar para trabalhar', enps, 'sentiment_satisfied')}
-                    ${cardNPS('NPS', 'Recomendaria os produtos e serviços', nps, 'thumb_up')}
-                    ${cardResumo(resps)}
-                </div>
-            </div>`;
+                <div class="rank-grid" id="rankGrid"></div>
+                <div id="iaArea"></div>
+                <div class="secao-label">Resultados por dimensão</div>
+                <div id="dimsArea"></div>`;
         }
 
-        function calcNpsPorDimensao(itens, tipo) {
-            // acha a dimensão cujo nome bate e pega a pergunta escala10
-            const dim = (dados.dimensoes||[]).find(d => (d.nome||'').toLowerCase().replace(/[^a-z]/g,'').includes(tipo));
-            if (!dim) return null;
-            const perg = (dim.perguntas||[]).find(p=>p.tipo==='escala10');
-            if (!perg) return null;
-            return calcNPS(itens.filter(it=>it.pergunta_id===perg.id));
+        function atualizarDados() {
+            const resps = respostasFiltradas();
+            const itens = itensDe(resps.map(r=>r.id));
+            const rc = document.getElementById('respCount');
+            if (rc) rc.innerHTML = `<b>${resps.length}</b> resposta${resps.length!==1?'s':''}`;
+            const clr = document.getElementById('fClear');
+            if (clr) clr.style.display = (filtros.setor||filtros.tempo||filtros.lider) ? 'flex' : 'none';
+            atualizarGauge(itens);
+            atualizarHeroSide(itens, resps);
+            atualizarRankings(resps);
+            atualizarIA(itens, resps);
+            atualizarDimensoes(itens);
         }
 
-        function cardNPS(label, sub, valor, icon) {
-            if (valor === null) return `<div class="card kpi-nps"><div class="kpi-nps-top"><div class="kpi-nps-icon" style="background:#f4f4f5;"><span class="material-symbols-rounded" style="color:var(--text-muted);">${icon}</span></div><span class="kpi-nps-label">${label}</span></div><div class="kpi-nps-num" style="color:var(--text-muted);">—</div><div class="kpi-nps-sub">Sem dados</div></div>`;
-            const cor = valor >= 50 ? '#14b8a6' : valor >= 0 ? '#eab308' : '#f87171';
-            const bg = valor >= 50 ? '#ecfdf5' : valor >= 0 ? '#fefce8' : '#fef2f2';
-            return `<div class="card kpi-nps">
-                <div class="kpi-nps-top"><div class="kpi-nps-icon" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${icon}</span></div><span class="kpi-nps-label">${label}</span></div>
-                <div class="kpi-nps-num" style="color:${cor};">${valor > 0 ? '+' : ''}${valor}</div>
-                <div class="kpi-nps-sub">${sub}</div>
-            </div>`;
+        function atualizarGauge(itens) {
+            const ids=[]; (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{ if(p.tipo==='likert') ids.push(p.id); }));
+            const pct = positivas(itens.filter(i=>ids.includes(i.pergunta_id))) ?? 0;
+            const cor = corIndice(pct);
+            const r=82, c=2*Math.PI*r;
+            document.getElementById('gauge').innerHTML = `
+                <svg width="190" height="190" viewBox="0 0 190 190" style="transform:rotate(-90deg);">
+                    <circle cx="95" cy="95" r="${r}" fill="none" stroke="#f1f1f4" stroke-width="13"/>
+                    <circle cx="95" cy="95" r="${r}" fill="none" stroke="${cor}" stroke-width="13" stroke-linecap="round"
+                        stroke-dasharray="${c*pct/100} ${c}" style="transition:stroke-dasharray 0.9s cubic-bezier(0.34,1.1,0.64,1), stroke 0.4s;"/>
+                </svg>
+                <div class="gauge-center"><span class="gauge-num" style="color:${cor};">${pct}%</span><span class="gauge-lbl">Positivas</span></div>`;
         }
 
-        function cardResumo(resps) {
-            const nSetores = new Set(resps.map(r=>r.setor_id).filter(Boolean)).size;
+        function atualizarHeroSide(itens, resps) {
+            const enps = npsDim(itens,'enps'), npsv = npsDim(itens,'nps');
+            const nSet = new Set(resps.map(r=>r.setor_id).filter(Boolean)).size;
             const mais2 = resps.filter(r=>r.tempo_empresa==='mais_2').length;
-            return `<div class="card kpi-nps" style="grid-column: span 2;">
-                <div class="kpi-nps-top"><div class="kpi-nps-icon" style="background:#f0efff;"><span class="material-symbols-rounded" style="color:var(--primary-purple);">groups</span></div><span class="kpi-nps-label">Participação</span></div>
-                <div style="display:flex; gap:32px; margin-top:6px;">
-                    <div><div class="kpi-nps-num" style="font-size:32px;">${resps.length}</div><div class="kpi-nps-sub">respostas</div></div>
-                    <div><div class="kpi-nps-num" style="font-size:32px;">${nSetores}</div><div class="kpi-nps-sub">setores</div></div>
-                    <div><div class="kpi-nps-num" style="font-size:32px;">${mais2}</div><div class="kpi-nps-sub">com +2 anos</div></div>
-                </div>
-            </div>`;
+            const menos2 = resps.filter(r=>r.tempo_empresa==='menos_2').length;
+            document.getElementById('heroSide').innerHTML =
+                miniNPS('eNPS','Recomendaria trabalhar aqui',enps,'volunteer_activism') +
+                miniNPS('NPS','Recomendaria produtos e serviços',npsv,'recommend') +
+                `<div class="card mini-kpi" style="grid-column:1 / -1;">
+                    <div class="mini-kpi-top"><div class="mini-kpi-ico" style="background:var(--purple-soft);"><span class="material-symbols-rounded" style="color:var(--purple);">groups</span></div><span class="mini-kpi-lbl">Participação</span></div>
+                    <div class="part-row">
+                        <div class="part-item"><div class="n">${resps.length}</div><div class="l">respostas</div></div>
+                        <div class="part-item"><div class="n">${nSet||'—'}</div><div class="l">setores</div></div>
+                        <div class="part-item"><div class="n">${mais2}</div><div class="l">+2 anos</div></div>
+                        <div class="part-item"><div class="n">${menos2}</div><div class="l">-2 anos</div></div>
+                    </div>
+                </div>`;
+        }
+        function miniNPS(label, sub, val, icon) {
+            if (val===null) return `<div class="card mini-kpi"><div class="mini-kpi-top"><div class="mini-kpi-ico" style="background:#f1f1f4;"><span class="material-symbols-rounded" style="color:var(--text-muted);">${icon}</span></div><span class="mini-kpi-lbl">${label}</span></div><div class="mini-kpi-num" style="color:var(--text-muted);">—</div><div class="mini-kpi-sub">Sem dados</div></div>`;
+            const cor = val>=50?'#2FA875':val>=0?'#F5D06B':'#E5484D';
+            const bg = val>=50?'rgba(47,168,117,0.1)':val>=0?'rgba(245,208,107,0.15)':'rgba(229,72,77,0.1)';
+            return `<div class="card mini-kpi"><div class="mini-kpi-top"><div class="mini-kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${icon}</span></div><span class="mini-kpi-lbl">${label}</span></div><div class="mini-kpi-num" style="color:${cor};">${val>0?'+':''}${val}</div><div class="mini-kpi-sub">${sub}</div></div>`;
         }
 
-        // ----- Rankings: departamentos e lideranças -----
-        function renderRankings(resps) {
-            // por departamento
-            const setores = dados.setores || [];
-            const rankSetor = setores.map(s => {
-                const rIds = resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id);
-                const its = itensFiltrados(rIds).filter(it => ehLikertNaoLideranca(it.pergunta_id));
-                return { nome: s.nome, fav: calcFavLikert(its), n: rIds.length };
+        function atualizarRankings(resps) {
+            const rankSetor = (dados.setores||[]).map(s=>{
+                const ids=resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id);
+                return { nome:s.nome, fav:positivas(itensDe(ids).filter(i=>ehLikertNaoLid(i.pergunta_id))) };
             }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-
-            // por liderança (usa lider_id dos itens)
-            const lideres = dados.lideres || [];
-            const rankLider = lideres.map(l => {
-                const its = (dados.itens||[]).filter(it => String(it.lider_id)===String(l.id) && respostasFiltradas().map(r=>r.id).includes(it.resposta_id));
-                const likertIts = its.filter(it => it.valor_num!==null && ehLikertPerg(it.pergunta_id));
-                return { nome: l.nome, fav: calcFavLikert(likertIts), n: new Set(its.map(i=>i.resposta_id)).size };
+            const respIdSet = new Set(resps.map(r=>r.id));
+            const rankLider = (dados.lideres||[]).map(l=>{
+                const its=(dados.itens||[]).filter(i=>String(i.lider_id)===String(l.id) && respIdSet.has(i.resposta_id) && ehLikert(i.pergunta_id));
+                return { nome:l.nome, fav:positivas(its) };
             }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-
-            return `<div class="grid g-2" style="margin-bottom:16px;">
-                <div class="card">
-                    <div class="rank-titulo"><span class="material-symbols-rounded">domain</span> Positivas por Departamento</div>
-                    ${rankSetor.length ? `<div class="rank-list">${rankSetor.map((r,i)=>rankItem(r,i)).join('')}</div>` : '<div class="rank-vazio">Sem dados por departamento.</div>'}
+            document.getElementById('rankGrid').innerHTML = `
+                <div class="card rank-card">
+                    <div class="rank-head"><span class="material-symbols-rounded">domain</span> Positivas por departamento</div>
+                    ${rankSetor.length?`<div class="rank-list">${rankSetor.map((r,i)=>rankRow(r,i)).join('')}</div>`:'<div class="rank-empty">Sem dados por departamento.</div>'}
                 </div>
-                <div class="card">
-                    <div class="rank-titulo"><span class="material-symbols-rounded">supervisor_account</span> Positivas por Liderança</div>
-                    ${rankLider.length ? `<div class="rank-list">${rankLider.map((r,i)=>rankItem(r,i)).join('')}</div>` : '<div class="rank-vazio">Sem dados de liderança.</div>'}
-                </div>
-            </div>`;
+                <div class="card rank-card">
+                    <div class="rank-head"><span class="material-symbols-rounded">supervisor_account</span> Positivas por liderança</div>
+                    ${rankLider.length?`<div class="rank-list">${rankLider.map((r,i)=>rankRow(r,i)).join('')}</div>`:'<div class="rank-empty">Sem dados de liderança.</div>'}
+                </div>`;
+            requestAnimationFrame(()=>document.querySelectorAll('#rankGrid .rank-fill').forEach(f=>f.style.width=(f.dataset.w||0)+'%'));
         }
+        function rankRow(r,i){ const cor=corIndice(r.fav); return `<div class="rank-row"><div class="rank-badge ${i===0?'g1':''}">${i+1}</div><div class="rank-body"><div class="rank-line"><span class="rank-nome">${escH(r.nome)}</span><span class="rank-val" style="color:${cor};">${r.fav}%</span></div><div class="rank-track"><div class="rank-fill" data-w="${r.fav}" style="width:0%; background:${cor};"></div></div></div></div>`; }
 
-        function rankItem(r, i) {
-            const cor = corFav(r.fav);
-            return `<div class="rank-item">
-                <div class="rank-pos ${i===0?'top':''}">${i+1}</div>
-                <div class="rank-info">
-                    <div class="rank-nome"><span>${escH(r.nome)}</span><span class="rank-pct" style="color:${cor};">${r.fav}%</span></div>
-                    <div class="rank-bar"><div class="rank-bar-fill barra-anim" data-w="${r.fav}" style="width:0%; background:${cor};"></div></div>
-                </div>
-            </div>`;
+        function atualizarIA(itens, resps) {
+            const ins = gerarInsights(itens, resps);
+            document.getElementById('iaArea').innerHTML = `
+                <div class="ia-card">
+                    <div class="ia-head"><div class="ia-badge"><span class="material-symbols-rounded">auto_awesome</span></div><div><div class="ia-titulo">Análise automática</div><div class="ia-sub">Gerada a partir dos resultados filtrados</div></div></div>
+                    <div class="ia-grid">${ins.map(i=>`<div class="ia-item"><div class="ia-ico ia-${i.tipo}"><span class="material-symbols-rounded">${i.icon}</span></div><div class="ia-txt">${i.texto}</div></div>`).join('')}</div>
+                </div>`;
         }
-
-        function ehLikertPerg(pergId) {
-            for (const d of (dados.dimensoes||[])) for (const p of (d.perguntas||[])) if (p.id===pergId) return p.tipo==='likert';
-            return false;
-        }
-        function ehLikertNaoLideranca(pergId) {
-            for (const d of (dados.dimensoes||[])) { if (d.eh_lideranca) continue; for (const p of (d.perguntas||[])) if (p.id===pergId) return p.tipo==='likert'; }
-            return false;
-        }
-
-        // ----- Análise por IA (regras) -----
-        function renderIA(itens, resps) {
-            const insights = gerarInsights(itens, resps);
-            return `<div class="ia-card" style="margin-bottom:16px;">
-                <div class="ia-head">
-                    <div class="ia-badge"><span class="material-symbols-rounded">auto_awesome</span></div>
-                    <div><div class="ia-titulo">Análise automática</div><div class="ia-sub">Gerada a partir dos resultados filtrados</div></div>
-                </div>
-                <div class="ia-insights">
-                    ${insights.map(i => `<div class="ia-insight">
-                        <div class="ia-insight-icon ia-${i.tipo}"><span class="material-symbols-rounded">${i.icon}</span></div>
-                        <div class="ia-insight-txt">${i.texto}</div>
-                    </div>`).join('')}
-                </div>
-            </div>`;
-        }
-
         function gerarInsights(itens, resps) {
-            const out = [];
-            // Favorabilidade por dimensão (não-liderança)
-            const dimFavs = (dados.dimensoes||[]).map(d => ({ nome:d.nome, eh_lid:d.eh_lideranca, fav: favDimensao(d, itens) })).filter(x=>x.fav!==null);
-            if (dimFavs.length) {
-                const melhor = dimFavs.reduce((a,b)=>b.fav>a.fav?b:a);
-                const pior = dimFavs.reduce((a,b)=>b.fav<a.fav?b:a);
-                out.push({ tipo:'pos', icon:'trending_up', texto:`<b>${escH(melhor.nome)}</b> é o ponto mais forte, com <b>${melhor.fav}%</b> de favorabilidade.` });
-                if (pior.nome !== melhor.nome)
-                    out.push({ tipo:'neg', icon:'trending_down', texto:`<b>${escH(pior.nome)}</b> é a dimensão que mais precisa de atenção, com <b>${pior.fav}%</b>.` });
-            }
-            // Departamentos
-            const setores = dados.setores || [];
-            const rankSetor = setores.map(s => {
-                const rIds = resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id);
-                const its = itensFiltrados(rIds).filter(it=>ehLikertNaoLideranca(it.pergunta_id));
-                return { nome:s.nome, fav:calcFavLikert(its) };
-            }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-            if (rankSetor.length >= 2) {
-                out.push({ tipo:'neu', icon:'domain', texto:`Entre os departamentos, <b>${escH(rankSetor[0].nome)}</b> (${rankSetor[0].fav}%) lidera e <b>${escH(rankSetor[rankSetor.length-1].nome)}</b> (${rankSetor[rankSetor.length-1].fav}%) está mais abaixo.` });
-            }
-            // Lideranças
-            const lideres = dados.lideres || [];
-            const rankLider = lideres.map(l => {
-                const its = (dados.itens||[]).filter(it => String(it.lider_id)===String(l.id) && resps.map(r=>r.id).includes(it.resposta_id) && ehLikertPerg(it.pergunta_id));
-                return { nome:l.nome, fav:calcFavLikert(its) };
-            }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-            if (rankLider.length >= 2) {
-                const dif = rankLider[0].fav - rankLider[rankLider.length-1].fav;
-                if (dif >= 20) out.push({ tipo:'neg', icon:'balance', texto:`Há uma diferença de <b>${dif} pontos</b> entre a liderança mais bem avaliada (${escH(rankLider[0].nome)}, ${rankLider[0].fav}%) e a menos (${escH(rankLider[rankLider.length-1].nome)}, ${rankLider[rankLider.length-1].fav}%). Vale investigar.` });
-                else out.push({ tipo:'pos', icon:'balance', texto:`As lideranças têm avaliações relativamente equilibradas (variação de ${dif} pontos).` });
-            }
-            // eNPS
-            const enps = calcNpsPorDimensao(itens, 'enps');
-            if (enps !== null) {
-                if (enps >= 50) out.push({ tipo:'pos', icon:'favorite', texto:`O eNPS de <b>${enps>0?'+':''}${enps}</b> indica colaboradores promotores — bom sinal de engajamento.` });
-                else if (enps < 0) out.push({ tipo:'neg', icon:'heart_broken', texto:`O eNPS de <b>${enps}</b> está negativo: há mais detratores que promotores. Prioridade de atenção.` });
-                else out.push({ tipo:'neu', icon:'sentiment_neutral', texto:`O eNPS de <b>+${enps}</b> é intermediário — há espaço para melhorar o engajamento.` });
-            }
-            if (!out.length) out.push({ tipo:'neu', icon:'info', texto:'Ainda não há dados suficientes para gerar uma análise. Colete mais respostas.' });
+            const out=[];
+            const dimFavs=(dados.dimensoes||[]).map(d=>({nome:d.nome, fav:favDim(d,itens)})).filter(x=>x.fav!==null);
+            if(dimFavs.length){ const mel=dimFavs.reduce((a,b)=>b.fav>a.fav?b:a); const pio=dimFavs.reduce((a,b)=>b.fav<a.fav?b:a);
+                out.push({tipo:'pos',icon:'trending_up',texto:`<b>${escH(mel.nome)}</b> é o ponto mais forte, com <b>${mel.fav}%</b> de respostas positivas.`});
+                if(pio.nome!==mel.nome) out.push({tipo:'neg',icon:'trending_down',texto:`<b>${escH(pio.nome)}</b> pede mais atenção, com apenas <b>${pio.fav}%</b>.`}); }
+            const rankSetor=(dados.setores||[]).map(s=>{ const ids=resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id); return {nome:s.nome,fav:positivas(itensDe(ids).filter(i=>ehLikertNaoLid(i.pergunta_id)))}; }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
+            if(rankSetor.length>=2) out.push({tipo:'neu',icon:'domain',texto:`<b>${escH(rankSetor[0].nome)}</b> (${rankSetor[0].fav}%) é o departamento mais satisfeito; <b>${escH(rankSetor[rankSetor.length-1].nome)}</b> (${rankSetor[rankSetor.length-1].fav}%) o menos.`});
+            const respIdSet=new Set(resps.map(r=>r.id));
+            const rankLider=(dados.lideres||[]).map(l=>{ const its=(dados.itens||[]).filter(i=>String(i.lider_id)===String(l.id)&&respIdSet.has(i.resposta_id)&&ehLikert(i.pergunta_id)); return {nome:l.nome,fav:positivas(its)}; }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
+            if(rankLider.length>=2){ const dif=rankLider[0].fav-rankLider[rankLider.length-1].fav;
+                if(dif>=20) out.push({tipo:'neg',icon:'balance',texto:`Diferença de <b>${dif} pontos</b> entre a liderança mais bem avaliada (${escH(rankLider[0].nome)}) e a menos (${escH(rankLider[rankLider.length-1].nome)}). Vale investigar.`});
+                else out.push({tipo:'pos',icon:'balance',texto:`Lideranças equilibradas — variação de apenas <b>${dif} pontos</b> entre elas.`}); }
+            const enps=npsDim(itens,'enps');
+            if(enps!==null){ if(enps>=50) out.push({tipo:'pos',icon:'favorite',texto:`eNPS de <b>+${enps}</b>: colaboradores promotores, ótimo sinal de engajamento.`});
+                else if(enps<0) out.push({tipo:'neg',icon:'heart_broken',texto:`eNPS de <b>${enps}</b> (negativo): mais detratores que promotores. Prioridade.`});
+                else out.push({tipo:'neu',icon:'sentiment_neutral',texto:`eNPS de <b>+${enps}</b>: intermediário, com espaço para melhorar.`}); }
+            if(!out.length) out.push({tipo:'neu',icon:'info',texto:'Ainda não há dados suficientes para gerar uma análise.'});
             return out;
         }
 
-        // ----- Dimensões detalhadas -----
-        function renderDimensoes(itens) {
-            return (dados.dimensoes||[]).map(dim => {
-                const fav = favDimensao(dim, itens);
-                const cor = fav!==null ? corFav(fav) : '#d4d4d8';
-                const nPerg = (dim.perguntas||[]).length;
-                const aberta = dimsAbertas[dim.id];
-                return `<div class="dim-card ${aberta?'aberto':''}" id="dimcard-${dim.id}">
-                    <div class="dim-header" onclick="toggleDim('${dim.id}')">
-                        <div class="dim-header-left">
-                            <div class="dim-fav-badge" style="background:${cor};">
-                                <span class="n">${fav!==null?fav+'%':'—'}</span><span class="u">Positivas</span>
+        function atualizarDimensoes(itens) {
+            const area = document.getElementById('dimsArea');
+            (dados.dimensoes||[]).forEach((dim, idx) => {
+                const fav = favDim(dim, itens);
+                const cor = corIndice(fav);
+                const perguntasHTML = renderPerguntas(dim, itens);
+                let el = document.getElementById('dim-'+dim.id);
+                if (!el) {
+                    const nP = (dim.perguntas||[]).length;
+                    const wrap = document.createElement('div');
+                    wrap.className = 'dim' + (dimsAbertas[dim.id]?' aberto':'');
+                    wrap.id = 'dim-'+dim.id;
+                    wrap.innerHTML = `
+                        <div class="dim-head" onclick="toggleDim('${dim.id}')">
+                            <span class="dim-idx">${String(idx+1).padStart(2,'0')}</span>
+                            <div class="dim-info">
+                                <div class="dim-nome">${escH(dim.nome)} ${dim.eh_lideranca?'<span class="dim-lidtag">Liderança</span>':''}</div>
+                                <div class="dim-meta">${nP} pergunta${nP!==1?'s':''}</div>
                             </div>
-                            <div class="dim-nome-wrap">
-                                <div class="dim-nome">${escH(dim.nome)} ${dim.eh_lideranca?'<span class="dim-lid-tag">Liderança</span>':''}</div>
-                                <div class="dim-meta">${nPerg} pergunta${nPerg!==1?'s':''}</div>
+                            <div class="dim-score">
+                                <div class="dim-bar-wrap">
+                                    <span class="dim-pct" id="dimpct-${dim.id}" style="color:${cor};">${fav!==null?fav+'%':'—'}</span>
+                                    <div class="dim-bar"><div class="dim-bar-fill" id="dimbar-${dim.id}" style="width:0%; background:${cor};"></div></div>
+                                </div>
+                                <span class="dim-chevron material-symbols-rounded">expand_more</span>
                             </div>
                         </div>
-                        <div class="dim-header-right">
-                            <div class="dim-mini-bar"><div class="dim-mini-fill barra-anim" data-w="${fav||0}" style="width:0%; background:${cor};"></div></div>
-                            <span class="dim-chevron material-symbols-rounded">expand_more</span>
-                        </div>
-                    </div>
-                    <div class="dim-body" id="dimbody-${dim.id}">
-                        <div class="dim-perguntas">${renderPerguntasDim(dim, itens)}</div>
-                    </div>
-                </div>`;
-            }).join('');
+                        <div class="dim-body" id="dimbody-${dim.id}"><div class="dim-perguntas" id="dimperg-${dim.id}">${perguntasHTML}</div></div>`;
+                    area.appendChild(wrap);
+                    requestAnimationFrame(()=>{ const b=document.getElementById('dimbar-'+dim.id); if(b) b.style.width=(fav||0)+'%'; });
+                } else {
+                    const pctEl = document.getElementById('dimpct-'+dim.id);
+                    const barEl = document.getElementById('dimbar-'+dim.id);
+                    if (pctEl) { pctEl.textContent = fav!==null?fav+'%':'—'; pctEl.style.color = cor; }
+                    if (barEl) { barEl.style.background = cor; barEl.style.width = (fav||0)+'%'; }
+                    const pergEl = document.getElementById('dimperg-'+dim.id);
+                    if (pergEl) pergEl.innerHTML = perguntasHTML;
+                    if (dimsAbertas[dim.id]) { const body=document.getElementById('dimbody-'+dim.id); if(body){ body.style.maxHeight='none'; const h=body.scrollHeight; body.style.maxHeight=h+'px'; } }
+                }
+            });
         }
 
-        function renderPerguntasDim(dim, itens) {
+        function renderPerguntas(dim, itens) {
             const cards = (dim.perguntas||[]).map(pg => {
-                const its = itens.filter(it => it.pergunta_id === pg.id);
-                if (pg.tipo === 'likert') return renderPergLikert(pg, its);
-                if (pg.tipo === 'escala10') return renderPergEscala(pg, its);
-                return renderPergTexto(pg, its);
+                const its = itens.filter(i=>i.pergunta_id===pg.id);
+                if (pg.tipo==='likert') return cardLikert(pg, its);
+                if (pg.tipo==='escala10') return cardEscala(pg, its);
+                return cardTexto(pg, its);
             });
             return `<div class="pg-grid">${cards.join('')}</div>`;
         }
 
-        // Desenha um caminho de arco de rosca (donut) em SVG
-        function arcoDonut(cx, cy, rOut, rIn, startAng, endAng) {
-            const p = (r, a) => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
-            const large = (endAng - startAng) > Math.PI ? 1 : 0;
-            const [x1,y1] = p(rOut, startAng), [x2,y2] = p(rOut, endAng);
-            const [x3,y3] = p(rIn, endAng), [x4,y4] = p(rIn, startAng);
-            return `M ${x1} ${y1} A ${rOut} ${rOut} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${rIn} ${rIn} 0 ${large} 0 ${x4} ${y4} Z`;
-        }
-
-        function renderPergLikert(pg, its) {
-            const fav = calcFavLikert(its);
-            const dist = distLikert(its);
-            const total = Object.values(dist).reduce((a,b)=>a+b,0);
-            const cores = {5:COR5,4:COR4,3:COR3,2:COR2,1:COR1};
-            const labels = {5:'Concordo totalmente',4:'Concordo',3:'Indiferente',2:'Discordo',1:'Discordo totalmente'};
-
-            // Monta os arcos da rosca
-            let arcos = '';
-            if (total > 0) {
-                let ang = -Math.PI/2; // começa no topo
-                [5,4,3,2,1].forEach(n => {
-                    if (dist[n] > 0) {
-                        const frac = dist[n]/total;
-                        const end = ang + frac*2*Math.PI;
-                        arcos += `<path d="${arcoDonut(70,70,62,40,ang,end)}" fill="${cores[n]}"></path>`;
-                        ang = end;
-                    }
-                });
-            } else {
-                arcos = `<circle cx="70" cy="70" r="62" fill="#f4f4f5"/><circle cx="70" cy="70" r="40" fill="#fff"/>`;
-            }
-            const corCentro = fav!==null ? corFav(fav) : '#d4d4d8';
-            // Legenda com % de cada fatia (só as presentes), na ordem lógica
-            const legenda = [5,4,3,2,1].filter(n=>dist[n]>0).map(n => {
-                const pct = Math.round(dist[n]/total*100);
-                return `<div class="pg-leg"><span class="pg-leg-dot" style="background:${cores[n]};"></span>${labels[n]} <b>${pct}%</b></div>`;
+        function cardLikert(pg, its) {
+            const pct = positivas(its);
+            const d = distrib(its);
+            const total = Object.values(d).reduce((a,b)=>a+b,0);
+            const r=52, c=2*Math.PI*r;
+            let off = 0, segs = '';
+            [5,4,3,2,1].forEach(n=>{
+                if (total && d[n]>0) {
+                    const frac = d[n]/total;
+                    segs += `<circle cx="59" cy="59" r="${r}" fill="none" stroke="${LK[n]}" stroke-width="10" stroke-dasharray="${c*frac} ${c}" stroke-dashoffset="${-c*off}" />`;
+                    off += frac;
+                }
+            });
+            if (!total) segs = `<circle cx="59" cy="59" r="${r}" fill="none" stroke="#f1f1f4" stroke-width="10"/>`;
+            const leg = [5,4,3,2,1].filter(n=>d[n]>0).map(n=>{
+                const p = Math.round(d[n]/total*100);
+                return `<div class="pg-leg-row"><span class="pg-leg-dot" style="background:${LK[n]};"></span><span class="pg-leg-nome">${LK_LABEL[n]}</span><span class="pg-leg-val">${p}%</span></div>`;
             }).join('');
-
-            return `<div class="pg-card">
-                <div class="pg-card-titulo">${escH(pg.texto)}</div>
-                <div class="pg-donut-row">
+            return `<div class="pg">
+                <div class="pg-titulo">${escH(pg.texto)}</div>
+                <div class="pg-donut-wrap">
                     <div class="pg-donut">
-                        <svg width="140" height="140" viewBox="0 0 140 140">${arcos}</svg>
-                        <div class="pg-donut-center">
-                            <span class="pg-donut-num" style="color:${corCentro};">${fav!==null?fav+'%':'—'}</span>
-                            <span class="pg-donut-lbl">Positivas</span>
-                        </div>
+                        <svg width="118" height="118" viewBox="0 0 118 118">${segs}</svg>
+                        <div class="pg-donut-center"><span class="pg-donut-num">${pct!==null?pct+'%':'—'}</span><span class="pg-donut-lbl">Positivas</span></div>
                     </div>
-                    <div class="pg-legenda">${legenda||'<span class="pg-texto-vazio">Sem respostas</span>'}</div>
+                    <div class="pg-leg">${leg||'<span class="pg-texto-vazio">Sem respostas</span>'}</div>
                 </div>
             </div>`;
         }
 
-        function renderPergEscala(pg, its) {
-            const media = mediaEscala(its);
-            const nps = calcNPS(its);
-            const nResp = its.filter(i=>i.valor_num!==null).length;
-            const corN = media!==null?corFav(media*10):'#d4d4d8';
-            return `<div class="pg-card">
-                <div class="pg-card-titulo">${escH(pg.texto)}</div>
-                <div class="pg-escala-wrap">
-                    <div class="pg-escala-big" style="color:${corN};">${media!==null?media.toFixed(1):'—'}<span class="pg-escala-de">/10</span></div>
-                    <div class="pg-escala-meta">
-                        <div class="pg-escala-linha"><span class="material-symbols-rounded" style="font-size:15px;">group</span> ${nResp} resposta${nResp!==1?'s':''}</div>
-                        ${nps!==null?`<div class="pg-escala-linha"><span class="material-symbols-rounded" style="font-size:15px;">speed</span> NPS ${nps>0?'+':''}${nps}</div>`:''}
+        function cardEscala(pg, its) {
+            const m = media(its); const n = nps(its);
+            const nResp = its.filter(i=>i.valor_num!=null).length;
+            const cor = m!==null ? corIndice(m*10) : '#d4d4d8';
+            return `<div class="pg">
+                <div class="pg-titulo">${escH(pg.texto)}</div>
+                <div class="pg-esc">
+                    <div class="pg-esc-num" style="color:${cor};">${m!==null?m.toFixed(1):'—'}<small>/10</small></div>
+                    <div class="pg-esc-meta">
+                        <div class="pg-esc-line"><span class="material-symbols-rounded">group</span> ${nResp} resposta${nResp!==1?'s':''}</div>
+                        ${n!==null?`<div class="pg-esc-line"><span class="material-symbols-rounded">speed</span> NPS ${n>0?'+':''}${n}</div>`:''}
                     </div>
                 </div>
             </div>`;
         }
 
-        function renderPergTexto(pg, its) {
-            const textos = its.filter(it => it.valor_texto && it.valor_texto.trim()).map(it => it.valor_texto.trim());
-            return `<div class="pg-card pg-card-full">
-                <div class="pg-card-titulo">${escH(pg.texto)} <span class="badge-tipo">${textos.length} resposta${textos.length!==1?'s':''}</span></div>
-                <div class="pg-textos">
-                    ${textos.length ? textos.map(t=>`<div class="pg-texto-item">${escH(t)}</div>`).join('') : '<div class="pg-texto-vazio">Nenhuma resposta aberta.</div>'}
-                </div>
+        function cardTexto(pg, its) {
+            const t = its.filter(i=>i.valor_texto && i.valor_texto.trim()).map(i=>i.valor_texto.trim());
+            return `<div class="pg pg-full">
+                <div class="pg-titulo" style="margin-bottom:14px; min-height:auto;">${escH(pg.texto)}<span class="badge-n">${t.length} resposta${t.length!==1?'s':''}</span></div>
+                <div class="pg-textos">${t.length?t.map(x=>`<div class="pg-texto-item">${escH(x)}</div>`).join(''):'<div class="pg-texto-vazio">Nenhuma resposta aberta.</div>'}</div>
             </div>`;
         }
 
         function toggleDim(did) {
             dimsAbertas[did] = !dimsAbertas[did];
-            const card = document.getElementById('dimcard-'+did);
+            const dim = document.getElementById('dim-'+did);
             const body = document.getElementById('dimbody-'+did);
             if (dimsAbertas[did]) {
-                card.classList.add('aberto');
-                // recalcula em dois frames para garantir que o SVG já tenha layout
-                body.style.maxHeight = 'none';
-                const h = body.scrollHeight;
-                body.style.maxHeight = '0px';
-                requestAnimationFrame(()=>{ body.style.maxHeight = h + 'px'; });
+                dim.classList.add('aberto');
+                body.style.maxHeight='none'; const h=body.scrollHeight; body.style.maxHeight='0px';
+                requestAnimationFrame(()=>{ body.style.maxHeight=h+'px'; });
             } else {
-                card.classList.remove('aberto');
-                body.style.maxHeight = null;
+                dim.classList.remove('aberto'); body.style.maxHeight=null;
             }
-        }
-
-        function animarBarras() {
-            requestAnimationFrame(() => {
-                document.querySelectorAll('.barra-anim').forEach(b => { b.style.width = (b.dataset.w||0) + '%'; });
-            });
         }
     </script>
 </body>
