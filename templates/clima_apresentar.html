@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação · Clima</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root {
+            --bg:#f6f6f7; --surface:#ffffff; --ink:#18181b; --soft:#52525b; --muted:#9497a0;
+            --purple:#7371ff; --purple-soft:#f0efff; --line:#ececf0;
+            --lk1:#E5484D; --lk2:#F2A98C; --lk3:#F5D06B; --lk4:#7DD1A6; --lk5:#2FA875;
+        }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
+
+        /* Palco: cada slide ocupa a tela inteira */
+        .stage { position: fixed; inset: 0; }
+        .slide { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 5vh 6vw; opacity: 0; transform: scale(0.98) translateY(10px); pointer-events: none; transition: opacity 0.5s ease, transform 0.5s ease; overflow: hidden; }
+        .slide.active { opacity: 1; transform: none; pointer-events: auto; }
+
+        /* Marca d'água/cabeçalho comum */
+        .slide-brand { position: absolute; top: 4vh; left: 6vw; font-size: 1.4vw; font-weight: 800; letter-spacing: -0.5px; }
+        .slide-brand span { color: var(--purple); }
+        .slide-kicker { position: absolute; top: 4vh; right: 6vw; font-size: 1vw; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+
+        .slide-head { margin-bottom: 3vh; }
+        .slide-eyebrow { font-size: 1vw; font-weight: 800; text-transform: uppercase; letter-spacing: 2.5px; color: var(--purple); margin-bottom: 1vh; }
+        .slide-title { font-size: 3.4vw; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
+
+        /* ===== SLIDE CAPA ===== */
+        .capa { justify-content: center; align-items: flex-start; }
+        .capa-logo { font-size: 2vw; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6vh; }
+        .capa-logo span { color: var(--purple); }
+        .capa-eyebrow { font-size: 1.3vw; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--purple); margin-bottom: 2vh; }
+        .capa-titulo { font-size: 5.5vw; font-weight: 900; letter-spacing: -3px; line-height: 1; margin-bottom: 3vh; max-width: 80%; }
+        .capa-cliente { font-size: 2vw; font-weight: 600; color: var(--soft); margin-bottom: 8vh; }
+        .capa-stats { display: flex; gap: 6vw; }
+        .capa-stat .n { font-size: 3.5vw; font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--purple); }
+        .capa-stat .l { font-size: 1.1vw; font-weight: 600; color: var(--muted); margin-top: 1vh; text-transform: uppercase; letter-spacing: 1px; }
+        .capa-deco { position: absolute; right: -10vw; top: 50%; transform: translateY(-50%); width: 45vw; height: 45vw; background: radial-gradient(circle, rgba(115,113,255,0.08), transparent 65%); pointer-events: none; }
+
+        /* ===== SLIDE NÚMERO GRANDE (panorama) ===== */
+        .panorama { flex-direction: row; align-items: center; gap: 6vw; }
+        .pano-gauge { position: relative; width: 34vw; height: 34vw; max-width: 460px; max-height: 460px; flex-shrink: 0; }
+        .pano-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .pano-gauge-num { font-size: 8vw; font-weight: 900; letter-spacing: -5px; line-height: 1; }
+        .pano-gauge-lbl { font-size: 1.3vw; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--muted); margin-top: 1vh; }
+        .pano-side { flex-grow: 1; }
+        .pano-side-titulo { font-size: 2.6vw; font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 2vh; }
+        .pano-side-desc { font-size: 1.3vw; font-weight: 500; color: var(--soft); line-height: 1.5; margin-bottom: 4vh; max-width: 90%; }
+        .pano-nps-row { display: flex; gap: 2vw; }
+        .pano-nps { background: var(--surface); box-shadow: 0 2px 20px rgba(0,0,0,0.05); padding: 2.5vh 2vw; border-radius: 20px !important; flex: 1; }
+        .pano-nps-lbl { font-size: 1vw; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 1vh; }
+        .pano-nps-num { font-size: 3.4vw; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .pano-nps-sub { font-size: 0.95vw; font-weight: 500; color: var(--muted); margin-top: 0.8vh; }
+
+        /* ===== SLIDE RANKING ===== */
+        .rank-full { display: flex; flex-direction: column; }
+        .rank-list-big { display: flex; flex-direction: column; gap: 2.4vh; margin-top: 2vh; flex-grow: 1; justify-content: center; }
+        .rank-big { display: flex; align-items: center; gap: 2vw; }
+        .rank-big-pos { width: 3.4vw; height: 3.4vw; max-width: 56px; max-height: 56px; border-radius: 16px !important; display: flex; align-items: center; justify-content: center; font-size: 1.6vw; font-weight: 900; flex-shrink: 0; background: #ececf0; color: var(--muted); }
+        .rank-big-pos.g1 { background: var(--purple); color: #fff; }
+        .rank-big-body { flex-grow: 1; min-width: 0; }
+        .rank-big-line { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1vh; }
+        .rank-big-nome { font-size: 1.8vw; font-weight: 700; }
+        .rank-big-val { font-size: 2vw; font-weight: 900; letter-spacing: -1px; }
+        .rank-big-track { height: 1.4vh; background: #ececf0; border-radius: 50px !important; overflow: hidden; }
+        .rank-big-fill { height: 100%; border-radius: 50px !important; transition: width 1s cubic-bezier(0.34,1.1,0.64,1); }
+
+        /* ===== SLIDE DIMENSÃO ===== */
+        .dim-slide { display: flex; flex-direction: column; }
+        .dim-slide-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 4vw; margin-bottom: 3vh; }
+        .dim-slide-score { display: flex; align-items: baseline; gap: 1vw; flex-shrink: 0; }
+        .dim-slide-pct { font-size: 5vw; font-weight: 900; letter-spacing: -3px; line-height: 1; }
+        .dim-slide-pctlbl { font-size: 1.1vw; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+        .dim-grid { display: grid; gap: 2vw; flex-grow: 1; align-content: center; }
+        .dim-pg { background: var(--surface); box-shadow: 0 2px 20px rgba(0,0,0,0.04); padding: 2.6vh 2vw; border-radius: 20px !important; display: flex; flex-direction: column; }
+        .dim-pg-titulo { font-size: 1.15vw; font-weight: 700; line-height: 1.35; margin-bottom: 2vh; }
+        .dim-pg-donut-wrap { display: flex; align-items: center; gap: 1.6vw; }
+        .dim-pg-donut { position: relative; width: 8vw; height: 8vw; max-width: 130px; max-height: 130px; flex-shrink: 0; }
+        .dim-pg-donut svg { transform: rotate(-90deg); }
+        .dim-pg-donut-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .dim-pg-donut-n { font-size: 1.8vw; font-weight: 900; letter-spacing: -1px; line-height: 1; }
+        .dim-pg-donut-l { font-size: 0.6vw; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 0.4vh; }
+        .dim-pg-leg { display: flex; flex-direction: column; gap: 1vh; flex-grow: 1; min-width: 0; }
+        .dim-pg-leg-row { display: flex; align-items: center; gap: 0.6vw; font-size: 0.85vw; }
+        .dim-pg-leg-dot { width: 0.7vw; height: 0.7vw; max-width: 11px; max-height: 11px; border-radius: 3px !important; flex-shrink: 0; }
+        .dim-pg-leg-nome { color: var(--soft); font-weight: 500; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dim-pg-leg-val { font-weight: 900; }
+        /* escala e texto compactos no slide */
+        .dim-pg-esc { display: flex; align-items: center; gap: 1.4vw; }
+        .dim-pg-esc-n { font-size: 3.6vw; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+        .dim-pg-esc-n small { font-size: 1.2vw; color: var(--muted); }
+        .dim-pg-esc-meta { font-size: 0.95vw; font-weight: 600; color: var(--soft); line-height: 1.7; }
+        .dim-pg-txt { font-size: 0.9vw; color: var(--soft); font-weight: 500; }
+        .dim-pg-txt-n { font-size: 2.6vw; font-weight: 900; color: var(--purple); letter-spacing: -1px; }
+
+        /* ===== SLIDE ANÁLISE ===== */
+        .ia-slide { display: flex; flex-direction: column; }
+        .ia-grid-big { display: grid; grid-template-columns: 1fr 1fr; gap: 2vw; margin-top: 2vh; flex-grow: 1; align-content: center; }
+        .ia-big { display: flex; gap: 1.4vw; align-items: flex-start; background: var(--surface); box-shadow: 0 2px 20px rgba(0,0,0,0.04); padding: 3vh 2vw; border-radius: 20px !important; }
+        .ia-big-ico { width: 3vw; height: 3vw; max-width: 52px; max-height: 52px; border-radius: 14px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ia-big-ico .material-symbols-rounded { font-size: 1.6vw; }
+        .ia-big.pos .ia-big-ico { background: rgba(47,168,117,0.12); color: var(--lk5); }
+        .ia-big.neg .ia-big-ico { background: rgba(229,72,77,0.12); color: var(--lk1); }
+        .ia-big.neu .ia-big-ico { background: var(--purple-soft); color: var(--purple); }
+        .ia-big-txt { font-size: 1.35vw; line-height: 1.5; color: var(--soft); }
+        .ia-big-txt b { color: var(--ink); font-weight: 800; }
+
+        /* ===== SLIDE ENCERRAMENTO ===== */
+        .fim { justify-content: center; align-items: center; text-align: center; }
+        .fim-eyebrow { font-size: 1.2vw; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--purple); margin-bottom: 2vh; }
+        .fim-titulo { font-size: 4.5vw; font-weight: 900; letter-spacing: -2.5px; line-height: 1.05; margin-bottom: 3vh; }
+        .fim-sub { font-size: 1.4vw; font-weight: 500; color: var(--soft); max-width: 50vw; line-height: 1.5; margin-bottom: 6vh; }
+        .fim-logo { font-size: 1.6vw; font-weight: 800; }
+        .fim-logo span { color: var(--purple); }
+
+        /* ===== CONTROLES ===== */
+        .controls { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; z-index: 100; opacity: 0.35; transition: opacity 0.25s; }
+        .controls:hover { opacity: 1; }
+        .ctrl-btn { width: 46px; height: 46px; background: var(--surface); box-shadow: 0 4px 16px rgba(0,0,0,0.1); border-radius: 50% !important; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; color: var(--ink); }
+        .ctrl-btn:hover { background: var(--purple); color: #fff; transform: scale(1.06); }
+        .dots { display: flex; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50% !important; background: #cfcfd6; cursor: pointer; transition: 0.2s; }
+        .dot.active { background: var(--purple); width: 24px; border-radius: 50px !important; }
+        .counter { position: fixed; bottom: 3vh; right: 4vw; font-size: 1vw; font-weight: 700; color: var(--muted); z-index: 100; }
+        .exit-btn { position: fixed; top: 3vh; right: 4vw; width: 44px; height: 44px; background: var(--surface); box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-radius: 50% !important; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; transition: 0.15s; opacity: 0.4; }
+        .exit-btn:hover { opacity: 1; color: var(--lk1); }
+
+        .loading-full { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; color: var(--muted); font-weight: 600; }
+        .spin { width: 40px; height: 40px; border: 4px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: sp 0.7s linear infinite; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+
+        .hint { position: fixed; bottom: 3vh; left: 4vw; font-size: 0.9vw; font-weight: 600; color: var(--muted); z-index: 100; opacity: 0.5; display: flex; align-items: center; gap: 8px; }
+        .hint .k { background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 6px !important; font-size: 0.85vw; }
+    </style>
+</head>
+<body>
+    <div class="loading-full" id="loading"><div class="spin"></div>Preparando apresentação...</div>
+    <div class="stage" id="stage" style="display:none;"></div>
+
+    <div class="exit-btn" id="exitBtn" onclick="sair()" style="display:none;"><span class="material-symbols-rounded">close</span></div>
+    <div class="controls" id="controls" style="display:none;">
+        <div class="ctrl-btn" onclick="irPara(atual-1)"><span class="material-symbols-rounded">chevron_left</span></div>
+        <div class="dots" id="dots"></div>
+        <div class="ctrl-btn" onclick="irPara(atual+1)"><span class="material-symbols-rounded">chevron_right</span></div>
+    </div>
+    <div class="counter" id="counter" style="display:none;"></div>
+    <div class="hint" id="hint" style="display:none;"><span class="k">←</span> <span class="k">→</span> para navegar · <span class="k">Esc</span> para sair</div>
+
+    <script>
+        const PID = "{{ pesquisa_id }}";
+        let dados = null;
+        let slides = [];      // array de {tipo, ...}
+        let atual = 0;
+
+        const LK = { 1:'#E5484D', 2:'#F2A98C', 3:'#F5D06B', 4:'#7DD1A6', 5:'#2FA875' };
+        const LK_LABEL = { 5:'Concordo totalmente', 4:'Concordo', 3:'Indiferente', 2:'Discordo', 1:'Discordo totalmente' };
+
+        document.addEventListener('DOMContentLoaded', carregar);
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function corIndice(pct){ if(pct===null) return '#d4d4d8'; if(pct>=75) return '#2FA875'; if(pct>=50) return '#F5D06B'; return '#E5484D'; }
+        function positivas(itens){ const v=itens.filter(i=>i.valor_num!=null).map(i=>Number(i.valor_num)); if(!v.length) return null; return Math.round(v.filter(x=>x>=4).length/v.length*100); }
+        function distrib(itens){ const d={1:0,2:0,3:0,4:0,5:0}; itens.forEach(i=>{ const v=Math.round(Number(i.valor_num)); if(d[v]!=null) d[v]++; }); return d; }
+        function media(itens){ const v=itens.filter(i=>i.valor_num!=null).map(i=>Number(i.valor_num)); if(!v.length) return null; return v.reduce((a,b)=>a+b,0)/v.length; }
+        function nps(itens){ const v=itens.filter(i=>i.valor_num!=null).map(i=>Number(i.valor_num)); if(!v.length) return null; return Math.round((v.filter(x=>x>=9).length-v.filter(x=>x<=6).length)/v.length*100); }
+        function itensDe(ids){ const s=new Set(ids); return (dados.itens||[]).filter(i=>s.has(i.resposta_id)); }
+        function ehLikert(pid){ for(const d of dados.dimensoes) for(const p of (d.perguntas||[])) if(p.id===pid) return p.tipo==='likert'; return false; }
+        function ehLikertNaoLid(pid){ for(const d of dados.dimensoes){ if(d.eh_lideranca) continue; for(const p of (d.perguntas||[])) if(p.id===pid) return p.tipo==='likert'; } return false; }
+        function favDim(dim, itens){ const ids=(dim.perguntas||[]).filter(p=>p.tipo==='likert').map(p=>p.id); return positivas(itens.filter(i=>ids.includes(i.pergunta_id))); }
+        function npsDim(itens, chave){ const dim=(dados.dimensoes||[]).find(d=>(d.nome||'').toLowerCase().replace(/[^a-z]/g,'').includes(chave)); if(!dim) return null; const p=(dim.perguntas||[]).find(x=>x.tipo==='escala10'); if(!p) return null; return nps(itens.filter(i=>i.pergunta_id===p.id)); }
+
+        async function carregar() {
+            try {
+                const res = await fetch('/api/clima/resultados/' + PID);
+                dados = await res.json();
+                if (!res.ok || dados.erro) { document.getElementById('loading').innerHTML = 'Não foi possível carregar a pesquisa.'; return; }
+                montarSlides();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('stage').style.display = 'block';
+                document.getElementById('exitBtn').style.display = 'flex';
+                document.getElementById('controls').style.display = 'flex';
+                document.getElementById('counter').style.display = 'block';
+                document.getElementById('hint').style.display = 'flex';
+                renderSlides();
+                irPara(0);
+            } catch(e) { document.getElementById('loading').innerHTML = 'Erro de conexão.'; }
+        }
+
+        function montarSlides() {
+            const itens = dados.itens || [];
+            const resps = dados.respostas || [];
+            slides = [];
+            // 1. Capa
+            slides.push({ tipo:'capa' });
+            // 2. Panorama (número grande)
+            slides.push({ tipo:'panorama' });
+            // 3. Ranking departamentos (se houver)
+            if ((dados.setores||[]).length) slides.push({ tipo:'rank', escopo:'setor' });
+            // 4. Ranking lideranças (se houver)
+            if ((dados.lideres||[]).length) slides.push({ tipo:'rank', escopo:'lider' });
+            // 5. Uma tela por dimensão
+            (dados.dimensoes||[]).forEach(dim => slides.push({ tipo:'dim', dim }));
+            // 6. Análise
+            slides.push({ tipo:'ia' });
+            // 7. Encerramento
+            slides.push({ tipo:'fim' });
+        }
+
+        function renderSlides() {
+            const stage = document.getElementById('stage');
+            stage.innerHTML = slides.map((s,i) => `<div class="slide" id="slide-${i}">${conteudoSlide(s)}</div>`).join('');
+            // dots
+            document.getElementById('dots').innerHTML = slides.map((s,i)=>`<div class="dot" onclick="irPara(${i})" id="dot-${i}"></div>`).join('');
+        }
+
+        const nomeCliente = () => { return dados._cliente_nome || ''; };
+
+        function conteudoSlide(s) {
+            const itens = dados.itens || [];
+            const resps = dados.respostas || [];
+            if (s.tipo === 'capa') {
+                const nSet = new Set(resps.map(r=>r.setor_id).filter(Boolean)).size;
+                return `<div class="slide capa" style="position:relative;">
+                    <div class="capa-deco"></div>
+                    <div class="capa-logo">CX<span>Projetos</span></div>
+                    <div class="capa-eyebrow">Pesquisa de Clima Organizacional</div>
+                    <div class="capa-titulo">${escH(dados.pesquisa.titulo)}</div>
+                    <div class="capa-stats">
+                        <div class="capa-stat"><div class="n">${resps.length}</div><div class="l">Respostas</div></div>
+                        ${nSet?`<div class="capa-stat"><div class="n">${nSet}</div><div class="l">Setores</div></div>`:''}
+                        ${(dados.lideres||[]).length?`<div class="capa-stat"><div class="n">${dados.lideres.length}</div><div class="l">Lideranças</div></div>`:''}
+                        <div class="capa-stat"><div class="n">${(dados.dimensoes||[]).length}</div><div class="l">Dimensões</div></div>
+                    </div>
+                </div>`;
+            }
+            if (s.tipo === 'panorama') {
+                const ids=[]; (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{ if(p.tipo==='likert') ids.push(p.id); }));
+                const pct = positivas(itens.filter(i=>ids.includes(i.pergunta_id))) ?? 0;
+                const cor = corIndice(pct);
+                const enps = npsDim(itens,'enps'), npsv = npsDim(itens,'nps');
+                const r=44, c=2*Math.PI*r;
+                return `<div class="slide panorama">
+                    <div class="slide-brand">CX<span>Projetos</span></div>
+                    <div class="slide-kicker">Panorama geral</div>
+                    <div class="pano-gauge">
+                        <svg width="100%" height="100%" viewBox="0 0 100 100" style="transform:rotate(-90deg);">
+                            <circle cx="50" cy="50" r="${r}" fill="none" stroke="#ececf0" stroke-width="7"/>
+                            <circle class="anim-gauge" cx="50" cy="50" r="${r}" fill="none" stroke="${cor}" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 ${c}" data-full="${c*pct/100}" style="transition:stroke-dasharray 1.2s cubic-bezier(0.34,1.1,0.64,1);"/>
+                        </svg>
+                        <div class="pano-gauge-center"><span class="pano-gauge-num" style="color:${cor};">${pct}%</span><span class="pano-gauge-lbl">Positivas</span></div>
+                    </div>
+                    <div class="pano-side">
+                        <div class="pano-side-titulo">Índice geral de clima</div>
+                        <div class="pano-side-desc">Percentual de respostas positivas (Concordo e Concordo totalmente) considerando todas as perguntas de escala da pesquisa.</div>
+                        <div class="pano-nps-row">
+                            ${panoNPS('eNPS', 'Recomendaria trabalhar aqui', enps)}
+                            ${panoNPS('NPS', 'Recomendaria produtos e serviços', npsv)}
+                        </div>
+                    </div>
+                </div>`;
+            }
+            if (s.tipo === 'rank') {
+                const isSetor = s.escopo === 'setor';
+                let lista;
+                if (isSetor) {
+                    lista = (dados.setores||[]).map(x=>{ const ids=resps.filter(r=>String(r.setor_id)===String(x.id)).map(r=>r.id); return {nome:x.nome, fav:positivas(itensDe(ids).filter(i=>ehLikertNaoLid(i.pergunta_id)))}; });
+                } else {
+                    lista = (dados.lideres||[]).map(x=>{ const its=(dados.itens||[]).filter(i=>String(i.lider_id)===String(x.id)&&ehLikert(i.pergunta_id)); return {nome:x.nome, fav:positivas(its)}; });
+                }
+                lista = lista.filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
+                return `<div class="slide rank-full">
+                    <div class="slide-brand">CX<span>Projetos</span></div>
+                    <div class="slide-kicker">${isSetor?'Por departamento':'Por liderança'}</div>
+                    <div class="slide-head">
+                        <div class="slide-eyebrow">${isSetor?'Comparativo entre áreas':'Comparativo entre líderes'}</div>
+                        <div class="slide-title">${isSetor?'Clima por departamento':'Clima por liderança'}</div>
+                    </div>
+                    <div class="rank-list-big">
+                        ${lista.length?lista.map((r,i)=>{ const cor=corIndice(r.fav); return `<div class="rank-big">
+                            <div class="rank-big-pos ${i===0?'g1':''}">${i+1}</div>
+                            <div class="rank-big-body">
+                                <div class="rank-big-line"><span class="rank-big-nome">${escH(r.nome)}</span><span class="rank-big-val" style="color:${cor};">${r.fav}%</span></div>
+                                <div class="rank-big-track"><div class="rank-big-fill anim-bar" data-w="${r.fav}" style="width:0%; background:${cor};"></div></div>
+                            </div>
+                        </div>`; }).join(''):'<div style="text-align:center;color:var(--muted);font-size:1.4vw;">Sem dados disponíveis.</div>'}
+                    </div>
+                </div>`;
+            }
+            if (s.tipo === 'dim') {
+                const dim = s.dim;
+                const fav = favDim(dim, itens);
+                const cor = corIndice(fav);
+                const perg = (dim.perguntas||[]);
+                // define colunas conforme número de perguntas
+                const cols = perg.length <= 2 ? perg.length : perg.length <= 4 ? 2 : 3;
+                const cards = perg.map(pg => {
+                    const its = itens.filter(i=>i.pergunta_id===pg.id);
+                    if (pg.tipo==='likert') return dimCardLikert(pg, its);
+                    if (pg.tipo==='escala10') return dimCardEscala(pg, its);
+                    return dimCardTexto(pg, its);
+                }).join('');
+                return `<div class="slide dim-slide">
+                    <div class="slide-brand">CX<span>Projetos</span></div>
+                    <div class="slide-kicker">Dimensão</div>
+                    <div class="dim-slide-head">
+                        <div class="slide-head" style="margin:0;">
+                            <div class="slide-eyebrow">${dim.eh_lideranca?'Avaliação de liderança':'Resultados da dimensão'}</div>
+                            <div class="slide-title">${escH(dim.nome)}</div>
+                        </div>
+                        ${fav!==null?`<div class="dim-slide-score"><span class="dim-slide-pct" style="color:${cor};">${fav}%</span><span class="dim-slide-pctlbl">Positivas</span></div>`:''}
+                    </div>
+                    <div class="dim-grid" style="grid-template-columns:repeat(${cols},1fr);">${cards}</div>
+                </div>`;
+            }
+            if (s.tipo === 'ia') {
+                const ins = gerarInsights(itens, resps);
+                return `<div class="slide ia-slide">
+                    <div class="slide-brand">CX<span>Projetos</span></div>
+                    <div class="slide-kicker">Análise</div>
+                    <div class="slide-head">
+                        <div class="slide-eyebrow">Leitura automática dos resultados</div>
+                        <div class="slide-title">Destaques e pontos de atenção</div>
+                    </div>
+                    <div class="ia-grid-big">
+                        ${ins.map(i=>`<div class="ia-big ${i.tipo}"><div class="ia-big-ico"><span class="material-symbols-rounded">${i.icon}</span></div><div class="ia-big-txt">${i.texto}</div></div>`).join('')}
+                    </div>
+                </div>`;
+            }
+            if (s.tipo === 'fim') {
+                const ids=[]; (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{ if(p.tipo==='likert') ids.push(p.id); }));
+                const pct = positivas(itens.filter(i=>ids.includes(i.pergunta_id))) ?? 0;
+                return `<div class="slide fim">
+                    <div class="fim-eyebrow">Obrigado</div>
+                    <div class="fim-titulo">Clima geral em <span style="color:${corIndice(pct)};">${pct}%</span><br>de respostas positivas</div>
+                    <div class="fim-sub">Este panorama é o ponto de partida para construir, juntos, um ambiente de trabalho ainda melhor.</div>
+                    <div class="fim-logo">CX<span>Projetos</span> · Consultoria</div>
+                </div>`;
+            }
+            return '';
+        }
+
+        function panoNPS(label, sub, val) {
+            if (val===null) return `<div class="pano-nps"><div class="pano-nps-lbl">${label}</div><div class="pano-nps-num" style="color:var(--muted);">—</div><div class="pano-nps-sub">Sem dados</div></div>`;
+            const cor = val>=50?'#2FA875':val>=0?'#F5D06B':'#E5484D';
+            return `<div class="pano-nps"><div class="pano-nps-lbl">${label}</div><div class="pano-nps-num" style="color:${cor};">${val>0?'+':''}${val}</div><div class="pano-nps-sub">${sub}</div></div>`;
+        }
+
+        function dimCardLikert(pg, its) {
+            const pct = positivas(its);
+            const d = distrib(its); const total = Object.values(d).reduce((a,b)=>a+b,0);
+            const r=42, c=2*Math.PI*r;
+            let off=0, segs='';
+            [5,4,3,2,1].forEach(n=>{ if(total&&d[n]>0){ const f=d[n]/total; segs+=`<circle cx="50" cy="50" r="${r}" fill="none" stroke="${LK[n]}" stroke-width="12" stroke-dasharray="${c*f} ${c}" stroke-dashoffset="${-c*off}"/>`; off+=f; } });
+            if(!total) segs=`<circle cx="50" cy="50" r="${r}" fill="none" stroke="#ececf0" stroke-width="12"/>`;
+            const leg=[5,4,3,2,1].filter(n=>d[n]>0).map(n=>`<div class="dim-pg-leg-row"><span class="dim-pg-leg-dot" style="background:${LK[n]};"></span><span class="dim-pg-leg-nome">${LK_LABEL[n]}</span><span class="dim-pg-leg-val" style="color:${LK[n]};">${Math.round(d[n]/total*100)}%</span></div>`).join('');
+            return `<div class="dim-pg">
+                <div class="dim-pg-titulo">${escH(pg.texto)}</div>
+                <div class="dim-pg-donut-wrap">
+                    <div class="dim-pg-donut"><svg width="100%" height="100%" viewBox="0 0 100 100">${segs}</svg><div class="dim-pg-donut-c"><span class="dim-pg-donut-n">${pct!==null?pct+'%':'—'}</span><span class="dim-pg-donut-l">Positivas</span></div></div>
+                    <div class="dim-pg-leg">${leg||'<span class="dim-pg-txt">Sem respostas</span>'}</div>
+                </div>
+            </div>`;
+        }
+        function dimCardEscala(pg, its) {
+            const m=media(its), n=nps(its); const nr=its.filter(i=>i.valor_num!=null).length;
+            const cor = m!==null?corIndice(m*10):'#d4d4d8';
+            return `<div class="dim-pg">
+                <div class="dim-pg-titulo">${escH(pg.texto)}</div>
+                <div class="dim-pg-esc">
+                    <div class="dim-pg-esc-n" style="color:${cor};">${m!==null?m.toFixed(1):'—'}<small>/10</small></div>
+                    <div class="dim-pg-esc-meta">${nr} resposta${nr!==1?'s':''}${n!==null?`<br>NPS ${n>0?'+':''}${n}`:''}</div>
+                </div>
+            </div>`;
+        }
+        function dimCardTexto(pg, its) {
+            const t=its.filter(i=>i.valor_texto&&i.valor_texto.trim());
+            return `<div class="dim-pg">
+                <div class="dim-pg-titulo">${escH(pg.texto)}</div>
+                <div style="display:flex;align-items:center;gap:1vw;"><span class="dim-pg-txt-n">${t.length}</span><span class="dim-pg-txt">resposta${t.length!==1?'s':''} aberta${t.length!==1?'s':''}<br>disponíveis no relatório</span></div>
+            </div>`;
+        }
+
+        function gerarInsights(itens, resps) {
+            const out=[];
+            const dimFavs=(dados.dimensoes||[]).map(d=>({nome:d.nome, fav:favDim(d,itens)})).filter(x=>x.fav!==null);
+            if(dimFavs.length){ const mel=dimFavs.reduce((a,b)=>b.fav>a.fav?b:a); const pio=dimFavs.reduce((a,b)=>b.fav<a.fav?b:a);
+                out.push({tipo:'pos',icon:'trending_up',texto:`<b>${escH(mel.nome)}</b> é o ponto mais forte, com <b>${mel.fav}%</b> de respostas positivas.`});
+                if(pio.nome!==mel.nome) out.push({tipo:'neg',icon:'trending_down',texto:`<b>${escH(pio.nome)}</b> pede mais atenção, com <b>${pio.fav}%</b>.`}); }
+            const rankSetor=(dados.setores||[]).map(s=>{ const ids=resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id); return {nome:s.nome,fav:positivas(itensDe(ids).filter(i=>ehLikertNaoLid(i.pergunta_id)))}; }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
+            if(rankSetor.length>=2) out.push({tipo:'neu',icon:'domain',texto:`<b>${escH(rankSetor[0].nome)}</b> (${rankSetor[0].fav}%) é o departamento mais satisfeito; <b>${escH(rankSetor[rankSetor.length-1].nome)}</b> (${rankSetor[rankSetor.length-1].fav}%) o menos.`});
+            const rankLider=(dados.lideres||[]).map(l=>{ const its=(dados.itens||[]).filter(i=>String(i.lider_id)===String(l.id)&&ehLikert(i.pergunta_id)); return {nome:l.nome,fav:positivas(its)}; }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
+            if(rankLider.length>=2){ const dif=rankLider[0].fav-rankLider[rankLider.length-1].fav;
+                if(dif>=20) out.push({tipo:'neg',icon:'balance',texto:`Diferença de <b>${dif} pontos</b> entre a liderança mais bem avaliada (${escH(rankLider[0].nome)}) e a menos avaliada (${escH(rankLider[rankLider.length-1].nome)}).`});
+                else out.push({tipo:'pos',icon:'balance',texto:`Lideranças equilibradas — variação de apenas <b>${dif} pontos</b>.`}); }
+            const enps=npsDim(itens,'enps');
+            if(enps!==null){ if(enps>=50) out.push({tipo:'pos',icon:'favorite',texto:`eNPS de <b>+${enps}</b>: colaboradores promotores, ótimo engajamento.`});
+                else if(enps<0) out.push({tipo:'neg',icon:'heart_broken',texto:`eNPS de <b>${enps}</b> (negativo): mais detratores que promotores.`});
+                else out.push({tipo:'neu',icon:'sentiment_neutral',texto:`eNPS de <b>+${enps}</b>: intermediário, com espaço para melhorar.`}); }
+            if(!out.length) out.push({tipo:'neu',icon:'info',texto:'Ainda não há dados suficientes para uma análise detalhada.'});
+            return out.slice(0,6);
+        }
+
+        // ===== NAVEGAÇÃO =====
+        function irPara(i) {
+            if (i < 0 || i >= slides.length) return;
+            atual = i;
+            document.querySelectorAll('.slide').forEach((el,idx)=>el.classList.toggle('active', idx===i));
+            document.querySelectorAll('.dot').forEach((el,idx)=>el.classList.toggle('active', idx===i));
+            document.getElementById('counter').textContent = `${i+1} / ${slides.length}`;
+            // dispara animações do slide ativo
+            requestAnimationFrame(()=>{
+                const s = document.getElementById('slide-'+i);
+                if (!s) return;
+                s.querySelectorAll('.anim-bar').forEach(b=>{ b.style.width='0%'; requestAnimationFrame(()=>b.style.width=(b.dataset.w||0)+'%'); });
+                s.querySelectorAll('.anim-gauge').forEach(g=>{ const full=g.dataset.full; const c=g.getAttribute('stroke-dasharray').split(' ')[1]; g.setAttribute('stroke-dasharray','0 '+c); requestAnimationFrame(()=>g.setAttribute('stroke-dasharray', full+' '+c)); });
+            });
+        }
+
+        function sair() {
+            if (window.opener) window.close();
+            else window.location.href = '/clima/dashboard';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); irPara(atual+1); }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); irPara(atual-1); }
+            else if (e.key === 'Escape') sair();
+            else if (e.key === 'Home') irPara(0);
+            else if (e.key === 'End') irPara(slides.length-1);
+        });
+
+        // clique no meio-direita avança, meio-esquerda volta
+        document.getElementById('stage').addEventListener('click', (e) => {
+            const x = e.clientX / window.innerWidth;
+            if (x > 0.65) irPara(atual+1);
+            else if (x < 0.35) irPara(atual-1);
+        });
+    </script>
+</body>
+</html>
