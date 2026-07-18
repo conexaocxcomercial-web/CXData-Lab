@@ -1642,5 +1642,401 @@ def okr_excluir_item():
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 
+# ============================================================
+# --- MÓDULO PESQUISA DE CLIMA ---
+# ============================================================
+import secrets
+
+def pode_ver_clima():
+    """Admin/gestor sempre; comum/personalizado conforme módulo 'clima' liberado."""
+    nivel = session.get('nivel_acesso')
+    if nivel in ('admin', 'gestor'):
+        return True
+    return pode_acessar_modulo('clima')
+
+@app.route('/clima')
+@app.route('/clima/gestao')
+def clima_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not pode_ver_clima():
+        return redirect(url_for('index'))
+    return render_template('clima.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
+
+@app.route('/clima/dashboard')
+def clima_dashboard_page():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not pode_ver_clima():
+        return redirect(url_for('index'))
+    # Dashboard do Clima será construído na fase 2
+    return render_template('clima.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
+
+# ===== MODELO BASE =====
+@app.route('/api/clima/modelo', methods=['GET'])
+def clima_modelo_get():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res_dim = supabase.table("clima_modelo_dimensoes").select("*").order("ordem").execute()
+        dims = res_dim.data or []
+        dim_ids = [d["id"] for d in dims]
+        pergs_por_dim = {d["id"]: [] for d in dims}
+        if dim_ids:
+            res_p = supabase.table("clima_modelo_perguntas").select("*").in_("dimensao_id", dim_ids).order("ordem").execute()
+            for p in (res_p.data or []):
+                pergs_por_dim.setdefault(p["dimensao_id"], []).append(p)
+        for d in dims:
+            d["perguntas"] = pergs_por_dim.get(d["id"], [])
+        return jsonify({"status": "sucesso", "dimensoes": dims}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_modelo_get: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Não foi possível carregar o modelo."}), 500
+
+@app.route('/api/clima/modelo/dimensao', methods=['POST'])
+def clima_modelo_dim_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        if d.get("id"):
+            supabase.table("clima_modelo_dimensoes").update({"nome": d.get("nome"), "eh_lideranca": bool(d.get("eh_lideranca"))}).eq("id", d["id"]).execute()
+        else:
+            supabase.table("clima_modelo_dimensoes").insert({"nome": d.get("nome"), "ordem": d.get("ordem", 0), "eh_lideranca": bool(d.get("eh_lideranca"))}).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_modelo_dim_salvar: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
+
+@app.route('/api/clima/modelo/dimensao/<did>', methods=['DELETE'])
+def clima_modelo_dim_excluir(did):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_modelo_dimensoes").delete().eq("id", did).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+@app.route('/api/clima/modelo/pergunta', methods=['POST'])
+def clima_modelo_perg_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        payload = {"texto": d.get("texto"), "tipo": d.get("tipo", "likert"), "obrigatoria": bool(d.get("obrigatoria", True))}
+        if d.get("id"):
+            supabase.table("clima_modelo_perguntas").update(payload).eq("id", d["id"]).execute()
+        else:
+            payload["dimensao_id"] = d.get("dimensao_id")
+            payload["ordem"] = d.get("ordem", 0)
+            supabase.table("clima_modelo_perguntas").insert(payload).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_modelo_perg_salvar: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
+
+@app.route('/api/clima/modelo/pergunta/<pid>', methods=['DELETE'])
+def clima_modelo_perg_excluir(pid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_modelo_perguntas").delete().eq("id", pid).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+# ===== PESQUISAS =====
+@app.route('/api/clima/pesquisas', methods=['GET'])
+def clima_pesquisas_listar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        # Clientes permitidos (reusa a lógica do OKR)
+        clientes, mostra_seletor, cliente_travado = clientes_okr_permitidos()
+        ids_permitidos = {c["id"] for c in clientes}
+        res = supabase.table("clima_pesquisas").select("*").order("criado_em", desc=True).execute()
+        pesquisas = [p for p in (res.data or []) if str(p.get("cliente_id")) in ids_permitidos]
+        # Conta respostas de cada uma
+        for p in pesquisas:
+            rc = supabase.table("clima_respostas").select("id", count="exact").eq("pesquisa_id", p["id"]).execute()
+            p["total_respostas"] = rc.count or 0
+        return jsonify({"status": "sucesso", "pesquisas": pesquisas, "clientes": clientes, "mostra_seletor": mostra_seletor}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_pesquisas_listar: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Não foi possível carregar."}), 500
+
+@app.route('/api/clima/pesquisa', methods=['POST'])
+def clima_pesquisa_criar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        cliente_id = d.get("cliente_id")
+        # Valida acesso ao cliente
+        clientes, _, _ = clientes_okr_permitidos()
+        if str(cliente_id) not in {c["id"] for c in clientes}:
+            return jsonify({"erro": "Acesso negado a este cliente"}), 403
+        token = secrets.token_urlsafe(12)
+        nova = {"cliente_id": cliente_id, "titulo": d.get("titulo"), "descricao": d.get("descricao"), "status": "rascunho", "token": token}
+        res = supabase.table("clima_pesquisas").insert(nova).execute()
+        pesquisa_id = res.data[0]["id"]
+
+        # Copia o modelo base para dentro da pesquisa
+        res_dim = supabase.table("clima_modelo_dimensoes").select("*").order("ordem").execute()
+        for md in (res_dim.data or []):
+            nd = supabase.table("clima_dimensoes").insert({
+                "pesquisa_id": pesquisa_id, "nome": md["nome"], "ordem": md.get("ordem", 0), "eh_lideranca": md.get("eh_lideranca", False)
+            }).execute()
+            nova_dim_id = nd.data[0]["id"]
+            res_p = supabase.table("clima_modelo_perguntas").select("*").eq("dimensao_id", md["id"]).order("ordem").execute()
+            for mp in (res_p.data or []):
+                supabase.table("clima_perguntas").insert({
+                    "dimensao_id": nova_dim_id, "texto": mp["texto"], "tipo": mp["tipo"], "ordem": mp.get("ordem", 0), "obrigatoria": mp.get("obrigatoria", True)
+                }).execute()
+
+        return jsonify({"status": "sucesso", "pesquisa_id": pesquisa_id}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_pesquisa_criar: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Falha ao criar pesquisa."}), 500
+
+@app.route('/api/clima/pesquisa/<pid>', methods=['GET'])
+def clima_pesquisa_get(pid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = supabase.table("clima_pesquisas").select("*").eq("id", pid).execute()
+        if not res.data: return jsonify({"erro": "Não encontrada"}), 404
+        pesquisa = res.data[0]
+        # valida acesso ao cliente
+        clientes, _, _ = clientes_okr_permitidos()
+        if str(pesquisa.get("cliente_id")) not in {c["id"] for c in clientes}:
+            return jsonify({"erro": "Acesso negado"}), 403
+        pesquisa["dimensoes"] = _clima_montar_dimensoes(pid)
+        # líderes e setores do cliente
+        lid = supabase.table("clima_lideres").select("*").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
+        pesquisa["lideres"] = lid.data or []
+        setores = supabase.table("clima_setores").select("*").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
+        pesquisa["setores"] = setores.data or []
+        return jsonify({"status": "sucesso", "pesquisa": pesquisa}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_pesquisa_get: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Falha ao carregar."}), 500
+
+def _clima_montar_dimensoes(pesquisa_id):
+    res_dim = supabase.table("clima_dimensoes").select("*").eq("pesquisa_id", pesquisa_id).order("ordem").execute()
+    dims = res_dim.data or []
+    dim_ids = [d["id"] for d in dims]
+    pergs = {d["id"]: [] for d in dims}
+    if dim_ids:
+        res_p = supabase.table("clima_perguntas").select("*").in_("dimensao_id", dim_ids).order("ordem").execute()
+        for p in (res_p.data or []):
+            pergs.setdefault(p["dimensao_id"], []).append(p)
+    for d in dims:
+        d["perguntas"] = pergs.get(d["id"], [])
+    return dims
+
+@app.route('/api/clima/pesquisa/<pid>', methods=['PUT'])
+def clima_pesquisa_atualizar(pid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        upd = {}
+        for campo in ("titulo", "descricao", "status"):
+            if campo in d: upd[campo] = d[campo]
+        if d.get("status") == "encerrada":
+            upd["encerrada_em"] = "now()"
+        supabase.table("clima_pesquisas").update(upd).eq("id", pid).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao atualizar."}), 500
+
+@app.route('/api/clima/pesquisa/<pid>', methods=['DELETE'])
+def clima_pesquisa_excluir(pid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_pesquisas").delete().eq("id", pid).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+# ===== DIMENSÕES / PERGUNTAS DA PESQUISA (editáveis) =====
+@app.route('/api/clima/dimensao', methods=['POST'])
+def clima_dim_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        if d.get("id"):
+            supabase.table("clima_dimensoes").update({"nome": d.get("nome"), "eh_lideranca": bool(d.get("eh_lideranca"))}).eq("id", d["id"]).execute()
+        else:
+            supabase.table("clima_dimensoes").insert({"pesquisa_id": d.get("pesquisa_id"), "nome": d.get("nome"), "ordem": d.get("ordem", 99), "eh_lideranca": bool(d.get("eh_lideranca"))}).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
+
+@app.route('/api/clima/dimensao/<did>', methods=['DELETE'])
+def clima_dim_excluir(did):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_dimensoes").delete().eq("id", did).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+@app.route('/api/clima/pergunta', methods=['POST'])
+def clima_perg_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        payload = {"texto": d.get("texto"), "tipo": d.get("tipo", "likert"), "obrigatoria": bool(d.get("obrigatoria", True))}
+        if d.get("id"):
+            supabase.table("clima_perguntas").update(payload).eq("id", d["id"]).execute()
+        else:
+            payload["dimensao_id"] = d.get("dimensao_id")
+            payload["ordem"] = d.get("ordem", 99)
+            supabase.table("clima_perguntas").insert(payload).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
+
+@app.route('/api/clima/pergunta/<pid>', methods=['DELETE'])
+def clima_perg_excluir(pid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_perguntas").delete().eq("id", pid).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+# ===== LÍDERES E SETORES =====
+@app.route('/api/clima/lider', methods=['POST'])
+def clima_lider_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        if d.get("id"):
+            supabase.table("clima_lideres").update({"nome": d.get("nome"), "cargo": d.get("cargo"), "ativo": bool(d.get("ativo", True))}).eq("id", d["id"]).execute()
+        else:
+            supabase.table("clima_lideres").insert({"cliente_id": d.get("cliente_id"), "nome": d.get("nome"), "cargo": d.get("cargo")}).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
+
+@app.route('/api/clima/lider/<lid>', methods=['DELETE'])
+def clima_lider_excluir(lid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_lideres").delete().eq("id", lid).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+@app.route('/api/clima/setor', methods=['POST'])
+def clima_setor_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json
+    try:
+        if d.get("id"):
+            supabase.table("clima_setores").update({"nome": d.get("nome")}).eq("id", d["id"]).execute()
+        else:
+            supabase.table("clima_setores").insert({"cliente_id": d.get("cliente_id"), "nome": d.get("nome")}).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
+
+@app.route('/api/clima/setor/<sid>', methods=['DELETE'])
+def clima_setor_excluir(sid):
+    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        supabase.table("clima_setores").delete().eq("id", sid).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
+
+# ===== RESPOSTA PÚBLICA (anônima, sem login) =====
+@app.route('/clima/responder/<token>')
+def clima_responder_page(token):
+    # Página pública — não exige login
+    return render_template('clima_responder.html', token=token)
+
+@app.route('/api/clima/publico/<token>', methods=['GET'])
+def clima_publico_get(token):
+    # Retorna a pesquisa para responder (sem dados sensíveis)
+    try:
+        res = supabase.table("clima_pesquisas").select("*").eq("token", token).execute()
+        if not res.data: return jsonify({"erro": "Pesquisa não encontrada"}), 404
+        pesquisa = res.data[0]
+        if pesquisa.get("status") != "ativa":
+            return jsonify({"erro": "indisponivel", "status_pesquisa": pesquisa.get("status")}), 200
+        dados = {
+            "titulo": pesquisa["titulo"],
+            "descricao": pesquisa.get("descricao"),
+            "dimensoes": _clima_montar_dimensoes(pesquisa["id"]),
+        }
+        lid = supabase.table("clima_lideres").select("id, nome, cargo").eq("cliente_id", pesquisa["cliente_id"]).eq("ativo", True).order("nome").execute()
+        dados["lideres"] = lid.data or []
+        setores = supabase.table("clima_setores").select("id, nome").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
+        dados["setores"] = setores.data or []
+        return jsonify({"status": "sucesso", "pesquisa": dados}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_publico_get: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Falha ao carregar."}), 500
+
+@app.route('/api/clima/publico/<token>/responder', methods=['POST'])
+def clima_publico_responder(token):
+    # Grava uma resposta anônima
+    d = request.json
+    try:
+        res = supabase.table("clima_pesquisas").select("id, status, cliente_id").eq("token", token).execute()
+        if not res.data: return jsonify({"erro": "Pesquisa não encontrada"}), 404
+        pesquisa = res.data[0]
+        if pesquisa.get("status") != "ativa":
+            return jsonify({"erro": "Pesquisa não está ativa"}), 400
+
+        # Cria a resposta (anônima)
+        resp = supabase.table("clima_respostas").insert({
+            "pesquisa_id": pesquisa["id"],
+            "tempo_empresa": d.get("tempo_empresa"),
+            "setor_id": d.get("setor_id") or None
+        }).execute()
+        resposta_id = resp.data[0]["id"]
+
+        # Liga os líderes marcados
+        lideres = d.get("lideres") or []
+        for lid in lideres:
+            supabase.table("clima_resposta_lideres").insert({"resposta_id": resposta_id, "lider_id": lid}).execute()
+
+        # Grava os itens (respostas das perguntas)
+        itens = d.get("itens") or []
+        for it in itens:
+            registro = {
+                "resposta_id": resposta_id,
+                "pergunta_id": it.get("pergunta_id"),
+                "lider_id": it.get("lider_id") or None,
+            }
+            val = it.get("valor")
+            if it.get("tipo") in ("likert", "escala10"):
+                try: registro["valor_num"] = float(val) if val not in (None, "") else None
+                except: registro["valor_num"] = None
+            else:
+                registro["valor_texto"] = val
+            supabase.table("clima_respostas_itens").insert(registro).execute()
+
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] clima_publico_responder: {str(e)}")
+        return jsonify({"status": "erro", "mensagem": "Falha ao enviar resposta."}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
