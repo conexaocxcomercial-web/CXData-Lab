@@ -160,6 +160,24 @@
             </div>
         </div>
         {% endif %}
+
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'desempenho' in perm_modulos) %}
+        <div class="cxsb-item cxsb-parent" id="despParent" onclick="toggleDespSub(event)">
+            <span class="material-symbols-rounded">leaderboard</span>
+            <span class="cxsb-item-label">Desempenho</span>
+            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
+        </div>
+        <div class="cxsb-sub" id="despSub">
+            <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="window.location.href='/desempenho/gestao'">
+                <span class="material-symbols-rounded">clarify</span>
+                <span class="cxsb-item-label">Gestão</span>
+            </div>
+            <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="window.location.href='/desempenho/dashboard'">
+                <span class="material-symbols-rounded">insights</span>
+                <span class="cxsb-item-label">Dashboard</span>
+            </div>
+        </div>
+        {% endif %}
         {% endif %}
 
         <div class="cxsb-section">Gestão</div>
@@ -199,6 +217,7 @@
     if (curr === '/planejamento') curr = '/agenda';
     if (curr === '/okr') curr = '/okr/gestao';
     if (curr === '/clima') curr = '/clima/gestao';
+    if (curr === '/desempenho') curr = '/desempenho/gestao';
     document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
         var path = item.getAttribute('data-path');
         var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
@@ -224,11 +243,27 @@
         var pc = document.getElementById('climaParent'), sc = document.getElementById('climaSub');
         if (pc) pc.classList.add('aberto'); if (sc) sc.classList.add('aberto');
     }
+    // Submenu Desempenho
+    var emDesp = false;
+    document.querySelectorAll('#despSub .cxsb-subitem[data-path]').forEach(function(sub) {
+        var path = sub.getAttribute('data-path');
+        if (curr === path || curr.startsWith(path + '/')) { sub.classList.add('active'); emDesp = true; }
+    });
+    if (emDesp) {
+        var pd = document.getElementById('despParent'), sd = document.getElementById('despSub');
+        if (pd) pd.classList.add('aberto'); if (sd) sd.classList.add('aberto');
+    }
 })();
 
 function toggleOkrSub(e) {
     e.stopPropagation();
     var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
+    p.classList.toggle('aberto'); s.classList.toggle('aberto');
+}
+
+function toggleDespSub(e) {
+    e.stopPropagation();
+    var p = document.getElementById('despParent'), s = document.getElementById('despSub');
     p.classList.toggle('aberto'); s.classList.toggle('aberto');
 }
 
