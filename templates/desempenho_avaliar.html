@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desempenho | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0; --green:#14b8a6; --amber:#eab308; --red:#f87171; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
+        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
+        .top-bar-logo span { color: var(--primary-purple); }
+        .command-bar { padding: 22px 40px 6px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px; }
+        .cb-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .cb-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+        .cb-title .material-symbols-rounded { color: var(--primary-purple); }
+        .cliente-sel { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #fff; border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); min-width: 230px; }
+        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; white-space: nowrap; }
+        .btn-acao:hover { background-color: var(--text-main); }
+        .btn-sec { background: #fff; color: var(--text-main); padding: 10px 18px; font-weight: 800; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:7px; transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .btn-sec:hover { background: #f4f4f5; }
+        .btn-ghost { background: transparent; color: var(--text-muted); padding: 9px 14px; font-weight: 700; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:6px; transition: 0.15s; }
+        .btn-ghost:hover { background: rgba(0,0,0,0.04); color: var(--text-main); }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 14px 40px 60px 40px; }
+        .empty { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+        .empty .material-symbols-rounded { font-size: 60px; opacity: 0.18; display: block; margin-bottom: 16px; }
+        .empty h3 { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
+        .empty p { font-size: 13px; max-width: 380px; margin: 0 auto 20px; line-height: 1.5; }
+        .loading { text-align: center; padding: 70px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 22px; background: #fff; padding: 6px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); width: fit-content; }
+        .tab { padding: 10px 20px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: 0.15s; border-radius: 50px !important; }
+        .tab:hover { color: var(--text-main); }
+        .tab.active { background: var(--primary-purple); color: #fff; }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; }
+        .breadcrumb .crumb { cursor: pointer; transition: 0.15s; display: flex; align-items: center; gap: 6px; }
+        .breadcrumb .crumb:hover { color: var(--primary-purple); }
+        .breadcrumb .crumb.active { color: var(--text-main); font-weight: 800; cursor: default; }
+        .breadcrumb .sep { opacity: 0.4; }
+        /* Cards genéricos */
+        .card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
+        .lista-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .item-card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 22px; cursor: pointer; transition: 0.18s; }
+        .item-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+        .item-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .item-nome { font-size: 16px; font-weight: 800; line-height: 1.3; }
+        .item-desc { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 3px; line-height: 1.4; }
+        .item-meta { font-size: 12px; font-weight: 700; color: var(--text-muted); border-top: 1px solid #f0f0f1; padding-top: 12px; display: flex; align-items: center; gap: 7px; }
+        .item-meta .material-symbols-rounded { font-size: 16px; }
+        .item-meta b { color: var(--primary-purple); }
+        .icon-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: 0.15s; border-radius: 9px !important; }
+        .icon-btn:hover { background: #f4f4f5; color: var(--text-main); }
+        .icon-btn.danger:hover { background: #fef2f2; color: var(--red); }
+        .status-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 10px; border-radius: 50px !important; white-space: nowrap; flex-shrink: 0; }
+        .status-rascunho { background: #f4f4f5; color: var(--text-muted); }
+        .status-ativo { background: #e7fbf5; color: var(--green); }
+        .status-encerrado { background: #fef2f2; color: var(--red); }
+        .formato-tag { font-size: 10px; font-weight: 800; background: #f0efff; color: var(--primary-purple); padding: 4px 9px; border-radius: 50px !important; }
+        /* Tabelas */
+        .tabela { width: 100%; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); border-collapse: collapse; }
+        .tabela th { text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 16px 20px; border-bottom: 1px solid #f0f0f1; }
+        .tabela td { padding: 15px 20px; font-size: 13px; font-weight: 500; border-bottom: 1px solid #f7f7f8; }
+        .tabela tr:last-child td { border-bottom: none; }
+        .tabela tr:hover td { background: #fafafb; }
+        .tabela .acoes { text-align: right; display: flex; gap: 4px; justify-content: flex-end; opacity: 0; transition: 0.15s; }
+        .tabela tr:hover .acoes { opacity: 1; }
+        /* Cargo/competência bloco */
+        .cargo-bloco { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); margin-bottom: 16px; overflow: hidden; }
+        .cargo-head { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #f0f0f1; }
+        .cargo-nome { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .comp-lista { padding: 6px 0; }
+        .comp-item { padding: 12px 24px; display: flex; align-items: center; gap: 14px; transition: 0.12s; }
+        .comp-item:hover { background: #fafafb; }
+        .comp-tipo-ico { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 8px !important; flex-shrink: 0; }
+        .comp-info { flex-grow: 1; min-width: 0; }
+        .comp-nome { font-size: 13px; font-weight: 600; }
+        .comp-tipo-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+        .comp-peso { font-size: 11px; font-weight: 800; color: var(--primary-purple); background: #f0efff; padding: 4px 10px; border-radius: 50px !important; }
+        .comp-acoes { display: flex; gap: 4px; opacity: 0; transition: 0.15s; }
+        .comp-item:hover .comp-acoes { opacity: 1; }
+        .add-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--primary-purple); cursor: pointer; padding: 10px 24px; transition: 0.15s; }
+        .add-inline:hover { opacity: 0.7; }
+        /* Editor ciclo */
+        .editor-head { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 26px 30px; margin-bottom: 20px; }
+        .editor-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+        .editor-titulo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px; }
+        .editor-desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+        .editor-acoes { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        .prog-mini { margin-top: 16px; }
+        .prog-mini-bar { height: 7px; background: #f0f0f1; border-radius: 50px !important; overflow: hidden; margin-top: 8px; }
+        .prog-mini-fill { height: 100%; background: var(--green); border-radius: 50px !important; transition: width 0.6s; }
+        .prog-mini-txt { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .aval-link-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f7f7f8; }
+        .aval-papel { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; padding: 4px 9px; border-radius: 50px !important; background: #f4f4f5; color: var(--text-muted); flex-shrink: 0; min-width: 90px; text-align: center; }
+        .aval-link-input { flex-grow: 1; background: #f9f9fb; padding: 9px 12px; font-size: 12px; font-weight: 600; color: var(--text-main); outline: none; font-family: monospace; }
+        .aval-status-ok { color: var(--green); }
+        .aval-status-pend { color: var(--amber); }
+        /* Modais */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(20,20,25,0.4); backdrop-filter: blur(3px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #fff; width: 100%; max-width: 500px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-titulo { font-size: 18px; font-weight: 900; margin-bottom: 22px; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 7px; }
+        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px 14px; font-size: 14px; background: #f9f9fb; outline: none; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { box-shadow: inset 0 0 0 2px var(--primary-purple); }
+        .input-group textarea { resize: vertical; min-height: 70px; }
+        .input-row { display: flex; gap: 12px; }
+        .input-row .input-group { flex: 1; }
+        .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: #fff; padding: 14px 24px; font-size: 13px; font-weight: 700; z-index: 200; opacity: 0; transition: all 0.3s; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--green); } .toast.error { background: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="command-bar">
+        <div class="cb-left">
+            <span class="cb-title"><span class="material-symbols-rounded">leaderboard</span> <span id="tituloBarra">Gestão de Desempenho</span></span>
+            <select class="cliente-sel" id="selCliente" onchange="trocarCliente()"></select>
+        </div>
+        <div class="cb-left" id="acoesTopo"></div>
+    </div>
+
+    <div class="scroll-area" id="conteudo"><div class="loading">Carregando...</div></div>
+
+    <!-- MODAL Cargo -->
+    <div class="modal-overlay" id="modalCargo"><div class="modal">
+        <div class="modal-titulo" id="modalCargoTit">Novo cargo</div>
+        <div class="input-group"><label>Nome do cargo *</label><input type="text" id="cargoNome" placeholder="Ex: Analista Contábil"></div>
+        <div class="input-group"><label>Descrição</label><textarea id="cargoDesc" placeholder="Breve descrição do cargo..."></textarea></div>
+        <div class="modal-acoes"><button class="btn-ghost" onclick="fecharModal('modalCargo')">Cancelar</button><button class="btn-acao" onclick="salvarCargo()">Salvar</button></div>
+    </div></div>
+
+    <!-- MODAL Competência -->
+    <div class="modal-overlay" id="modalComp"><div class="modal">
+        <div class="modal-titulo" id="modalCompTit">Nova competência</div>
+        <div class="input-group"><label>Nome da competência *</label><input type="text" id="compNome" placeholder="Ex: Comunicação"></div>
+        <div class="input-row">
+            <div class="input-group"><label>Tipo</label><select id="compTipo"><option value="tecnica">Técnica</option><option value="comportamental">Comportamental</option><option value="resultado">Resultado</option></select></div>
+            <div class="input-group"><label>Peso</label><select id="compPeso"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        </div>
+        <div class="modal-acoes"><button class="btn-ghost" onclick="fecharModal('modalComp')">Cancelar</button><button class="btn-acao" onclick="salvarComp()">Salvar</button></div>
+    </div></div>
+
+    <!-- MODAL Pessoa -->
+    <div class="modal-overlay" id="modalPessoa"><div class="modal">
+        <div class="modal-titulo" id="modalPessoaTit">Nova pessoa</div>
+        <div class="input-group"><label>Nome *</label><input type="text" id="pessoaNome" placeholder="Nome completo"></div>
+        <div class="input-row">
+            <div class="input-group"><label>Cargo</label><select id="pessoaCargo"></select></div>
+            <div class="input-group"><label>Gestor</label><select id="pessoaGestor"></select></div>
+        </div>
+        <div class="input-group"><label>E-mail (opcional)</label><input type="email" id="pessoaEmail" placeholder="email@empresa.com"></div>
+        <div class="modal-acoes"><button class="btn-ghost" onclick="fecharModal('modalPessoa')">Cancelar</button><button class="btn-acao" onclick="salvarPessoa()">Salvar</button></div>
+    </div></div>
+
+    <!-- MODAL Ciclo -->
+    <div class="modal-overlay" id="modalCiclo"><div class="modal">
+        <div class="modal-titulo">Novo ciclo de avaliação</div>
+        <div class="input-group"><label>Título *</label><input type="text" id="cicloTitulo" placeholder="Ex: Avaliação Semestral 2026"></div>
+        <div class="input-group"><label>Formato *</label><select id="cicloFormato">
+            <option value="90">90° — Só o gestor avalia</option>
+            <option value="180">180° — Gestor + autoavaliação</option>
+            <option value="360">360° — Gestor + auto + pares + liderados</option>
+        </select></div>
+        <div class="input-row">
+            <div class="input-group"><label>Início</label><input type="date" id="cicloInicio"></div>
+            <div class="input-group"><label>Fim</label><input type="date" id="cicloFim"></div>
+        </div>
+        <div class="modal-acoes"><button class="btn-ghost" onclick="fecharModal('modalCiclo')">Cancelar</button><button class="btn-acao" onclick="salvarCiclo()">Criar ciclo</button></div>
+    </div></div>
+
+    <!-- MODAL Add Participante -->
+    <div class="modal-overlay" id="modalPart"><div class="modal">
+        <div class="modal-titulo">Adicionar participantes</div>
+        <div class="editor-desc" style="margin-bottom:16px;">Selecione as pessoas que serão avaliadas neste ciclo. As competências virão do cargo de cada uma.</div>
+        <div id="listaPartSelecao" style="max-height:340px; overflow-y:auto;"></div>
+        <div class="modal-acoes"><button class="btn-ghost" onclick="fecharModal('modalPart')">Fechar</button></div>
+    </div></div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
+        let clientes = [], clienteAtual = '';
+        let cargos = [], pessoas = [], ciclos = [];
+        let abaAtual = 'cargos';
+        let cicloAberto = null;
+        let ctx = {};
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+        function showToast(m,t){ const e=document.getElementById('toast'); e.textContent=m; e.className='toast show '+(t||''); setTimeout(()=>e.className='toast',2600); }
+        function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
+        function tipoCompIco(t){ return {tecnica:'code', comportamental:'psychology', resultado:'target'}[t]||'star'; }
+        function tipoCompCor(t){ return {tecnica:'#7371ff', comportamental:'#14b8a6', resultado:'#ff43c0'}[t]||'#71717a'; }
+        function tipoCompLabel(t){ return {tecnica:'Técnica', comportamental:'Comportamental', resultado:'Resultado'}[t]||t; }
+        function formatoLabel(f){ return {'90':'90°','180':'180°','360':'360°'}[f]||f; }
+        function nomeCargo(id){ const c=cargos.find(x=>x.id===id); return c?c.nome:'—'; }
+        function nomePessoa(id){ const p=pessoas.find(x=>x.id===id); return p?p.nome:'—'; }
+
+        async function init() {
+            try {
+                const res = await fetch('/api/gd/cargos');
+                if (res.status===403){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                const data = await res.json();
+                clientes = data.clientes || [];
+                const sc = document.getElementById('selCliente');
+                sc.innerHTML = clientes.map(c=>`<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+                if (clientes.length){ clienteAtual = clientes[0].id; sc.value = clienteAtual; }
+                if (!data.mostra_seletor && clientes.length<=1) sc.style.display='none';
+                await carregarTudo();
+            } catch(e){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3></div>'; }
+        }
+
+        async function carregarTudo() {
+            const [rc, rp, rci] = await Promise.all([
+                fetch('/api/gd/cargos?cliente_id='+clienteAtual).then(r=>r.json()),
+                fetch('/api/gd/pessoas?cliente_id='+clienteAtual).then(r=>r.json()),
+                fetch('/api/gd/ciclos').then(r=>r.json())
+            ]);
+            cargos = rc.cargos || [];
+            pessoas = rp.pessoas || [];
+            ciclos = (rci.ciclos || []).filter(c=>String(c.cliente_id)===String(clienteAtual));
+            render();
+        }
+
+        function trocarCliente(){ clienteAtual = document.getElementById('selCliente').value; cicloAberto=null; carregarTudo(); }
+
+        function render() {
+            document.getElementById('tituloBarra').textContent = 'Gestão de Desempenho';
+            if (cicloAberto) { renderEditorCiclo(); return; }
+            // topo com abas
+            document.getElementById('acoesTopo').innerHTML = topoAcoes();
+            let html = `<div class="tabs">
+                <div class="tab ${abaAtual==='cargos'?'active':''}" onclick="trocarAba('cargos')">Cargos & Competências</div>
+                <div class="tab ${abaAtual==='pessoas'?'active':''}" onclick="trocarAba('pessoas')">Pessoas</div>
+                <div class="tab ${abaAtual==='ciclos'?'active':''}" onclick="trocarAba('ciclos')">Ciclos</div>
+            </div><div id="abaArea"></div>`;
+            document.getElementById('conteudo').innerHTML = html;
+            renderAba();
+        }
+
+        function topoAcoes() {
+            if (abaAtual==='cargos') return `<button class="btn-acao" onclick="novoCargo()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Novo cargo</button>`;
+            if (abaAtual==='pessoas') return `<button class="btn-acao" onclick="novaPessoa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Nova pessoa</button>`;
+            return `<button class="btn-acao" onclick="novoCiclo()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Novo ciclo</button>`;
+        }
+        function trocarAba(a){ abaAtual=a; render(); }
+        function renderAba(){ if(abaAtual==='cargos') renderCargos(); else if(abaAtual==='pessoas') renderPessoas(); else renderCiclos(); }
+
+        // ===== CARGOS =====
+        function renderCargos() {
+            if (!cargos.length){ document.getElementById('abaArea').innerHTML = `<div class="empty"><span class="material-symbols-rounded">badge</span><h3>Nenhum cargo cadastrado</h3><p>Cadastre os cargos e defina as competências que serão avaliadas em cada um.</p><button class="btn-acao" style="margin:0 auto;" onclick="novoCargo()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Novo cargo</button></div>`; return; }
+            document.getElementById('abaArea').innerHTML = cargos.map(cg => `
+                <div class="cargo-bloco">
+                    <div class="cargo-head">
+                        <div class="cargo-nome"><span class="material-symbols-rounded" style="color:var(--primary-purple);">badge</span> ${escH(cg.nome)}</div>
+                        <div style="display:flex; gap:6px;">
+                            <div class="icon-btn" onclick="editarCargo('${cg.id}')"><span class="material-symbols-rounded" style="font-size:18px;">edit</span></div>
+                            <div class="icon-btn danger" onclick="excluirCargo('${cg.id}')"><span class="material-symbols-rounded" style="font-size:18px;">delete</span></div>
+                        </div>
+                    </div>
+                    <div class="comp-lista">
+                        ${(cg.competencias||[]).map(cp=>`
+                            <div class="comp-item">
+                                <div class="comp-tipo-ico" style="background:${tipoCompCor(cp.tipo)}1a;"><span class="material-symbols-rounded" style="font-size:16px; color:${tipoCompCor(cp.tipo)};">${tipoCompIco(cp.tipo)}</span></div>
+                                <div class="comp-info"><div class="comp-nome">${escH(cp.nome)}</div><div class="comp-tipo-label">${tipoCompLabel(cp.tipo)}</div></div>
+                                <span class="comp-peso">peso ${cp.peso}</span>
+                                <div class="comp-acoes">
+                                    <div class="icon-btn" onclick="editarComp('${cg.id}','${cp.id}')"><span class="material-symbols-rounded" style="font-size:16px;">edit</span></div>
+                                    <div class="icon-btn danger" onclick="excluirComp('${cp.id}')"><span class="material-symbols-rounded" style="font-size:16px;">delete</span></div>
+                                </div>
+                            </div>`).join('') || '<div style="padding:14px 24px; font-size:12px; color:var(--text-muted);">Sem competências. Adicione as que serão avaliadas.</div>'}
+                        <div class="add-inline" onclick="novaComp('${cg.id}')"><span class="material-symbols-rounded" style="font-size:16px;">add</span> Adicionar competência</div>
+                    </div>
+                </div>`).join('');
+        }
+        function novoCargo(){ ctx={}; document.getElementById('modalCargoTit').textContent='Novo cargo'; document.getElementById('cargoNome').value=''; document.getElementById('cargoDesc').value=''; document.getElementById('modalCargo').classList.add('show'); }
+        function editarCargo(id){ const c=cargos.find(x=>x.id===id); ctx={id}; document.getElementById('modalCargoTit').textContent='Editar cargo'; document.getElementById('cargoNome').value=c.nome; document.getElementById('cargoDesc').value=c.descricao||''; document.getElementById('modalCargo').classList.add('show'); }
+        async function salvarCargo(){ const nome=document.getElementById('cargoNome').value.trim(); if(!nome){showToast('Informe o nome.','error');return;} const p={nome, descricao:document.getElementById('cargoDesc').value.trim()}; if(ctx.id)p.id=ctx.id; else p.cliente_id=clienteAtual; const r=await fetch('/api/gd/cargo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){showToast('Salvo!','success');fecharModal('modalCargo');await carregarTudo();}else showToast('Erro.','error'); }
+        async function excluirCargo(id){ if(!confirm('Excluir este cargo e suas competências?'))return; const r=await fetch('/api/gd/cargo/'+id,{method:'DELETE'}); if(r.ok){showToast('Excluído.','success');await carregarTudo();} }
+
+        function novaComp(cargoId){ ctx={cargo_id:cargoId}; document.getElementById('modalCompTit').textContent='Nova competência'; document.getElementById('compNome').value=''; document.getElementById('compTipo').value='comportamental'; document.getElementById('compPeso').value='1'; document.getElementById('modalComp').classList.add('show'); }
+        function editarComp(cargoId, compId){ const cg=cargos.find(x=>x.id===cargoId); const cp=(cg.competencias||[]).find(x=>x.id===compId); ctx={id:compId}; document.getElementById('modalCompTit').textContent='Editar competência'; document.getElementById('compNome').value=cp.nome; document.getElementById('compTipo').value=cp.tipo; document.getElementById('compPeso').value=cp.peso; document.getElementById('modalComp').classList.add('show'); }
+        async function salvarComp(){ const nome=document.getElementById('compNome').value.trim(); if(!nome){showToast('Informe o nome.','error');return;} const p={nome, tipo:document.getElementById('compTipo').value, peso:document.getElementById('compPeso').value}; if(ctx.id)p.id=ctx.id; else p.cargo_id=ctx.cargo_id; const r=await fetch('/api/gd/competencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){showToast('Salvo!','success');fecharModal('modalComp');await carregarTudo();}else showToast('Erro.','error'); }
+        async function excluirComp(id){ if(!confirm('Excluir esta competência?'))return; const r=await fetch('/api/gd/competencia/'+id,{method:'DELETE'}); if(r.ok){showToast('Excluída.','success');await carregarTudo();} }
+
+        // ===== PESSOAS =====
+        function renderPessoas() {
+            if (!pessoas.length){ document.getElementById('abaArea').innerHTML = `<div class="empty"><span class="material-symbols-rounded">groups</span><h3>Nenhuma pessoa cadastrada</h3><p>Cadastre os colaboradores que serão avaliados, com cargo e gestor.</p><button class="btn-acao" style="margin:0 auto;" onclick="novaPessoa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Nova pessoa</button></div>`; return; }
+            document.getElementById('abaArea').innerHTML = `<table class="tabela"><thead><tr><th>Nome</th><th>Cargo</th><th>Gestor</th><th></th></tr></thead><tbody>
+                ${pessoas.map(p=>`<tr>
+                    <td style="font-weight:700;">${escH(p.nome)}</td>
+                    <td>${escH(nomeCargo(p.cargo_id))}</td>
+                    <td>${escH(nomePessoa(p.gestor_id))}</td>
+                    <td><div class="acoes"><div class="icon-btn" onclick="editarPessoa('${p.id}')"><span class="material-symbols-rounded" style="font-size:17px;">edit</span></div><div class="icon-btn danger" onclick="excluirPessoa('${p.id}')"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div></div></td>
+                </tr>`).join('')}
+            </tbody></table>`;
+        }
+        function preencherSelectsPessoa(exclui){
+            const sc=document.getElementById('pessoaCargo');
+            sc.innerHTML='<option value="">Sem cargo</option>'+cargos.map(c=>`<option value="${c.id}">${escH(c.nome)}</option>`).join('');
+            const sg=document.getElementById('pessoaGestor');
+            sg.innerHTML='<option value="">Sem gestor</option>'+pessoas.filter(p=>p.id!==exclui).map(p=>`<option value="${p.id}">${escH(p.nome)}</option>`).join('');
+        }
+        function novaPessoa(){ ctx={}; preencherSelectsPessoa(); document.getElementById('modalPessoaTit').textContent='Nova pessoa'; document.getElementById('pessoaNome').value=''; document.getElementById('pessoaEmail').value=''; document.getElementById('pessoaCargo').value=''; document.getElementById('pessoaGestor').value=''; document.getElementById('modalPessoa').classList.add('show'); }
+        function editarPessoa(id){ const p=pessoas.find(x=>x.id===id); ctx={id}; preencherSelectsPessoa(id); document.getElementById('modalPessoaTit').textContent='Editar pessoa'; document.getElementById('pessoaNome').value=p.nome; document.getElementById('pessoaEmail').value=p.email||''; document.getElementById('pessoaCargo').value=p.cargo_id||''; document.getElementById('pessoaGestor').value=p.gestor_id||''; document.getElementById('modalPessoa').classList.add('show'); }
+        async function salvarPessoa(){ const nome=document.getElementById('pessoaNome').value.trim(); if(!nome){showToast('Informe o nome.','error');return;} const p={nome, cargo_id:document.getElementById('pessoaCargo').value, gestor_id:document.getElementById('pessoaGestor').value, email:document.getElementById('pessoaEmail').value.trim()}; if(ctx.id)p.id=ctx.id; else p.cliente_id=clienteAtual; const r=await fetch('/api/gd/pessoa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); if(r.ok){showToast('Salvo!','success');fecharModal('modalPessoa');await carregarTudo();}else showToast('Erro.','error'); }
+        async function excluirPessoa(id){ if(!confirm('Excluir esta pessoa?'))return; const r=await fetch('/api/gd/pessoa/'+id,{method:'DELETE'}); if(r.ok){showToast('Excluída.','success');await carregarTudo();} }
+
+        // ===== CICLOS =====
+        function renderCiclos() {
+            if (!ciclos.length){ document.getElementById('abaArea').innerHTML = `<div class="empty"><span class="material-symbols-rounded">event_repeat</span><h3>Nenhum ciclo criado</h3><p>Crie um ciclo de avaliação, escolha o formato (90°, 180° ou 360°) e adicione os participantes.</p><button class="btn-acao" style="margin:0 auto;" onclick="novoCiclo()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Novo ciclo</button></div>`; return; }
+            document.getElementById('abaArea').innerHTML = `<div class="lista-grid">${ciclos.map(c=>`
+                <div class="item-card" onclick="abrirCiclo('${c.id}')">
+                    <div class="item-card-top">
+                        <div><div class="item-nome">${escH(c.titulo)}</div><div class="item-desc"><span class="formato-tag">${formatoLabel(c.formato)}</span></div></div>
+                        <span class="status-badge status-${c.status}">${c.status}</span>
+                    </div>
+                    <div class="item-meta"><span class="material-symbols-rounded">group</span> <b>${c.total_participantes||0}</b> participante${(c.total_participantes||0)!==1?'s':''} · ${c.avaliacoes_concluidas||0}/${c.total_avaliacoes||0} avaliações</div>
+                </div>`).join('')}</div>`;
+        }
+        function novoCiclo(){ if(!clientes.length){showToast('Cadastre um cliente.','error');return;} document.getElementById('cicloTitulo').value=''; document.getElementById('cicloFormato').value='90'; document.getElementById('cicloInicio').value=''; document.getElementById('cicloFim').value=''; document.getElementById('modalCiclo').classList.add('show'); }
+        async function salvarCiclo(){ const titulo=document.getElementById('cicloTitulo').value.trim(); if(!titulo){showToast('Informe o título.','error');return;} const p={cliente_id:clienteAtual, titulo, formato:document.getElementById('cicloFormato').value, data_inicio:document.getElementById('cicloInicio').value, data_fim:document.getElementById('cicloFim').value}; const r=await fetch('/api/gd/ciclo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}); const data=await r.json(); if(r.ok){showToast('Ciclo criado!','success');fecharModal('modalCiclo');await carregarTudo();if(data.ciclo_id)abrirCiclo(data.ciclo_id);}else showToast(data.mensagem||'Erro.','error'); }
+
+        async function abrirCiclo(id){ document.getElementById('conteudo').innerHTML='<div class="loading">Carregando ciclo...</div>'; document.getElementById('acoesTopo').innerHTML=''; const r=await fetch('/api/gd/ciclo/'+id); const data=await r.json(); if(!r.ok){showToast('Erro.','error');return;} cicloAberto=data.ciclo; renderEditorCiclo(); }
+
+        function renderEditorCiclo() {
+            const c = cicloAberto;
+            const totalAval = c.participantes.reduce((s,p)=>s+p.avaliacoes.length,0);
+            const feitas = c.participantes.reduce((s,p)=>s+p.avaliacoes.filter(a=>a.status==='concluida').length,0);
+            const pct = totalAval? Math.round(feitas/totalAval*100):0;
+            let html = `
+                <div class="breadcrumb"><span class="crumb" onclick="voltarLista()"><span class="material-symbols-rounded" style="font-size:16px;">arrow_back</span> Ciclos</span><span class="sep">/</span><span class="crumb active">${escH(c.titulo)}</span></div>
+                <div class="editor-head">
+                    <div class="editor-head-top">
+                        <div>
+                            <div class="editor-titulo"><span class="material-symbols-rounded" style="color:var(--primary-purple);">event_repeat</span> ${escH(c.titulo)} <span class="formato-tag">${formatoLabel(c.formato)}</span></div>
+                            <div class="editor-desc">${c.participantes.length} participante${c.participantes.length!==1?'s':''}</div>
+                        </div>
+                        <div class="editor-acoes">
+                            <span class="status-badge status-${c.status}">${c.status}</span>
+                            ${c.status==='rascunho'?`<button class="btn-acao" onclick="mudarStatusCiclo('ativo')"><span class="material-symbols-rounded" style="font-size:16px;">play_arrow</span> Ativar</button>`:''}
+                            ${c.status==='ativo'?`<button class="btn-sec" onclick="mudarStatusCiclo('encerrado')"><span class="material-symbols-rounded" style="font-size:16px;">stop</span> Encerrar</button>`:''}
+                            ${c.status==='encerrado'?`<button class="btn-sec" onclick="mudarStatusCiclo('ativo')"><span class="material-symbols-rounded" style="font-size:16px;">refresh</span> Reabrir</button>`:''}
+                        </div>
+                    </div>
+                    ${c.status!=='rascunho'?`<div class="prog-mini"><div class="prog-mini-txt">${feitas} de ${totalAval} avaliações concluídas (${pct}%)</div><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:${pct}%;"></div></div></div>`:''}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div style="font-size:14px; font-weight:800;">Participantes</div>
+                    <button class="btn-sec" onclick="abrirAddParticipante()"><span class="material-symbols-rounded" style="font-size:16px;">person_add</span> Adicionar</button>
+                </div>`;
+            if (!c.participantes.length) {
+                html += `<div class="empty" style="padding:50px 20px;"><span class="material-symbols-rounded">group_add</span><h3>Sem participantes</h3><p>Adicione as pessoas que serão avaliadas neste ciclo.</p></div>`;
+            } else {
+                html += c.participantes.map(p=>renderParticipante(p, c)).join('');
+            }
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        function renderParticipante(p, ciclo) {
+            const origin = window.location.origin;
+            return `<div class="cargo-bloco">
+                <div class="cargo-head">
+                    <div class="cargo-nome"><span class="material-symbols-rounded" style="color:var(--primary-purple);">person</span> ${escH(p.nome)} <span style="font-size:12px; font-weight:600; color:var(--text-muted);">${escH(nomeCargo(p.cargo_id))}</span></div>
+                    <div class="icon-btn danger" onclick="removerParticipante('${p.pessoa_id}')"><span class="material-symbols-rounded" style="font-size:18px;">person_remove</span></div>
+                </div>
+                <div style="padding:12px 24px;">
+                    ${p.avaliacoes.map(a=>`
+                        <div class="aval-link-row">
+                            <span class="aval-papel">${papelLabel(a.papel)}</span>
+                            ${ciclo.status==='ativo'?`<input class="aval-link-input" value="${origin}/desempenho/avaliar/${a.token}" readonly onclick="this.select()">`:`<span style="flex-grow:1; font-size:12px; color:var(--text-muted);">Ative o ciclo para gerar o link</span>`}
+                            <span class="${a.status==='concluida'?'aval-status-ok':'aval-status-pend'}" style="font-size:12px; font-weight:700; display:flex; align-items:center; gap:5px;"><span class="material-symbols-rounded" style="font-size:16px;">${a.status==='concluida'?'check_circle':'schedule'}</span>${a.status==='concluida'?'Concluída':'Pendente'}</span>
+                        </div>`).join('')}
+                </div>
+            </div>`;
+        }
+        function papelLabel(p){ return {gestor:'Gestor', autoavaliacao:'Autoaval.', par:'Par', liderado:'Liderado'}[p]||p; }
+
+        async function mudarStatusCiclo(novo){ const r=await fetch('/api/gd/ciclo/'+cicloAberto.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:novo})}); if(r.ok){showToast(novo==='ativo'?'Ciclo ativado!':novo==='encerrado'?'Encerrado.':'Atualizado.','success');await abrirCiclo(cicloAberto.id);}else showToast('Erro.','error'); }
+        function voltarLista(){ cicloAberto=null; render(); }
+
+        function abrirAddParticipante(){
+            const jaSao = new Set(cicloAberto.participantes.map(p=>p.pessoa_id));
+            const disp = pessoas.filter(p=>!jaSao.has(p.id));
+            document.getElementById('listaPartSelecao').innerHTML = disp.length? disp.map(p=>`
+                <div class="aval-link-row" style="cursor:pointer;" onclick="addParticipante('${p.id}')">
+                    <span style="flex-grow:1; font-size:13px; font-weight:600;">${escH(p.nome)} <span style="color:var(--text-muted); font-weight:500;">· ${escH(nomeCargo(p.cargo_id))}</span></span>
+                    <span class="material-symbols-rounded" style="color:var(--primary-purple);">add_circle</span>
+                </div>`).join('') : '<div style="font-size:13px; color:var(--text-muted); padding:14px 0;">Todas as pessoas já são participantes.</div>';
+            document.getElementById('modalPart').classList.add('show');
+        }
+        async function addParticipante(pessoaId){ const r=await fetch('/api/gd/ciclo/'+cicloAberto.id+'/participante',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pessoa_id:pessoaId})}); if(r.ok){showToast('Adicionado!','success');fecharModal('modalPart');await abrirCiclo(cicloAberto.id);}else showToast('Erro.','error'); }
+        async function removerParticipante(pessoaId){ if(!confirm('Remover este participante do ciclo?'))return; const r=await fetch('/api/gd/ciclo/'+cicloAberto.id+'/participante/'+pessoaId,{method:'DELETE'}); if(r.ok){showToast('Removido.','success');await abrirCiclo(cicloAberto.id);} }
+    </script>
+</body>
+</html>
