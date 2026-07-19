@@ -2107,5 +2107,441 @@ def clima_publico_responder(token):
         return jsonify({"status": "erro", "mensagem": "Falha ao enviar resposta."}), 500
 
 
+# ============================================================
+# --- MÓDULO GESTÃO DE DESEMPENHO ---
+# ============================================================
+
+def pode_ver_desempenho():
+    nivel = session.get('nivel_acesso')
+    if nivel in ('admin', 'gestor'):
+        return True
+    return pode_acessar_modulo('desempenho')
+
+@app.route('/desempenho')
+@app.route('/desempenho/gestao')
+def desempenho_page():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    if not pode_ver_desempenho(): return redirect(url_for('index'))
+    return render_template('desempenho.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
+
+@app.route('/desempenho/dashboard')
+def desempenho_dashboard_page():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    if not pode_ver_desempenho(): return redirect(url_for('index'))
+    return render_template('desempenho_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
+
+# ===== CARGOS =====
+@app.route('/api/gd/cargos', methods=['GET'])
+def gd_cargos_listar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        cliente_id = request.args.get('cliente_id')
+        clientes, mostra_seletor, _ = clientes_okr_permitidos()
+        ids = {c["id"] for c in clientes}
+        q = supabase.table("gd_cargos").select("*").order("nome")
+        if cliente_id: q = q.eq("cliente_id", cliente_id)
+        cargos = [c for c in (q.execute().data or []) if str(c.get("cliente_id")) in ids]
+        # competências de cada cargo
+        cargo_ids = [c["id"] for c in cargos]
+        comp_por_cargo = {c["id"]: [] for c in cargos}
+        if cargo_ids:
+            comps = supabase.table("gd_competencias").select("*").in_("cargo_id", cargo_ids).order("ordem").execute()
+            for cp in (comps.data or []): comp_por_cargo.setdefault(cp["cargo_id"], []).append(cp)
+        for c in cargos: c["competencias"] = comp_por_cargo.get(c["id"], [])
+        return jsonify({"status":"sucesso", "cargos":cargos, "clientes":clientes, "mostra_seletor":mostra_seletor}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_cargos_listar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Não foi possível carregar."}), 500
+
+@app.route('/api/gd/cargo', methods=['POST'])
+def gd_cargo_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        if d.get("id"):
+            supabase.table("gd_cargos").update({"nome":d.get("nome"),"descricao":d.get("descricao")}).eq("id", d["id"]).execute()
+        else:
+            supabase.table("gd_cargos").insert({"cliente_id":d.get("cliente_id"),"nome":d.get("nome"),"descricao":d.get("descricao")}).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_cargo_salvar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
+
+@app.route('/api/gd/cargo/<cid>', methods=['DELETE'])
+def gd_cargo_excluir(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        supabase.table("gd_cargos").delete().eq("id", cid).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
+
+# ===== COMPETÊNCIAS =====
+@app.route('/api/gd/competencia', methods=['POST'])
+def gd_competencia_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        payload = {"nome":d.get("nome"),"descricao":d.get("descricao"),"tipo":d.get("tipo","comportamental"),"peso":int(d.get("peso",1) or 1)}
+        if d.get("id"):
+            supabase.table("gd_competencias").update(payload).eq("id", d["id"]).execute()
+        else:
+            payload["cargo_id"]=d.get("cargo_id"); payload["ordem"]=d.get("ordem",0)
+            supabase.table("gd_competencias").insert(payload).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_competencia_salvar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
+
+@app.route('/api/gd/competencia/<cid>', methods=['DELETE'])
+def gd_competencia_excluir(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        supabase.table("gd_competencias").delete().eq("id", cid).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
+
+# ===== PESSOAS =====
+@app.route('/api/gd/pessoas', methods=['GET'])
+def gd_pessoas_listar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        cliente_id = request.args.get('cliente_id')
+        clientes, _, _ = clientes_okr_permitidos()
+        ids = {c["id"] for c in clientes}
+        q = supabase.table("gd_pessoas").select("*").order("nome")
+        if cliente_id: q = q.eq("cliente_id", cliente_id)
+        pessoas = [p for p in (q.execute().data or []) if str(p.get("cliente_id")) in ids]
+        return jsonify({"status":"sucesso","pessoas":pessoas}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_pessoas_listar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Não foi possível carregar."}), 500
+
+@app.route('/api/gd/pessoa', methods=['POST'])
+def gd_pessoa_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        payload = {"nome":d.get("nome"),"cargo_id":d.get("cargo_id") or None,"gestor_id":d.get("gestor_id") or None,"email":d.get("email")}
+        if d.get("id"):
+            supabase.table("gd_pessoas").update(payload).eq("id", d["id"]).execute()
+        else:
+            payload["cliente_id"]=d.get("cliente_id")
+            supabase.table("gd_pessoas").insert(payload).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_pessoa_salvar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
+
+@app.route('/api/gd/pessoa/<pid>', methods=['DELETE'])
+def gd_pessoa_excluir(pid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        supabase.table("gd_pessoas").delete().eq("id", pid).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
+
+# ===== CICLOS =====
+@app.route('/api/gd/ciclos', methods=['GET'])
+def gd_ciclos_listar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        clientes, mostra_seletor, _ = clientes_okr_permitidos()
+        ids = {c["id"] for c in clientes}
+        ciclos = [c for c in (supabase.table("gd_ciclos").select("*").order("criado_em", desc=True).execute().data or []) if str(c.get("cliente_id")) in ids]
+        for c in ciclos:
+            partc = supabase.table("gd_ciclo_participantes").select("id", count="exact").eq("ciclo_id", c["id"]).execute()
+            c["total_participantes"] = partc.count or 0
+            avalc = supabase.table("gd_avaliacoes").select("id", count="exact").eq("ciclo_id", c["id"]).execute()
+            avalcc = supabase.table("gd_avaliacoes").select("id", count="exact").eq("ciclo_id", c["id"]).eq("status","concluida").execute()
+            c["total_avaliacoes"] = avalc.count or 0
+            c["avaliacoes_concluidas"] = avalcc.count or 0
+        return jsonify({"status":"sucesso","ciclos":ciclos,"clientes":clientes,"mostra_seletor":mostra_seletor}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_ciclos_listar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Não foi possível carregar."}), 500
+
+@app.route('/api/gd/ciclo', methods=['POST'])
+def gd_ciclo_criar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        clientes, _, _ = clientes_okr_permitidos()
+        if str(d.get("cliente_id")) not in {c["id"] for c in clientes}:
+            return jsonify({"erro":"Acesso negado a este cliente"}), 403
+        nova = {"cliente_id":d.get("cliente_id"),"titulo":d.get("titulo"),"formato":d.get("formato","90"),
+                "status":"rascunho","data_inicio":d.get("data_inicio") or None,"data_fim":d.get("data_fim") or None}
+        res = supabase.table("gd_ciclos").insert(nova).execute()
+        return jsonify({"status":"sucesso","ciclo_id":res.data[0]["id"]}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_ciclo_criar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao criar ciclo."}), 500
+
+@app.route('/api/gd/ciclo/<cid>', methods=['GET'])
+def gd_ciclo_get(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        res = supabase.table("gd_ciclos").select("*").eq("id", cid).execute()
+        if not res.data: return jsonify({"erro":"Não encontrado"}), 404
+        ciclo = res.data[0]
+        clientes, _, _ = clientes_okr_permitidos()
+        if str(ciclo.get("cliente_id")) not in {c["id"] for c in clientes}:
+            return jsonify({"erro":"Acesso negado"}), 403
+        # participantes com dados da pessoa
+        parts = supabase.table("gd_ciclo_participantes").select("*").eq("ciclo_id", cid).execute().data or []
+        pessoa_ids = [p["pessoa_id"] for p in parts]
+        pessoas = {}
+        if pessoa_ids:
+            for p in (supabase.table("gd_pessoas").select("*").in_("id", pessoa_ids).execute().data or []):
+                pessoas[p["id"]] = p
+        # avaliações do ciclo
+        avals = supabase.table("gd_avaliacoes").select("*").eq("ciclo_id", cid).execute().data or []
+        aval_por_pessoa = {}
+        for a in avals: aval_por_pessoa.setdefault(a["pessoa_id"], []).append(a)
+        participantes = []
+        for p in parts:
+            pe = pessoas.get(p["pessoa_id"], {})
+            participantes.append({
+                "pessoa_id": p["pessoa_id"], "nome": pe.get("nome","—"),
+                "cargo_id": pe.get("cargo_id"), "avaliacoes": aval_por_pessoa.get(p["pessoa_id"], [])
+            })
+        ciclo["participantes"] = participantes
+        return jsonify({"status":"sucesso","ciclo":ciclo}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_ciclo_get: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao carregar."}), 500
+
+@app.route('/api/gd/ciclo/<cid>', methods=['PUT'])
+def gd_ciclo_atualizar(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        upd = {}
+        for campo in ("titulo","formato","status","data_inicio","data_fim"):
+            if campo in d: upd[campo] = d[campo] or None
+        if d.get("status") == "encerrado": upd["encerrado_em"] = "now()"
+        supabase.table("gd_ciclos").update(upd).eq("id", cid).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao atualizar."}), 500
+
+@app.route('/api/gd/ciclo/<cid>', methods=['DELETE'])
+def gd_ciclo_excluir(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        supabase.table("gd_ciclos").delete().eq("id", cid).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
+
+# adicionar participante (copia competências do cargo + cria avaliações conforme formato)
+@app.route('/api/gd/ciclo/<cid>/participante', methods=['POST'])
+def gd_ciclo_add_participante(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        pessoa_id = d.get("pessoa_id")
+        ciclo = supabase.table("gd_ciclos").select("*").eq("id", cid).execute().data
+        if not ciclo: return jsonify({"erro":"Ciclo não encontrado"}), 404
+        ciclo = ciclo[0]
+        # evita duplicar
+        ex = supabase.table("gd_ciclo_participantes").select("id").eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute().data
+        if ex: return jsonify({"status":"sucesso","aviso":"já era participante"}), 200
+        supabase.table("gd_ciclo_participantes").insert({"ciclo_id":cid,"pessoa_id":pessoa_id}).execute()
+        # copia competências do cargo da pessoa (snapshot)
+        pessoa = supabase.table("gd_pessoas").select("*").eq("id", pessoa_id).execute().data[0]
+        if pessoa.get("cargo_id"):
+            comps = supabase.table("gd_competencias").select("*").eq("cargo_id", pessoa["cargo_id"]).order("ordem").execute().data or []
+            for cp in comps:
+                supabase.table("gd_ciclo_competencias").insert({
+                    "ciclo_id":cid,"pessoa_id":pessoa_id,"nome":cp["nome"],"tipo":cp.get("tipo","comportamental"),
+                    "peso":cp.get("peso",1),"ordem":cp.get("ordem",0)
+                }).execute()
+        # cria as avaliações conforme o formato
+        _gd_gerar_avaliacoes(cid, pessoa_id, ciclo.get("formato","90"), pessoa)
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_ciclo_add_participante: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao adicionar participante."}), 500
+
+def _gd_gerar_avaliacoes(ciclo_id, pessoa_id, formato, pessoa):
+    """Cria as avaliações conforme o formato (90/180/360)."""
+    import secrets as _s
+    def cria(papel, avaliador_id):
+        supabase.table("gd_avaliacoes").insert({
+            "ciclo_id":ciclo_id,"pessoa_id":pessoa_id,"avaliador_pessoa_id":avaliador_id,
+            "papel":papel,"status":"pendente","token":_s.token_urlsafe(12)
+        }).execute()
+    # gestor sempre avalia
+    cria("gestor", pessoa.get("gestor_id"))
+    if formato in ("180","360"):
+        cria("autoavaliacao", pessoa_id)
+    if formato == "360":
+        # pares = mesmo gestor; liderados = quem tem essa pessoa como gestor
+        if pessoa.get("gestor_id"):
+            pares = supabase.table("gd_pessoas").select("id").eq("gestor_id", pessoa["gestor_id"]).neq("id", pessoa_id).execute().data or []
+            for par in pares: cria("par", par["id"])
+        liderados = supabase.table("gd_pessoas").select("id").eq("gestor_id", pessoa_id).execute().data or []
+        for lid in liderados: cria("liderado", lid["id"])
+
+@app.route('/api/gd/ciclo/<cid>/participante/<pessoa_id>', methods=['DELETE'])
+def gd_ciclo_rem_participante(cid, pessoa_id):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        supabase.table("gd_ciclo_participantes").delete().eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute()
+        supabase.table("gd_ciclo_competencias").delete().eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute()
+        supabase.table("gd_avaliacoes").delete().eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao remover."}), 500
+
+# ===== AVALIAÇÃO PÚBLICA (por token) =====
+@app.route('/desempenho/avaliar/<token>')
+def desempenho_avaliar_page(token):
+    return render_template('desempenho_avaliar.html', token=token)
+
+@app.route('/api/gd/avaliar/<token>', methods=['GET'])
+def gd_avaliar_get(token):
+    try:
+        aval = supabase.table("gd_avaliacoes").select("*").eq("token", token).execute().data
+        if not aval: return jsonify({"erro":"Avaliação não encontrada"}), 404
+        aval = aval[0]
+        ciclo = supabase.table("gd_ciclos").select("*").eq("id", aval["ciclo_id"]).execute().data[0]
+        if ciclo.get("status") != "ativo":
+            return jsonify({"erro":"indisponivel","status_ciclo":ciclo.get("status")}), 200
+        pessoa = supabase.table("gd_pessoas").select("nome").eq("id", aval["pessoa_id"]).execute().data
+        avaliador = supabase.table("gd_pessoas").select("nome").eq("id", aval["avaliador_pessoa_id"]).execute().data if aval.get("avaliador_pessoa_id") else None
+        comps = supabase.table("gd_ciclo_competencias").select("*").eq("ciclo_id", aval["ciclo_id"]).eq("pessoa_id", aval["pessoa_id"]).order("ordem").execute().data or []
+        # se já concluída, traz respostas
+        itens_ex = {}
+        if aval.get("status") == "concluida":
+            for it in (supabase.table("gd_avaliacao_itens").select("*").eq("avaliacao_id", aval["id"]).execute().data or []):
+                itens_ex[it["competencia_id"]] = it
+        return jsonify({"status":"sucesso","avaliacao":{
+            "papel":aval["papel"],"status":aval["status"],
+            "avaliado":pessoa[0]["nome"] if pessoa else "—",
+            "avaliador":avaliador[0]["nome"] if avaliador else None,
+            "eh_gestor":aval["papel"]=="gestor",
+            "titulo_ciclo":ciclo["titulo"],"escala_min":ciclo.get("escala_min",1),"escala_max":ciclo.get("escala_max",5),
+            "competencias":comps,"itens_existentes":itens_ex
+        }}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_avaliar_get: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao carregar."}), 500
+
+@app.route('/api/gd/avaliar/<token>', methods=['POST'])
+def gd_avaliar_enviar(token):
+    d = request.json
+    try:
+        aval = supabase.table("gd_avaliacoes").select("*").eq("token", token).execute().data
+        if not aval: return jsonify({"erro":"Avaliação não encontrada"}), 404
+        aval = aval[0]
+        ciclo = supabase.table("gd_ciclos").select("status").eq("id", aval["ciclo_id"]).execute().data[0]
+        if ciclo.get("status") != "ativo": return jsonify({"erro":"Ciclo não está ativo"}), 400
+        # limpa itens antigos (reenvio)
+        supabase.table("gd_avaliacao_itens").delete().eq("avaliacao_id", aval["id"]).execute()
+        for it in (d.get("itens") or []):
+            reg = {"avaliacao_id":aval["id"],"competencia_id":it.get("competencia_id"),"comentario":it.get("comentario")}
+            try: reg["nota"] = float(it.get("nota")) if it.get("nota") not in (None,"") else None
+            except: reg["nota"] = None
+            supabase.table("gd_avaliacao_itens").insert(reg).execute()
+        # potencial (só gestor)
+        if aval["papel"] == "gestor" and d.get("potencial") is not None:
+            supabase.table("gd_potencial").delete().eq("ciclo_id", aval["ciclo_id"]).eq("pessoa_id", aval["pessoa_id"]).execute()
+            try: pot = float(d.get("potencial"))
+            except: pot = None
+            if pot is not None:
+                supabase.table("gd_potencial").insert({"ciclo_id":aval["ciclo_id"],"pessoa_id":aval["pessoa_id"],"nota_potencial":pot}).execute()
+        supabase.table("gd_avaliacoes").update({"status":"concluida","concluida_em":"now()"}).eq("id", aval["id"]).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        print(f"[ERRO] gd_avaliar_enviar: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Falha ao enviar."}), 500
+
+# ===== PDI =====
+@app.route('/api/gd/pdi', methods=['POST'])
+def gd_pdi_salvar():
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    d = request.json
+    try:
+        payload = {"competencia_nome":d.get("competencia_nome"),"acao":d.get("acao"),"prazo":d.get("prazo") or None,"status":d.get("status","pendente")}
+        if d.get("id"):
+            supabase.table("gd_pdi").update(payload).eq("id", d["id"]).execute()
+        else:
+            payload["ciclo_id"]=d.get("ciclo_id"); payload["pessoa_id"]=d.get("pessoa_id")
+            supabase.table("gd_pdi").insert(payload).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
+
+@app.route('/api/gd/pdi/<pid>', methods=['DELETE'])
+def gd_pdi_excluir(pid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        supabase.table("gd_pdi").delete().eq("id", pid).execute()
+        return jsonify({"status":"sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
+
+# ===== RESULTADOS (dashboard) =====
+@app.route('/api/gd/resultados/<cid>', methods=['GET'])
+def gd_resultados(cid):
+    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
+    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
+    try:
+        ciclo = supabase.table("gd_ciclos").select("*").eq("id", cid).execute().data
+        if not ciclo: return jsonify({"erro":"Não encontrado"}), 404
+        ciclo = ciclo[0]
+        clientes, _, _ = clientes_okr_permitidos()
+        if str(ciclo.get("cliente_id")) not in {c["id"] for c in clientes}:
+            return jsonify({"erro":"Acesso negado"}), 403
+        parts = supabase.table("gd_ciclo_participantes").select("*").eq("ciclo_id", cid).execute().data or []
+        pessoa_ids = [p["pessoa_id"] for p in parts]
+        pessoas = {}
+        cargos = {}
+        if pessoa_ids:
+            for p in (supabase.table("gd_pessoas").select("*").in_("id", pessoa_ids).execute().data or []): pessoas[p["id"]] = p
+            cargo_ids = list({p.get("cargo_id") for p in pessoas.values() if p.get("cargo_id")})
+            if cargo_ids:
+                for cg in (supabase.table("gd_cargos").select("*").in_("id", cargo_ids).execute().data or []): cargos[cg["id"]] = cg["nome"]
+        comps = supabase.table("gd_ciclo_competencias").select("*").eq("ciclo_id", cid).execute().data or []
+        avals = supabase.table("gd_avaliacoes").select("*").eq("ciclo_id", cid).execute().data or []
+        aval_ids = [a["id"] for a in avals]
+        itens = []
+        if aval_ids:
+            for i in range(0, len(aval_ids), 50):
+                bloco = aval_ids[i:i+50]
+                itens.extend(supabase.table("gd_avaliacao_itens").select("*").in_("avaliacao_id", bloco).execute().data or [])
+        potenciais = supabase.table("gd_potencial").select("*").eq("ciclo_id", cid).execute().data or []
+        pdis = supabase.table("gd_pdi").select("*").eq("ciclo_id", cid).execute().data or []
+        return jsonify({"status":"sucesso",
+            "ciclo":{"id":ciclo["id"],"titulo":ciclo["titulo"],"formato":ciclo["formato"],"status":ciclo["status"],"cliente_id":ciclo["cliente_id"]},
+            "pessoas":list(pessoas.values()),"cargos":cargos,"competencias":comps,
+            "avaliacoes":avals,"itens":itens,"potenciais":potenciais,"pdis":pdis
+        }), 200
+    except Exception as e:
+        print(f"[ERRO] gd_resultados: {str(e)}")
+        return jsonify({"status":"erro","mensagem":"Não foi possível carregar os resultados."}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
