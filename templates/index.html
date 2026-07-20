@@ -105,18 +105,16 @@
 
         // Definição dos módulos por seção
         const SECOES = [
-            { titulo:'Quadros', mods:[
+            { titulo:'Módulos', mods:[
                 { cond:temModulo('rhestrategico'), nome:'RH Estratégico', desc:'Projetos e iniciativas de RH estratégico.', ico:'psychology', cor:'#7371ff', bg:'#f0efff', rota:'/board/rhestrategico' },
                 { cond:temModulo('recrutamento'), nome:'R&S', desc:'Processos seletivos em andamento.', ico:'group_add', cor:'#14b8a6', bg:'#e7fbf5', rota:'/board/recrutamento' },
                 { cond:temModulo('geral'), nome:'Quadro Geral', desc:'Comercial, marketing, CX Data e demandas pontuais.', ico:'dashboard', cor:'#ff43c0', bg:'#fdeaf7', rota:'/board/geral' },
-            ]},
-            { titulo:'Análise', mods:[
-                { cond:temAnalise('dashboard'), nome:'Dashboard', desc:'Visão consolidada de projetos e produtividade.', ico:'monitoring', cor:'#7371ff', bg:'#f0efff', rota:'/dashboard' },
                 { cond:temAnalise('okr'), nome:'OKR', desc:'Objetivos e resultados-chave por cliente.', ico:'target', cor:'#f59e0b', bg:'#fef3e2', rota:'/okr/gestao' },
                 { cond:temAnalise('clima'), nome:'Clima', desc:'Pesquisas de clima organizacional e resultados.', ico:'mood', cor:'#14b8a6', bg:'#e7fbf5', rota:'/clima/gestao' },
                 { cond:temAnalise('desempenho'), nome:'Desempenho', desc:'Avaliações, Nine Box e planos de desenvolvimento.', ico:'leaderboard', cor:'#ff43c0', bg:'#fdeaf7', rota:'/desempenho/gestao' },
             ]},
             { titulo:'Gestão', mods:[
+                { cond:temAnalise('dashboard'), nome:'Dashboard', desc:'Visão consolidada de projetos e produtividade.', ico:'monitoring', cor:'#7371ff', bg:'#f0efff', rota:'/dashboard' },
                 { cond:temModulo('clientes'), nome:'Clientes', desc:'Cadastro e gestão da carteira de clientes.', ico:'apartment', cor:'#7371ff', bg:'#f0efff', rota:'/clientes' },
                 { cond:(!ehPerson || PERM.includes('agenda')), nome:'Agenda', desc:'Compromissos e planejamento dos projetos.', ico:'calendar_today', cor:'#52525b', bg:'#f4f4f5', rota:'/agenda' },
                 { cond:(NIVEL==='admin'), nome:'Configurações', desc:'Usuários, acessos e permissões da plataforma.', ico:'settings', cor:'#52525b', bg:'#f4f4f5', rota:'/configuracoes' },
