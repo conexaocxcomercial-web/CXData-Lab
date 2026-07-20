@@ -2543,5 +2543,41 @@ def gd_resultados(cid):
         return jsonify({"status":"erro","mensagem":"Não foi possível carregar os resultados."}), 500
 
 
+# --- API RESUMO DO HUB ---
+@app.route('/api/hub/resumo', methods=['GET'])
+def hub_resumo():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    resumo = {"clientes": None, "clima_ativas": None, "desempenho_ativos": None, "projetos": None}
+    # Clientes (não excluídos)
+    try:
+        cs = supabase.table("clientes").select("id", count="exact").is_("excluido_em", "null").execute()
+        resumo["clientes"] = cs.count or 0
+    except Exception as e:
+        print(f"[HUB] clientes: {str(e)}")
+    # Pesquisas de clima ativas
+    try:
+        if pode_ver_clima():
+            ca = supabase.table("clima_pesquisas").select("id", count="exact").eq("status", "ativa").execute()
+            resumo["clima_ativas"] = ca.count or 0
+    except Exception as e:
+        print(f"[HUB] clima: {str(e)}")
+    # Ciclos de desempenho ativos
+    try:
+        if pode_ver_desempenho():
+            da = supabase.table("gd_ciclos").select("id", count="exact").eq("status", "ativo").execute()
+            resumo["desempenho_ativos"] = da.count or 0
+    except Exception as e:
+        print(f"[HUB] desempenho: {str(e)}")
+    # Projetos (não excluídos, respeitando permissões)
+    try:
+        res = supabase.table("projetos").select("*").execute()
+        projs = [p for p in (res.data or []) if not p.get("excluido_em")]
+        projs = filtrar_projetos_permitidos(projs)
+        resumo["projetos"] = len(projs)
+    except Exception as e:
+        print(f"[HUB] projetos: {str(e)}")
+    return jsonify({"status": "sucesso", "resumo": resumo}), 200
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
