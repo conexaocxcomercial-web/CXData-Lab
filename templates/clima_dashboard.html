@@ -23,10 +23,10 @@
         .top-bar-right { display: flex; align-items: center; gap: 14px; }
         .pesq-sel { padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--text-main); background: var(--bg-board); outline: none; cursor: pointer; border-radius: 9px !important; min-width: 240px; }
 
-        .dash-body { flex-grow: 1; display: flex; min-height: 0; }
+        .dash-body { flex-grow: 1; display: flex; min-height: 0; padding-left: 22px; }
 
         /* NAV lateral */
-        .nav-lateral { width: 232px; min-width: 232px; background: var(--surface); box-shadow: 1px 0 0 var(--line); overflow-y: auto; padding: 16px 12px; flex-shrink: 0; }
+        .nav-lateral { width: 218px; min-width: 218px; background: transparent; overflow-y: auto; padding: 20px 10px 20px 0; flex-shrink: 0; }
         .nav-grupo { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin: 16px 0 8px; }
         .nav-grupo:first-child { margin-top: 0; }
         .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 9px !important; cursor: pointer; transition: 0.13s; margin-bottom: 2px; }
@@ -118,7 +118,7 @@
 
         /* Painel de leitura (textos) */
         .leitura { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding-right: 4px; }
-        .leitura-item { background: var(--bg-board); padding: 11px 13px; font-size: 11.5px; line-height: 1.5; color: var(--text-soft); border-radius: 8px !important; border-left: 3px solid var(--purple) !important; }
+        .leitura-item { background: var(--bg-board); padding: 13px 15px; font-size: 12px; line-height: 1.6; color: var(--text-soft); border-radius: 10px !important; }
         .leitura-vazio { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 20px; text-align: center; }
 
         /* Análise IA */
@@ -140,8 +140,13 @@
         .lider-nota-badge { display:inline-flex; align-items:center; gap:5px; background:var(--purple-soft); color:var(--purple); font-size:11px; font-weight:800; padding:4px 10px; border-radius:50px !important; }
         /* Containers ECharts */
         .echart-pie { width: 130px; height: 130px; flex-shrink: 0; }
-        .echart-gauge { width: 100%; height: 150px; }
-        .echart-bar { width: 100%; height: 150px; }
+        .echart-gauge { width: 100%; height: 180px; }
+        .echart-bar { width: 100%; height: 180px; }
+        /* Layout escala 0-10: gauge + barras lado a lado */
+        .escala-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: center; }
+        .escala-gauge { border-right: 1px solid var(--line); padding-right: 16px; }
+        .escala-barras { min-width: 0; }
+        @media (max-width: 720px) { .escala-layout { grid-template-columns: 1fr; } .escala-gauge { border-right: none; padding-right: 0; } }
     </style>
 </head>
 <body>
@@ -510,18 +515,27 @@
             const textoPergs=perguntas.filter(p=>p.tipo==='texto');
 
             if(likertPergs.length){
-                h+=`<div class="sec-lbl">Perguntas de escala</div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr));">`;
+                // 2 colunas fixas quando há 2+, 1 quando há só 1 mas centralizado e largo
+                const cols = likertPergs.length===1 ? '1fr' : 'repeat(auto-fit,minmax(380px,1fr))';
+                h+=`<div class="sec-lbl">Perguntas de escala</div><div class="grid" style="grid-template-columns:${cols};">`;
                 likertPergs.forEach(p=>{ const its=itens.filter(i=>i.pergunta_id===p.id); h+=`<div class="painel"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">Distribuição das respostas</div>${pizzaLikert(its)}</div>`; });
                 h+=`</div>`;
             }
             if(escalaPergs.length){
-                h+=`<div class="sec-lbl">Escala 0-10</div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">`;
+                h+=`<div class="sec-lbl">Escala 0-10</div>`;
                 escalaPergs.forEach(p=>{ const its=itens.filter(i=>i.pergunta_id===p.id); const m=media(its); const n=nps(its);
-                    h+=`<div class="painel"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">Média ${m!==null?m.toFixed(1):'—'} · NPS ${n!==null?(n>0?'+':'')+n:'—'}</div>${gauge(m!==null?m.toFixed(1):'0',0,10,corNota10(m),'')}${barras10(its)}</div>`; });
-                h+=`</div>`;
+                    // gauge + barras LADO A LADO ocupando a largura toda
+                    h+=`<div class="painel" style="margin-bottom:14px;"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">Média ${m!==null?m.toFixed(1):'—'} · NPS ${n!==null?(n>0?'+':'')+n:'—'}</div>
+                        <div class="escala-layout">
+                            <div class="escala-gauge">${gauge(m!==null?m.toFixed(1):'0',0,10,corNota10(m),'')}</div>
+                            <div class="escala-barras">${barras10(its)}</div>
+                        </div>
+                    </div>`; });
             }
             if(textoPergs.length){
-                h+=`<div class="sec-lbl">Respostas abertas</div><div class="grid" style="grid-template-columns:1fr;">`;
+                // textos em 2 colunas quando há 2+, aproveitando o espaço
+                const colsT = textoPergs.length===1 ? '1fr' : 'repeat(auto-fit,minmax(440px,1fr))';
+                h+=`<div class="sec-lbl">Respostas abertas</div><div class="grid" style="grid-template-columns:${colsT}; align-items:start;">`;
                 textoPergs.forEach(p=>{ const txts=itens.filter(i=>i.pergunta_id===p.id&&i.valor_texto&&i.valor_texto.trim()).map(i=>i.valor_texto.trim());
                     h+=`<div class="painel"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">${txts.length} resposta${txts.length!==1?'s':''}</div><div class="leitura">${txts.length?txts.map(t=>`<div class="leitura-item">${escH(t)}</div>`).join(''):'<div class="leitura-vazio">Nenhuma resposta.</div>'}</div></div>`; });
                 h+=`</div>`;
