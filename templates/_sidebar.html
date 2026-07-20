@@ -2,78 +2,101 @@
 .cxsidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 68px;
-    background: #ffffff;
-    border-right: 1px solid #f0f0f1;
+    background: #171718;
     z-index: 100;
     display: flex; flex-direction: column;
-    transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    box-shadow: 2px 0 12px rgba(0,0,0,0.02);
+    transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 1px 0 0 rgba(255,255,255,0.04);
 }
 .cxsidebar:hover {
-    width: 230px;
-    box-shadow: 8px 0 40px rgba(0,0,0,0.10);
+    width: 236px;
+    box-shadow: 10px 0 50px rgba(0,0,0,0.28);
 }
 
 .cxsb-header {
     height: 70px; min-height: 70px;
     display: flex; align-items: center;
-    padding: 0 16px; gap: 12px;
-    border-bottom: 1px solid #f4f4f5;
+    padding: 0 18px; gap: 12px;
     overflow: hidden;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .cxsb-logo-icon {
-    width: 32px; height: 32px; min-width: 32px;
+    width: 30px; height: 30px; min-width: 30px;
     object-fit: contain; flex-shrink: 0;
+    filter: brightness(0) invert(1);
 }
 .cxsb-brand-text {
-    font-size: 14px; font-weight: 900;
-    color: #1e1e1e; white-space: nowrap;
-    opacity: 0; transition: opacity 0.2s 0.05s;
-    font-family: 'Inter', sans-serif; letter-spacing: -0.3px;
+    font-size: 15px; font-weight: 800;
+    color: #fff; white-space: nowrap;
+    opacity: 0; transition: opacity 0.2s 0.06s;
+    font-family: 'Inter', sans-serif; letter-spacing: -0.4px;
 }
 .cxsidebar:hover .cxsb-brand-text { opacity: 1; }
 
-.cxsb-body { padding: 12px 12px; display: flex; flex-direction: column; gap: 3px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
+.cxsb-body { padding: 12px 12px; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; overflow-y: auto; overflow-x: visible; }
+.cxsb-body::-webkit-scrollbar { width: 0; }
 
 .cxsb-section {
     font-size: 9px; font-weight: 800;
-    text-transform: uppercase; letter-spacing: 0.8px;
-    color: #c4c4c8; padding: 12px 10px 4px 10px;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: rgba(255,255,255,0.28); padding: 16px 12px 6px 12px;
     white-space: nowrap; overflow: hidden;
     opacity: 0; transition: opacity 0.2s;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif; height: 0;
 }
-.cxsidebar:hover .cxsb-section { opacity: 1; }
+.cxsidebar:hover .cxsb-section { opacity: 1; height: auto; }
+/* espaçador para quando minimizada (mantém respiro entre grupos) */
+.cxsb-gap { height: 10px; flex-shrink: 0; transition: height 0.2s; }
+.cxsidebar:hover .cxsb-gap { height: 0; }
 
 .cxsb-item {
-    display: flex; align-items: center; gap: 14px;
-    padding: 10px 10px;
-    border-radius: 10px !important;
+    display: flex; align-items: center; gap: 15px;
+    padding: 0 12px; height: 44px; min-height: 44px;
+    border-radius: 11px !important;
     cursor: pointer; transition: background 0.15s, color 0.15s;
-    color: #71717a; white-space: nowrap;
-    min-height: 42px; position: relative;
+    color: rgba(255,255,255,0.62); white-space: nowrap;
+    position: relative;
     font-family: 'Inter', sans-serif;
 }
-.cxsb-item:hover { background: #f4f4f5; color: #1e1e1e; }
-.cxsb-item.active { background: #f0efff; color: #7371ff; }
-.cxsb-item .material-symbols-rounded { font-size: 22px; min-width: 22px; flex-shrink: 0; }
-.cxsb-item-label { font-size: 13px; font-weight: 700; opacity: 0; transition: opacity 0.2s 0.05s; }
+.cxsb-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.cxsb-item.active { background: #7371ff; color: #fff; box-shadow: 0 6px 18px rgba(115,113,255,0.35); }
+.cxsb-item.active .material-symbols-rounded { color: #fff; }
+.cxsb-item .material-symbols-rounded { font-size: 22px; min-width: 22px; flex-shrink: 0; transition: color 0.15s; }
+.cxsb-item-label { font-size: 13.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
 .cxsidebar:hover .cxsb-item-label { opacity: 1; }
 
-.cxsb-divider { height: 1px; background: #f4f4f5; margin: 6px 10px; flex-shrink: 0; }
+/* indicador de módulo com subitens (setinha à direita, some quando minimizada) */
+.cxsb-caret { font-size: 18px !important; min-width: 18px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s; color: rgba(255,255,255,0.4); }
+.cxsidebar:hover .cxsb-parent .cxsb-caret { opacity: 1; }
+.cxsb-parent.active .cxsb-caret { color: rgba(255,255,255,0.8); }
 
-/* Submenu (OKR) */
+/* ===== FLYOUT (painel flutuante dos subitens) ===== */
 .cxsb-parent { position: relative; }
-.cxsb-caret { font-size: 16px !important; min-width: 16px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s, transform 0.2s; }
-.cxsidebar:hover .cxsb-caret { opacity: 0.6; }
-.cxsb-parent.aberto .cxsb-caret { transform: rotate(180deg); }
-.cxsb-sub { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
-.cxsb-sub.aberto { max-height: 120px; }
-.cxsb-subitem { display: flex; align-items: center; gap: 14px; padding: 9px 18px 9px 26px; margin: 1px 8px; cursor: pointer; color: #71717a; transition: 0.15s; border-radius: 10px !important; }
-.cxsb-subitem:hover { background: #f4f4f5; color: #1e1e1e; }
-.cxsb-subitem.active { background: #f0efff; color: #7371ff; }
+.cxsb-flyout {
+    position: absolute; left: calc(100% + 10px); top: -6px;
+    background: #1f1f21; min-width: 190px;
+    padding: 8px; border-radius: 14px !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
+    opacity: 0; visibility: hidden; transform: translateX(-6px);
+    transition: opacity 0.16s, transform 0.16s, visibility 0.16s;
+    z-index: 200; pointer-events: none;
+}
+.cxsb-parent:hover .cxsb-flyout { opacity: 1; visibility: visible; transform: translateX(0); pointer-events: auto; }
+/* ponte invisível para o mouse não "cair" entre o item e o flyout */
+.cxsb-flyout::before { content: ''; position: absolute; left: -12px; top: 0; width: 12px; height: 100%; }
+.cxsb-flyout-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.32); padding: 8px 12px 6px; }
+.cxsb-subitem {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 12px; height: 40px;
+    cursor: pointer; color: rgba(255,255,255,0.66);
+    transition: 0.14s; border-radius: 10px !important;
+    white-space: nowrap;
+}
+.cxsb-subitem:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.cxsb-subitem.active { background: #7371ff; color: #fff; }
+.cxsb-subitem.active .material-symbols-rounded { color: #fff; }
 .cxsb-subitem .material-symbols-rounded { font-size: 19px; min-width: 19px; flex-shrink: 0; }
+.cxsb-subitem-label { font-size: 13px; font-weight: 600; }
 </style>
 
 <nav class="cxsidebar" id="cxSidebar">
@@ -84,7 +107,6 @@
     <div class="cxsb-body">
         {% set eh_externo = (tipo_usuario == 'externo') %}
         {% set eh_person = (nivel_acesso == 'personalizado') %}
-        {# Helper: módulo liberado se admin/gestor, ou colaborador (quadros/agenda), ou personalizado com permissão #}
         {% if eh_externo %}
         <div class="cxsb-section">Acompanhamento</div>
         <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
@@ -98,6 +120,7 @@
         </div>
 
         <div class="cxsb-section">Quadros</div>
+        <div class="cxsb-gap"></div>
         {% if not eh_person or 'rhestrategico' in perm_modulos %}
         <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
             <span class="material-symbols-rounded">psychology</span>
@@ -117,70 +140,70 @@
         </div>
         {% endif %}
 
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('dashboard' in perm_modulos or 'okr' in perm_modulos)) %}
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('dashboard' in perm_modulos or 'okr' in perm_modulos or 'clima' in perm_modulos or 'desempenho' in perm_modulos)) %}
         <div class="cxsb-section">Análise</div>
+        <div class="cxsb-gap"></div>
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
         <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
             <span class="material-symbols-rounded">monitoring</span>
             <span class="cxsb-item-label">Dashboard</span>
         </div>
         {% endif %}
+
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'okr' in perm_modulos) %}
-        <div class="cxsb-item cxsb-parent" id="okrParent" onclick="toggleOkrSub(event)">
+        <div class="cxsb-item cxsb-parent" id="okrParent" data-path="/okr" onclick="window.location.href='/okr/gestao'">
             <span class="material-symbols-rounded">target</span>
             <span class="cxsb-item-label">OKR</span>
-            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-        </div>
-        <div class="cxsb-sub" id="okrSub">
-            <div class="cxsb-subitem" data-path="/okr/gestao" onclick="window.location.href='/okr/gestao'">
-                <span class="material-symbols-rounded">account_tree</span>
-                <span class="cxsb-item-label">Gestão</span>
-            </div>
-            <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="window.location.href='/okr/dashboard'">
-                <span class="material-symbols-rounded">insights</span>
-                <span class="cxsb-item-label">Dashboard</span>
+            <span class="material-symbols-rounded cxsb-caret">chevron_right</span>
+            <div class="cxsb-flyout">
+                <div class="cxsb-flyout-title">OKR</div>
+                <div class="cxsb-subitem" data-path="/okr/gestao" onclick="event.stopPropagation(); window.location.href='/okr/gestao'">
+                    <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-label">Gestão</span>
+                </div>
+                <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="event.stopPropagation(); window.location.href='/okr/dashboard'">
+                    <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
+                </div>
             </div>
         </div>
         {% endif %}
 
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clima' in perm_modulos) %}
-        <div class="cxsb-item cxsb-parent" id="climaParent" onclick="toggleClimaSub(event)">
+        <div class="cxsb-item cxsb-parent" id="climaParent" data-path="/clima" onclick="window.location.href='/clima/gestao'">
             <span class="material-symbols-rounded">mood</span>
             <span class="cxsb-item-label">Clima</span>
-            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-        </div>
-        <div class="cxsb-sub" id="climaSub">
-            <div class="cxsb-subitem" data-path="/clima/gestao" onclick="window.location.href='/clima/gestao'">
-                <span class="material-symbols-rounded">clarify</span>
-                <span class="cxsb-item-label">Gestão</span>
-            </div>
-            <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="window.location.href='/clima/dashboard'">
-                <span class="material-symbols-rounded">insights</span>
-                <span class="cxsb-item-label">Dashboard</span>
+            <span class="material-symbols-rounded cxsb-caret">chevron_right</span>
+            <div class="cxsb-flyout">
+                <div class="cxsb-flyout-title">Clima</div>
+                <div class="cxsb-subitem" data-path="/clima/gestao" onclick="event.stopPropagation(); window.location.href='/clima/gestao'">
+                    <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span>
+                </div>
+                <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="event.stopPropagation(); window.location.href='/clima/dashboard'">
+                    <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
+                </div>
             </div>
         </div>
         {% endif %}
 
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'desempenho' in perm_modulos) %}
-        <div class="cxsb-item cxsb-parent" id="despParent" onclick="toggleDespSub(event)">
+        <div class="cxsb-item cxsb-parent" id="despParent" data-path="/desempenho" onclick="window.location.href='/desempenho/gestao'">
             <span class="material-symbols-rounded">leaderboard</span>
             <span class="cxsb-item-label">Desempenho</span>
-            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-        </div>
-        <div class="cxsb-sub" id="despSub">
-            <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="window.location.href='/desempenho/gestao'">
-                <span class="material-symbols-rounded">clarify</span>
-                <span class="cxsb-item-label">Gestão</span>
-            </div>
-            <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="window.location.href='/desempenho/dashboard'">
-                <span class="material-symbols-rounded">insights</span>
-                <span class="cxsb-item-label">Dashboard</span>
+            <span class="material-symbols-rounded cxsb-caret">chevron_right</span>
+            <div class="cxsb-flyout">
+                <div class="cxsb-flyout-title">Desempenho</div>
+                <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="event.stopPropagation(); window.location.href='/desempenho/gestao'">
+                    <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span>
+                </div>
+                <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="event.stopPropagation(); window.location.href='/desempenho/dashboard'">
+                    <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
+                </div>
             </div>
         </div>
         {% endif %}
         {% endif %}
 
         <div class="cxsb-section">Gestão</div>
+        <div class="cxsb-gap"></div>
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clientes' in perm_modulos) %}
         <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
             <span class="material-symbols-rounded">apartment</span>
@@ -218,58 +241,17 @@
     if (curr === '/okr') curr = '/okr/gestao';
     if (curr === '/clima') curr = '/clima/gestao';
     if (curr === '/desempenho') curr = '/desempenho/gestao';
+
+    // Marca item ativo (itens simples). Para os módulos com flyout, o data-path é o prefixo (/okr, /clima, /desempenho)
     document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
         var path = item.getAttribute('data-path');
-        var match = path === '/' ? curr === '/' : curr === path || curr.startsWith(path + '/');
+        var match = path === '/' ? curr === '/' : (curr === path || curr.startsWith(path + '/'));
         if (match) item.classList.add('active');
     });
-    // Submenu OKR: marca subitem ativo e abre o submenu se estiver numa página de OKR
-    var emOkr = false;
+    // Marca o subitem ativo dentro dos flyouts
     document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(sub) {
         var path = sub.getAttribute('data-path');
-        if (curr === path || curr.startsWith(path + '/')) { sub.classList.add('active'); emOkr = true; }
+        if (curr === path || curr.startsWith(path + '/')) sub.classList.add('active');
     });
-    if (emOkr) {
-        var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
-        if (p) p.classList.add('aberto'); if (s) s.classList.add('aberto');
-    }
-    // Submenu Clima
-    var emClima = false;
-    document.querySelectorAll('#climaSub .cxsb-subitem[data-path]').forEach(function(sub) {
-        var path = sub.getAttribute('data-path');
-        if (curr === path || curr.startsWith(path + '/')) { sub.classList.add('active'); emClima = true; }
-    });
-    if (emClima) {
-        var pc = document.getElementById('climaParent'), sc = document.getElementById('climaSub');
-        if (pc) pc.classList.add('aberto'); if (sc) sc.classList.add('aberto');
-    }
-    // Submenu Desempenho
-    var emDesp = false;
-    document.querySelectorAll('#despSub .cxsb-subitem[data-path]').forEach(function(sub) {
-        var path = sub.getAttribute('data-path');
-        if (curr === path || curr.startsWith(path + '/')) { sub.classList.add('active'); emDesp = true; }
-    });
-    if (emDesp) {
-        var pd = document.getElementById('despParent'), sd = document.getElementById('despSub');
-        if (pd) pd.classList.add('aberto'); if (sd) sd.classList.add('aberto');
-    }
 })();
-
-function toggleOkrSub(e) {
-    e.stopPropagation();
-    var p = document.getElementById('okrParent'), s = document.getElementById('okrSub');
-    p.classList.toggle('aberto'); s.classList.toggle('aberto');
-}
-
-function toggleDespSub(e) {
-    e.stopPropagation();
-    var p = document.getElementById('despParent'), s = document.getElementById('despSub');
-    p.classList.toggle('aberto'); s.classList.toggle('aberto');
-}
-
-function toggleClimaSub(e) {
-    e.stopPropagation();
-    var p = document.getElementById('climaParent'), s = document.getElementById('climaSub');
-    p.classList.toggle('aberto'); s.classList.toggle('aberto');
-}
 </script>
