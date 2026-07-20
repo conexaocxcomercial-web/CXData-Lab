@@ -281,7 +281,7 @@
                     <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">star</span></div><span class="kpi-lbl">Nota média</span></div><div class="kpi-num" style="color:${corNota(mediaGeral)};">${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</div><div class="kpi-sub">de 5.0</div></div>
                     <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">groups</span></div><span class="kpi-lbl">Avaliados</span></div><div class="kpi-num">${avaliados}</div><div class="kpi-sub">de ${pessoas.length} pessoas</div></div>
                     <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">task_alt</span></div><span class="kpi-lbl">Conclusão</span></div><div class="kpi-num">${pctConcl}%</div><div class="kpi-sub">${concluidas}/${totalAval} avaliações</div></div>
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">grid_view</span></div><span class="kpi-lbl">Formato</span></div><div class="kpi-num">${dados.ciclo.formato}°</div><div class="kpi-sub">${{'90':'Gestor','180':'Gestor + auto','360':'Completo'}[dados.ciclo.formato]||''}</div></div>
+                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">grid_view</span></div><span class="kpi-lbl">Formato</span></div><div class="kpi-num">${dados.ciclo.formato}°</div><div class="kpi-sub">${ ({'90':'Gestor','180':'Gestor + auto','360':'Completo'})[dados.ciclo.formato]||''}</div></div>
                 </div>
                 <div class="secao-label">Ranking de desempenho</div>
                 <div class="card rank-card">
