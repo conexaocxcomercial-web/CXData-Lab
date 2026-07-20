@@ -6,7 +6,7 @@
     <title>Clima · Dashboard | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>    <style>
         :root {
             --bg-board:#eef0f4; --surface:#ffffff; --text-main:#1a1d29; --text-soft:#5a5f6e; --text-muted:#9AA0AE; --line:#e7e9ef;
             --purple:#7371ff; --purple-soft:#f0efff;
@@ -138,6 +138,10 @@
 
         .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 22px 0 12px; }
         .lider-nota-badge { display:inline-flex; align-items:center; gap:5px; background:var(--purple-soft); color:var(--purple); font-size:11px; font-weight:800; padding:4px 10px; border-radius:50px !important; }
+        /* Containers ECharts */
+        .echart-pie { width: 130px; height: 130px; flex-shrink: 0; }
+        .echart-gauge { width: 100%; height: 150px; }
+        .echart-bar { width: 100%; height: 150px; }
     </style>
 </head>
 <body>
@@ -253,6 +257,7 @@
         function irPara(id){ telaAtiva=id; montarNav(); render(); document.getElementById('conteudo').scrollTop=0; }
 
         function render() {
+            limparCharts();
             const resps=respostasFiltradas(); const itens=itensDe(resps.map(r=>r.id));
             const c=document.getElementById('cont'); if(c)c.innerHTML=`<b>${resps.length}</b> resposta${resps.length!==1?'s':''}`;
             const lm=document.getElementById('fLimpar'); if(lm)lm.style.display=(filtros.setor||filtros.tempo||filtros.lider)?'flex':'none';
@@ -260,47 +265,118 @@
             if(telaAtiva==='geral') renderGeral(itens,resps);
             else if(telaAtiva==='lideres') renderLideres(resps);
             else renderDimensao(telaAtiva,itens,resps);
+            requestAnimationFrame(montarCharts);
         }
 
-        // ========== COMPONENTES GRÁFICOS ==========
-        // Pizza (donut furo pequeno) para Likert
-        function pizzaLikert(itens, tam) {
-            tam = tam || 108;
-            const d=distLikert(itens); const total=Object.values(d).reduce((a,b)=>a+b,0);
-            const pct=positivas(itens);
-            const cx=tam/2, cy=tam/2, rOut=tam/2-2, rIn=tam*0.30;
-            let ang=-Math.PI/2, paths='';
-            if(total){
-                [5,4,3,2,1].forEach(n=>{ if(d[n]>0){ const frac=d[n]/total; const end=ang+frac*2*Math.PI; paths+=arco(cx,cy,rOut,rIn,ang,end,LK[n]); ang=end; } });
-            } else { paths=`<circle cx="${cx}" cy="${cy}" r="${rOut}" fill="#eef0f4"/><circle cx="${cx}" cy="${cy}" r="${rIn}" fill="#fff"/>`; }
-            const leg=[5,4,3,2,1].filter(n=>d[n]>0).map(n=>{ const p=Math.round(d[n]/total*100); return `<div class="pie-leg-item"><span class="pie-leg-dot" style="background:${LK[n]};"></span><span class="pie-leg-nome">${LK_LBL[n]}</span><span class="pie-leg-val">${p}%</span></div>`; }).join('');
-            return `<div class="pie-row"><div class="pie-box"><svg width="${tam}" height="${tam}" viewBox="0 0 ${tam} ${tam}">${paths}</svg><div class="pie-center"><span class="pie-pct" style="color:${corPct(pct)};">${pct!==null?pct+'%':'—'}</span><span class="pie-cap">Positivas</span></div></div><div class="pie-leg">${leg||'<span style="font-size:11px;color:var(--text-muted);">Sem respostas</span>'}</div></div>`;
+        // ========== SISTEMA DE GRÁFICOS ECHARTS ==========
+        // Registra configs para inicializar após inserir o HTML
+        let chartQueue = [];
+        let chartInstances = [];
+        function limparCharts() { chartInstances.forEach(c=>{ try{c.dispose();}catch(e){} }); chartInstances=[]; chartQueue=[]; }
+        function agendarChart(id, option) { chartQueue.push({id, option}); }
+        function montarCharts() {
+            chartQueue.forEach(({id, option})=>{
+                const el = document.getElementById(id);
+                if (!el) return;
+                const inst = echarts.init(el, null, { renderer: 'svg' });
+                inst.setOption(option);
+                chartInstances.push(inst);
+            });
+            chartQueue = [];
         }
-        function arco(cx,cy,rO,rI,a1,a2,cor){
-            const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
-            const large=(a2-a1)>Math.PI?1:0;
-            const [x1,y1]=p(rO,a1),[x2,y2]=p(rO,a2),[x3,y3]=p(rI,a2),[x4,y4]=p(rI,a1);
-            return `<path d="M ${x1} ${y1} A ${rO} ${rO} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${rI} ${rI} 0 ${large} 0 ${x4} ${y4} Z" fill="${cor}"></path>`;
+        window.addEventListener('resize', ()=>{ chartInstances.forEach(c=>{ try{c.resize();}catch(e){} }); });
+
+        const FONT = 'Inter, sans-serif';
+        const CHART_ANIM = { animationDuration: 700, animationEasing: 'cubicOut' };
+
+        // Pizza/rosca Likert com ECharts
+        let pieCounter = 0;
+        function pizzaLikert(itens) {
+            const id = 'chart_pie_' + (pieCounter++);
+            const d = distLikert(itens); const total = Object.values(d).reduce((a,b)=>a+b,0);
+            const pct = positivas(itens);
+            const data = [5,4,3,2,1].filter(n=>d[n]>0).map(n=>({ value:d[n], name:LK_LBL[n], itemStyle:{color:LK[n]} }));
+            if (total) {
+                agendarChart(id, {
+                    ...CHART_ANIM,
+                    tooltip: { trigger:'item', formatter: p=>`${p.name}<br/><b>${p.value}</b> resposta${p.value!==1?'s':''} (${p.percent}%)`, textStyle:{fontFamily:FONT, fontSize:12} },
+                    legend: { show:false },
+                    series: [{
+                        type:'pie', radius:['58%','82%'], center:['50%','50%'], avoidLabelOverlap:true,
+                        itemStyle:{ borderColor:'#fff', borderWidth:2, borderRadius:3 },
+                        label:{show:false}, labelLine:{show:false},
+                        data
+                    }],
+                    graphic: [
+                        { type:'text', left:'center', top:'40%', style:{ text: pct!==null?pct+'%':'—', fontSize:22, fontWeight:800, fill:corPct(pct), fontFamily:FONT } },
+                        { type:'text', left:'center', top:'56%', style:{ text:'POSITIVAS', fontSize:8, fontWeight:800, fill:'#9AA0AE', fontFamily:FONT } }
+                    ]
+                });
+            }
+            const leg = [5,4,3,2,1].filter(n=>d[n]>0).map(n=>{ const p=Math.round(d[n]/total*100); return `<div class="pie-leg-item"><span class="pie-leg-dot" style="background:${LK[n]};"></span><span class="pie-leg-nome">${LK_LBL[n]}</span><span class="pie-leg-val">${p}%</span></div>`; }).join('');
+            return `<div class="pie-row"><div id="${id}" class="echart-pie"></div><div class="pie-leg">${leg||'<span style="font-size:11px;color:var(--text-muted);">Sem respostas</span>'}</div></div>`;
         }
-        // Gauge semicircular para nota/NPS
+
+        // Gauge ECharts
+        let gaugeCounter = 0;
         function gauge(valor, min, max, cor, sufixo) {
-            const w=180,h=110,cx=w/2,cy=h-8,r=76;
-            const frac=Math.max(0,Math.min(1,(valor-min)/(max-min)));
-            const a1=Math.PI, a2=Math.PI+frac*Math.PI;
-            const p=(ang)=>[cx+r*Math.cos(ang),cy+r*Math.sin(ang)];
-            const [bx1,by1]=p(Math.PI),[bx2,by2]=p(2*Math.PI);
-            const [fx,fy]=p(a2); const large=frac>0.5?1:0;
-            return `<div class="gauge-wrap"><svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-                <path d="M ${bx1} ${by1} A ${r} ${r} 0 0 1 ${bx2} ${by2}" fill="none" stroke="#eef0f4" stroke-width="13" stroke-linecap="round"/>
-                <path d="M ${bx1} ${by1} A ${r} ${r} 0 ${large} 1 ${fx} ${fy}" fill="none" stroke="${cor}" stroke-width="13" stroke-linecap="round" style="transition:all 0.8s;"/>
-                </svg><div style="text-align:center;margin-top:-14px;"><div class="gauge-val" style="color:${cor};">${valor}${sufixo||''}</div></div></div>`;
+            const id = 'chart_gauge_' + (gaugeCounter++);
+            const v = parseFloat(valor) || 0;
+            agendarChart(id, {
+                ...CHART_ANIM,
+                series: [{
+                    type:'gauge', min, max, startAngle:200, endAngle:-20, radius:'96%', center:['50%','62%'],
+                    progress:{ show:true, width:12, roundCap:true, itemStyle:{color:cor} },
+                    axisLine:{ lineStyle:{ width:12, color:[[1,'#eef0f4']] } },
+                    axisTick:{ show:false }, splitLine:{ show:false },
+                    axisLabel:{ show:true, distance:-2, fontSize:9, color:'#9AA0AE', fontFamily:FONT },
+                    pointer:{ show:false }, anchor:{ show:false },
+                    title:{ show:false },
+                    detail:{ valueAnimation:true, offsetCenter:[0,'-2%'], fontSize:26, fontWeight:800, color:cor, fontFamily:FONT, formatter:'{value}'+(sufixo||'') },
+                    data:[{ value:v }]
+                }]
+            });
+            return `<div id="${id}" class="echart-gauge"></div>`;
         }
-        // Barras verticais 0-10
+
+        // Barras verticais 0-10 ECharts
+        let barCounter = 0;
         function barras10(itens) {
-            const d=dist10(itens); const max=Math.max(...Object.values(d),1);
-            let cols='';
-            for(let n=0;n<=10;n++){ const alt=d[n]/max*100; const cor=n>=9?'#2FA875':n>=7?'#8AD9B1':n>=5?'#F5D06B':'#E5484D'; cols+=`<div class="barra-col"><div class="barra-n">${d[n]||''}</div><div class="barra-fill" style="height:${alt}%;background:${cor};"></div><div class="barra-x">${n}</div></div>`; }
-            return `<div class="barras10">${cols}</div>`;
+            const id = 'chart_bar_' + (barCounter++);
+            const d = dist10(itens);
+            const vals = []; const cores = [];
+            for (let n=0;n<=10;n++){ vals.push(d[n]); cores.push(n>=9?'#2FA875':n>=7?'#8AD9B1':n>=5?'#F5D06B':'#E5484D'); }
+            agendarChart(id, {
+                ...CHART_ANIM,
+                grid:{ left:6, right:6, top:20, bottom:4, containLabel:true },
+                tooltip:{ trigger:'axis', formatter:p=>`Nota ${p[0].axisValue}<br/><b>${p[0].value}</b> resposta${p[0].value!==1?'s':''}`, textStyle:{fontFamily:FONT, fontSize:12} },
+                xAxis:{ type:'category', data:[0,1,2,3,4,5,6,7,8,9,10], axisLine:{lineStyle:{color:'#e7e9ef'}}, axisTick:{show:false}, axisLabel:{fontSize:10, color:'#9AA0AE', fontFamily:FONT} },
+                yAxis:{ type:'value', splitLine:{lineStyle:{color:'#f2f3f6'}}, axisLabel:{show:false}, axisLine:{show:false} },
+                series:[{ type:'bar', data: vals.map((v,i)=>({value:v, itemStyle:{color:cores[i], borderRadius:[4,4,0,0]}})), barWidth:'62%',
+                    label:{show:true, position:'top', fontSize:9, fontWeight:700, color:'#5a5f6e', fontFamily:FONT, formatter:p=>p.value||''} }]
+            });
+            return `<div id="${id}" class="echart-bar"></div>`;
+        }
+
+        // Barra horizontal de ranking ECharts (para dimensões/setores/líderes)
+        let rankCounter = 0;
+        function rankBarChart(itens, maxVal, sufixo) {
+            // itens: [{nome, valor, cor, sub}]
+            const id = 'chart_rank_' + (rankCounter++);
+            const nomes = itens.map(x=>x.nome).reverse();
+            const valores = itens.map(x=>({ value:x.valor, itemStyle:{color:x.cor, borderRadius:[0,5,5,0]} })).reverse();
+            const altura = Math.max(120, itens.length * 42);
+            agendarChart(id, {
+                ...CHART_ANIM,
+                grid:{ left:4, right:44, top:6, bottom:4, containLabel:true },
+                tooltip:{ trigger:'axis', axisPointer:{type:'shadow'}, formatter:p=>`${p[0].name}<br/><b>${p[0].value}${sufixo||''}</b>`, textStyle:{fontFamily:FONT, fontSize:12} },
+                xAxis:{ type:'value', max:maxVal, splitLine:{show:false}, axisLabel:{show:false}, axisLine:{show:false}, axisTick:{show:false} },
+                yAxis:{ type:'category', data:nomes, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{fontSize:12, fontWeight:600, color:'#1a1d29', fontFamily:FONT} },
+                series:[{ type:'bar', data:valores, barWidth:14,
+                    label:{show:true, position:'right', fontSize:12, fontWeight:800, fontFamily:FONT, color:'#1a1d29', formatter:p=>p.value+(sufixo||'')},
+                    showBackground:true, backgroundStyle:{color:'#eef0f4', borderRadius:5} }]
+            });
+            return `<div id="${id}" style="width:100%; height:${altura}px;"></div>`;
         }
 
         // ========== TELA: VISÃO GERAL ==========
@@ -324,23 +400,22 @@
                     ${kpi('Respostas', String(resps.length), 'Participantes', 'groups', '#7371ff', '#f0efff')}
                     ${kpi('Setores', String(nSet||'—'), 'Departamentos', 'domain', '#5a5f6e', '#eef0f4')}
                 </div>
-                <div class="grid" style="grid-template-columns: 1.3fr 1fr; align-items:start;">
+                <div class="grid" style="grid-template-columns: 1fr 1fr; align-items:start;">
                     <div class="painel">
                         <div class="painel-tit">Favorabilidade por dimensão</div>
                         <div class="painel-sub">% de respostas positivas em cada tema</div>
-                        <div>${dimRank.map((d,i)=>rankItem(d.nome,d.fav+'%',d.fav,corPct(d.fav),i,d.lideranca?'Liderança':null)).join('')||'<div class="leitura-vazio">Sem dados</div>'}</div>
+                        ${dimRank.length?rankBarChart(dimRank.map(d=>({nome:d.nome, valor:d.fav, cor:corPct(d.fav)})), 100, '%'):'<div class="leitura-vazio">Sem dados</div>'}
                     </div>
                     <div class="painel">
                         <div class="painel-tit">Favorabilidade por departamento</div>
                         <div class="painel-sub">Ranking dos setores</div>
-                        <div>${setRank.length?setRank.map((s,i)=>rankItem(s.nome,s.fav+'%',s.fav,corPct(s.fav),i,s.n+' resp.')).join(''):'<div class="leitura-vazio">Sem dados por setor</div>'}</div>
+                        ${setRank.length?rankBarChart(setRank.map(s=>({nome:s.nome, valor:s.fav, cor:corPct(s.fav)})), 100, '%'):'<div class="leitura-vazio">Sem dados por setor</div>'}
                     </div>
                 </div>
                 <div class="sec-lbl">Análise automática</div>
                 ${renderIA(itens,resps)}
             </div>`;
             document.getElementById('conteudo').innerHTML=h;
-            requestAnimationFrame(()=>document.querySelectorAll('.rank-bar').forEach(b=>b.style.width=(b.dataset.w||0)+'%'));
         }
         function npsDim(itens,chave){ const dim=(dados.dimensoes||[]).find(d=>(d.nome||'').toLowerCase().replace(/[^a-z]/g,'').includes(chave)); if(!dim)return null; const p=(dim.perguntas||[]).find(x=>x.tipo==='escala10'); if(!p)return null; return nps(itens.filter(i=>i.pergunta_id===p.id)); }
         function kpi(lbl,val,desc,ic,cor,bg){ return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${ic}</span></div><span class="kpi-lbl">${lbl}</span></div><div class="kpi-val" style="color:${cor};">${val}</div><div class="kpi-desc">${desc}</div></div>`; }
@@ -397,7 +472,7 @@
             <div class="painel" style="margin-bottom:14px;">
                 <div class="painel-tit">Ranking de performance das lideranças</div>
                 <div class="painel-sub">Nota média 0-10 recebida por cada líder</div>
-                <div>${rank.map((r,i)=>rankItem(r.nome, r.nota!==null?r.nota.toFixed(1):'—', r.nota!==null?r.nota*10:0, corNota10(r.nota), i, `${r.n} avaliaç${r.n!==1?'ões':'ão'}${r.fav!==null?' · '+r.fav+'% favoráveis':''}`)).join('')}</div>
+                ${rankBarChart(rank.filter(r=>r.nota!==null).map(r=>({nome:r.nome, valor:parseFloat(r.nota.toFixed(1)), cor:corNota10(r.nota)})), 10, '')}
             </div>`;
             // painéis de texto
             if(textosLid.length){
@@ -410,7 +485,6 @@
             }
             h+=`</div>`;
             document.getElementById('conteudo').innerHTML=h;
-            requestAnimationFrame(()=>document.querySelectorAll('.rank-bar').forEach(b=>b.style.width=(b.dataset.w||0)+'%'));
         }
 
         // ========== TELA: DIMENSÃO ==========
