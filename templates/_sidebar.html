@@ -122,7 +122,7 @@
             <span class="cxsb-item-label">Hub</span>
         </div>
 
-        <div class="cxsb-section">Quadros</div>
+        <div class="cxsb-section">Módulos</div>
         <div class="cxsb-gap"></div>
         {% if not eh_person or 'rhestrategico' in perm_modulos %}
         <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
@@ -143,16 +143,7 @@
         </div>
         {% endif %}
 
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('dashboard' in perm_modulos or 'okr' in perm_modulos or 'clima' in perm_modulos or 'desempenho' in perm_modulos)) %}
-        <div class="cxsb-section">Análise</div>
-        <div class="cxsb-gap"></div>
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
-        <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
-            <span class="material-symbols-rounded">monitoring</span>
-            <span class="cxsb-item-label">Dashboard</span>
-        </div>
-        {% endif %}
-
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('okr' in perm_modulos or 'clima' in perm_modulos or 'desempenho' in perm_modulos)) %}
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'okr' in perm_modulos) %}
         <div class="cxsb-item cxsb-parent" id="okrParent" data-path="/okr" onclick="cliqueModulo(event,'okr','/okr/gestao')">
             <span class="material-symbols-rounded">target</span>
@@ -204,6 +195,12 @@
 
         <div class="cxsb-section">Gestão</div>
         <div class="cxsb-gap"></div>
+        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
+        <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
+            <span class="material-symbols-rounded">monitoring</span>
+            <span class="cxsb-item-label">Dashboard</span>
+        </div>
+        {% endif %}
         {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clientes' in perm_modulos) %}
         <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
             <span class="material-symbols-rounded">apartment</span>
