@@ -6,106 +6,173 @@
     <title>CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    
     <style>
-        :root { 
-            --bg-board: #f4f4f5; 
-            --glass-bg: rgba(255, 255, 255, 0.6);
-            --text-main: #1e1e1e;
-            --text-muted: #71717a;
-            --primary-purple: #7371ff; 
-            --accent-lime: #bef533; 
+        :root {
+            --bg-board:#f6f6f7; --surface:#ffffff; --text-main:#18181b; --text-soft:#52525b; --text-muted:#9497a0;
+            --purple:#7371ff; --purple-soft:#f0efff; --line:#ececf0; --lime:#bef533; --pink:#ff43c0; --green:#14b8a6;
         }
-
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-left: 68px; }
+        body { background-color: var(--bg-board); color: var(--text-main); min-height: 100vh; padding-left: 68px; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #d8d8dd; }
 
-        .hub-container { width: 100%; max-width: 1000px; padding: 40px; }
-        
-        .hub-header { text-align: center; margin-bottom: 50px; }
-        .hub-header h1 { font-size: 42px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 10px; }
-        .hub-header h1 span { color: var(--primary-purple); }
-        .hub-header p { color: var(--text-muted); font-size: 16px; font-weight: 500; }
+        .usermenu-fixo { position: fixed; top: 20px; right: 32px; z-index: 50; }
+        .hub-wrap { max-width: 1120px; margin: 0 auto; padding: 54px 40px 80px; }
 
-        .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+        /* Saudação */
+        .hub-hero { margin-bottom: 40px; }
+        .hub-saud { font-size: 34px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.1; }
+        .hub-saud span { color: var(--purple); }
+        .hub-data { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-top: 8px; text-transform: capitalize; }
 
-        .hub-card { 
-            background: var(--glass-bg); 
-            backdrop-filter: blur(16px);
-            padding: 40px 30px; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-        }
-        
-        .hub-card:hover { 
-            background: rgba(255, 255, 255, 0.9); 
-            transform: translateY(-8px); 
-            box-shadow: 0 15px 40px 0 rgba(115, 113, 255, 0.15); 
-        }
+        /* Pulso / resumo */
+        .pulso { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
+        .pulso-card { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 16px !important; padding: 22px 24px; display: flex; align-items: center; gap: 16px; transition: 0.2s; }
+        .pulso-card.clicavel { cursor: pointer; }
+        .pulso-card.clicavel:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07), 0 0 0 1px var(--line); }
+        .pulso-ico { width: 46px; height: 46px; border-radius: 13px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pulso-ico .material-symbols-rounded { font-size: 24px; }
+        .pulso-info { min-width: 0; }
+        .pulso-num { font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+        .pulso-num.vazio { color: var(--text-muted); }
+        .pulso-lbl { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
+        .pulso-skel { width: 34px; height: 28px; background: linear-gradient(90deg,#eee,#f5f5f5,#eee); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 6px !important; }
+        @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
 
-        .icon-box { 
-            width: 70px; height: 70px; 
-            background: #1e1e1e; color: var(--accent-lime); 
-            display: flex; align-items: center; justify-content: center; 
-            margin-bottom: 25px;
-            border-radius: 50% !important; /* Exclusão do arredondamento */
-        }
-        .icon-box span { font-size: 32px; }
+        /* Seções de módulos */
+        .secao { margin-bottom: 40px; }
+        .secao-titulo { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+        .secao-titulo::after { content: ''; flex-grow: 1; height: 1px; background: var(--line); }
+        .mod-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
-        .card-title { font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing: -0.5px; }
-        .card-desc { font-size: 13px; color: var(--text-muted); font-weight: 500; line-height: 1.4; margin-bottom: 25px; flex-grow: 1;}
+        .mod-card { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 18px !important; padding: 26px; cursor: pointer; transition: 0.22s cubic-bezier(0.34,1.1,0.64,1); position: relative; overflow: hidden; }
+        .mod-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.09), 0 0 0 1px var(--line); }
+        .mod-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 60%, var(--glow, rgba(115,113,255,0.06))); opacity: 0; transition: 0.3s; pointer-events: none; }
+        .mod-card:hover::after { opacity: 1; }
+        .mod-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .mod-ico { width: 52px; height: 52px; border-radius: 15px !important; display: flex; align-items: center; justify-content: center; }
+        .mod-ico .material-symbols-rounded { font-size: 27px; }
+        .mod-seta { width: 34px; height: 34px; border-radius: 10px !important; background: var(--bg-board); display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: 0.2s; }
+        .mod-card:hover .mod-seta { background: var(--purple); color: #fff; transform: translateX(2px); }
+        .mod-nome { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 6px; }
+        .mod-desc { font-size: 13px; color: var(--text-muted); font-weight: 500; line-height: 1.5; }
+        .mod-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--green); background: #e7fbf5; padding: 4px 10px; border-radius: 50px !important; margin-top: 14px; }
 
-        .btn-entrar { 
-            background-color: var(--primary-purple); color: white; 
-            padding: 12px 30px; font-weight: 800; font-size: 13px; 
-            transition: all 0.2s; display: inline-block; text-decoration: none;
-            border-radius: 50px !important; /* Exclusão do arredondamento */
-        }
-        .hub-card:hover .btn-entrar { background-color: var(--text-main); }
+        @media (max-width: 900px) { .pulso { grid-template-columns: 1fr 1fr; } .mod-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .mod-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-
     {% include '_sidebar.html' %}
-
-    <!-- elemento oculto para o script da sidebar ler o nome -->
     <span id="nomeUsuario" style="display:none;">{{ usuario_nome }}</span>
+    <div class="usermenu-fixo">{% include '_usermenu.html' %}</div>
 
-    <div style="position: fixed; top: 24px; right: 32px; z-index: 50;">
-        {% include '_usermenu.html' %}
-    </div>
-
-    <div class="hub-container">
-        <div class="hub-header">
-            <h1>CX<span>Projetos</span></h1>
-            <p>Selecione o quadro de projetos para começar.</p>
+    <div class="hub-wrap">
+        <div class="hub-hero">
+            <div class="hub-saud" id="saudacao">Olá<span>.</span></div>
+            <div class="hub-data" id="dataHoje"></div>
         </div>
 
-        <div class="cards-grid">
-            <div class="hub-card" onclick="window.location.href='/board/rhestrategico'">
-                <div class="icon-box"><span class="material-symbols-rounded">psychology</span></div>
-                <div class="card-title">RH Estratégico</div>
-                <div class="card-desc">Acompanhe os projetos atuais de RH Estratégico.</div>
-                <a href="/board/rhestrategico" class="btn-entrar">ACESSAR QUADRO</a>
-            </div>
-
-            <div class="hub-card" onclick="window.location.href='/board/recrutamento'">
-                <div class="icon-box" style="color: var(--primary-purple); background: #f4f4f5;"><span class="material-symbols-rounded">group_add</span></div>
-                <div class="card-title">R&S</div>
-                <div class="card-desc">Acompanhe os processos seletivos em aberto nesse momento.</div>
-                <a href="/board/recrutamento" class="btn-entrar">ACESSAR QUADRO</a>
-            </div>
-
-            <div class="hub-card" onclick="window.location.href='/board/geral'">
-                <div class="icon-box"><span class="material-symbols-rounded">dashboard</span></div>
-                <div class="card-title">Quadro Geral</div>
-                <div class="card-desc">Acompanhe as demandas do comercial, marketing, CX Data e projetos pontuais.</div>
-                <a href="/board/geral" class="btn-entrar">ACESSAR QUADRO</a>
-            </div>
+        <div class="pulso" id="pulso">
+            <div class="pulso-card"><div class="pulso-ico" style="background:var(--purple-soft);"><span class="material-symbols-rounded" style="color:var(--purple);">apartment</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Clientes</div></div></div>
+            <div class="pulso-card"><div class="pulso-ico" style="background:#e7fbf5;"><span class="material-symbols-rounded" style="color:var(--green);">mood</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Pesquisas de clima ativas</div></div></div>
+            <div class="pulso-card"><div class="pulso-ico" style="background:#fdeaf7;"><span class="material-symbols-rounded" style="color:var(--pink);">leaderboard</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Ciclos de desempenho ativos</div></div></div>
+            <div class="pulso-card"><div class="pulso-ico" style="background:#f4f4f5;"><span class="material-symbols-rounded" style="color:var(--text-soft);">view_kanban</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Projetos ativos</div></div></div>
         </div>
+
+        <div id="modulos"></div>
     </div>
 
+    <script>
+        const NIVEL = "{{ nivel_acesso }}";
+        const TIPO = "{{ tipo_usuario }}";
+        const PERM = {{ perm_modulos | tojson }};
+        const NOME = "{{ usuario_nome }}";
+
+        const ehExterno = TIPO === 'externo';
+        const ehPerson = NIVEL === 'personalizado';
+        function temModulo(m){ return (NIVEL==='admin'||NIVEL==='gestor') || (!ehPerson) || PERM.includes(m); }
+        function temAnalise(m){ return (NIVEL==='admin'||NIVEL==='gestor') || (ehPerson && PERM.includes(m)); }
+
+        // Saudação por horário
+        (function(){
+            const h = new Date().getHours();
+            const saud = h<12 ? 'Bom dia' : h<18 ? 'Boa tarde' : 'Boa noite';
+            const primeiro = (NOME||'').trim().split(/\s+/)[0] || '';
+            document.getElementById('saudacao').innerHTML = `${saud}, ${primeiro}<span>.</span>`;
+            const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+            document.getElementById('dataHoje').textContent = new Date().toLocaleDateString('pt-BR', opts);
+        })();
+
+        // Definição dos módulos por seção
+        const SECOES = [
+            { titulo:'Quadros', mods:[
+                { cond:temModulo('rhestrategico'), nome:'RH Estratégico', desc:'Projetos e iniciativas de RH estratégico.', ico:'psychology', cor:'#7371ff', bg:'#f0efff', rota:'/board/rhestrategico' },
+                { cond:temModulo('recrutamento'), nome:'R&S', desc:'Processos seletivos em andamento.', ico:'group_add', cor:'#14b8a6', bg:'#e7fbf5', rota:'/board/recrutamento' },
+                { cond:temModulo('geral'), nome:'Quadro Geral', desc:'Comercial, marketing, CX Data e demandas pontuais.', ico:'dashboard', cor:'#ff43c0', bg:'#fdeaf7', rota:'/board/geral' },
+            ]},
+            { titulo:'Análise', mods:[
+                { cond:temAnalise('dashboard'), nome:'Dashboard', desc:'Visão consolidada de projetos e produtividade.', ico:'monitoring', cor:'#7371ff', bg:'#f0efff', rota:'/dashboard' },
+                { cond:temAnalise('okr'), nome:'OKR', desc:'Objetivos e resultados-chave por cliente.', ico:'target', cor:'#f59e0b', bg:'#fef3e2', rota:'/okr/gestao' },
+                { cond:temAnalise('clima'), nome:'Clima', desc:'Pesquisas de clima organizacional e resultados.', ico:'mood', cor:'#14b8a6', bg:'#e7fbf5', rota:'/clima/gestao' },
+                { cond:temAnalise('desempenho'), nome:'Desempenho', desc:'Avaliações, Nine Box e planos de desenvolvimento.', ico:'leaderboard', cor:'#ff43c0', bg:'#fdeaf7', rota:'/desempenho/gestao' },
+            ]},
+            { titulo:'Gestão', mods:[
+                { cond:temModulo('clientes'), nome:'Clientes', desc:'Cadastro e gestão da carteira de clientes.', ico:'apartment', cor:'#7371ff', bg:'#f0efff', rota:'/clientes' },
+                { cond:(!ehPerson || PERM.includes('agenda')), nome:'Agenda', desc:'Compromissos e planejamento dos projetos.', ico:'calendar_today', cor:'#52525b', bg:'#f4f4f5', rota:'/agenda' },
+                { cond:(NIVEL==='admin'), nome:'Configurações', desc:'Usuários, acessos e permissões da plataforma.', ico:'settings', cor:'#52525b', bg:'#f4f4f5', rota:'/configuracoes' },
+                { cond:(NIVEL==='admin'), nome:'Usuários Externos', desc:'Acessos de clientes e parceiros externos.', ico:'badge', cor:'#52525b', bg:'#f4f4f5', rota:'/externos' },
+            ]},
+        ];
+
+        function render() {
+            // Externo: hub simplificado só com agenda
+            if (ehExterno) {
+                document.getElementById('pulso').style.display='none';
+                document.getElementById('modulos').innerHTML = `<div class="secao"><div class="secao-titulo">Acompanhamento</div><div class="mod-grid">${cardHtml({nome:'Agenda do Projeto', desc:'Acompanhe os compromissos e o planejamento do seu projeto.', ico:'calendar_today', cor:'#7371ff', bg:'#f0efff', rota:'/agenda'})}</div></div>`;
+                return;
+            }
+            let html = '';
+            SECOES.forEach(sec => {
+                const visiveis = sec.mods.filter(m => m.cond);
+                if (!visiveis.length) return;
+                html += `<div class="secao"><div class="secao-titulo">${sec.titulo}</div><div class="mod-grid">${visiveis.map(cardHtml).join('')}</div></div>`;
+            });
+            document.getElementById('modulos').innerHTML = html;
+        }
+        function cardHtml(m) {
+            return `<div class="mod-card" style="--glow:${m.cor}14;" onclick="window.location.href='${m.rota}'">
+                <div class="mod-top">
+                    <div class="mod-ico" style="background:${m.bg};"><span class="material-symbols-rounded" style="color:${m.cor};">${m.ico}</span></div>
+                    <div class="mod-seta"><span class="material-symbols-rounded" style="font-size:19px;">arrow_forward</span></div>
+                </div>
+                <div class="mod-nome">${m.nome}</div>
+                <div class="mod-desc">${m.desc}</div>
+            </div>`;
+        }
+        render();
+
+        // Pulso (dados reais)
+        (async function(){
+            if (ehExterno) return;
+            try {
+                const res = await fetch('/api/hub/resumo');
+                const data = await res.json();
+                const r = data.resumo || {};
+                const cards = document.querySelectorAll('#pulso .pulso-card');
+                setNum(cards[0], r.clientes);
+                setNum(cards[1], r.clima_ativas);
+                setNum(cards[2], r.desempenho_ativos);
+                setNum(cards[3], r.projetos);
+            } catch(e) {
+                document.querySelectorAll('#pulso .pulso-num').forEach(n=>n.innerHTML='<span class="vazio">—</span>');
+            }
+        })();
+        function setNum(card, val) {
+            if (!card) return;
+            const el = card.querySelector('.pulso-num');
+            if (val===null || val===undefined) { el.innerHTML = '<span style="color:var(--text-muted);">—</span>'; return; }
+            el.textContent = val;
+        }
+    </script>
 </body>
 </html>
