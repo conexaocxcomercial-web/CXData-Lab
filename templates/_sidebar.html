@@ -2,15 +2,15 @@
 .cxsidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 68px;
-    background: linear-gradient(178deg, #7c7aff 0%, #7371ff 42%, #6462f0 100%);
+    background: #ffffff;
     z-index: 100;
     display: flex; flex-direction: column;
     transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset -1px 0 0 rgba(255,255,255,0.08);
+    box-shadow: inset -1px 0 0 #eeeef0;
 }
 .cxsidebar:hover {
     width: 240px;
-    box-shadow: 12px 0 50px rgba(88,86,214,0.28);
+    box-shadow: 14px 0 44px rgba(24,24,27,0.10), inset -1px 0 0 #eeeef0;
 }
 
 .cxsb-header {
@@ -18,16 +18,15 @@
     display: flex; align-items: center;
     padding: 0 18px; gap: 12px;
     overflow: hidden;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
+    border-bottom: 1px solid #f3f3f5;
 }
 .cxsb-logo-icon {
     width: 30px; height: 30px; min-width: 30px;
     object-fit: contain; flex-shrink: 0;
-    filter: brightness(0) invert(1);
 }
 .cxsb-brand-text {
     font-size: 15px; font-weight: 800;
-    color: #fff; white-space: nowrap;
+    color: #18181b; white-space: nowrap;
     opacity: 0; transition: opacity 0.2s 0.06s;
     font-family: 'Inter', sans-serif; letter-spacing: -0.4px;
 }
@@ -39,7 +38,7 @@
 .cxsb-section {
     font-size: 9px; font-weight: 800;
     text-transform: uppercase; letter-spacing: 1px;
-    color: rgba(255,255,255,0.45); padding: 16px 12px 6px 12px;
+    color: #b8b8bf; padding: 16px 12px 6px 12px;
     white-space: nowrap; overflow: hidden;
     opacity: 0; transition: opacity 0.2s; height: 0;
     font-family: 'Inter', sans-serif;
@@ -53,24 +52,28 @@
     padding: 0 12px; height: 44px; min-height: 44px;
     border-radius: 11px !important;
     cursor: pointer; transition: background 0.15s, color 0.15s;
-    color: rgba(255,255,255,0.82); white-space: nowrap;
+    color: #6b6b76; white-space: nowrap;
     position: relative;
     font-family: 'Inter', sans-serif;
 }
-.cxsb-item:hover { background: rgba(255,255,255,0.13); color: #fff; }
-.cxsb-item.active { background: rgba(255,255,255,0.96); color: #6462f0; box-shadow: 0 6px 20px rgba(60,58,140,0.22); }
-.cxsb-item.active .material-symbols-rounded { color: #6462f0; }
+.cxsb-item:hover { background: #f5f5f7; color: #18181b; }
+.cxsb-item.active { background: #f0efff; color: #6462f0; }
+.cxsb-item.active .material-symbols-rounded { color: #7371ff; }
 .cxsb-item .material-symbols-rounded { font-size: 22px; min-width: 22px; flex-shrink: 0; transition: color 0.15s; }
 .cxsb-item-label { font-size: 13.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
 .cxsidebar:hover .cxsb-item-label { opacity: 1; }
+/* indicador ativo: barrinha roxa à esquerda */
+.cxsb-item.active::before {
+    content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 20px; background: #7371ff; border-radius: 0 3px 3px 0 !important;
+}
 
-/* Caret dos módulos com submenu */
-.cxsb-caret { font-size: 20px !important; min-width: 20px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s, transform 0.25s; color: rgba(255,255,255,0.6); }
+.cxsb-caret { font-size: 20px !important; min-width: 20px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s, transform 0.25s; color: #b8b8bf; }
 .cxsidebar:hover .cxsb-parent .cxsb-caret { opacity: 1; }
-.cxsb-parent.active .cxsb-caret { color: rgba(100,98,240,0.7); }
+.cxsb-parent.active .cxsb-caret { color: #7371ff; }
 .cxsb-parent.aberto .cxsb-caret { transform: rotate(180deg); }
 
-/* ===== SUBMENU ACORDEÃO (só aparece com a sidebar expandida) ===== */
+/* ===== SUBMENU ACORDEÃO ===== */
 .cxsb-sub {
     max-height: 0; overflow: hidden;
     transition: max-height 0.28s cubic-bezier(0.4,0,0.2,1);
@@ -78,22 +81,22 @@
 }
 .cxsb-sub::before {
     content: ''; position: absolute; left: 22px; top: 4px; bottom: 6px; width: 1.5px;
-    background: rgba(255,255,255,0.18); border-radius: 2px !important;
+    background: #ececf0; border-radius: 2px !important;
     opacity: 0; transition: opacity 0.2s;
 }
 .cxsidebar:hover .cxsb-sub::before { opacity: 1; }
-/* subitens só quando a sidebar está aberta (hover) e o pai está aberto */
 .cxsidebar:hover .cxsb-parent.aberto + .cxsb-sub { max-height: 120px; }
 
 .cxsb-subitem {
     display: flex; align-items: center; gap: 12px;
     padding: 0 12px 0 40px; height: 40px; margin: 1px 0;
-    cursor: pointer; color: rgba(255,255,255,0.7);
+    cursor: pointer; color: #8a8a93;
     transition: 0.14s; border-radius: 10px !important;
     white-space: nowrap;
 }
-.cxsb-subitem:hover { background: rgba(255,255,255,0.11); color: #fff; }
-.cxsb-subitem.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 700; }
+.cxsb-subitem:hover { background: #f5f5f7; color: #18181b; }
+.cxsb-subitem.active { background: #f0efff; color: #6462f0; font-weight: 700; }
+.cxsb-subitem.active .material-symbols-rounded { color: #7371ff; }
 .cxsb-subitem .material-symbols-rounded { font-size: 18px; min-width: 18px; flex-shrink: 0; }
 .cxsb-subitem-label { font-size: 12.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
 .cxsidebar:hover .cxsb-subitem-label { opacity: 1; }
@@ -244,7 +247,6 @@
         var match = path === '/' ? curr === '/' : (curr === path || curr.startsWith(path + '/'));
         if (match) item.classList.add('active');
     });
-    // subitem ativo + abre o acordeão do módulo correspondente
     document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(sub) {
         var path = sub.getAttribute('data-path');
         if (curr === path || curr.startsWith(path + '/')) {
@@ -255,15 +257,11 @@
     });
 })();
 
-// Clique num módulo com submenu:
-// - sidebar expandida (largura > 100px): alterna o acordeão
-// - sidebar minimizada: vai direto pra Gestão
 function cliqueModulo(e, chave, rotaGestao) {
     var sb = document.getElementById('cxSidebar');
     var expandida = sb.offsetWidth > 100;
     if (!expandida) { window.location.href = rotaGestao; return; }
     e.stopPropagation();
-    var parent = e.currentTarget;
-    parent.classList.toggle('aberto');
+    e.currentTarget.classList.toggle('aberto');
 }
 </script>
