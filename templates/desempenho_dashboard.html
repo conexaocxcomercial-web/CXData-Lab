@@ -142,6 +142,15 @@
         .comp-vl { font-size:13px; font-weight:800; }
         .comp-track { height:9px; background:#eef0f6; border-radius:50px !important; overflow:hidden; }
         .comp-fill { height:100%; border-radius:50px !important; transition:width 0.8s cubic-bezier(0.34,1.15,0.6,1); }
+        /* Lista compacta de competências (estilo tabela densa) */
+        .clist { display:flex; flex-direction:column; }
+        .clist-row { display:flex; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid var(--line); }
+        .clist-row:last-child { border-bottom:none; }
+        .clist-main { flex-grow:1; min-width:0; }
+        .clist-nm { font-size:12.5px; font-weight:600; margin-bottom:7px; display:flex; align-items:center; }
+        .clist-track { height:7px; background:#eef0f6; border-radius:50px !important; overflow:hidden; }
+        .clist-fill { height:100%; border-radius:50px !important; transition:width 0.8s cubic-bezier(0.34,1.15,0.6,1); }
+        .clist-val { font-size:16px; font-weight:800; letter-spacing:-0.5px; flex-shrink:0; width:38px; text-align:right; }
 
         /* Gap auto vs gestor */
         .gap-box { display:flex; align-items:center; justify-content:center; gap:28px; padding:10px 0; }
@@ -455,35 +464,49 @@
             let h=`<div class="fade">
                 <div class="head"><div class="head-l"><div class="eyebrow">Competências</div><div class="title">Análise por competência</div><div class="subtitle">Média da equipe em cada competência avaliada</div></div></div>`;
             if(!comps.length){ h+=`<div class="card empty" style="padding:60px;"><span class="material-symbols-rounded">radar</span><h3>Sem avaliações</h3><p>Ainda não há avaliações concluídas neste ciclo.</p></div></div>`; document.getElementById('main').innerHTML=h; return; }
-            // radar geral + barras por tipo
-            h+=`<div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                <div class="card"><div class="card-h"><div class="card-t">Panorama de competências</div><div class="card-s">Visão radar da equipe</div></div>${radarComps(comps)}</div>
-                <div class="card"><div class="card-h"><div class="card-t">Ranking de competências</div><div class="card-s">Da mais forte à mais frágil</div></div>${barrasComps(comps)}</div>
+            // destaques
+            const forte=comps[0], fragil=comps[comps.length-1];
+            const mediaGeral=comps.reduce((a,b)=>a+b.media,0)/comps.length;
+            // média por tipo
+            const tipos={}; comps.forEach(c=>{ if(!tipos[c.tipo])tipos[c.tipo]={soma:0,n:0}; tipos[c.tipo].soma+=c.media; tipos[c.tipo].n++; });
+            const tipoLabel={tecnica:'Técnicas',comportamental:'Comportamentais',resultado:'Resultado'};
+            const tipoCards=Object.entries(tipos).map(([t,v])=>{ const m=v.soma/v.n; return kpiBig(tipoLabel[t]||t, m.toFixed(1), v.n+(v.n===1?' competência':' competências'), 'category', corN(m)); }).join('');
+
+            h+=`<div class="grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:4px;">
+                ${kpiBig('Média geral', mediaGeral.toFixed(1), 'todas as competências', 'analytics', corN(mediaGeral))}
+                ${kpiBig('Mais forte', forte.media.toFixed(1), forte.nome, 'trending_up', '#1fb589')}
+                ${kpiBig('Mais frágil', fragil.media.toFixed(1), fragil.nome, 'trending_down', fragil.media<2.5?'#f0616d':'#f5a83d')}
             </div>`;
+            // radar (protagonista) + lista compacta ao lado
+            h+=`<div class="grid" style="grid-template-columns:1.1fr 0.9fr; align-items:start; margin-top:18px;">
+                <div class="card"><div class="card-h"><div class="card-t">Panorama de competências</div><div class="card-s">Visão radar da equipe · escala 0 a 5</div></div>${radarComps(comps)}</div>
+                <div class="card"><div class="card-h"><div class="card-t">Detalhamento</div><div class="card-s">Ordenado da mais forte à mais frágil</div></div>${listaComps(comps)}</div>
+            </div>`;
+            // médias por tipo
+            h+=`<div class="sec">Por natureza da competência</div><div class="grid" style="grid-template-columns:repeat(${Math.min(3,Object.keys(tipos).length)},1fr);">${tipoCards}</div>`;
             document.getElementById('main').innerHTML=h;
+            animBars();
+        }
+        // lista compacta estilo tabela (substitui a parede de barras)
+        function listaComps(comps){
+            return `<div class="clist">${comps.map(c=>`
+                <div class="clist-row">
+                    <div class="clist-main">
+                        <div class="clist-nm">${escH(c.nome)}<span class="comp-tp">${escH(c.tipo)}</span></div>
+                        <div class="clist-track"><div class="clist-fill" data-w="${c.media/5*100}" style="width:0; background:${corN(c.media)};"></div></div>
+                    </div>
+                    <div class="clist-val" style="color:${corN(c.media)};">${c.media.toFixed(1)}</div>
+                </div>`).join('')}</div>`;
         }
         function radarComps(comps){
             const id='ch_radar'; const use=comps.slice(0,8);
             agendarChart(id,{ ...CHART_ANIM,
                 tooltip:{textStyle:{fontFamily:FONT,fontSize:12}},
-                radar:{ indicator:use.map(c=>({name:c.nome,max:5})), radius:'66%', center:['50%','54%'],
-                    axisName:{fontSize:10,color:'#4a5069',fontFamily:FONT}, splitLine:{lineStyle:{color:'#e9ecf3'}}, splitArea:{areaStyle:{color:['#fbfcfe','#f4f6fa']}}, axisLine:{lineStyle:{color:'#e9ecf3'}} },
-                series:[{type:'radar',data:[{value:use.map(c=>+c.media.toFixed(2)),name:'Média',areaStyle:{color:'rgba(108,92,231,0.18)'},lineStyle:{color:'#6c5ce7',width:2},itemStyle:{color:'#6c5ce7'}}]}]
+                radar:{ indicator:use.map(c=>({name:c.nome,max:5})), radius:'68%', center:['50%','54%'],
+                    axisName:{fontSize:10.5,color:'#4a5069',fontFamily:FONT}, splitLine:{lineStyle:{color:'#e9ecf3'}}, splitArea:{areaStyle:{color:['#fbfcfe','#f4f6fa']}}, axisLine:{lineStyle:{color:'#e9ecf3'}} },
+                series:[{type:'radar',data:[{value:use.map(c=>+c.media.toFixed(2)),name:'Média',areaStyle:{color:'rgba(108,92,231,0.18)'},lineStyle:{color:'#6c5ce7',width:2.5},itemStyle:{color:'#6c5ce7'},symbolSize:5}]}]
             });
-            return `<div id="${id}" class="echart" style="height:340px;"></div>`;
-        }
-        function barrasComps(comps){
-            const id='ch_bcomp';
-            const nomes=comps.map(c=>c.nome).reverse();
-            const vals=comps.map(c=>({value:+c.media.toFixed(2), itemStyle:{color:corN(c.media),borderRadius:[0,6,6,0]}})).reverse();
-            const alt=Math.max(180, comps.length*40);
-            agendarChart(id,{ ...CHART_ANIM, grid:{left:4,right:44,top:6,bottom:4,containLabel:true},
-                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].name}<br/><b>${p[0].value}</b> / 5.0`},
-                xAxis:{type:'value',max:5,splitLine:{show:false},axisLabel:{show:false},axisLine:{show:false},axisTick:{show:false}},
-                yAxis:{type:'category',data:nomes,axisLine:{show:false},axisTick:{show:false},axisLabel:{fontSize:11.5,fontWeight:600,color:'#141726',fontFamily:FONT}},
-                series:[{type:'bar',data:vals,barWidth:15,label:{show:true,position:'right',fontSize:12,fontWeight:800,fontFamily:FONT,color:'#141726',formatter:p=>p.value.toFixed(1)},showBackground:true,backgroundStyle:{color:'#eef0f6',borderRadius:6}}]
-            });
-            return `<div id="${id}" class="echart" style="height:${alt}px;"></div>`;
+            return `<div id="${id}" class="echart" style="height:360px;"></div>`;
         }
 
         // ===== PESSOAS =====
@@ -537,7 +560,7 @@
             animBars();
         }
 
-        function animBars(){ requestAnimationFrame(()=>{ document.querySelectorAll('.rank-bar,.comp-fill').forEach(b=>{ b.style.width=(b.dataset.w||0)+'%'; }); }); }
+        function animBars(){ requestAnimationFrame(()=>{ document.querySelectorAll('.rank-bar,.comp-fill,.clist-fill').forEach(b=>{ b.style.width=(b.dataset.w||0)+'%'; }); }); }
     </script>
 </body>
 </html>
