@@ -97,8 +97,9 @@
         <div class="filtro"><span class="material-symbols-rounded">domain</span><label>Área</label><select id="fArea"><option value="">Todas</option></select></div>
         <div class="filtro"><span class="material-symbols-rounded">person</span><label>Resp.</label><select id="fResp"><option value="">Todos</option></select></div>
         <div class="filtro"><span class="material-symbols-rounded">apartment</span><label>Cliente</label><select id="fCliente"><option value="">Todos</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">event_available</span><label>Abertura</label><input type="date" id="fAbIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fAbFim"></div>
-        <div class="filtro"><span class="material-symbols-rounded">event_busy</span><label>Fechamento</label><input type="date" id="fFeIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fFeFim"></div>
+        <div class="filtro"><span class="material-symbols-rounded">event_available</span><label>Aberto em</label><input type="date" id="fAbIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fAbFim"></div>
+        <div class="filtro"><span class="material-symbols-rounded">event_busy</span><label>Fechado em</label><input type="date" id="fFeIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fFeFim"></div>
+        <div class="filtro"><span class="material-symbols-rounded">timer</span><label>Horas em</label><input type="date" id="fHoIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fHoFim"></div>
         <div class="filtro-limpar" id="fLimpar" onclick="limparFiltros()"><span class="material-symbols-rounded" style="font-size:15px;">close</span> Limpar</div>
     </div>
 
@@ -110,7 +111,7 @@
     <script>
         const NIVEL_ACESSO = "{{ nivel_acesso }}";
         let dados = null, telaAtiva = 'geral';
-        let filtros = { area:'', resp:'', cliente:'', abIni:'', abFim:'', feIni:'', feFim:'' };
+        let filtros = { area:'', resp:'', cliente:'', abIni:'', abFim:'', feIni:'', feFim:'', hoIni:'', hoFim:'' };
 
         const FONT = 'Inter, sans-serif';
         const CHART_ANIM = { animationDuration: 700, animationEasing: 'cubicOut' };
@@ -138,6 +139,8 @@
             if(filtros.abFim) qs.set('abertura_fim', filtros.abFim);
             if(filtros.feIni) qs.set('fechamento_ini', filtros.feIni);
             if(filtros.feFim) qs.set('fechamento_fim', filtros.feFim);
+            if(filtros.hoIni) qs.set('horas_ini', filtros.hoIni);
+            if(filtros.hoFim) qs.set('horas_fim', filtros.hoFim);
             try {
                 const res = await fetch('/api/dashboard?'+qs.toString());
                 if(res.status===403){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
@@ -162,12 +165,14 @@
                 document.getElementById('fAbFim').onchange=e=>{filtros.abFim=e.target.value; carregar();};
                 document.getElementById('fFeIni').onchange=e=>{filtros.feIni=e.target.value; carregar();};
                 document.getElementById('fFeFim').onchange=e=>{filtros.feFim=e.target.value; carregar();};
+                document.getElementById('fHoIni').onchange=e=>{filtros.hoIni=e.target.value; carregar();};
+                document.getElementById('fHoFim').onchange=e=>{filtros.hoFim=e.target.value; carregar();};
                 window._filtrosLig=true;
             }
             const algum = Object.values(filtros).some(v=>v);
             document.getElementById('fLimpar').style.display = algum?'flex':'none';
         }
-        function limparFiltros(){ filtros={area:'',resp:'',cliente:'',abIni:'',abFim:'',feIni:'',feFim:''}; ['fAbIni','fAbFim','fFeIni','fFeFim'].forEach(id=>document.getElementById(id).value=''); carregar(); }
+        function limparFiltros(){ filtros={area:'',resp:'',cliente:'',abIni:'',abFim:'',feIni:'',feFim:'',hoIni:'',hoFim:''}; ['fAbIni','fAbFim','fFeIni','fFeFim','fHoIni','fHoFim'].forEach(id=>document.getElementById(id).value=''); carregar(); }
 
         // ===== NAV =====
         function montarNav(){
