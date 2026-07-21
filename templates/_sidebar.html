@@ -57,20 +57,15 @@
     font-family: 'Inter', sans-serif;
 }
 .cxsb-item:hover { background: #f5f5f7; color: #18181b; }
-.cxsb-item.active { background: #f0efff; color: #6462f0; }
-.cxsb-item.active .material-symbols-rounded { color: #7371ff; }
+.cxsb-item.active { background: #6c5ce7; color: #ffffff; box-shadow: 0 6px 16px rgba(108,92,231,0.32); }
+.cxsb-item.active .material-symbols-rounded { color: #ffffff; }
 .cxsb-item .material-symbols-rounded { font-size: 22px; min-width: 22px; flex-shrink: 0; transition: color 0.15s; }
 .cxsb-item-label { font-size: 13.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
 .cxsidebar:hover .cxsb-item-label { opacity: 1; }
-/* indicador ativo: barrinha roxa à esquerda */
-.cxsb-item.active::before {
-    content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
-    width: 3px; height: 20px; background: #7371ff; border-radius: 0 3px 3px 0 !important;
-}
 
 .cxsb-caret { font-size: 20px !important; min-width: 20px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s, transform 0.25s; color: #b8b8bf; }
 .cxsidebar:hover .cxsb-parent .cxsb-caret { opacity: 1; }
-.cxsb-parent.active .cxsb-caret { color: #7371ff; }
+.cxsb-parent.active .cxsb-caret { color: #ffffff; }
 .cxsb-parent.aberto .cxsb-caret { transform: rotate(180deg); }
 
 /* ===== SUBMENU ACORDEÃO ===== */
@@ -95,8 +90,8 @@
     white-space: nowrap;
 }
 .cxsb-subitem:hover { background: #f5f5f7; color: #18181b; }
-.cxsb-subitem.active { background: #f0efff; color: #6462f0; font-weight: 700; }
-.cxsb-subitem.active .material-symbols-rounded { color: #7371ff; }
+.cxsb-subitem.active { background: #6c5ce7; color: #ffffff; font-weight: 700; box-shadow: 0 4px 12px rgba(108,92,231,0.28); }
+.cxsb-subitem.active .material-symbols-rounded { color: #ffffff; }
 .cxsb-subitem .material-symbols-rounded { font-size: 18px; min-width: 18px; flex-shrink: 0; }
 .cxsb-subitem-label { font-size: 12.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
 .cxsidebar:hover .cxsb-subitem-label { opacity: 1; }
