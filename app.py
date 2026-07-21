@@ -1,6 +1,17 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from supabase import create_client, Client
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# Fuso horário de Brasília (UTC-3). Usado para gravar datas de projeto
+# de forma consistente com a realidade local — evita erro de "um dia" na
+# virada do ciclo de comissionamento (20 a 20).
+FUSO_BR = timezone(timedelta(hours=-3))
+def agora_br():
+    """Retorna o datetime atual no horário de Brasília, em ISO."""
+    return datetime.now(FUSO_BR).isoformat()
+def hoje_br():
+    """Retorna a data de hoje (date) no horário de Brasília."""
+    return datetime.now(FUSO_BR).date()
 import bcrypt
 import secrets
 import string
@@ -308,16 +319,21 @@ def atualizar_projeto(projeto_id):
         if "status" in dados:
             novo_status = dados.get("status")
             atualizacao["status"] = novo_status
-            atualizacao["data_status_atual"] = datetime.utcnow().isoformat()
+            atualizacao["data_status_atual"] = agora_br()
 
             status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding", "Cancelado"]
-            if novo_status in status_pausa:
-                atualizacao["data_conclusao"] = datetime.utcnow().isoformat()
-            else:
-                atualizacao["data_conclusao"] = None 
-                
+            # data_conclusao só deve marcar finalização REAL (Finalizado/Cancelado),
+            # não pausas — senão a data do comissionamento fica incorreta.
+            if novo_status in ["Finalizado", "Cancelado"]:
+                # só grava se ainda não tem (preserva a data da 1ª finalização)
+                if not (res_atual.data and res_atual.data[0].get("data_conclusao")):
+                    atualizacao["data_conclusao"] = agora_br()
+            elif novo_status not in status_pausa:
+                # voltou a um status ativo → limpa a conclusão
+                atualizacao["data_conclusao"] = None
+
             if res_atual.data and not res_atual.data[0].get("data_inicio"):
-                atualizacao["data_inicio"] = datetime.utcnow().isoformat()
+                atualizacao["data_inicio"] = agora_br()
 
             if novo_status and novo_status != status_anterior:
                 try:
@@ -994,7 +1010,8 @@ def dados_dashboard():
         # para não zerar métricas de ativos, guardamos um conjunto separado.
         tem_filtro_fech = bool(f_fech_ini or f_fech_fim)
         def _fechou_no_periodo(p):
-            if p.get("status") not in ["Finalizado", "Cancelado"]: return False
+            # SOMENTE "Finalizado" conta como fechamento real (Cancelado não é entrega)
+            if p.get("status") != "Finalizado": return False
             d = _dia(p.get("data_conclusao"))
             if not d: return False
             if f_fech_ini and d < f_fech_ini: return False
@@ -1039,11 +1056,13 @@ def dados_dashboard():
         # ===== KPIs GERAIS =====
         total_projetos = len(projetos)
         ativos = [p for p in projetos if p.get("status") not in ["Finalizado", "Cancelado"]]
-        finalizados = [p for p in projetos if p.get("status") in ["Finalizado", "Cancelado"]]
+        # "Finalizados" conta SOMENTE status "Finalizado" (entrega real p/ comissionamento).
+        finalizados = [p for p in projetos if p.get("status") == "Finalizado"]
+        cancelados = [p for p in projetos if p.get("status") == "Cancelado"]
         tempo_total = sum((l.get("tempo_segundos") or 0) for l in logs)
 
         # Projetos atrasados
-        hoje = datetime.now().date().isoformat()
+        hoje = hoje_br().isoformat()
         atrasados = 0
         for p in ativos:
             prazo = p.get("prazo_data")
@@ -1112,7 +1131,7 @@ def dados_dashboard():
         for p in ativos:
             prazo = p.get("prazo_data")
             if prazo and str(prazo)[:10] < hoje:
-                dias_atraso = (datetime.now().date() - datetime.strptime(str(prazo)[:10], "%Y-%m-%d").date()).days
+                dias_atraso = (hoje_br() - datetime.strptime(str(prazo)[:10], "%Y-%m-%d").date()).days
                 lista_atrasados.append({
                     "nome": p.get("nome_projeto"),
                     "responsavel": p.get("responsavel") or "—",
@@ -1146,7 +1165,7 @@ def dados_dashboard():
             dt_ini = datetime.strptime(min(dias_com_log), "%Y-%m-%d").date()
             dt_fim = datetime.strptime(max(dias_com_log), "%Y-%m-%d").date()
         else:
-            dt_ini = dt_fim = datetime.now().date()
+            dt_ini = dt_fim = hoje_br()
 
         # Conta dias úteis (seg-sex) no período
         dias_uteis = 0
@@ -1223,7 +1242,7 @@ def dados_dashboard():
         cycle_times = []      # dias: início -> conclusão (ou corte no R&S)
         detalhe_tempos = []
         for p in projetos:
-            if p.get("status") not in ["Finalizado", "Cancelado"]:
+            if p.get("status") != "Finalizado":
                 continue
             abertura = _parse(p.get("criado_em"))
             inicio = _parse(p.get("data_inicio")) or abertura
@@ -1281,10 +1300,17 @@ def dados_dashboard():
                 if f_abertura_fim and dia > f_abertura_fim: ok_ab = False
                 if ok_ab:
                     iniciados_mes[mes] = iniciados_mes.get(mes, 0) + 1
-                    lista_iniciados.append({"nome": p.get("nome_projeto"), "area": p.get("area") or "—", "data": dia, "responsavel": p.get("responsavel") or "—"})
-            # conclusão
+                    lista_iniciados.append({
+                        "nome": p.get("nome_projeto"),
+                        "area": p.get("area") or "—",
+                        "data": dia,
+                        "responsavel": p.get("responsavel") or "—",
+                        "cliente": cliente_nomes.get(str(p.get("cliente_id")), "—"),
+                        "status": p.get("status")
+                    })
+            # conclusão — SOMENTE status "Finalizado" conta (Cancelado NÃO é entrega)
             dc = p.get("data_conclusao")
-            if dc and p.get("status") in ["Finalizado", "Cancelado"]:
+            if dc and p.get("status") == "Finalizado":
                 mes = str(dc)[:7]
                 dia = str(dc)[:10]
                 ok_fe = True
@@ -1292,7 +1318,14 @@ def dados_dashboard():
                 if f_fech_fim and dia > f_fech_fim: ok_fe = False
                 if ok_fe:
                     finalizados_mes[mes] = finalizados_mes.get(mes, 0) + 1
-                    lista_finalizados.append({"nome": p.get("nome_projeto"), "area": p.get("area") or "—", "data": dia, "responsavel": p.get("responsavel") or "—", "status": p.get("status")})
+                    lista_finalizados.append({
+                        "nome": p.get("nome_projeto"),
+                        "area": p.get("area") or "—",
+                        "data": dia,
+                        "responsavel": p.get("responsavel") or "—",
+                        "cliente": cliente_nomes.get(str(p.get("cliente_id")), "—"),
+                        "status": p.get("status")
+                    })
 
         # Une os meses das duas séries
         todos_meses = sorted(set(list(iniciados_mes.keys()) + list(finalizados_mes.keys())))
@@ -1310,6 +1343,126 @@ def dados_dashboard():
                 elif v <= 30: fx["16-30d"] += 1
                 else: fx["30d+"] += 1
             return fx
+
+        # ============================================================
+        # ===== SAÚDE DOS DADOS — auditoria de integridade =====
+        # Verifica registros que comprometem as métricas, para que o
+        # usuário confie (ou não) nos números direto pelo dashboard.
+        # Usa TODOS os projetos permitidos, sem os filtros de recorte.
+        # ============================================================
+        try:
+            _res_all = supabase.table("projetos").select("*").execute()
+            _proj_all = [p for p in _res_all.data if not p.get("excluido_em")]
+            _proj_all = filtrar_projetos_permitidos(_proj_all)
+            # aplica só filtros categóricos (não os de data), para auditar o universo relevante
+            if f_area: _proj_all = [p for p in _proj_all if p.get("area") == f_area]
+            if f_resp: _proj_all = [p for p in _proj_all if p.get("responsavel") == f_resp]
+            if f_cliente: _proj_all = [p for p in _proj_all if str(p.get("cliente_id")) == str(f_cliente)]
+        except Exception:
+            _proj_all = projetos
+
+        _finalizados_all = [p for p in _proj_all if p.get("status") in ["Finalizado", "Cancelado"]]
+        _ativos_all = [p for p in _proj_all if p.get("status") not in ["Finalizado", "Cancelado"]]
+
+        # Projetos que TÊM registro de timer (ao menos 1 log)
+        _proj_com_log = set(str(l.get("projeto_id")) for l in logs if (l.get("tempo_segundos") or 0) > 0)
+
+        # Problemas de integridade (cada um é uma lista de projetos afetados)
+        prob_sem_conclusao = []   # finalizado sem data_conclusao -> some do filtro de fechamento
+        prob_sem_inicio = []      # sem data_inicio -> cycle time impreciso
+        prob_rs_sem_etapa = []    # R&S finalizado sem passar por "Entrevista com Cliente" no histórico
+        prob_sem_timer = []       # projeto (ativo ou finalizado) sem nenhum registro de timer
+        prob_sem_responsavel = [] # sem responsável definido
+
+        for p in _proj_all:
+            pid = str(p["id"])
+            nome = p.get("nome_projeto") or "—"
+            area = p.get("area") or "—"
+            item = {"nome": nome, "area": area, "status": p.get("status") or "—", "responsavel": p.get("responsavel") or "—"}
+            eh_final = p.get("status") in ["Finalizado", "Cancelado"]
+            if eh_final and not p.get("data_conclusao"):
+                prob_sem_conclusao.append(item)
+            if not p.get("data_inicio"):
+                prob_sem_inicio.append(item)
+            # R&S finalizado sem a etapa de corte registrada no histórico
+            _a = (p.get("area") or "").strip().lower()
+            _eh_rs = ("recrut" in _a or _a == "r&s")
+            if _eh_rs and eh_final:
+                _tem_corte = any((h.get("status_novo") or "") == RS_CORTE for h in hist_por_proj.get(pid, []))
+                if not _tem_corte:
+                    prob_rs_sem_etapa.append(item)
+            if pid not in _proj_com_log:
+                prob_sem_timer.append(item)
+            if not p.get("responsavel"):
+                prob_sem_responsavel.append(item)
+
+        _tot = len(_proj_all) or 1
+        def _pct_ok(n_problemas):
+            return round((_tot - n_problemas) / _tot * 100)
+
+        # Score geral de confiabilidade (média ponderada dos indicadores mais críticos)
+        _peso_score = [
+            (_pct_ok(len(prob_sem_conclusao)), 3),   # crítico p/ fechamento/comissionamento
+            (_pct_ok(len(prob_sem_inicio)), 2),       # cycle time
+            (_pct_ok(len(prob_sem_timer)), 2),        # horas
+            (_pct_ok(len(prob_sem_responsavel)), 1),
+        ]
+        _score = round(sum(v*w for v, w in _peso_score) / sum(w for _, w in _peso_score))
+
+        saude_dados = {
+            "score": _score,
+            "total_projetos": len(_proj_all),
+            "total_finalizados": len(_finalizados_all),
+            "com_timer": len(_proj_com_log),
+            "indicadores": [
+                {
+                    "chave": "sem_conclusao",
+                    "titulo": "Finalizados sem data de conclusão",
+                    "descricao": "Não aparecem no filtro de fechamento (afeta comissionamento).",
+                    "severidade": "alta",
+                    "qtd": len(prob_sem_conclusao),
+                    "base": len(_finalizados_all),
+                    "projetos": prob_sem_conclusao[:30]
+                },
+                {
+                    "chave": "sem_inicio",
+                    "titulo": "Projetos sem data de início",
+                    "descricao": "O cycle time usa a abertura como aproximação.",
+                    "severidade": "media",
+                    "qtd": len(prob_sem_inicio),
+                    "base": len(_proj_all),
+                    "projetos": prob_sem_inicio[:30]
+                },
+                {
+                    "chave": "rs_sem_etapa",
+                    "titulo": "R&S sem passagem por 'Entrevista com Cliente'",
+                    "descricao": "O cycle time interno do R&S não é recortado corretamente.",
+                    "severidade": "media",
+                    "qtd": len(prob_rs_sem_etapa),
+                    "base": len([p for p in _finalizados_all if ('recrut' in (p.get('area') or '').lower())]),
+                    "projetos": prob_rs_sem_etapa[:30]
+                },
+                {
+                    "chave": "sem_timer",
+                    "titulo": "Projetos sem registro de timer",
+                    "descricao": "Não entram nas métricas de horas e ocupação.",
+                    "severidade": "baixa",
+                    "qtd": len(prob_sem_timer),
+                    "base": len(_proj_all),
+                    "projetos": prob_sem_timer[:30]
+                },
+                {
+                    "chave": "sem_responsavel",
+                    "titulo": "Projetos sem responsável",
+                    "descricao": "Não aparecem no ranking por responsável.",
+                    "severidade": "baixa",
+                    "qtd": len(prob_sem_responsavel),
+                    "base": len(_proj_all),
+                    "projetos": prob_sem_responsavel[:30]
+                }
+            ]
+        }
+
 
         metricas_fluxo = {
             "lead_medio": lead_medio,
@@ -1330,6 +1483,7 @@ def dados_dashboard():
         return jsonify({
             "status": "sucesso",
             "metricas_fluxo": metricas_fluxo,
+            "saude_dados": saude_dados,
             "kpis": {
                 "total_projetos": total_projetos,
                 "ativos": len(ativos),
