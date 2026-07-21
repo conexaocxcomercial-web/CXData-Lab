@@ -1133,8 +1133,172 @@ def dados_dashboard():
             andamento_colab[r] = andamento_colab.get(r, 0) + 1
         proj_por_colab = sorted([{"nome": k, "qtd": v} for k, v in andamento_colab.items()], key=lambda x: x["qtd"], reverse=True)
 
+        # ============================================================
+        # ===== NOVAS MÉTRICAS DE FLUXO (lead time, cycle time, etc) =====
+        # ============================================================
+        from datetime import timedelta as _td
+
+        # Filtros de data específicos (abertura e fechamento)
+        f_abertura_ini = request.args.get('abertura_ini')
+        f_abertura_fim = request.args.get('abertura_fim')
+        f_fech_ini = request.args.get('fechamento_ini')
+        f_fech_fim = request.args.get('fechamento_fim')
+
+        def _dia(v):
+            return str(v)[:10] if v else None
+        def _parse(v):
+            try: return datetime.strptime(str(v)[:10], "%Y-%m-%d").date()
+            except: return None
+
+        # Carrega histórico de colunas (para cycle time do R&S e etapas)
+        historico = []
+        try:
+            off = 0
+            while True:
+                rh = supabase.table("historico_colunas").select("*").range(off, off + 999).execute()
+                if not rh.data: break
+                historico.extend(rh.data)
+                if len(rh.data) < 1000: break
+                off += 1000
+        except Exception as e:
+            print(f"[BI] historico_colunas indisponivel: {str(e)}")
+
+        # Indexa histórico por projeto (ordenado por data)
+        hist_por_proj = {}
+        for h in historico:
+            pid = str(h.get("projeto_id"))
+            hist_por_proj.setdefault(pid, []).append(h)
+        for pid in hist_por_proj:
+            hist_por_proj[pid].sort(key=lambda x: str(x.get("criado_em") or ""))
+
+        # Etapa de corte do cycle time interno no R&S: quando ENTRA em "Entrevista com Cliente",
+        # o trabalho interno terminou (a última etapa interna é "Produção de Relatório").
+        RS_CORTE = "Entrevista com Cliente"
+        RS_AREAS = {"recrutamento", "r&s", "recrutamento e seleção", "recrutamento e seleÇÃo"}
+
+        def eh_rs(proj):
+            a = (proj.get("area") or "").strip().lower()
+            return "recrut" in a or a == "r&s"
+
+        def momento_corte_rs(pid):
+            """Retorna o datetime em que o projeto entrou em 'Entrevista com Cliente'."""
+            for h in hist_por_proj.get(str(pid), []):
+                if (h.get("status_novo") or "") == RS_CORTE:
+                    return _parse(h.get("criado_em"))
+            return None
+
+        # Calcula lead time e cycle time por projeto finalizado
+        lead_times = []       # dias: abertura -> conclusão
+        cycle_times = []      # dias: início -> conclusão (ou corte no R&S)
+        detalhe_tempos = []
+        for p in projetos:
+            if p.get("status") not in ["Finalizado", "Cancelado"]:
+                continue
+            abertura = _parse(p.get("criado_em"))
+            inicio = _parse(p.get("data_inicio")) or abertura
+            conclusao = _parse(p.get("data_conclusao"))
+            if not conclusao:
+                continue
+            # aplica filtro de data de fechamento
+            cdia = _dia(p.get("data_conclusao"))
+            if f_fech_ini and cdia and cdia < f_fech_ini: continue
+            if f_fech_fim and cdia and cdia > f_fech_fim: continue
+
+            lead = (conclusao - abertura).days if abertura else None
+            # cycle time: R&S usa corte na entrada de "Entrevista com Cliente"
+            fim_cycle = conclusao
+            if eh_rs(p):
+                corte = momento_corte_rs(p["id"])
+                if corte: fim_cycle = corte
+            cycle = (fim_cycle - inicio).days if inicio else None
+
+            if lead is not None and lead >= 0: lead_times.append(lead)
+            if cycle is not None and cycle >= 0: cycle_times.append(cycle)
+            detalhe_tempos.append({
+                "nome": p.get("nome_projeto"),
+                "area": p.get("area") or "—",
+                "abertura": _dia(p.get("criado_em")),
+                "conclusao": cdia,
+                "lead": lead if (lead is not None and lead >= 0) else None,
+                "cycle": cycle if (cycle is not None and cycle >= 0) else None,
+                "eh_rs": eh_rs(p)
+            })
+
+        def _media(lst): return round(sum(lst)/len(lst), 1) if lst else None
+        lead_medio = _media(lead_times)
+        cycle_medio = _media(cycle_times)
+
+        # Tempo médio de tarefa (time_logs) — em segundos e formatado
+        tarefas_validas = [l.get("tempo_segundos") or 0 for l in logs if (l.get("tempo_segundos") or 0) > 0]
+        tempo_medio_tarefa = round(sum(tarefas_validas)/len(tarefas_validas)) if tarefas_validas else 0
+
+        # ===== INICIADOS x FINALIZADOS (por mês) =====
+        # Iniciados: por data_inicio (ou criado_em). Finalizados: por data_conclusao.
+        iniciados_mes = {}
+        finalizados_mes = {}
+        lista_iniciados = []
+        lista_finalizados = []
+        for p in projetos:
+            # abertura/início
+            di = p.get("data_inicio") or p.get("criado_em")
+            if di:
+                mes = str(di)[:7]
+                dia = str(di)[:10]
+                # filtro de abertura
+                ok_ab = True
+                if f_abertura_ini and dia < f_abertura_ini: ok_ab = False
+                if f_abertura_fim and dia > f_abertura_fim: ok_ab = False
+                if ok_ab:
+                    iniciados_mes[mes] = iniciados_mes.get(mes, 0) + 1
+                    lista_iniciados.append({"nome": p.get("nome_projeto"), "area": p.get("area") or "—", "data": dia, "responsavel": p.get("responsavel") or "—"})
+            # conclusão
+            dc = p.get("data_conclusao")
+            if dc and p.get("status") in ["Finalizado", "Cancelado"]:
+                mes = str(dc)[:7]
+                dia = str(dc)[:10]
+                ok_fe = True
+                if f_fech_ini and dia < f_fech_ini: ok_fe = False
+                if f_fech_fim and dia > f_fech_fim: ok_fe = False
+                if ok_fe:
+                    finalizados_mes[mes] = finalizados_mes.get(mes, 0) + 1
+                    lista_finalizados.append({"nome": p.get("nome_projeto"), "area": p.get("area") or "—", "data": dia, "responsavel": p.get("responsavel") or "—", "status": p.get("status")})
+
+        # Une os meses das duas séries
+        todos_meses = sorted(set(list(iniciados_mes.keys()) + list(finalizados_mes.keys())))
+        serie_inic_fin = [{"periodo": m, "iniciados": iniciados_mes.get(m, 0), "finalizados": finalizados_mes.get(m, 0)} for m in todos_meses]
+        lista_iniciados = sorted(lista_iniciados, key=lambda x: x["data"], reverse=True)
+        lista_finalizados = sorted(lista_finalizados, key=lambda x: x["data"], reverse=True)
+
+        # Distribuição de lead/cycle em faixas (para histograma)
+        def faixas(lst):
+            fx = {"0-3d": 0, "4-7d": 0, "8-15d": 0, "16-30d": 0, "30d+": 0}
+            for v in lst:
+                if v <= 3: fx["0-3d"] += 1
+                elif v <= 7: fx["4-7d"] += 1
+                elif v <= 15: fx["8-15d"] += 1
+                elif v <= 30: fx["16-30d"] += 1
+                else: fx["30d+"] += 1
+            return fx
+
+        metricas_fluxo = {
+            "lead_medio": lead_medio,
+            "cycle_medio": cycle_medio,
+            "tempo_medio_tarefa_seg": tempo_medio_tarefa,
+            "total_finalizados_periodo": len(lead_times),
+            "lead_faixas": faixas(lead_times),
+            "cycle_faixas": faixas(cycle_times),
+            "serie_iniciados_finalizados": serie_inic_fin,
+            "lista_iniciados": lista_iniciados[:50],
+            "lista_finalizados": lista_finalizados[:50],
+            "detalhe_tempos": sorted([d for d in detalhe_tempos if d["lead"] is not None], key=lambda x: x["lead"], reverse=True)[:50],
+            "qtd_iniciados": len(lista_iniciados),
+            "qtd_finalizados": len(lista_finalizados)
+        }
+
+
         return jsonify({
             "status": "sucesso",
+            "metricas_fluxo": metricas_fluxo,
             "kpis": {
                 "total_projetos": total_projetos,
                 "ativos": len(ativos),
