@@ -6,501 +6,379 @@
     <title>Dashboard | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
     <style>
-        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0; }
+        :root {
+            --bg-board:#eef0f4; --surface:#ffffff; --text-main:#1a1d29; --text-soft:#5a5f6e; --text-muted:#9AA0AE; --line:#e7e9ef;
+            --purple:#7371ff; --purple-soft:#f0efff; --lime:#bef533; --pink:#ff43c0; --green:#14b8a6; --amber:#f59e0b;
+            --pos:#2FA875; --neu:#F5D06B; --neg:#E5484D;
+        }
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
         body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px;}
-        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
-        .top-bar-logo span { color: var(--primary-purple); }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #cfd3dd; border-radius: 6px !important; } ::-webkit-scrollbar-track { background: transparent; }
 
-        .command-bar { padding: 24px 40px 8px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .filtros-bar { padding: 0 40px 16px 40px; display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
-        .filtro-select, .filtro-data { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255,255,255,0.85); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
-        .filtro-select:focus, .filtro-data:focus { background: #fff; box-shadow: 0 2px 12px rgba(115,113,255,0.12); }
-        .btn-limpar-f { padding: 10px 18px; font-size: 11px; font-weight: 800; color: var(--text-muted); background: transparent; cursor: pointer; border-radius: 50px !important; transition: 0.2s; }
-        .btn-limpar-f:hover { background: #fee2e2; color: #ef4444; }
+        .top-bar { background: var(--surface); height: 60px; min-height: 60px; flex-shrink: 0; padding: 0 28px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 var(--line); z-index: 30; }
+        .top-bar-logo { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; cursor: pointer; }
+        .top-bar-logo span { color: var(--purple); }
+        .top-bar-right { display: flex; align-items: center; gap: 14px; }
 
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 8px 40px 40px 40px; }
+        /* Filtros */
+        .filtros { background: var(--surface); padding: 11px 26px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); flex-shrink: 0; }
+        .filtro { display: flex; align-items: center; gap: 7px; background: var(--bg-board); padding: 0 6px 0 12px; height: 36px; border-radius: 9px !important; }
+        .filtro .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
+        .filtro label { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+        .filtro select, .filtro input { border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); outline: none; cursor: pointer; padding: 7px 4px; font-family: 'Inter'; max-width: 150px; }
+        .filtro input[type=date] { cursor: text; width: 125px; }
+        .filtro-limpar { font-size: 12px; font-weight: 700; color: var(--purple); cursor: pointer; padding: 0 10px; height: 36px; display: flex; align-items: center; gap: 4px; border-radius: 9px !important; }
+        .filtro-limpar:hover { background: var(--purple-soft); }
 
-        /* KPIs */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 22px; }
-        .kpi-card { background: #fff; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); position: relative; overflow: hidden; transition: 0.2s; }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
-        .kpi-card::after { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
-        .kpi-card.roxo::after { background: var(--primary-purple); }
-        .kpi-card.lime::after { background: #84cc16; }
-        .kpi-card.pink::after { background: var(--accent-pink); }
-        .kpi-card.dark::after { background: var(--text-main); }
-        .kpi-card.amber::after { background: #f59e0b; }
-        .kpi-icone { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 11px !important; margin-bottom: 14px; }
-        .kpi-valor { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
-        .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px; }
+        .dash-body { flex-grow: 1; display: flex; min-height: 0; padding-left: 22px; }
+        .nav-lateral { width: 210px; min-width: 210px; background: transparent; overflow-y: auto; padding: 20px 10px 20px 0; flex-shrink: 0; }
+        .nav-grupo { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin: 16px 0 8px; }
+        .nav-grupo:first-child { margin-top: 0; }
+        .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 9px !important; cursor: pointer; transition: 0.13s; margin-bottom: 2px; }
+        .nav-item:hover { background: var(--surface); }
+        .nav-item.ativo { background: var(--purple); box-shadow: 0 4px 12px rgba(115,113,255,0.3); }
+        .nav-item.ativo .nav-nome, .nav-item.ativo .material-symbols-rounded { color: #fff !important; }
+        .nav-item .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
+        .nav-nome { flex-grow: 1; font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; }
 
-        /* GRIDS DE GRÁFICOS */
-        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .chart-card { background: #fff; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
-        .chart-card.full { grid-column: 1 / -1; }
-        .chart-title { font-size: 13px; font-weight: 900; letter-spacing: -0.2px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .chart-title .material-symbols-rounded { font-size: 18px; color: var(--primary-purple); }
-        .chart-sub { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 18px; }
-        .chart-wrap { position: relative; height: 260px; }
-        .chart-wrap.tall { height: 300px; }
+        .conteudo { flex-grow: 1; overflow-y: auto; padding: 22px 26px 60px; }
+        .tela-cab { margin-bottom: 20px; }
+        .tela-titulo { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 11px; }
+        .tela-titulo .material-symbols-rounded { color: var(--purple); font-size: 24px; }
+        .tela-sub { font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
+        .fade { animation: f 0.3s ease; } @keyframes f { from{opacity:0; transform:translateY(6px);} to{opacity:1;} }
 
-        /* RANKINGS / LISTAS */
-        .rank-item { display: flex; align-items: center; gap: 13px; padding: 11px 0; border-bottom: 1px solid #f4f4f5; }
-        .rank-item:last-child { border-bottom: none; }
-        .rank-pos { width: 24px; height: 24px; min-width: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; border-radius: 8px !important; background: #f4f4f5; color: var(--text-muted); }
-        .rank-pos.top { background: var(--text-main); color: var(--accent-lime); }
-        .rank-nome { flex-grow: 1; font-size: 13px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .rank-valor { font-size: 13px; font-weight: 900; color: var(--primary-purple); font-family: monospace; white-space: nowrap; }
-        .rank-bar-track { flex-grow: 1; height: 8px; background: #f4f4f5; border-radius: 20px !important; overflow: hidden; max-width: 120px; }
-        .rank-bar-fill { height: 100%; background: var(--primary-purple); border-radius: 20px !important; }
+        .empty, .loading { text-align: center; padding: 90px 20px; color: var(--text-muted); }
+        .empty .material-symbols-rounded { font-size: 54px; opacity: 0.2; display: block; margin-bottom: 14px; }
+        .empty h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 5px; }
+        .empty p { font-size: 13px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
+        .spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: sp 0.7s linear infinite; margin: 0 auto 16px; } @keyframes sp { to{transform:rotate(360deg);} }
 
-        .ativ-item { padding: 12px 0; border-bottom: 1px solid #f4f4f5; }
-        .ativ-item:last-child { border-bottom: none; }
-        .ativ-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
-        .ativ-nome { font-size: 13px; font-weight: 700; }
-        .ativ-tempo { font-size: 12px; font-weight: 900; color: var(--primary-purple); font-family: monospace; }
-        .ativ-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+        .painel { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 18px; display: flex; flex-direction: column; }
+        .painel-tit { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; line-height: 1.35; }
+        .painel-sub { font-size: 10.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
+        .grid { display: grid; gap: 14px; }
 
-        .empty-mini { text-align: center; padding: 40px 20px; color: #c4c4c8; font-size: 12px; font-weight: 600; }
+        .kpis { display: grid; gap: 14px; margin-bottom: 14px; }
+        .kpi { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 16px 18px; }
+        .kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .kpi-ico { width: 30px; height: 30px; border-radius: 8px !important; display: flex; align-items: center; justify-content: center; }
+        .kpi-ico .material-symbols-rounded { font-size: 17px; }
+        .kpi-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+        .kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -1.3px; line-height: 1; }
+        .kpi-desc { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 5px; }
 
-        /* Toggle de fluxo */
-        .toggle-fluxo { display: flex; gap: 4px; background: #f4f4f5; padding: 4px; border-radius: 50px !important; }
-        .toggle-opt { padding: 7px 16px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 50px !important; color: var(--text-muted); transition: 0.2s; }
-        .toggle-opt.active { background: #fff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .echart { width: 100%; }
+        .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 22px 0 12px; }
 
-        /* Lista de ocupação */
-        .ocup-item { padding: 13px 0; border-bottom: 1px solid #f4f4f5; }
-        .ocup-item:last-child { border-bottom: none; }
-        .ocup-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-        .ocup-nome { font-size: 13px; font-weight: 700; }
-        .ocup-pct { font-size: 14px; font-weight: 900; font-family: monospace; }
-        .ocup-track { height: 10px; background: #f4f4f5; border-radius: 20px !important; overflow: hidden; }
-        .ocup-fill { height: 100%; border-radius: 20px !important; transition: width 0.5s ease; }
-        .ocup-meta { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 5px; }
+        /* Tabelas/listas */
+        .lista { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; }
+        .lista-item { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); }
+        .lista-item:last-child { border-bottom: none; }
+        .lista-nome { flex-grow: 1; font-size: 12.5px; font-weight: 600; min-width: 0; }
+        .lista-nome small { display: block; font-size: 10.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+        .lista-tag { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 50px !important; white-space: nowrap; }
+        .lista-data { font-size: 11.5px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+        .badge-area { background: var(--purple-soft); color: var(--purple); }
 
-        /* Projetos atrasados */
-        .atraso-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f4f4f5; }
-        .atraso-item:last-child { border-bottom: none; }
-        .atraso-dias { width: 56px; min-width: 56px; text-align: center; padding: 8px 4px; background: #fef2f2; border-radius: 12px !important; }
-        .atraso-dias-num { font-size: 18px; font-weight: 900; color: #ef4444; line-height: 1; }
-        .atraso-dias-label { font-size: 8px; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
-        .atraso-info { flex-grow: 1; min-width: 0; }
-        .atraso-nome { font-size: 14px; font-weight: 800; }
-        .atraso-meta { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
-        .atraso-prazo { font-size: 11px; font-weight: 800; color: #ef4444; white-space: nowrap; }
-        .loading-screen { position: fixed; inset: 0; background: var(--bg-board); display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; gap: 16px; }
-        .spinner-big { width: 36px; height: 36px; border: 3px solid #e4e4e7; border-top-color: var(--primary-purple); border-radius: 50%; animation: spin 0.7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        .dot { width: 8px; height: 8px; border-radius: 50% !important; display: inline-block; }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
-        {% include '_usermenu.html' %}
+        <div class="top-bar-right">{% include '_usermenu.html' %}</div>
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="command-bar">
-        <div>
-            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Dashboard</h2>
-            <p style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;" id="subtitulo">Visão analítica da operação</p>
-        </div>
+    <div class="filtros" id="filtros">
+        <div class="filtro"><span class="material-symbols-rounded">domain</span><label>Área</label><select id="fArea"><option value="">Todas</option></select></div>
+        <div class="filtro"><span class="material-symbols-rounded">person</span><label>Resp.</label><select id="fResp"><option value="">Todos</option></select></div>
+        <div class="filtro"><span class="material-symbols-rounded">apartment</span><label>Cliente</label><select id="fCliente"><option value="">Todos</option></select></div>
+        <div class="filtro"><span class="material-symbols-rounded">event_available</span><label>Abertura</label><input type="date" id="fAbIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fAbFim"></div>
+        <div class="filtro"><span class="material-symbols-rounded">event_busy</span><label>Fechamento</label><input type="date" id="fFeIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fFeFim"></div>
+        <div class="filtro-limpar" id="fLimpar" onclick="limparFiltros()"><span class="material-symbols-rounded" style="font-size:15px;">close</span> Limpar</div>
     </div>
 
-    <div class="filtros-bar">
-        <select class="filtro-select" id="fArea" onchange="aplicarFiltros()"><option value="">Todas as áreas</option></select>
-        <select class="filtro-select" id="fResp" onchange="aplicarFiltros()"><option value="">Todos os responsáveis</option></select>
-        <select class="filtro-select" id="fCliente" onchange="aplicarFiltros()"><option value="">Todos os clientes</option></select>
-        <input type="date" class="filtro-data" id="fInicio" onchange="aplicarFiltros()" title="Data inicial">
-        <span style="font-size:11px; color:var(--text-muted); font-weight:700;">até</span>
-        <input type="date" class="filtro-data" id="fFim" onchange="aplicarFiltros()" title="Data final">
-        <span class="btn-limpar-f" onclick="limparFiltros()">Limpar</span>
-    </div>
-
-    <div class="scroll-area">
-        <div class="kpi-grid" id="kpiGrid"></div>
-
-        <div class="charts-grid">
-            <div class="chart-card">
-                <div class="chart-title"><span class="material-symbols-rounded">donut_large</span> Projetos por Status</div>
-                <div class="chart-sub">Distribuição atual do portfólio</div>
-                <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title"><span class="material-symbols-rounded">category</span> Projetos por Área</div>
-                <div class="chart-sub">Volume de trabalho por frente</div>
-                <div class="chart-wrap"><canvas id="chartArea"></canvas></div>
-            </div>
-        </div>
-
-        <div class="chart-card full" style="margin-bottom:16px;">
-            <div class="chart-title"><span class="material-symbols-rounded">show_chart</span> Evolução do Tempo Dedicado</div>
-            <div class="chart-sub">Horas registradas ao longo do tempo (últimos 30 dias com atividade)</div>
-            <div class="chart-wrap tall"><canvas id="chartEvolucao"></canvas></div>
-        </div>
-
-        <div class="charts-grid">
-            <div class="chart-card">
-                <div class="chart-title"><span class="material-symbols-rounded">leaderboard</span> Ranking de Colaboradores</div>
-                <div class="chart-sub">Tempo dedicado por pessoa</div>
-                <div id="rankColaboradores"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title"><span class="material-symbols-rounded">apartment</span> Top Clientes por Tempo</div>
-                <div class="chart-sub">Onde a operação mais investe horas</div>
-                <div id="rankClientes"></div>
-            </div>
-        </div>
-
-        <div class="chart-card full" style="margin-bottom:16px;">
-            <div class="chart-title"><span class="material-symbols-rounded">format_list_bulleted</span> Principais Atividades</div>
-            <div class="chart-sub">As tarefas que mais consomem tempo na operação</div>
-            <div id="topAtividades"></div>
-        </div>
-
-        <!-- FLUXO DE NOVOS PROJETOS -->
-        <div class="chart-card full" style="margin-bottom:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
-                <div>
-                    <div class="chart-title"><span class="material-symbols-rounded">rocket_launch</span> Fluxo de Novos Projetos</div>
-                    <div class="chart-sub">Ritmo de abertura de projetos ao longo do tempo</div>
-                </div>
-                <div class="toggle-fluxo">
-                    <div class="toggle-opt active" id="fluxo-mes" onclick="setFluxo('mes')">Anual (por mês)</div>
-                    <div class="toggle-opt" id="fluxo-dia" onclick="setFluxo('dia')">Mensal (por dia)</div>
-                </div>
-            </div>
-            <div class="chart-wrap tall" style="margin-top:14px;"><canvas id="chartFluxo"></canvas></div>
-        </div>
-
-        <div class="charts-grid">
-            <!-- OCUPAÇÃO POR COLABORADOR -->
-            <div class="chart-card">
-                <div class="chart-title"><span class="material-symbols-rounded">battery_charging_full</span> Ocupação por Colaborador</div>
-                <div class="chart-sub" id="ocupacaoSub">% das horas úteis registradas no timer (8h/dia)</div>
-                <div id="ocupacaoLista"></div>
-            </div>
-            <!-- PROJETOS EM ANDAMENTO POR COLABORADOR -->
-            <div class="chart-card">
-                <div class="chart-title"><span class="material-symbols-rounded">account_tree</span> Carga de Projetos Ativos</div>
-                <div class="chart-sub">Projetos em andamento por colaborador</div>
-                <div class="chart-wrap" style="height:300px;"><canvas id="chartCargaColab"></canvas></div>
-            </div>
-        </div>
-
-        <!-- PROJETOS ATRASADOS -->
-        <div class="chart-card full">
-            <div class="chart-title"><span class="material-symbols-rounded" style="color:#ef4444;">warning</span> Projetos Atrasados</div>
-            <div class="chart-sub">Projetos ativos com prazo vencido, ordenados pela gravidade do atraso</div>
-            <div id="listaAtrasados"></div>
-        </div>
-    </div>
-
-    <div class="loading-screen" id="loadingScreen">
-        <div class="spinner-big"></div>
-        <p style="font-size:13px; color:var(--text-muted); font-weight:700;">Analisando dados...</p>
+    <div class="dash-body">
+        <div class="nav-lateral" id="nav"></div>
+        <div class="conteudo" id="conteudo"><div class="loading"><div class="spinner"></div>Carregando dashboard...</div></div>
     </div>
 
     <script>
-        let nomeUsuario = '{{ usuario_nome }}';
-        let charts = {};
-        let filtrosCarregados = false;
-        let fluxoModo = 'mes';
-        let dadosFluxo = { mes: [], dia: [] };
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
+        let dados = null, telaAtiva = 'geral';
+        let filtros = { area:'', resp:'', cliente:'', abIni:'', abFim:'', feIni:'', feFim:'' };
 
-        document.addEventListener('DOMContentLoaded', () => carregar());
+        const FONT = 'Inter, sans-serif';
+        const CHART_ANIM = { animationDuration: 700, animationEasing: 'cubicOut' };
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function fmtHoras(seg){ if(!seg) return '0h'; const h=Math.floor(seg/3600), m=Math.floor((seg%3600)/60); return h>0?`${h}h${m>0?' '+m+'min':''}`:`${m}min`; }
+        function fmtDias(d){ if(d===null||d===undefined) return '—'; return d+ (d===1?' dia':' dias'); }
 
-        function fmtH(s){ const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); if(h>0) return `${h}h ${m}min`; if(m>0) return `${m}min`; return `${s}s`; }
-        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        // ===== SISTEMA ECHARTS =====
+        let chartQueue=[], chartInstances=[];
+        function limparCharts(){ chartInstances.forEach(c=>{try{c.dispose();}catch(e){}}); chartInstances=[]; chartQueue=[]; }
+        function agendarChart(id, option){ chartQueue.push({id, option}); }
+        function montarCharts(){ chartQueue.forEach(({id,option})=>{ const el=document.getElementById(id); if(!el)return; const inst=echarts.init(el,null,{renderer:'svg'}); inst.setOption(option); chartInstances.push(inst); }); chartQueue=[]; }
+        window.addEventListener('resize', ()=>{ chartInstances.forEach(c=>{try{c.resize();}catch(e){}}); });
 
-        function aplicarFiltros() { carregar(); }
-        function limparFiltros() {
-            document.getElementById('fArea').value = '';
-            document.getElementById('fResp').value = '';
-            document.getElementById('fCliente').value = '';
-            document.getElementById('fInicio').value = '';
-            document.getElementById('fFim').value = '';
-            carregar();
-        }
+        document.addEventListener('DOMContentLoaded', ()=>{ montarNav(); carregar(); });
 
+        // ===== CARGA =====
         async function carregar() {
-            const params = new URLSearchParams();
-            const area = document.getElementById('fArea').value;
-            const resp = document.getElementById('fResp').value;
-            const cliente = document.getElementById('fCliente').value;
-            const inicio = document.getElementById('fInicio').value;
-            const fim = document.getElementById('fFim').value;
-            if (area) params.append('area', area);
-            if (resp) params.append('responsavel', resp);
-            if (cliente) params.append('cliente_id', cliente);
-            if (inicio) params.append('inicio', inicio);
-            if (fim) params.append('fim', fim);
-
+            document.getElementById('conteudo').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dashboard...</div>';
+            const qs = new URLSearchParams();
+            if(filtros.area) qs.set('area', filtros.area);
+            if(filtros.resp) qs.set('responsavel', filtros.resp);
+            if(filtros.cliente) qs.set('cliente_id', filtros.cliente);
+            if(filtros.abIni) qs.set('abertura_ini', filtros.abIni);
+            if(filtros.abFim) qs.set('abertura_fim', filtros.abFim);
+            if(filtros.feIni) qs.set('fechamento_ini', filtros.feIni);
+            if(filtros.feFim) qs.set('fechamento_fim', filtros.feFim);
             try {
-                const res = await fetch('/api/dashboard?' + params.toString());
-                if (res.status === 403) { document.body.innerHTML = '<div style="padding:60px;text-align:center;font-weight:700;">Acesso restrito a gestores e administradores.</div>'; return; }
-                const data = await res.json();
-                if (data.status !== 'sucesso') { document.getElementById('loadingScreen').style.display = 'none'; return; }
+                const res = await fetch('/api/dashboard?'+qs.toString());
+                if(res.status===403){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                dados = await res.json();
+                if(dados.status!=='sucesso'){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3><p>'+escH(dados.mensagem||'')+'</p></div>'; return; }
+                popularFiltros(); render();
+            } catch(e){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
+        }
 
-                if (!filtrosCarregados) { popularFiltros(data.filtros); filtrosCarregados = true; }
-                renderKpis(data.kpis);
-                renderStatus(data.por_status);
-                renderArea(data.por_area);
-                renderEvolucao(data.evolucao);
-                renderRankColaboradores(data.ranking_colaboradores);
-                renderRankClientes(data.top_clientes);
-                renderAtividades(data.top_atividades);
-
-                // Novos indicadores
-                dadosFluxo.mes = data.fluxo_mensal || [];
-                dadosFluxo.dia = data.fluxo_diario || [];
-                renderFluxo();
-                renderOcupacao(data.ocupacao, data.dias_uteis);
-                renderCargaColab(data.proj_por_colab);
-                renderAtrasados(data.lista_atrasados);
-
-                document.getElementById('loadingScreen').style.display = 'none';
-            } catch(e) {
-                console.error(e);
-                document.getElementById('loadingScreen').style.display = 'none';
+        function popularFiltros(){
+            const f = dados.filtros||{};
+            const setSel=(id, arr, val, lblAll)=>{ const el=document.getElementById(id); if(!el)return; const cur=filtros[val]; el.innerHTML=`<option value="">${lblAll}</option>`+arr.map(x=>typeof x==='object'?`<option value="${x.id}" ${String(cur)===String(x.id)?'selected':''}>${escH(x.nome)}</option>`:`<option value="${escH(x)}" ${cur===x?'selected':''}>${escH(x)}</option>`).join(''); };
+            setSel('fArea', f.areas||[], 'area', 'Todas');
+            setSel('fResp', f.responsaveis||[], 'resp', 'Todos');
+            setSel('fCliente', f.clientes||[], 'cliente', 'Todos');
+            // listeners (uma vez)
+            if(!window._filtrosLig){
+                document.getElementById('fArea').onchange=e=>{filtros.area=e.target.value; carregar();};
+                document.getElementById('fResp').onchange=e=>{filtros.resp=e.target.value; carregar();};
+                document.getElementById('fCliente').onchange=e=>{filtros.cliente=e.target.value; carregar();};
+                document.getElementById('fAbIni').onchange=e=>{filtros.abIni=e.target.value; carregar();};
+                document.getElementById('fAbFim').onchange=e=>{filtros.abFim=e.target.value; carregar();};
+                document.getElementById('fFeIni').onchange=e=>{filtros.feIni=e.target.value; carregar();};
+                document.getElementById('fFeFim').onchange=e=>{filtros.feFim=e.target.value; carregar();};
+                window._filtrosLig=true;
             }
+            const algum = Object.values(filtros).some(v=>v);
+            document.getElementById('fLimpar').style.display = algum?'flex':'none';
+        }
+        function limparFiltros(){ filtros={area:'',resp:'',cliente:'',abIni:'',abFim:'',feIni:'',feFim:''}; ['fAbIni','fAbFim','fFeIni','fFeFim'].forEach(id=>document.getElementById(id).value=''); carregar(); }
+
+        // ===== NAV =====
+        function montarNav(){
+            const nav=document.getElementById('nav');
+            const items=[
+                {g:'Panorama'},
+                {id:'geral', ic:'dashboard', nome:'Visão Geral'},
+                {id:'fluxo', ic:'timeline', nome:'Fluxo & Tempos'},
+                {id:'entrega', ic:'compare_arrows', nome:'Iniciados × Finalizados'},
+                {g:'Equipe'},
+                {id:'produtividade', ic:'schedule', nome:'Produtividade'},
+                {id:'projetos', ic:'folder_open', nome:'Projetos'},
+            ];
+            nav.innerHTML=items.map(it=>it.g?`<div class="nav-grupo">${it.g}</div>`:`<div class="nav-item ${telaAtiva===it.id?'ativo':''}" onclick="irPara('${it.id}')"><span class="material-symbols-rounded">${it.ic}</span><span class="nav-nome">${it.nome}</span></div>`).join('');
+        }
+        function irPara(id){ telaAtiva=id; montarNav(); render(); document.getElementById('conteudo').scrollTop=0; }
+
+        function render(){
+            limparCharts();
+            if(!dados){ return; }
+            if(telaAtiva==='geral') renderGeral();
+            else if(telaAtiva==='fluxo') renderFluxo();
+            else if(telaAtiva==='entrega') renderEntrega();
+            else if(telaAtiva==='produtividade') renderProdutividade();
+            else if(telaAtiva==='projetos') renderProjetos();
+            requestAnimationFrame(montarCharts);
         }
 
-        function popularFiltros(f) {
-            const fa = document.getElementById('fArea');
-            const fr = document.getElementById('fResp');
-            const fc = document.getElementById('fCliente');
-            fa.innerHTML = '<option value="">Todas as áreas</option>' + f.areas.map(a => `<option value="${escH(a)}">${escH(a)}</option>`).join('');
-            fr.innerHTML = '<option value="">Todos os responsáveis</option>' + f.responsaveis.map(r => `<option value="${escH(r)}">${escH(r)}</option>`).join('');
-            fc.innerHTML = '<option value="">Todos os clientes</option>' + f.clientes.map(c => `<option value="${c.id}">${escH(c.nome)}</option>`).join('');
-        }
-
-        function renderKpis(k) {
-            document.getElementById('kpiGrid').innerHTML = `
-                <div class="kpi-card dark">
-                    <div class="kpi-icone" style="background:#f4f4f5; color:var(--text-main);"><span class="material-symbols-rounded">folder_open</span></div>
-                    <div class="kpi-valor">${k.total_projetos}</div>
-                    <div class="kpi-label">Projetos Totais</div>
-                </div>
-                <div class="kpi-card roxo">
-                    <div class="kpi-icone" style="background:#f0efff; color:var(--primary-purple);"><span class="material-symbols-rounded">bolt</span></div>
-                    <div class="kpi-valor" style="color:var(--primary-purple);">${k.ativos}</div>
-                    <div class="kpi-label">Em Andamento</div>
-                </div>
-                <div class="kpi-card lime">
-                    <div class="kpi-icone" style="background:#f1f9e0; color:#65a30d;"><span class="material-symbols-rounded">check_circle</span></div>
-                    <div class="kpi-valor" style="color:#65a30d;">${k.finalizados}</div>
-                    <div class="kpi-label">Finalizados</div>
-                </div>
-                <div class="kpi-card amber">
-                    <div class="kpi-icone" style="background:#fef3c7; color:#d97706;"><span class="material-symbols-rounded">warning</span></div>
-                    <div class="kpi-valor" style="color:#d97706;">${k.atrasados}</div>
-                    <div class="kpi-label">Atrasados</div>
-                </div>
-                <div class="kpi-card pink">
-                    <div class="kpi-icone" style="background:#fce7f3; color:#db2777;"><span class="material-symbols-rounded">schedule</span></div>
-                    <div class="kpi-valor" style="font-size:24px;">${fmtH(k.tempo_total_segundos)}</div>
-                    <div class="kpi-label">Tempo Dedicado</div>
-                </div>
-                <div class="kpi-card dark">
-                    <div class="kpi-icone" style="background:#f4f4f5; color:var(--text-main);"><span class="material-symbols-rounded">timer</span></div>
-                    <div class="kpi-valor">${k.total_sessoes}</div>
-                    <div class="kpi-label">Sessões de Trabalho</div>
-                </div>`;
-        }
-
-        const CORES = ['#7371ff', '#bef533', '#ff43c0', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6', '#f97316'];
-
-        function renderStatus(porStatus) {
-            const labels = Object.keys(porStatus);
-            const valores = Object.values(porStatus);
-            if (charts.status) charts.status.destroy();
-            const ctx = document.getElementById('chartStatus');
-            if (labels.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Sem dados.</div>'; return; }
-            charts.status = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels, datasets: [{ data: valores, backgroundColor: CORES, borderWidth: 0, hoverOffset: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
-                    plugins: { legend: { position: 'right', labels: { font: { family: 'Inter', size: 12, weight: '600' }, padding: 14, usePointStyle: true, pointStyle: 'circle' } } } }
+        // ===== COMPONENTES ECHARTS =====
+        let cc=0;
+        function chartBarH(itens, cor, sufixo, fmt){
+            // itens: [{nome, valor}]
+            const id='ch_'+(cc++);
+            const nomes=itens.map(x=>x.nome).reverse();
+            const vals=itens.map(x=>({value:x.valor, itemStyle:{color:typeof cor==='function'?cor(x):cor, borderRadius:[0,5,5,0]}})).reverse();
+            const alt=Math.max(120, itens.length*40);
+            agendarChart(id,{ ...CHART_ANIM, grid:{left:4,right:50,top:6,bottom:4,containLabel:true},
+                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].name}<br/><b>${fmt?fmt(p[0].value):p[0].value}${sufixo||''}</b>`},
+                xAxis:{type:'value',splitLine:{show:false},axisLabel:{show:false},axisLine:{show:false},axisTick:{show:false}},
+                yAxis:{type:'category',data:nomes,axisLine:{show:false},axisTick:{show:false},axisLabel:{fontSize:12,fontWeight:600,color:'#1a1d29',fontFamily:FONT}},
+                series:[{type:'bar',data:vals,barWidth:14,label:{show:true,position:'right',fontSize:11.5,fontWeight:800,fontFamily:FONT,color:'#1a1d29',formatter:p=>(fmt?fmt(p.value):p.value)+(sufixo||'')},showBackground:true,backgroundStyle:{color:'#eef0f4',borderRadius:5}}]
             });
+            return `<div id="${id}" class="echart" style="height:${alt}px;"></div>`;
         }
-
-        function renderArea(porArea) {
-            const labels = Object.keys(porArea);
-            const valores = Object.values(porArea);
-            if (charts.area) charts.area.destroy();
-            const ctx = document.getElementById('chartArea');
-            if (labels.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Sem dados.</div>'; return; }
-            charts.area = new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets: [{ data: valores, backgroundColor: '#7371ff', borderRadius: 8, barThickness: 'flex', maxBarThickness: 48 }] },
-                options: { responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, precision: 0 }, grid: { color: '#f4f4f5' } }, x: { ticks: { font: { family: 'Inter', size: 11, weight: '700' } }, grid: { display: false } } } }
+        function chartDonut(itens){
+            const id='ch_'+(cc++);
+            const total=itens.reduce((a,b)=>a+b.valor,0);
+            agendarChart(id,{ ...CHART_ANIM,
+                tooltip:{trigger:'item',textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p.name}<br/><b>${p.value}</b> (${p.percent}%)`},
+                legend:{type:'scroll',orient:'vertical',right:6,top:'center',textStyle:{fontFamily:FONT,fontSize:11,color:'#5a5f6e'},itemWidth:9,itemHeight:9,itemGap:9},
+                series:[{type:'pie',radius:['52%','78%'],center:['32%','50%'],avoidLabelOverlap:true,itemStyle:{borderColor:'#fff',borderWidth:2,borderRadius:3},label:{show:false},labelLine:{show:false},
+                    data:itens.map(x=>({value:x.valor,name:x.nome,itemStyle:{color:x.cor}}))}],
+                graphic:[{type:'text',left:'30%',top:'44%',style:{text:String(total),fontSize:24,fontWeight:800,fill:'#1a1d29',fontFamily:FONT,textAlign:'center'}},{type:'text',left:'30%',top:'56%',style:{text:'total',fontSize:9,fontWeight:700,fill:'#9AA0AE',fontFamily:FONT,textAlign:'center'}}]
             });
+            return `<div id="${id}" class="echart" style="height:200px;"></div>`;
         }
-
-        function renderEvolucao(evolucao) {
-            const labels = evolucao.map(e => { const p = e.dia.split('-'); return `${p[2]}/${p[1]}`; });
-            const valores = evolucao.map(e => Math.round(e.segundos / 3600 * 10) / 10);
-            if (charts.evol) charts.evol.destroy();
-            const ctx = document.getElementById('chartEvolucao');
-            if (evolucao.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Nenhuma atividade registrada no período.</div>'; return; }
-            const grad = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
-            grad.addColorStop(0, 'rgba(115,113,255,0.25)');
-            grad.addColorStop(1, 'rgba(115,113,255,0)');
-            charts.evol = new Chart(ctx, {
-                type: 'line',
-                data: { labels, datasets: [{ label: 'Horas', data: valores, borderColor: '#7371ff', backgroundColor: grad, fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#7371ff', pointHoverRadius: 6 }] },
-                options: { responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + 'h' } } },
-                    scales: { y: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, callback: v => v + 'h' }, grid: { color: '#f4f4f5' } }, x: { ticks: { font: { family: 'Inter', size: 10, weight: '600' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } } } }
+        function chartLinhaDupla(serie){
+            // serie: [{periodo, iniciados, finalizados}]
+            const id='ch_'+(cc++);
+            const cats=serie.map(x=>x.periodo);
+            agendarChart(id,{ ...CHART_ANIM,
+                tooltip:{trigger:'axis',textStyle:{fontFamily:FONT,fontSize:12}},
+                legend:{data:['Iniciados','Finalizados'],right:0,top:0,textStyle:{fontFamily:FONT,fontSize:11,fontWeight:600},icon:'roundRect',itemWidth:11,itemHeight:11},
+                grid:{left:4,right:8,top:36,bottom:4,containLabel:true},
+                xAxis:{type:'category',data:cats,boundaryGap:false,axisLine:{lineStyle:{color:'#e7e9ef'}},axisTick:{show:false},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
+                yAxis:{type:'value',splitLine:{lineStyle:{color:'#f2f3f6'}},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
+                series:[
+                    {name:'Iniciados',type:'line',smooth:true,data:serie.map(x=>x.iniciados),lineStyle:{width:3,color:'#7371ff'},itemStyle:{color:'#7371ff'},areaStyle:{color:'rgba(115,113,255,0.10)'},symbol:'circle',symbolSize:7},
+                    {name:'Finalizados',type:'line',smooth:true,data:serie.map(x=>x.finalizados),lineStyle:{width:3,color:'#2FA875'},itemStyle:{color:'#2FA875'},areaStyle:{color:'rgba(47,168,117,0.10)'},symbol:'circle',symbolSize:7}
+                ]
             });
+            return `<div id="${id}" class="echart" style="height:300px;"></div>`;
+        }
+        function chartFaixas(faixasObj, cor){
+            const id='ch_'+(cc++);
+            const cats=Object.keys(faixasObj); const vals=Object.values(faixasObj);
+            agendarChart(id,{ ...CHART_ANIM, grid:{left:6,right:6,top:20,bottom:4,containLabel:true},
+                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].axisValue}<br/><b>${p[0].value}</b> projeto${p[0].value!==1?'s':''}`},
+                xAxis:{type:'category',data:cats,axisLine:{lineStyle:{color:'#e7e9ef'}},axisTick:{show:false},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
+                yAxis:{type:'value',splitLine:{lineStyle:{color:'#f2f3f6'}},axisLabel:{show:false}},
+                series:[{type:'bar',data:vals,barWidth:'55%',itemStyle:{color:cor,borderRadius:[5,5,0,0]},label:{show:true,position:'top',fontSize:11,fontWeight:700,color:'#5a5f6e',fontFamily:FONT,formatter:p=>p.value||''}}]
+            });
+            return `<div id="${id}" class="echart" style="height:180px;"></div>`;
+        }
+        function kpi(lbl,val,desc,ic,cor,bg){ return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${ic}</span></div><span class="kpi-lbl">${lbl}</span></div><div class="kpi-val" style="color:${cor};">${val}</div><div class="kpi-desc">${desc}</div></div>`; }
+
+        const CORES_STATUS = {'Backlog':'#9AA0AE','Não Iniciado':'#9AA0AE','Onboarding':'#3b82f6','Kick-off':'#3b82f6','Pausado':'#f59e0b','Finalizado':'#2FA875','Cancelado':'#E5484D'};
+        function corStatus(s){ return CORES_STATUS[s] || '#7371ff'; }
+        const PALETA = ['#7371ff','#14b8a6','#ff43c0','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#10b981','#6366f1'];
+
+        // ===== TELA: VISÃO GERAL =====
+        function renderGeral(){
+            const k=dados.kpis||{}; const mf=dados.metricas_fluxo||{};
+            const porStatus=Object.entries(dados.por_status||{}).map(([nome,valor])=>({nome,valor,cor:corStatus(nome)})).sort((a,b)=>b.valor-a.valor);
+            const porArea=Object.entries(dados.por_area||{}).map(([nome,valor],i)=>({nome,valor,cor:PALETA[i%PALETA.length]})).sort((a,b)=>b.valor-a.valor);
+            let h=`<div class="fade">
+                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">dashboard</span> Visão Geral</div><div class="tela-sub">Panorama de projetos e produtividade</div></div>
+                <div class="kpis" style="grid-template-columns:repeat(6,1fr);">
+                    ${kpi('Projetos', k.total_projetos||0, 'No total', 'folder_open', '#1a1d29', '#eef0f4')}
+                    ${kpi('Ativos', k.ativos||0, 'Em andamento', 'bolt', '#7371ff', '#f0efff')}
+                    ${kpi('Finalizados', k.finalizados||0, 'Concluídos', 'check_circle', '#2FA875', '#2FA87522')}
+                    ${kpi('Atrasados', k.atrasados||0, 'Fora do prazo', 'warning', k.atrasados>0?'#E5484D':'#9AA0AE', (k.atrasados>0?'#E5484D':'#9AA0AE')+'22')}
+                    ${kpi('Lead time', fmtDias(mf.lead_medio), 'Médio (abertura→fim)', 'timeline', '#f59e0b', '#fef3e2')}
+                    ${kpi('Cycle time', fmtDias(mf.cycle_medio), 'Médio (trabalho)', 'speed', '#14b8a6', '#e7fbf5')}
+                </div>
+                <div class="grid" style="grid-template-columns:1fr 1fr;">
+                    <div class="painel"><div class="painel-tit">Projetos por status</div><div class="painel-sub">Distribuição atual no fluxo</div>${porStatus.length?chartDonut(porStatus):'<div class="painel-sub">Sem dados</div>'}</div>
+                    <div class="painel"><div class="painel-tit">Projetos por área</div><div class="painel-sub">Volume por quadro</div>${porArea.length?chartBarH(porArea, x=>PALETA[porArea.indexOf(x)%PALETA.length], ''):'<div class="painel-sub">Sem dados</div>'}</div>
+                </div>
+                <div class="sec-lbl">Iniciados × Finalizados</div>
+                <div class="painel"><div class="painel-tit">Evolução mensal</div><div class="painel-sub">Projetos abertos e concluídos ao longo do tempo</div>${(mf.serie_iniciados_finalizados||[]).length?chartLinhaDupla(mf.serie_iniciados_finalizados):'<div class="painel-sub">Sem dados no período</div>'}</div>
+            </div>`;
+            document.getElementById('conteudo').innerHTML=h;
         }
 
-        function renderRankColaboradores(ranking) {
-            const c = document.getElementById('rankColaboradores');
-            if (!ranking || ranking.length === 0) { c.innerHTML = '<div class="empty-mini">Sem dados de tempo.</div>'; return; }
-            const max = ranking[0].segundos || 1;
-            c.innerHTML = ranking.slice(0, 8).map((r, i) => `
-                <div class="rank-item">
-                    <div class="rank-pos ${i === 0 ? 'top' : ''}">${i + 1}</div>
-                    <div class="rank-nome">${escH(r.nome)}</div>
-                    <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(r.segundos / max * 100)}%"></div></div>
-                    <div class="rank-valor">${fmtH(r.segundos)}</div>
-                </div>`).join('');
+        // ===== TELA: FLUXO & TEMPOS =====
+        function renderFluxo(){
+            const mf=dados.metricas_fluxo||{};
+            let h=`<div class="fade">
+                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">timeline</span> Fluxo & Tempos</div><div class="tela-sub">Lead time, cycle time e tempo de tarefa</div></div>
+                <div class="kpis" style="grid-template-columns:repeat(4,1fr);">
+                    ${kpi('Lead time médio', fmtDias(mf.lead_medio), 'Abertura → finalização', 'timeline', '#f59e0b', '#fef3e2')}
+                    ${kpi('Cycle time médio', fmtDias(mf.cycle_medio), 'Trabalho efetivo', 'speed', '#14b8a6', '#e7fbf5')}
+                    ${kpi('Tempo médio/tarefa', fmtHoras(mf.tempo_medio_tarefa_seg), 'Por apontamento de timer', 'timer', '#7371ff', '#f0efff')}
+                    ${kpi('Finalizados', mf.total_finalizados_periodo||0, 'Com tempo medido', 'check_circle', '#2FA875', '#2FA87522')}
+                </div>
+                <div class="grid" style="grid-template-columns:1fr 1fr;">
+                    <div class="painel"><div class="painel-tit">Distribuição do Lead time</div><div class="painel-sub">Quantos projetos em cada faixa (abertura → fim)</div>${mf.lead_faixas?chartFaixas(mf.lead_faixas,'#f59e0b'):''}</div>
+                    <div class="painel"><div class="painel-tit">Distribuição do Cycle time</div><div class="painel-sub">Tempo de trabalho efetivo</div>${mf.cycle_faixas?chartFaixas(mf.cycle_faixas,'#14b8a6'):''}</div>
+                </div>
+                <div class="sec-lbl">Detalhamento por projeto</div>
+                <div class="painel"><div class="painel-tit">Tempos por projeto finalizado</div><div class="painel-sub">Ordenado pelo maior lead time · R&S usa corte na entrevista com cliente</div>
+                    ${(mf.detalhe_tempos||[]).length?listaTempos(mf.detalhe_tempos):'<div class="painel-sub">Sem projetos finalizados no período.</div>'}
+                </div>
+            </div>`;
+            document.getElementById('conteudo').innerHTML=h;
+        }
+        function listaTempos(arr){
+            return `<div class="lista">${arr.map(d=>`<div class="lista-item">
+                <span class="dot" style="background:${d.eh_rs?'#ff43c0':'#7371ff'};"></span>
+                <div class="lista-nome">${escH(d.nome)}<small>${escH(d.area)} · aberto ${escH(d.abertura||'—')} · fechado ${escH(d.conclusao||'—')}</small></div>
+                <div style="text-align:right;"><div class="lista-data" style="color:#f59e0b;">Lead ${fmtDias(d.lead)}</div><div class="lista-data" style="color:#14b8a6;font-size:10.5px;">Cycle ${fmtDias(d.cycle)}</div></div>
+            </div>`).join('')}</div>`;
         }
 
-        function renderRankClientes(top) {
-            const c = document.getElementById('rankClientes');
-            if (!top || top.length === 0) { c.innerHTML = '<div class="empty-mini">Sem dados de tempo.</div>'; return; }
-            const max = top[0].segundos || 1;
-            c.innerHTML = top.map((r, i) => `
-                <div class="rank-item">
-                    <div class="rank-pos ${i === 0 ? 'top' : ''}">${i + 1}</div>
-                    <div class="rank-nome">${escH(r.cliente)}</div>
-                    <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(r.segundos / max * 100)}%; background:var(--accent-pink);"></div></div>
-                    <div class="rank-valor" style="color:var(--accent-pink);">${fmtH(r.segundos)}</div>
-                </div>`).join('');
+        // ===== TELA: INICIADOS × FINALIZADOS =====
+        function renderEntrega(){
+            const mf=dados.metricas_fluxo||{};
+            let h=`<div class="fade">
+                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">compare_arrows</span> Iniciados × Finalizados</div><div class="tela-sub">Fluxo de entrada e saída de projetos</div></div>
+                <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
+                    ${kpi('Iniciados', mf.qtd_iniciados||0, 'No período filtrado', 'play_circle', '#7371ff', '#f0efff')}
+                    ${kpi('Finalizados', mf.qtd_finalizados||0, 'No período filtrado', 'check_circle', '#2FA875', '#2FA87522')}
+                    ${kpi('Saldo', ((mf.qtd_iniciados||0)-(mf.qtd_finalizados||0)>=0?'+':'')+((mf.qtd_iniciados||0)-(mf.qtd_finalizados||0)), 'Iniciados − finalizados', 'balance', '#f59e0b', '#fef3e2')}
+                </div>
+                <div class="painel" style="margin-bottom:14px;"><div class="painel-tit">Evolução mensal</div><div class="painel-sub">Comparativo ao longo do tempo</div>${(mf.serie_iniciados_finalizados||[]).length?chartLinhaDupla(mf.serie_iniciados_finalizados):'<div class="painel-sub">Sem dados</div>'}</div>
+                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+                    <div class="painel"><div class="painel-tit">Projetos iniciados</div><div class="painel-sub">${(mf.lista_iniciados||[]).length} no período · mais recentes primeiro</div>${listaProjetos(mf.lista_iniciados, 'iniciado')}</div>
+                    <div class="painel"><div class="painel-tit">Projetos finalizados</div><div class="painel-sub">${(mf.lista_finalizados||[]).length} no período · mais recentes primeiro</div>${listaProjetos(mf.lista_finalizados, 'finalizado')}</div>
+                </div>
+            </div>`;
+            document.getElementById('conteudo').innerHTML=h;
+        }
+        function listaProjetos(arr, tipo){
+            if(!arr||!arr.length) return '<div class="painel-sub">Nenhum projeto.</div>';
+            return `<div class="lista">${arr.map(p=>`<div class="lista-item">
+                <span class="dot" style="background:${tipo==='finalizado'?(p.status==='Cancelado'?'#E5484D':'#2FA875'):'#7371ff'};"></span>
+                <div class="lista-nome">${escH(p.nome)}<small>${escH(p.responsavel||'—')}</small></div>
+                <span class="lista-tag badge-area">${escH(p.area)}</span>
+                <div class="lista-data">${escH(p.data)}</div>
+            </div>`).join('')}</div>`;
         }
 
-        function renderAtividades(top) {
-            const c = document.getElementById('topAtividades');
-            if (!top || top.length === 0) { c.innerHTML = '<div class="empty-mini">Nenhuma atividade registrada.</div>'; return; }
-            c.innerHTML = top.map(a => `
-                <div class="ativ-item">
-                    <div class="ativ-top">
-                        <span class="ativ-nome">${escH(a.atividade)}</span>
-                        <span class="ativ-tempo">${fmtH(a.segundos)}</span>
+        // ===== TELA: PRODUTIVIDADE =====
+        function renderProdutividade(){
+            const k=dados.kpis||{};
+            const rankColab=(dados.ranking_colaboradores||[]).slice(0,10).map(c=>({nome:c.nome,valor:Math.round(c.segundos/3600)}));
+            const ocup=(dados.ocupacao||[]).slice(0,10).map(o=>({nome:o.nome,valor:o.percentual}));
+            const topAtiv=(dados.top_atividades||[]).slice(0,10).map(a=>({nome:a.atividade,valor:Math.round(a.segundos/3600)}));
+            const topCli=(dados.top_clientes||[]).slice(0,8).map(c=>({nome:c.cliente,valor:Math.round(c.segundos/3600)}));
+            let h=`<div class="fade">
+                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">schedule</span> Produtividade</div><div class="tela-sub">Tempo registrado e ocupação da equipe</div></div>
+                <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
+                    ${kpi('Tempo total', fmtHoras(k.tempo_total_segundos), 'Registrado no timer', 'timer', '#7371ff', '#f0efff')}
+                    ${kpi('Apontamentos', k.total_sessoes||0, 'Sessões de timer', 'touch_app', '#14b8a6', '#e7fbf5')}
+                    ${kpi('Dias úteis', dados.dias_uteis||0, 'No período', 'today', '#f59e0b', '#fef3e2')}
+                </div>
+                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+                    <div class="painel"><div class="painel-tit">Horas por colaborador</div><div class="painel-sub">Tempo registrado</div>${rankColab.length?chartBarH(rankColab,'#7371ff','h'):'<div class="painel-sub">Sem dados</div>'}</div>
+                    <div class="painel"><div class="painel-tit">Ocupação (%)</div><div class="painel-sub">Base: dias úteis × 8h</div>${ocup.length?chartBarH(ocup, x=>x.valor>=80?'#2FA875':x.valor>=50?'#F5D06B':'#E5484D','%'):'<div class="painel-sub">Sem dados</div>'}</div>
+                    <div class="painel"><div class="painel-tit">Principais atividades</div><div class="painel-sub">Por horas registradas</div>${topAtiv.length?chartBarH(topAtiv,'#14b8a6','h'):'<div class="painel-sub">Sem dados</div>'}</div>
+                    <div class="painel"><div class="painel-tit">Horas por cliente</div><div class="painel-sub">Onde o tempo foi investido</div>${topCli.length?chartBarH(topCli,'#ff43c0','h'):'<div class="painel-sub">Sem dados</div>'}</div>
+                </div>
+            </div>`;
+            document.getElementById('conteudo').innerHTML=h;
+        }
+
+        // ===== TELA: PROJETOS =====
+        function renderProjetos(){
+            const atras=dados.lista_atrasados||[];
+            const porColab=(dados.proj_por_colab||[]).map(c=>({nome:c.nome,valor:c.qtd}));
+            let h=`<div class="fade">
+                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">folder_open</span> Projetos</div><div class="tela-sub">Carga da equipe e projetos atrasados</div></div>
+                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+                    <div class="painel"><div class="painel-tit">Projetos ativos por responsável</div><div class="painel-sub">Carga atual de trabalho</div>${porColab.length?chartBarH(porColab,'#7371ff',''):'<div class="painel-sub">Sem dados</div>'}</div>
+                    <div class="painel"><div class="painel-tit">Projetos atrasados</div><div class="painel-sub">${atras.length} fora do prazo</div>
+                        ${atras.length?`<div class="lista">${atras.map(a=>`<div class="lista-item"><span class="dot" style="background:#E5484D;"></span><div class="lista-nome">${escH(a.nome)}<small>${escH(a.responsavel)} · ${escH(a.area)}</small></div><span class="lista-tag" style="background:#E5484D22;color:#E5484D;">${a.dias_atraso}d atraso</span></div>`).join('')}</div>`:'<div class="empty" style="padding:40px;"><span class="material-symbols-rounded" style="color:#2FA875;opacity:0.4;">check_circle</span><h3>Nada atrasado</h3><p>Todos os projetos estão dentro do prazo.</p></div>'}
                     </div>
-                    <div class="ativ-meta">${a.qtd} ${a.qtd === 1 ? 'registro' : 'registros'}</div>
-                </div>`).join('');
-        }
-
-        // ===== FLUXO DE NOVOS PROJETOS =====
-        function setFluxo(modo) {
-            fluxoModo = modo;
-            document.getElementById('fluxo-mes').classList.toggle('active', modo === 'mes');
-            document.getElementById('fluxo-dia').classList.toggle('active', modo === 'dia');
-            renderFluxo();
-        }
-
-        function renderFluxo() {
-            const dados = dadosFluxo[fluxoModo];
-            if (charts.fluxo) charts.fluxo.destroy();
-            const ctx = document.getElementById('chartFluxo');
-            if (!dados || dados.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Sem projetos no período.</div>'; return; }
-
-            const labels = dados.map(d => {
-                if (fluxoModo === 'mes') {
-                    const [a, m] = d.periodo.split('-');
-                    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-                    return `${meses[parseInt(m)-1]}/${a.slice(2)}`;
-                } else {
-                    const p = d.periodo.split('-');
-                    return `${p[2]}/${p[1]}`;
-                }
-            });
-            const valores = dados.map(d => d.qtd);
-
-            charts.fluxo = new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'Novos projetos', data: valores, backgroundColor: '#bef533', borderRadius: 8, maxBarThickness: 50, hoverBackgroundColor: '#7371ff' }] },
-                options: { responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + (c.parsed.y === 1 ? ' projeto' : ' projetos') } } },
-                    scales: { y: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, precision: 0 }, grid: { color: '#f4f4f5' } }, x: { ticks: { font: { family: 'Inter', size: 11, weight: '700' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 15 }, grid: { display: false } } } }
-            });
-        }
-
-        // ===== OCUPAÇÃO POR COLABORADOR =====
-        function renderOcupacao(ocupacao, diasUteis) {
-            const c = document.getElementById('ocupacaoLista');
-            document.getElementById('ocupacaoSub').textContent = `% das horas úteis registradas no timer (8h/dia · ${diasUteis} dias úteis no período)`;
-            if (!ocupacao || ocupacao.length === 0) { c.innerHTML = '<div class="empty-mini">Sem registros de tempo.</div>'; return; }
-            c.innerHTML = ocupacao.map(o => {
-                const pct = o.percentual;
-                let cor = '#ef4444'; // baixo
-                if (pct >= 70) cor = '#22c55e'; // bom
-                else if (pct >= 40) cor = '#f59e0b'; // médio
-                const larguraBarra = Math.min(pct, 100);
-                return `
-                <div class="ocup-item">
-                    <div class="ocup-top">
-                        <span class="ocup-nome">${escH(o.nome)}</span>
-                        <span class="ocup-pct" style="color:${cor};">${pct}%</span>
-                    </div>
-                    <div class="ocup-track"><div class="ocup-fill" style="width:${larguraBarra}%; background:${cor};"></div></div>
-                    <div class="ocup-meta">${fmtH(o.segundos)} registradas de ${fmtH(o.esperado_segundos)} esperadas</div>
-                </div>`;
-            }).join('');
-        }
-
-        // ===== CARGA DE PROJETOS ATIVOS POR COLABORADOR =====
-        function renderCargaColab(dados) {
-            if (charts.carga) charts.carga.destroy();
-            const ctx = document.getElementById('chartCargaColab');
-            if (!dados || dados.length === 0) { ctx.parentElement.innerHTML = '<div class="empty-mini">Nenhum projeto ativo.</div>'; return; }
-            const labels = dados.map(d => d.nome);
-            const valores = dados.map(d => d.qtd);
-            charts.carga = new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets: [{ data: valores, backgroundColor: '#7371ff', borderRadius: 8, maxBarThickness: 36 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x + (c.parsed.x === 1 ? ' projeto ativo' : ' projetos ativos') } } },
-                    scales: { x: { beginAtZero: true, ticks: { font: { family: 'Inter', weight: '600' }, precision: 0 }, grid: { color: '#f4f4f5' } }, y: { ticks: { font: { family: 'Inter', size: 11, weight: '700' } }, grid: { display: false } } } }
-            });
-        }
-
-        // ===== PROJETOS ATRASADOS =====
-        function renderAtrasados(lista) {
-            const c = document.getElementById('listaAtrasados');
-            if (!lista || lista.length === 0) {
-                c.innerHTML = '<div class="empty-mini"><span class="material-symbols-rounded" style="font-size:40px; opacity:0.3; display:block; margin-bottom:10px; color:#22c55e;">check_circle</span>Nenhum projeto atrasado. Tudo em dia! 🎉</div>';
-                return;
-            }
-            c.innerHTML = lista.map(p => `
-                <div class="atraso-item">
-                    <div class="atraso-dias">
-                        <div class="atraso-dias-num">${p.dias_atraso}</div>
-                        <div class="atraso-dias-label">${p.dias_atraso === 1 ? 'dia' : 'dias'}</div>
-                    </div>
-                    <div class="atraso-info">
-                        <div class="atraso-nome">${escH(p.nome)}</div>
-                        <div class="atraso-meta">
-                            <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:-2px;">person</span> ${escH(p.responsavel)}</span>
-                            <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:-2px;">category</span> ${escH(p.area)}</span>
-                            <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:-2px;">flag</span> ${escH(p.status)}</span>
-                        </div>
-                    </div>
-                    <div class="atraso-prazo">Prazo: ${new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
-                </div>`).join('');
+                </div>
+            </div>`;
+            document.getElementById('conteudo').innerHTML=h;
         }
     </script>
 </body>
