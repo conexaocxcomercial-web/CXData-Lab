@@ -961,21 +961,54 @@ def dados_dashboard():
         f_area = request.args.get('area')
         f_resp = request.args.get('responsavel')
         f_cliente = request.args.get('cliente_id')
-        f_inicio = request.args.get('inicio')  # YYYY-MM-DD
-        f_fim = request.args.get('fim')
+        # Datas: cada uma com propósito claro
+        f_horas_ini = request.args.get('horas_ini') or request.args.get('inicio')  # registro de time_logs
+        f_horas_fim = request.args.get('horas_fim') or request.args.get('fim')
+        f_abertura_ini = request.args.get('abertura_ini')   # data de abertura do projeto
+        f_abertura_fim = request.args.get('abertura_fim')
+        f_fech_ini = request.args.get('fechamento_ini')     # data de conclusão do projeto
+        f_fech_fim = request.args.get('fechamento_fim')
 
-        # Projetos ativos (fora da lixeira)
+        def _dia(v): return str(v)[:10] if v else None
+
+        # Projetos (fora da lixeira)
         res_proj = supabase.table("projetos").select("*").execute()
         projetos = [p for p in res_proj.data if not p.get("excluido_em")]
 
-        # Aplica filtros de projeto
+        # Filtros categóricos
         if f_area: projetos = [p for p in projetos if p.get("area") == f_area]
         if f_resp: projetos = [p for p in projetos if p.get("responsavel") == f_resp]
         if f_cliente: projetos = [p for p in projetos if str(p.get("cliente_id")) == str(f_cliente)]
 
+        # Filtro por data de ABERTURA (created_em/data_inicio) — afeta todo o conjunto de projetos
+        if f_abertura_ini or f_abertura_fim:
+            def _abriu_no_periodo(p):
+                d = _dia(p.get("data_inicio") or p.get("criado_em"))
+                if not d: return False
+                if f_abertura_ini and d < f_abertura_ini: return False
+                if f_abertura_fim and d > f_abertura_fim: return False
+                return True
+            projetos = [p for p in projetos if _abriu_no_periodo(p)]
+
+        # Filtro por data de FECHAMENTO — restringe às contagens de finalizados;
+        # para não zerar métricas de ativos, guardamos um conjunto separado.
+        tem_filtro_fech = bool(f_fech_ini or f_fech_fim)
+        def _fechou_no_periodo(p):
+            if p.get("status") not in ["Finalizado", "Cancelado"]: return False
+            d = _dia(p.get("data_conclusao"))
+            if not d: return False
+            if f_fech_ini and d < f_fech_ini: return False
+            if f_fech_fim and d > f_fech_fim: return False
+            return True
+
+        # Se há filtro de fechamento, o "universo" de finalizados é o que fechou no período.
+        # Os demais painéis (status, área, ativos) passam a refletir só o recorte filtrado.
+        if tem_filtro_fech:
+            projetos = [p for p in projetos if _fechou_no_periodo(p)]
+
         ids_proj = set(str(p["id"]) for p in projetos)
 
-        # Time logs (paginado) — para tempo, atividades, produtividade
+        # Time logs (paginado)
         logs = []
         page_size = 1000
         offset = 0
@@ -986,16 +1019,22 @@ def dados_dashboard():
             if len(res_t.data) < page_size: break
             offset += page_size
 
-        # Filtra logs pelos projetos visíveis e período
+        # Filtra logs pelos projetos visíveis e pelo período de REGISTRO DE HORAS
         def log_no_periodo(log):
             d = log.get("data_inicio_atividade") or log.get("criado_em")
             if not d: return True
             dia = str(d)[:10]
-            if f_inicio and dia < f_inicio: return False
-            if f_fim and dia > f_fim: return False
+            if f_horas_ini and dia < f_horas_ini: return False
+            if f_horas_fim and dia > f_horas_fim: return False
             return True
 
+        # Se filtro de horas está ativo, restringe logs aos projetos visíveis? 
+        # Não: horas registradas devem refletir o período independente do recorte de projeto,
+        # exceto pelos filtros categóricos (área/resp/cliente) que restringem via ids_proj.
         logs = [l for l in logs if str(l.get("projeto_id")) in ids_proj and log_no_periodo(l)]
+        # variáveis legadas usadas mais abaixo
+        f_inicio = f_horas_ini
+        f_fim = f_horas_fim
 
         # ===== KPIs GERAIS =====
         total_projetos = len(projetos)
@@ -1138,14 +1177,6 @@ def dados_dashboard():
         # ============================================================
         from datetime import timedelta as _td
 
-        # Filtros de data específicos (abertura e fechamento)
-        f_abertura_ini = request.args.get('abertura_ini')
-        f_abertura_fim = request.args.get('abertura_fim')
-        f_fech_ini = request.args.get('fechamento_ini')
-        f_fech_fim = request.args.get('fechamento_fim')
-
-        def _dia(v):
-            return str(v)[:10] if v else None
         def _parse(v):
             try: return datetime.strptime(str(v)[:10], "%Y-%m-%d").date()
             except: return None
