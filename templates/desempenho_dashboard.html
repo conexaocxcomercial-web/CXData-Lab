@@ -6,224 +6,231 @@
     <title>Desempenho · Dashboard | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
     <style>
         :root {
-            --bg-board:#f6f6f7; --surface:#ffffff; --text-main:#18181b; --text-soft:#52525b; --text-muted:#9497a0;
-            --purple:#7371ff; --purple-soft:#f0efff; --line:#ececf0;
-            --nb1:#E5484D; --nb2:#F5D06B; --nb3:#2FA875;
+            /* Paleta profissional fria — RH/gestão */
+            --bg:#f4f6fa; --surface:#ffffff; --surface-2:#fbfcfe;
+            --ink:#141726; --ink-soft:#4a5069; --ink-mute:#8b91a7; --line:#e9ecf3;
+            --purple:#6c5ce7; --purple-soft:#eeecfe;
+            /* Escala de performance (heat) */
+            --lo:#f0616d; --mid:#f5a83d; --hi:#1fb589;
+            --lo-soft:#fdecee; --mid-soft:#fef3e2; --hi-soft:#e4f7f1;
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 7px; height: 7px; } ::-webkit-scrollbar-thumb { background: #d8d8dd; } ::-webkit-scrollbar-track { background: transparent; }
-        .top-bar { background: rgba(255,255,255,0.85); backdrop-filter: blur(14px); height: 68px; min-height: 68px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 var(--line); z-index: 20; }
-        .top-bar-logo { font-size: 23px; font-weight: 800; letter-spacing: -0.6px; cursor: pointer; }
-        .top-bar-logo span { color: var(--purple); }
-        .dash-header { padding: 22px 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); background: var(--surface); }
-        .dash-title-wrap { display: flex; align-items: center; gap: 13px; }
-        .dash-title-icon { width: 40px; height: 40px; background: var(--purple); display: flex; align-items: center; justify-content: center; border-radius: 12px !important; box-shadow: 0 4px 14px rgba(115,113,255,0.28); }
-        .dash-title-icon .material-symbols-rounded { color: #fff; font-size: 22px; }
-        .dash-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-        .dash-title-sub { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 1px; }
-        .pesq-sel { padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--text-main); background: var(--surface); outline: none; cursor: pointer; box-shadow: 0 0 0 1px var(--line); min-width: 240px; border-radius: 11px !important; }
-        .dash-body { flex-grow: 1; display: flex; min-height: 0; }
-        .nav-lateral { width: 250px; min-width: 250px; background: var(--surface); box-shadow: 1px 0 0 var(--line); overflow-y: auto; padding: 22px 16px; flex-shrink: 0; }
-        .nav-grupo-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin: 18px 0 8px; }
-        .nav-grupo-label:first-child { margin-top: 0; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 11px !important; cursor: pointer; transition: 0.14s; margin-bottom: 3px; }
-        .nav-item:hover { background: var(--bg-board); }
-        .nav-item.ativo { background: var(--purple); box-shadow: 0 4px 14px rgba(115,113,255,0.28); }
-        .nav-item.ativo .nav-nome, .nav-item.ativo .material-symbols-rounded { color: #fff !important; }
-        .nav-item .material-symbols-rounded { font-size: 19px; color: var(--text-muted); }
-        .nav-nome { flex-grow: 1; font-size: 13.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .conteudo { flex-grow: 1; overflow-y: auto; padding: 30px 40px 70px; }
-        .empty, .loading { text-align: center; padding: 100px 20px; color: var(--text-muted); }
-        .empty .material-symbols-rounded { font-size: 60px; opacity: 0.2; display: block; margin-bottom: 16px; }
-        .empty h3 { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
-        .empty p { font-size: 13px; max-width: 360px; margin: 0 auto; line-height: 1.5; }
-        .spinner { width: 30px; height: 30px; border: 3px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: spin 0.7s linear infinite; margin: 0 auto 18px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .tela-titulo { font-size: 24px; font-weight: 800; letter-spacing: -0.6px; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
-        .tela-sub { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 26px; }
-        .fade-in { animation: fade 0.35s ease; } @keyframes fade { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
-        .card { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 16px !important; }
-        .secao-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin: 30px 0 16px; }
-        /* Visão geral KPIs */
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
-        .kpi { padding: 22px 24px; }
-        .kpi-top { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
-        .kpi-ico { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px !important; background: var(--purple-soft); }
-        .kpi-ico .material-symbols-rounded { font-size: 18px; color: var(--purple); }
-        .kpi-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        .kpi-num { font-size: 34px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
-        .kpi-sub { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-top: 6px; }
-        /* IA */
-        .ia-card { background: linear-gradient(140deg, #17171b 0%, #26243f 100%); border-radius: 16px !important; padding: 28px 30px; position: relative; overflow: hidden; margin-bottom: 16px; }
-        .ia-card::before { content:''; position:absolute; top:-80px; right:-40px; width:240px; height:240px; background: radial-gradient(circle, rgba(115,113,255,0.35), transparent 68%); }
-        .ia-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; position: relative; }
-        .ia-badge { width: 38px; height: 38px; background: linear-gradient(135deg, var(--purple), #9d7bff); display: flex; align-items: center; justify-content: center; border-radius: 11px !important; box-shadow: 0 6px 18px rgba(115,113,255,0.4); }
-        .ia-badge .material-symbols-rounded { font-size: 21px; color: #fff; }
-        .ia-titulo { font-size: 15px; font-weight: 800; color: #fff; }
-        .ia-sub { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 500; margin-top: 1px; }
-        .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; position: relative; }
-        .ia-item { display: flex; gap: 13px; align-items: flex-start; background: rgba(255,255,255,0.04); padding: 15px 17px; border-radius: 12px !important; }
-        .ia-ico { width: 30px; height: 30px; border-radius: 9px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .ia-ico .material-symbols-rounded { font-size: 17px; }
-        .ia-pos { background: rgba(47,168,117,0.18); color: #4ade80; } .ia-neg { background: rgba(229,72,77,0.18); color: #ff7a7f; } .ia-neu { background: rgba(115,113,255,0.2); color: #b0aeff; }
-        .ia-txt { font-size: 12.5px; line-height: 1.55; color: rgba(255,255,255,0.82); } .ia-txt b { color: #fff; font-weight: 700; }
-        /* Ranking pessoas */
-        .rank-card { padding: 24px 26px; }
-        .rank-head { font-size: 13px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 9px; }
-        .rank-head .material-symbols-rounded { font-size: 18px; color: var(--purple); }
-        .rank-list { display: flex; flex-direction: column; gap: 16px; }
-        .rank-row { display: flex; align-items: center; gap: 14px; }
-        .rank-badge { width: 22px; height: 22px; border-radius: 7px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; background: #f1f1f4; color: var(--text-muted); }
-        .rank-badge.g1 { background: var(--purple); color: #fff; }
-        .rank-body { flex-grow: 1; min-width: 0; }
-        .rank-line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 7px; }
-        .rank-nome { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-val { font-size: 13px; font-weight: 800; flex-shrink: 0; }
-        .rank-track { height: 6px; background: #f1f1f4; border-radius: 50px !important; overflow: hidden; }
-        .rank-fill { height: 100%; border-radius: 50px !important; transition: width 0.8s cubic-bezier(0.34,1.2,0.64,1); }
-        /* Nine Box */
-        .ninebox-wrap { display: grid; grid-template-columns: 30px 1fr; gap: 10px; margin-bottom: 10px; }
-        .nb-eixo-y { display: flex; align-items: center; justify-content: center; }
-        .nb-eixo-y span { transform: rotate(-90deg); white-space: nowrap; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-        .ninebox { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 150px); gap: 8px; }
-        .nb-cell { border-radius: 14px !important; padding: 12px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        .nb-cell-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.7; margin-bottom: 6px; }
-        .nb-pessoas { display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; overflow-y: auto; }
-        .nb-chip { background: rgba(255,255,255,0.85); font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 50px !important; color: #18181b; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        .nb-eixo-x { text-align: center; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-left: 40px; margin-top: 6px; }
-        .nb-legenda { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-        .nb-leg { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-soft); }
-        .nb-leg-dot { width: 12px; height: 12px; border-radius: 4px !important; }
-        /* Competência bars */
-        .comp-list { display: flex; flex-direction: column; gap: 18px; }
-        .comp-bar-row { }
-        .comp-bar-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-        .comp-bar-nome { font-size: 14px; font-weight: 700; }
-        .comp-bar-tipo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-left: 8px; }
-        .comp-bar-val { font-size: 15px; font-weight: 800; }
-        .comp-bar-track { height: 10px; background: #f1f1f4; border-radius: 50px !important; overflow: hidden; }
-        .comp-bar-fill { height: 100%; border-radius: 50px !important; transition: width 0.8s cubic-bezier(0.34,1.2,0.64,1); }
-        /* Pessoa detalhe */
-        .pessoa-sel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; }
-        .pessoa-card { padding: 18px 20px; cursor: pointer; transition: 0.16s; display: flex; align-items: center; gap: 14px; }
-        .pessoa-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07), 0 0 0 1px var(--line); }
-        .pessoa-avatar { width: 44px; height: 44px; border-radius: 12px !important; background: var(--purple-soft); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--purple); flex-shrink: 0; }
-        .pessoa-card-info { min-width: 0; } .pessoa-card-nome { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .pessoa-card-cargo { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-        .pessoa-card-nota { margin-left: auto; font-size: 18px; font-weight: 800; flex-shrink: 0; }
-        .voltar-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--purple); cursor: pointer; margin-bottom: 18px; }
-        .gap-card { display: flex; align-items: center; gap: 20px; padding: 24px 26px; margin-bottom: 16px; }
-        .gap-nota { text-align: center; } .gap-nota .n { font-size: 40px; font-weight: 800; letter-spacing: -2px; line-height: 1; } .gap-nota .l { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-        .gap-div { width: 1px; align-self: stretch; background: var(--line); }
-        /* PDI */
-        .pdi-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid #f4f4f5; }
-        .pdi-check { width: 22px; height: 22px; border-radius: 7px !important; box-shadow: inset 0 0 0 2px var(--line); cursor: pointer; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: 0.15s; }
-        .pdi-check.done { background: var(--nb3); box-shadow: none; } .pdi-check.done .material-symbols-rounded { color: #fff; font-size: 15px; }
-        .pdi-body { flex-grow: 1; } .pdi-comp { font-size: 11px; font-weight: 800; color: var(--purple); text-transform: uppercase; letter-spacing: 0.4px; } .pdi-acao { font-size: 13px; font-weight: 500; margin-top: 3px; line-height: 1.4; } .pdi-prazo { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
-        .btn-mini { background: var(--purple); color: #fff; padding: 9px 16px; font-size: 12px; font-weight: 800; cursor: pointer; border-radius: 50px !important; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-mini:hover { background: var(--text-main); }
-        /* Modal PDI */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(20,20,25,0.4); backdrop-filter: blur(3px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-overlay.show { display: flex; }
-        .modal { background: #fff; width: 100%; max-width: 480px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); border-radius: 16px !important; }
-        .modal-titulo { font-size: 18px; font-weight: 900; margin-bottom: 22px; }
-        .input-group { margin-bottom: 16px; } .input-group label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 7px; }
-        .input-group input, .input-group textarea { width: 100%; padding: 12px 14px; font-size: 14px; background: #f9f9fb; outline: none; font-family: 'Inter'; font-weight: 500; border-radius: 10px !important; }
-        .input-group input:focus, .input-group textarea:focus { box-shadow: inset 0 0 0 2px var(--purple); }
-        .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
-        .btn-ghost { background: transparent; color: var(--text-muted); padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 10px !important; }
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: #fff; padding: 14px 24px; font-size: 13px; font-weight: 700; z-index: 200; opacity: 0; transition: all 0.3s; border-radius: 10px !important; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; } .toast.success { background: #14b8a6; } .toast.error { background: #f87171; }
-        .icon-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: 0.15s; border-radius: 8px !important; flex-shrink: 0; }
-        .icon-btn:hover { background: #fef2f2; color: #f87171; }
-        @media (max-width: 1050px) { .kpi-row { grid-template-columns: 1fr 1fr; } .ia-grid { grid-template-columns: 1fr; } }
+        * { box-sizing:border-box; font-family:'Inter',sans-serif; margin:0; padding:0; border-radius:0 !important; border:none; }
+        body { background:var(--bg); color:var(--ink); height:100vh; overflow:hidden; display:flex; flex-direction:column; padding-left:68px; }
+        ::-webkit-scrollbar { width:8px; height:8px; } ::-webkit-scrollbar-thumb { background:#cdd2df; border-radius:6px !important; } ::-webkit-scrollbar-track { background:transparent; }
+
+        .top-bar { background:var(--surface); height:60px; min-height:60px; flex-shrink:0; padding:0 28px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 0 var(--line); z-index:30; }
+        .top-bar-logo { font-size:21px; font-weight:800; letter-spacing:-0.6px; cursor:pointer; }
+        .top-bar-logo span { color:var(--purple); }
+        .top-bar-right { display:flex; align-items:center; gap:14px; }
+        .ciclo-sel { padding:9px 14px; font-size:13px; font-weight:600; color:var(--ink); background:var(--bg); outline:none; cursor:pointer; border-radius:10px !important; min-width:260px; }
+
+        .dash-body { flex-grow:1; display:flex; min-height:0; padding-left:22px; }
+        .nav { width:212px; min-width:212px; background:transparent; overflow-y:auto; padding:22px 12px 22px 0; flex-shrink:0; }
+        .nav-grupo { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1.1px; color:var(--ink-mute); padding:0 13px; margin:18px 0 9px; }
+        .nav-grupo:first-child { margin-top:0; }
+        .nav-item { display:flex; align-items:center; gap:12px; padding:10px 13px; border-radius:11px !important; cursor:pointer; transition:0.14s; margin-bottom:3px; }
+        .nav-item:hover { background:var(--surface); }
+        .nav-item.on { background:var(--purple); box-shadow:0 6px 16px rgba(108,92,231,0.32); }
+        .nav-item.on .nav-nome, .nav-item.on .material-symbols-rounded { color:#fff !important; }
+        .nav-item .material-symbols-rounded { font-size:19px; color:var(--ink-mute); }
+        .nav-nome { flex-grow:1; font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; }
+
+        .main { flex-grow:1; overflow-y:auto; padding:26px 30px 70px; }
+        .head { margin-bottom:24px; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+        .head-l { min-width:0; }
+        .eyebrow { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.4px; color:var(--purple); margin-bottom:7px; }
+        .title { font-size:26px; font-weight:800; letter-spacing:-0.9px; line-height:1.05; }
+        .subtitle { font-size:13px; color:var(--ink-mute); font-weight:500; margin-top:6px; }
+        .fade { animation:f 0.32s ease; } @keyframes f { from{opacity:0; transform:translateY(8px);} to{opacity:1;} }
+
+        .empty, .loading { text-align:center; padding:100px 20px; color:var(--ink-mute); }
+        .empty .material-symbols-rounded { font-size:56px; opacity:0.18; display:block; margin-bottom:16px; }
+        .empty h3 { font-size:17px; font-weight:800; color:var(--ink); margin-bottom:6px; }
+        .empty p { font-size:13px; max-width:360px; margin:0 auto; line-height:1.55; }
+        .spin { width:30px; height:30px; border:3px solid var(--line); border-top-color:var(--purple); border-radius:50% !important; animation:s 0.7s linear infinite; margin:0 auto 16px; } @keyframes s { to{transform:rotate(360deg);} }
+
+        /* Cartão */
+        .card { background:var(--surface); border-radius:16px !important; box-shadow:0 1px 2px rgba(20,20,50,0.04), 0 0 0 1px var(--line); padding:22px; }
+        .card-h { margin-bottom:18px; }
+        .card-t { font-size:14px; font-weight:800; letter-spacing:-0.2px; }
+        .card-s { font-size:11px; color:var(--ink-mute); font-weight:600; margin-top:3px; }
+        .grid { display:grid; gap:18px; }
+
+        /* KPIs — hierarquia forte */
+        .kpi { background:var(--surface); border-radius:16px !important; box-shadow:0 1px 2px rgba(20,20,50,0.04), 0 0 0 1px var(--line); padding:20px 22px; position:relative; overflow:hidden; }
+        .kpi-ico { width:38px; height:38px; border-radius:11px !important; display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
+        .kpi-ico .material-symbols-rounded { font-size:21px; }
+        .kpi-v { font-size:34px; font-weight:800; letter-spacing:-1.6px; line-height:1; }
+        .kpi-l { font-size:12px; font-weight:700; color:var(--ink-soft); margin-top:8px; }
+        .kpi-d { font-size:11px; color:var(--ink-mute); font-weight:500; margin-top:3px; }
+
+        .echart { width:100%; }
+        .sec { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.1px; color:var(--ink-mute); margin:26px 0 14px; display:flex; align-items:center; gap:10px; }
+        .sec::after { content:''; flex-grow:1; height:1px; background:var(--line); }
+
+        /* ===== NINE BOX — o herói ===== */
+        .ninebox-wrap { display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:stretch; }
+        .ninebox-yaxis { display:flex; flex-direction:column; justify-content:center; }
+        .axis-label { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--ink-soft); writing-mode:vertical-rl; transform:rotate(180deg); text-align:center; }
+        .ninebox { flex-grow:1; }
+        .nb-grid { display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:10px; aspect-ratio:1.35/1; }
+        .nb-cell { border-radius:14px !important; padding:13px; display:flex; flex-direction:column; position:relative; cursor:pointer; transition:transform 0.18s, box-shadow 0.18s; overflow:hidden; min-height:0; }
+        .nb-cell:hover { transform:translateY(-3px) scale(1.012); box-shadow:0 12px 28px rgba(20,20,50,0.13); z-index:2; }
+        .nb-cell-lbl { font-size:10.5px; font-weight:800; letter-spacing:0.2px; line-height:1.2; margin-bottom:2px; }
+        .nb-cell-sub { font-size:9px; font-weight:600; opacity:0.7; }
+        .nb-count { position:absolute; top:11px; right:13px; font-size:22px; font-weight:800; letter-spacing:-1px; line-height:1; }
+        .nb-people { margin-top:auto; display:flex; flex-wrap:wrap; gap:4px; padding-top:8px; }
+        .nb-chip { font-size:9.5px; font-weight:700; background:rgba(255,255,255,0.72); padding:3px 8px; border-radius:50px !important; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,0.06); }
+        .nb-chip.more { background:rgba(0,0,0,0.14); color:#fff; }
+        .nb-xaxis { grid-column:2; display:flex; justify-content:center; margin-top:12px; }
+
+        /* Legendas do Nine Box ao lado */
+        .nb-legend { display:flex; flex-direction:column; gap:9px; }
+        .nb-leg-item { display:flex; gap:11px; align-items:flex-start; padding:11px 13px; background:var(--surface-2); border-radius:12px !important; box-shadow:0 0 0 1px var(--line); }
+        .nb-leg-dot { width:11px; height:11px; border-radius:4px !important; flex-shrink:0; margin-top:2px; }
+        .nb-leg-txt b { font-size:11.5px; font-weight:800; display:block; }
+        .nb-leg-txt span { font-size:10.5px; color:var(--ink-mute); font-weight:500; line-height:1.4; }
+
+        /* Ranking / listas */
+        .rank { display:flex; flex-direction:column; gap:2px; }
+        .rank-row { display:flex; align-items:center; gap:13px; padding:10px 0; }
+        .rank-pos { width:24px; height:24px; border-radius:8px !important; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background:#eef0f6; color:var(--ink-mute); flex-shrink:0; }
+        .rank-pos.p1 { background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff; }
+        .rank-pos.p2 { background:#e9ecf3; color:var(--ink-soft); }
+        .rank-pos.p3 { background:#f0e9e0; color:#b08948; }
+        .rank-mid { flex-grow:1; min-width:0; }
+        .rank-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; gap:10px; }
+        .rank-nm { font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .rank-nm small { color:var(--ink-mute); font-weight:500; }
+        .rank-vl { font-size:13px; font-weight:800; flex-shrink:0; }
+        .rank-track { height:8px; background:#eef0f6; border-radius:50px !important; overflow:hidden; }
+        .rank-bar { height:100%; border-radius:50px !important; transition:width 0.8s cubic-bezier(0.34,1.15,0.6,1); }
+
+        .avatar { width:38px; height:38px; border-radius:11px !important; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; flex-shrink:0; }
+
+        /* Pessoas grid */
+        .people-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:13px; }
+        .person { background:var(--surface); border-radius:14px !important; box-shadow:0 1px 2px rgba(20,20,50,0.04), 0 0 0 1px var(--line); padding:16px; cursor:pointer; transition:0.18s; display:flex; align-items:center; gap:13px; }
+        .person:hover { transform:translateY(-3px); box-shadow:0 12px 26px rgba(20,20,50,0.10); }
+        .person-info { flex-grow:1; min-width:0; }
+        .person-nm { font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .person-cg { font-size:11px; color:var(--ink-mute); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+        .person-badge { font-size:15px; font-weight:800; padding:5px 11px; border-radius:10px !important; flex-shrink:0; }
+
+        /* IA insight */
+        .ia { background:linear-gradient(135deg,#171a2e 0%,#2a2350 100%); border-radius:16px !important; padding:22px 24px; position:relative; overflow:hidden; }
+        .ia::before { content:''; position:absolute; top:-70px; right:-40px; width:200px; height:200px; background:radial-gradient(circle,rgba(108,92,231,0.5),transparent 70%); }
+        .ia-h { display:flex; align-items:center; gap:11px; margin-bottom:16px; position:relative; }
+        .ia-badge { width:34px; height:34px; background:linear-gradient(135deg,#6c5ce7,#a29bfe); display:flex; align-items:center; justify-content:center; border-radius:10px !important; }
+        .ia-badge .material-symbols-rounded { font-size:19px; color:#fff; }
+        .ia-t { font-size:13.5px; font-weight:800; color:#fff; } .ia-s { font-size:10px; color:rgba(255,255,255,0.5); font-weight:500; }
+        .ia-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; position:relative; }
+        .ia-item { display:flex; gap:11px; align-items:flex-start; background:rgba(255,255,255,0.055); padding:13px 15px; border-radius:11px !important; }
+        .ia-ic { width:28px; height:28px; border-radius:8px !important; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ia-ic .material-symbols-rounded { font-size:16px; }
+        .ia-pos { background:rgba(31,181,137,0.22); color:#3ee0aa; } .ia-neg { background:rgba(240,97,109,0.22); color:#ff8a94; } .ia-neu { background:rgba(108,92,231,0.26); color:#c3bcff; }
+        .ia-tx { font-size:11.5px; line-height:1.55; color:rgba(255,255,255,0.82); } .ia-tx b { color:#fff; font-weight:700; }
+
+        /* Competências barras */
+        .comp-row { margin-bottom:16px; } .comp-row:last-child { margin-bottom:0; }
+        .comp-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; gap:10px; }
+        .comp-nm { font-size:12.5px; font-weight:600; }
+        .comp-tp { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-mute); background:var(--bg); padding:2px 7px; border-radius:50px !important; margin-left:7px; }
+        .comp-vl { font-size:13px; font-weight:800; }
+        .comp-track { height:9px; background:#eef0f6; border-radius:50px !important; overflow:hidden; }
+        .comp-fill { height:100%; border-radius:50px !important; transition:width 0.8s cubic-bezier(0.34,1.15,0.6,1); }
+
+        /* Gap auto vs gestor */
+        .gap-box { display:flex; align-items:center; justify-content:center; gap:28px; padding:10px 0; }
+        .gap-n { text-align:center; } .gap-n .v { font-size:32px; font-weight:800; letter-spacing:-1.5px; } .gap-n .l { font-size:11px; font-weight:700; color:var(--ink-mute); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+        .gap-mid { text-align:center; } .gap-mid .d { font-size:19px; font-weight:800; } .gap-mid .l { font-size:10px; color:var(--ink-mute); font-weight:600; }
+
+        /* Voltar */
+        .back { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--purple); cursor:pointer; margin-bottom:14px; }
+        .back:hover { text-decoration:underline; }
+
+        .pdi-item { display:flex; gap:13px; align-items:flex-start; padding:14px; background:var(--surface-2); border-radius:12px !important; box-shadow:0 0 0 1px var(--line); margin-bottom:10px; }
+        .pdi-st { font-size:10px; font-weight:800; padding:4px 10px; border-radius:50px !important; white-space:nowrap; text-transform:uppercase; letter-spacing:0.3px; }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
-        {% include '_usermenu.html' %}
+        <div class="top-bar-right">
+            <select class="ciclo-sel" id="selCiclo" onchange="carregar()"><option value="">Selecione um ciclo...</option></select>
+            {% include '_usermenu.html' %}
+        </div>
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="dash-header">
-        <div class="dash-title-wrap">
-            <div class="dash-title-icon"><span class="material-symbols-rounded">insights</span></div>
-            <div><div class="dash-title">Dashboard de Desempenho</div><div class="dash-title-sub">Resultados dos ciclos de avaliação</div></div>
-        </div>
-        <select class="pesq-sel" id="selCiclo" onchange="carregarResultados()"><option value="">Selecione um ciclo...</option></select>
-    </div>
-
     <div class="dash-body">
-        <div class="nav-lateral" id="navLateral" style="display:none;"></div>
-        <div class="conteudo" id="conteudo">
-            <div class="empty"><span class="material-symbols-rounded">insights</span><h3>Selecione um ciclo</h3><p>Escolha um ciclo de avaliação acima para ver os resultados.</p></div>
+        <div class="nav" id="nav" style="display:none;"></div>
+        <div class="main" id="main">
+            <div class="empty"><span class="material-symbols-rounded">leaderboard</span><h3>Selecione um ciclo</h3><p>Escolha um ciclo de avaliação para ver a análise de desempenho da equipe.</p></div>
         </div>
     </div>
-
-    <!-- Modal PDI -->
-    <div class="modal-overlay" id="modalPdi"><div class="modal">
-        <div class="modal-titulo">Ação de desenvolvimento</div>
-        <div class="input-group"><label>Competência a desenvolver</label><input type="text" id="pdiComp" placeholder="Ex: Comunicação"></div>
-        <div class="input-group"><label>Ação</label><textarea id="pdiAcao" placeholder="O que será feito para desenvolver..."></textarea></div>
-        <div class="input-group"><label>Prazo</label><input type="date" id="pdiPrazo"></div>
-        <div class="modal-acoes"><button class="btn-ghost" onclick="fecharModal('modalPdi')">Cancelar</button><button class="btn-mini" onclick="salvarPdi()">Salvar ação</button></div>
-    </div></div>
-
-    <div class="toast" id="toast"></div>
 
     <script>
         const NIVEL_ACESSO = "{{ nivel_acesso }}";
-        let dados = null;
-        let telaAtiva = 'geral';
-        let pessoaAberta = null;
-        let ctxPdi = {};
+        let dados=null, telaAtiva='geral', pessoaAberta=null;
+        const FONT='Inter, sans-serif';
+        const CHART_ANIM={ animationDuration:750, animationEasing:'cubicOut' };
+
+        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function iniciais(n){ if(!n) return '?'; const p=n.trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[p.length-1]||'')[0]||''); }
+        // cor por nota 1-5 (heat)
+        function corN(n){ if(n===null||n===undefined) return '#cdd2df'; if(n>=3.5) return '#1fb589'; if(n>=2.5) return '#f5a83d'; return '#f0616d'; }
+        function corNsoft(n){ if(n===null||n===undefined) return '#eef0f6'; if(n>=3.5) return '#e4f7f1'; if(n>=2.5) return '#fef3e2'; return '#fdecee'; }
+        // avatar cor determinística
+        const AV=['#6c5ce7','#1fb589','#f5a83d','#ff6b9d','#4d8bf0','#9b7bff','#e8637a','#12b3a6'];
+        function corAvatar(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=(h*31+n.charCodeAt(i))%AV.length; return AV[h]; }
+
+        // ===== ECHARTS =====
+        let chartQueue=[], chartInstances=[];
+        function limparCharts(){ chartInstances.forEach(c=>{try{c.dispose();}catch(e){}}); chartInstances=[]; chartQueue=[]; }
+        function agendarChart(id,option){ chartQueue.push({id,option}); }
+        function montarCharts(){ chartQueue.forEach(({id,option})=>{ const el=document.getElementById(id); if(!el)return; const inst=echarts.init(el,null,{renderer:'svg'}); inst.setOption(option); chartInstances.push(inst); }); chartQueue=[]; }
+        window.addEventListener('resize', ()=>{ chartInstances.forEach(c=>{try{c.resize();}catch(e){}}); });
 
         document.addEventListener('DOMContentLoaded', carregarCiclos);
-        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-        function showToast(m,t){ const e=document.getElementById('toast'); e.textContent=m; e.className='toast show '+(t||''); setTimeout(()=>e.className='toast',2500); }
-        function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
-        function corNota(n){ if(n===null||n===undefined) return '#d4d4d8'; if(n>=3.5) return '#2FA875'; if(n>=2.5) return '#F5D06B'; return '#E5484D'; }
-        function iniciais(nome){ const p=(nome||'').trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
 
-        async function carregarCiclos() {
+        // ===== CARGA =====
+        async function carregarCiclos(){
             try {
-                const res = await fetch('/api/gd/ciclos');
-                if (res.status===403){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
-                const data = await res.json();
-                const clientes = data.clientes || [];
-                const nomeCli=(id)=>{ const c=clientes.find(x=>String(x.id)===String(id)); return c?c.nome:''; };
-                document.getElementById('selCiclo').innerHTML = '<option value="">Selecione um ciclo...</option>' +
-                    (data.ciclos||[]).map(c=>`<option value="${c.id}">${escH(c.titulo)} · ${escH(nomeCli(c.cliente_id))}</option>`).join('');
+                const res=await fetch('/api/gd/ciclos');
+                if(res.status===403){ document.getElementById('main').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                const data=await res.json();
+                const cli=data.clientes||[];
+                const nc=(id)=>{ const c=cli.find(x=>String(x.id)===String(id)); return c?c.nome:''; };
+                document.getElementById('selCiclo').innerHTML='<option value="">Selecione um ciclo...</option>'+
+                    (data.ciclos||[]).map(c=>`<option value="${c.id}">${escH(c.titulo)} · ${escH(nc(c.cliente_id))} (${c.formato}°)</option>`).join('');
             } catch(e){ console.error(e); }
         }
-
-        async function carregarResultados() {
-            const cid = document.getElementById('selCiclo').value;
-            document.getElementById('navLateral').style.display='none';
-            if (!cid){ document.getElementById('conteudo').innerHTML='<div class="empty"><span class="material-symbols-rounded">insights</span><h3>Selecione um ciclo</h3><p>Escolha um ciclo acima.</p></div>'; return; }
-            document.getElementById('conteudo').innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+        async function carregar(){
+            const cid=document.getElementById('selCiclo').value;
+            document.getElementById('nav').style.display='none';
+            if(!cid){ document.getElementById('main').innerHTML='<div class="empty"><span class="material-symbols-rounded">leaderboard</span><h3>Selecione um ciclo</h3><p>Escolha um ciclo para ver a análise.</p></div>'; return; }
+            document.getElementById('main').innerHTML='<div class="loading"><div class="spin"></div>Carregando análise...</div>';
             telaAtiva='geral'; pessoaAberta=null;
             try {
-                const res = await fetch('/api/gd/resultados/'+cid);
-                dados = await res.json();
-                if (!res.ok || dados.erro){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3></div>'; return; }
-                montarNav(); renderTela();
-            } catch(e){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
+                const res=await fetch('/api/gd/resultados/'+cid);
+                dados=await res.json();
+                if(!res.ok||dados.erro){ document.getElementById('main').innerHTML='<div class="empty"><h3>Erro ao carregar</h3></div>'; return; }
+                montarNav(); render();
+            } catch(e){ document.getElementById('main').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
         }
 
-        // ===== CÁLCULOS =====
-        // média ponderada de uma avaliação (por seus itens + pesos das competências)
+        // ===== CÁLCULOS (preservados) =====
         function pesoComp(compId){ const c=(dados.competencias||[]).find(x=>x.id===compId); return c?(c.peso||1):1; }
         function notaAvaliacao(avalId){
             const its=(dados.itens||[]).filter(i=>i.avaliacao_id===avalId && i.nota!=null);
             if(!its.length) return null;
-            let sn=0, sp=0; its.forEach(i=>{ const w=pesoComp(i.competencia_id); sn+=Number(i.nota)*w; sp+=w; });
+            let sn=0,sp=0; its.forEach(i=>{ const w=pesoComp(i.competencia_id); sn+=Number(i.nota)*w; sp+=w; });
             return sp? sn/sp : null;
         }
-        // nota consolidada de desempenho de uma pessoa (média das avaliações concluídas, conforme formato)
         function notaPessoa(pessoaId){
             const avals=(dados.avaliacoes||[]).filter(a=>a.pessoa_id===pessoaId && a.status==='concluida');
             const notas=avals.map(a=>notaAvaliacao(a.id)).filter(n=>n!=null);
@@ -231,247 +238,306 @@
             return notas.reduce((a,b)=>a+b,0)/notas.length;
         }
         function potencialPessoa(pessoaId){ const p=(dados.potenciais||[]).find(x=>x.pessoa_id===pessoaId); return p&&p.nota_potencial!=null?Number(p.nota_potencial):null; }
-        // gap auto vs gestor (para 180/360)
-        function notaPorPapel(pessoaId, papel){
+        function notaPorPapel(pessoaId,papel){
             const avals=(dados.avaliacoes||[]).filter(a=>a.pessoa_id===pessoaId && a.papel===papel && a.status==='concluida');
             const notas=avals.map(a=>notaAvaliacao(a.id)).filter(n=>n!=null);
             if(!notas.length) return null;
             return notas.reduce((a,b)=>a+b,0)/notas.length;
         }
-        function nomeCargo(id){ return dados.cargos[id]||'—'; }
-        function faixa(n){ if(n===null) return null; if(n>=3.5) return 2; if(n>=2.5) return 1; return 0; } // 0 baixo,1 medio,2 alto
+        function nomeCargo(id){ return (dados.cargos||{})[id]||'—'; }
+        function faixa(n){ if(n===null) return null; if(n>=3.5) return 2; if(n>=2.5) return 1; return 0; }
+        function competenciasPessoa(pessoaId){
+            // média por competência (nome) das avaliações concluídas da pessoa
+            const avals=(dados.avaliacoes||[]).filter(a=>a.pessoa_id===pessoaId && a.status==='concluida').map(a=>a.id);
+            const comps=(dados.competencias||[]).filter(c=>c.pessoa_id===pessoaId);
+            return comps.map(c=>{
+                const its=(dados.itens||[]).filter(i=>avals.includes(i.avaliacao_id) && i.competencia_id===c.id && i.nota!=null);
+                const m=its.length?its.reduce((a,b)=>a+Number(b.nota),0)/its.length:null;
+                return {nome:c.nome, tipo:c.tipo, media:m};
+            }).filter(c=>c.media!==null);
+        }
 
         // ===== NAV =====
-        function montarNav() {
-            const nav = document.getElementById('navLateral'); nav.style.display='block';
-            let html = `<div class="nav-grupo-label">Geral</div>`;
-            html += navItem('geral','dashboard','Visão Geral');
-            html += navItem('ninebox','grid_view','Matriz Nine Box');
-            html += navItem('competencias','insights','Por Competência');
-            html += navItem('pessoas','groups','Por Pessoa');
-            nav.innerHTML = html;
+        function montarNav(){
+            const nav=document.getElementById('nav'); nav.style.display='block';
+            const items=[
+                {g:'Análise'},
+                {id:'geral',ic:'insights',nome:'Visão Geral'},
+                {id:'ninebox',ic:'grid_view',nome:'Matriz Nine Box'},
+                {id:'competencias',ic:'radar',nome:'Competências'},
+                {g:'Pessoas'},
+                {id:'pessoas',ic:'groups',nome:'Por Pessoa'},
+            ];
+            nav.innerHTML=items.map(it=>it.g?`<div class="nav-grupo">${it.g}</div>`:`<div class="nav-item ${telaAtiva===it.id?'on':''}" onclick="irPara('${it.id}')"><span class="material-symbols-rounded">${it.ic}</span><span class="nav-nome">${it.nome}</span></div>`).join('');
         }
-        function navItem(id, icon, nome){ return `<div class="nav-item ${telaAtiva===id?'ativo':''}" onclick="irPara('${id}')"><span class="material-symbols-rounded">${icon}</span><span class="nav-nome">${nome}</span></div>`; }
-        function irPara(id){ telaAtiva=id; pessoaAberta=null; montarNav(); renderTela(); document.getElementById('conteudo').scrollTop=0; }
+        function irPara(id){ telaAtiva=id; pessoaAberta=null; montarNav(); render(); document.getElementById('main').scrollTop=0; }
 
-        function renderTela() {
-            if (telaAtiva==='geral') renderGeral();
-            else if (telaAtiva==='ninebox') renderNineBox();
-            else if (telaAtiva==='competencias') renderCompetencias();
-            else if (telaAtiva==='pessoas') renderPessoas();
+        function render(){
+            limparCharts();
+            if(!dados) return;
+            if(pessoaAberta) renderDetalhePessoa(pessoaAberta);
+            else if(telaAtiva==='geral') renderGeral();
+            else if(telaAtiva==='ninebox') renderNineBox(true);
+            else if(telaAtiva==='competencias') renderCompetencias();
+            else if(telaAtiva==='pessoas') renderPessoas();
+            requestAnimationFrame(montarCharts);
         }
 
-        // ===== VISÃO GERAL =====
-        function renderGeral() {
-            const pessoas = dados.pessoas || [];
-            const notas = pessoas.map(p=>notaPessoa(p.id)).filter(n=>n!=null);
-            const mediaGeral = notas.length? (notas.reduce((a,b)=>a+b,0)/notas.length) : null;
-            const totalAval = (dados.avaliacoes||[]).length;
-            const concluidas = (dados.avaliacoes||[]).filter(a=>a.status==='concluida').length;
-            const pctConcl = totalAval? Math.round(concluidas/totalAval*100):0;
-            const avaliados = pessoas.filter(p=>notaPessoa(p.id)!=null).length;
+        // dados agregados de pessoas
+        function pessoasComNota(){
+            return (dados.pessoas||[]).map(p=>({ ...p, nota:notaPessoa(p.id), pot:potencialPessoa(p.id) }));
+        }
 
+        // ===== TELA: VISÃO GERAL =====
+        function renderGeral(){
+            const ps=pessoasComNota();
+            const comNota=ps.filter(p=>p.nota!==null);
+            const mediaGeral=comNota.length? comNota.reduce((a,b)=>a+b.nota,0)/comNota.length : null;
+            const avaliadas=(dados.avaliacoes||[]).filter(a=>a.status==='concluida').length;
+            const totalAval=(dados.avaliacoes||[]).length;
+            const pctConcl=totalAval? Math.round(avaliadas/totalAval*100):0;
+            // distribuição por faixa
+            const fx={alto:0,medio:0,baixo:0};
+            comNota.forEach(p=>{ const f=faixa(p.nota); if(f===2)fx.alto++; else if(f===1)fx.medio++; else fx.baixo++; });
             // ranking
-            const rank = pessoas.map(p=>({nome:p.nome, nota:notaPessoa(p.id)})).filter(x=>x.nota!=null).sort((a,b)=>b.nota-a.nota);
+            const rank=[...comNota].sort((a,b)=>b.nota-a.nota);
 
-            let html = `<div class="fade-in">
-                <div class="tela-titulo"><span class="material-symbols-rounded" style="color:var(--purple);">dashboard</span> Visão Geral</div>
-                <div class="tela-sub">${escH(dados.ciclo.titulo)} · formato ${dados.ciclo.formato}°</div>
-                <div class="kpi-row">
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">star</span></div><span class="kpi-lbl">Nota média</span></div><div class="kpi-num" style="color:${corNota(mediaGeral)};">${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</div><div class="kpi-sub">de 5.0</div></div>
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">groups</span></div><span class="kpi-lbl">Avaliados</span></div><div class="kpi-num">${avaliados}</div><div class="kpi-sub">de ${pessoas.length} pessoas</div></div>
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">task_alt</span></div><span class="kpi-lbl">Conclusão</span></div><div class="kpi-num">${pctConcl}%</div><div class="kpi-sub">${concluidas}/${totalAval} avaliações</div></div>
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">grid_view</span></div><span class="kpi-lbl">Formato</span></div><div class="kpi-num">${dados.ciclo.formato}°</div><div class="kpi-sub">${ ({'90':'Gestor','180':'Gestor + auto','360':'Completo'})[dados.ciclo.formato]||''}</div></div>
-                </div>
-                <div class="secao-label">Ranking de desempenho</div>
-                <div class="card rank-card">
-                    ${rank.length?`<div class="rank-list">${rank.map((r,i)=>`<div class="rank-row"><div class="rank-badge ${i===0?'g1':''}">${i+1}</div><div class="rank-body"><div class="rank-line"><span class="rank-nome">${escH(r.nome)}</span><span class="rank-val" style="color:${corNota(r.nota)};">${r.nota.toFixed(1)}</span></div><div class="rank-track"><div class="rank-fill" data-w="${r.nota/5*100}" style="width:0%; background:${corNota(r.nota)};"></div></div></div></div>`).join('')}</div>`:'<div class="empty" style="padding:40px;"><p>Ainda não há avaliações concluídas.</p></div>'}
-                </div>
-                ${renderIA(mediaGeral, rank)}
-            </div>`;
-            document.getElementById('conteudo').innerHTML = html;
-            requestAnimationFrame(()=>document.querySelectorAll('.rank-fill').forEach(f=>f.style.width=(f.dataset.w||0)+'%'));
+            let h=`<div class="fade">
+                <div class="head"><div class="head-l"><div class="eyebrow">Ciclo de avaliação</div><div class="title">${escH(dados.ciclo.titulo)}</div><div class="subtitle">${escH(formatoLabel(dados.ciclo.formato))} · ${ps.length} participantes · ${pctConcl}% das avaliações concluídas</div></div></div>
+                <div class="grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:4px;">
+                    ${kpiBig('Nota média', mediaGeral!==null?mediaGeral.toFixed(1):'—', 'de 5.0', 'star', corN(mediaGeral))}
+                    ${kpiBig('Alto desempenho', String(fx.alto), 'nota ≥ 3.5', 'trending_up', '#1fb589')}
+                    ${kpiBig('Requer atenção', String(fx.baixo), 'nota < 2.5', 'priority_high', fx.baixo>0?'#f0616d':'#8b91a7')}
+                    ${kpiBig('Participantes', String(ps.length), 'no ciclo', 'groups', '#6c5ce7')}
+                </div>`;
+            // layout assimétrico: distribuição (donut) + ranking (maior)
+            h+=`<div class="grid" style="grid-template-columns:0.85fr 1.15fr; align-items:stretch; margin-top:18px;">
+                    <div class="card"><div class="card-h"><div class="card-t">Distribuição de desempenho</div><div class="card-s">Colaboradores por faixa</div></div>${donutFaixas(fx)}</div>
+                    <div class="card"><div class="card-h"><div class="card-t">Ranking de desempenho</div><div class="card-s">Nota consolidada por pessoa</div></div>
+                        ${rank.length?`<div class="rank">${rank.slice(0,8).map((r,i)=>rankRow(r,i)).join('')}</div>`:'<div class="empty" style="padding:36px;"><p>Sem avaliações concluídas ainda.</p></div>'}
+                    </div>
+                </div>`;
+            // Nine box compacto + IA
+            h+=`<div class="sec">Posicionamento estratégico</div>
+                <div class="grid" style="grid-template-columns:1.4fr 1fr; align-items:start;">
+                    <div class="card">${nineBoxMini()}</div>
+                    <div>${renderIA(ps,fx,rank)}</div>
+                </div>`;
+            h+=`</div>`;
+            document.getElementById('main').innerHTML=h;
+            animBars();
         }
-
-        function renderIA(mediaGeral, rank) {
-            const ins = [];
-            if (rank.length){
-                ins.push({tipo:'pos',icon:'workspace_premium',texto:`<b>${escH(rank[0].nome)}</b> tem o melhor desempenho do ciclo, com nota <b>${rank[0].nota.toFixed(1)}</b>.`});
-                if (rank.length>=2){ const ult=rank[rank.length-1]; if(ult.nota<3) ins.push({tipo:'neg',icon:'priority_high',texto:`<b>${escH(ult.nome)}</b> (${ult.nota.toFixed(1)}) está abaixo do esperado e pode precisar de um PDI focado.`}); }
-            }
-            // competência mais fraca no geral
-            const compMedia = mediaCompetenciasGeral();
-            if (compMedia.length){ const pior=compMedia[compMedia.length-1]; const mel=compMedia[0];
-                ins.push({tipo:'pos',icon:'trending_up',texto:`A competência mais forte da equipe é <b>${escH(mel.nome)}</b> (${mel.media.toFixed(1)}).`});
-                ins.push({tipo:'neg',icon:'trending_down',texto:`<b>${escH(pior.nome)}</b> (${pior.media.toFixed(1)}) é a competência a desenvolver no time.`});
-            }
-            // nine box: destaques (alto desempenho + alto potencial)
-            const estrelas = (dados.pessoas||[]).filter(p=>{ const d=faixa(notaPessoa(p.id)), pt=faixa(potencialPessoa(p.id)); return d===2&&pt===2; });
-            if (estrelas.length) ins.push({tipo:'neu',icon:'star',texto:`<b>${estrelas.length} pessoa(s)</b> estão no quadrante de destaque (alto desempenho + alto potencial) da Nine Box.`});
-            if (mediaGeral!==null) ins.push({tipo: mediaGeral>=3.5?'pos':mediaGeral>=2.5?'neu':'neg', icon:'analytics', texto:`A nota média geral do ciclo é <b>${mediaGeral.toFixed(1)}</b>.`});
-            if (!ins.length) ins.push({tipo:'neu',icon:'info',texto:'Sem dados suficientes ainda. Aguarde as avaliações serem concluídas.'});
-            return `<div class="secao-label">Análise</div><div class="ia-card"><div class="ia-head"><div class="ia-badge"><span class="material-symbols-rounded">auto_awesome</span></div><div><div class="ia-titulo">Análise automática</div><div class="ia-sub">Gerada a partir dos resultados do ciclo</div></div></div><div class="ia-grid">${ins.map(i=>`<div class="ia-item"><div class="ia-ico ia-${i.tipo}"><span class="material-symbols-rounded">${i.icon}</span></div><div class="ia-txt">${i.texto}</div></div>`).join('')}</div></div>`;
-        }
-
-        // média de cada competência (por nome, no ciclo todo)
-        function mediaCompetenciasGeral() {
-            const porNome = {};
-            (dados.itens||[]).filter(i=>i.nota!=null).forEach(i=>{
-                const comp=(dados.competencias||[]).find(c=>c.id===i.competencia_id); if(!comp) return;
-                porNome[comp.nome]=porNome[comp.nome]||{soma:0,n:0}; porNome[comp.nome].soma+=Number(i.nota); porNome[comp.nome].n++;
+        function formatoLabel(f){ return ({'90':'Avaliação do gestor','180':'Gestor + autoavaliação','360':'Avaliação 360°'})[f]||f+'°'; }
+        function kpiBig(lbl,val,desc,ic,cor){ return `<div class="kpi"><div class="kpi-ico" style="background:${hex2rgba(cor,0.13)};"><span class="material-symbols-rounded" style="color:${cor};">${ic}</span></div><div class="kpi-v" style="color:${cor};">${val}</div><div class="kpi-l">${lbl}</div><div class="kpi-d">${desc}</div></div>`; }
+        function hex2rgba(hex,a){ const n=hex.replace('#',''); const r=parseInt(n.slice(0,2),16),g=parseInt(n.slice(2,4),16),b=parseInt(n.slice(4,6),16); return `rgba(${r},${g},${b},${a})`; }
+        function rankRow(r,i){ const cls=i===0?'p1':i===1?'p2':i===2?'p3':''; return `<div class="rank-row"><div class="rank-pos ${cls}">${i+1}</div><div class="avatar" style="background:${corAvatar(r.nome)};">${escH(iniciais(r.nome))}</div><div class="rank-mid"><div class="rank-top"><span class="rank-nm">${escH(r.nome)} <small>· ${escH(nomeCargo(r.cargo_id))}</small></span><span class="rank-vl" style="color:${corN(r.nota)};">${r.nota.toFixed(1)}</span></div><div class="rank-track"><div class="rank-bar" data-w="${r.nota/5*100}" style="width:0; background:${corN(r.nota)};"></div></div></div></div>`; }
+        function donutFaixas(fx){
+            const id='ch_donut'; const data=[
+                {value:fx.alto,name:'Alto',itemStyle:{color:'#1fb589'}},
+                {value:fx.medio,name:'Médio',itemStyle:{color:'#f5a83d'}},
+                {value:fx.baixo,name:'Baixo',itemStyle:{color:'#f0616d'}}
+            ].filter(d=>d.value>0);
+            const total=fx.alto+fx.medio+fx.baixo;
+            agendarChart(id,{ ...CHART_ANIM,
+                tooltip:{trigger:'item',textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p.name} desempenho<br/><b>${p.value}</b> pessoa${p.value!==1?'s':''} (${p.percent}%)`},
+                legend:{bottom:0,left:'center',textStyle:{fontFamily:FONT,fontSize:11.5,fontWeight:600,color:'#4a5069'},icon:'roundRect',itemWidth:11,itemHeight:11,itemGap:16},
+                series:[{type:'pie',radius:['58%','80%'],center:['50%','44%'],avoidLabelOverlap:false,itemStyle:{borderColor:'#fff',borderWidth:3,borderRadius:4},label:{show:false},labelLine:{show:false},data}],
+                graphic:[{type:'text',left:'center',top:'38%',style:{text:String(total),fontSize:30,fontWeight:800,fill:'#141726',fontFamily:FONT,textAlign:'center'}},{type:'text',left:'center',top:'50%',style:{text:'avaliados',fontSize:10,fontWeight:600,fill:'#8b91a7',fontFamily:FONT,textAlign:'center'}}]
             });
-            return Object.entries(porNome).map(([nome,v])=>({nome, media:v.soma/v.n})).sort((a,b)=>b.media-a.media);
+            return `<div id="${id}" class="echart" style="height:240px;"></div>`;
         }
+
+        function renderIA(ps,fx,rank){
+            const out=[]; const comNota=ps.filter(p=>p.nota!==null);
+            // estrelas (alto/alto)
+            const estrelas=ps.filter(p=>{ const f=faixa(p.nota), fp=faixa(mapPot(p.pot)); return f===2&&fp===2; });
+            if(estrelas.length) out.push({t:'pos',i:'star',x:`<b>${estrelas.length} ${estrelas.length===1?'pessoa está':'pessoas estão'}</b> no quadrante de destaque (alto desempenho + alto potencial).`});
+            if(rank.length) out.push({t:'pos',i:'workspace_premium',x:`<b>${escH(rank[0].nome)}</b> lidera com nota <b>${rank[0].nota.toFixed(1)}</b>.`});
+            if(fx.baixo>0){ const criticos=comNota.filter(p=>faixa(p.nota)===0); out.push({t:'neg',i:'priority_high',x:`<b>${fx.baixo} ${fx.baixo===1?'pessoa requer':'pessoas requerem'}</b> atenção${criticos.length===1?' ('+escH(criticos[0].nome)+')':''}: desempenho abaixo de 2.5.`}); }
+            // gap auto vs gestor médio
+            const gaps=[]; ps.forEach(p=>{ const g=notaPorPapel(p.id,'gestor'), a=notaPorPapel(p.id,'autoavaliacao'); if(g!==null&&a!==null) gaps.push(a-g); });
+            if(gaps.length){ const gm=gaps.reduce((a,b)=>a+b,0)/gaps.length; if(Math.abs(gm)>=0.3) out.push({t:'neu',i:'compare_arrows',x:`Autoavaliações estão em média <b>${gm>0?'+':''}${gm.toFixed(1)}</b> ${gm>0?'acima':'abaixo'} da avaliação do gestor.`}); }
+            // PDIs
+            const pdis=(dados.pdis||[]).length; if(pdis) out.push({t:'neu',i:'checklist',x:`<b>${pdis}</b> ${pdis===1?'plano de desenvolvimento ativo':'planos de desenvolvimento ativos'} (PDI) no ciclo.`});
+            if(!out.length) out.push({t:'neu',i:'info',x:'Sem avaliações concluídas suficientes para gerar análise.'});
+            return `<div class="ia"><div class="ia-h"><div class="ia-badge"><span class="material-symbols-rounded">auto_awesome</span></div><div><div class="ia-t">Leitura do ciclo</div><div class="ia-s">Gerada dos resultados</div></div></div><div class="ia-grid">${out.slice(0,4).map(o=>`<div class="ia-item"><div class="ia-ic ia-${o.t}"><span class="material-symbols-rounded">${o.i}</span></div><div class="ia-tx">${o.x}</div></div>`).join('')}</div></div>`;
+        }
+        // mapeia potencial (1-5) para faixa
+        function mapPot(pot){ return pot; }
 
         // ===== NINE BOX =====
-        function renderNineBox() {
-            // matriz 3x3: linhas = potencial (alto em cima), colunas = desempenho (alto à direita)
-            const grid = [[[],[],[]],[[],[],[]],[[],[],[]]]; // grid[linhaPotencial][colDesempenho]
-            (dados.pessoas||[]).forEach(p=>{
-                const d=faixa(notaPessoa(p.id)), pt=faixa(potencialPessoa(p.id));
-                if(d===null||pt===null) return;
-                const linha = 2-pt; // alto potencial no topo
-                grid[linha][d].push(p.nome);
-            });
-            // cores por caixa (quadrantes: verde=melhores, amarelo=medianos, vermelho=atenção)
-            const cores = [
-                ['#F5D06B','#7DD1A6','#2FA875'],
-                ['#F2A98C','#F5D06B','#7DD1A6'],
-                ['#E5484D','#F2A98C','#F5D06B']
-            ];
-            const labels = [
-                ['Enigma','Forte desemp.','Estrela'],
-                ['Questionável','Mantenedor','Alto desemp.'],
-                ['Risco','Eficaz','Especialista']
-            ];
-            let cells = '';
-            for (let l=0;l<3;l++) for (let c=0;c<3;c++){
-                const pessoas=grid[l][c];
-                cells += `<div class="nb-cell" style="background:${cores[l][c]}2e; box-shadow: inset 0 0 0 1px ${cores[l][c]}55;">
-                    <div class="nb-cell-label" style="color:${cores[l][c]}; filter:brightness(0.7);">${labels[l][c]}</div>
-                    <div class="nb-pessoas">${pessoas.map(n=>`<span class="nb-chip">${escH(n)}</span>`).join('')||'<span style="font-size:11px; color:var(--text-muted); opacity:0.6;">—</span>'}</div>
-                </div>`;
-            }
-            const semDados = (dados.pessoas||[]).filter(p=>notaPessoa(p.id)!=null && potencialPessoa(p.id)!=null).length===0;
-            let html = `<div class="fade-in">
-                <div class="tela-titulo"><span class="material-symbols-rounded" style="color:var(--purple);">grid_view</span> Matriz Nine Box</div>
-                <div class="tela-sub">Cruzamento de desempenho (avaliação) e potencial (definido pelo gestor).</div>
-                ${semDados?`<div class="card empty" style="padding:60px;"><span class="material-symbols-rounded">grid_view</span><h3>Sem dados para a matriz</h3><p>A Nine Box precisa de avaliações concluídas e do potencial informado pelo gestor.</p></div>`:`
-                <div class="card" style="padding:26px;">
-                    <div class="ninebox-wrap">
-                        <div class="nb-eixo-y"><span>Potencial →</span></div>
-                        <div class="ninebox">${cells}</div>
-                    </div>
-                    <div class="nb-eixo-x">Desempenho →</div>
-                    <div class="nb-legenda">
-                        <div class="nb-leg"><span class="nb-leg-dot" style="background:#2FA875;"></span> Destaques / manter</div>
-                        <div class="nb-leg"><span class="nb-leg-dot" style="background:#F5D06B;"></span> Desenvolver</div>
-                        <div class="nb-leg"><span class="nb-leg-dot" style="background:#E5484D;"></span> Atenção / risco</div>
-                    </div>
-                </div>`}
-            </div>`;
-            document.getElementById('conteudo').innerHTML = html;
+        // quadrantes 3x3: linha = potencial (cima=alto), coluna = desempenho (direita=alto)
+        const NB_META = {
+            '2-2':{nome:'Estrela',sub:'Alto pot · alto desemp',cor:'#1fb589',bg:'#d6f5ec'},
+            '2-1':{nome:'Forte potencial',sub:'Alto pot · médio desemp',cor:'#3fbf9a',bg:'#e0f5ee'},
+            '2-0':{nome:'Enigma',sub:'Alto pot · baixo desemp',cor:'#f5a83d',bg:'#fdeed6'},
+            '1-2':{nome:'Alto desempenho',sub:'Médio pot · alto desemp',cor:'#4dbf8f',bg:'#e2f5ec'},
+            '1-1':{nome:'Mantenedor',sub:'Médio pot · médio desemp',cor:'#f5b544',bg:'#fdf0da'},
+            '1-0':{nome:'Em desenvolvimento',sub:'Médio pot · baixo desemp',cor:'#f08a3d',bg:'#fde8d6'},
+            '0-2':{nome:'Especialista',sub:'Baixo pot · alto desemp',cor:'#6c9fd8',bg:'#e4eef9'},
+            '0-1':{nome:'Eficaz',sub:'Baixo pot · médio desemp',cor:'#e89a4d',bg:'#fbecd8'},
+            '0-0':{nome:'Risco',sub:'Baixo pot · baixo desemp',cor:'#f0616d',bg:'#fbdde0'}
+        };
+        function nineBoxData(){
+            const ps=pessoasComNota();
+            const cells={};
+            for(let pot=2;pot>=0;pot--) for(let des=0;des<=2;des++) cells[pot+'-'+des]=[];
+            ps.forEach(p=>{ const fd=faixa(p.nota), fp=faixa(p.pot); if(fd===null||fp===null) return; cells[fp+'-'+fd].push(p); });
+            return cells;
         }
-
-        // ===== POR COMPETÊNCIA =====
-        function renderCompetencias() {
-            const comps = mediaCompetenciasGeral();
-            let html = `<div class="fade-in">
-                <div class="tela-titulo"><span class="material-symbols-rounded" style="color:var(--purple);">insights</span> Por Competência</div>
-                <div class="tela-sub">Média de cada competência avaliada no ciclo (todas as pessoas).</div>
-                ${comps.length?`<div class="card" style="padding:28px;"><div class="comp-list">${comps.map(c=>{ const cor=corNota(c.media); return `<div class="comp-bar-row"><div class="comp-bar-top"><div><span class="comp-bar-nome">${escH(c.nome)}</span></div><span class="comp-bar-val" style="color:${cor};">${c.media.toFixed(1)}</span></div><div class="comp-bar-track"><div class="comp-bar-fill" data-w="${c.media/5*100}" style="width:0%; background:${cor};"></div></div></div>`; }).join('')}</div></div>`:'<div class="card empty" style="padding:60px;"><p>Sem avaliações concluídas ainda.</p></div>'}
+        function nbCellHtml(pot,des,cells,compact){
+            const key=pot+'-'+des; const meta=NB_META[key]; const gente=cells[key]||[];
+            const chips=compact? '' : `<div class="nb-people">${gente.slice(0,4).map(p=>`<span class="nb-chip">${escH(p.nome.split(' ')[0])}</span>`).join('')}${gente.length>4?`<span class="nb-chip more">+${gente.length-4}</span>`:''}</div>`;
+            return `<div class="nb-cell" style="background:${meta.bg};" onclick="${compact?`irPara('ninebox')`:`filtrarQuadrante('${key}')`}" title="${meta.nome}">
+                <div class="nb-cell-lbl" style="color:${meta.cor};">${meta.nome}</div>
+                <div class="nb-cell-sub" style="color:${meta.cor};">${meta.sub}</div>
+                <div class="nb-count" style="color:${meta.cor};">${gente.length||''}</div>
+                ${chips}
             </div>`;
-            document.getElementById('conteudo').innerHTML = html;
-            requestAnimationFrame(()=>document.querySelectorAll('.comp-bar-fill').forEach(f=>f.style.width=(f.dataset.w||0)+'%'));
         }
-
-        // ===== POR PESSOA =====
-        function renderPessoas() {
-            if (pessoaAberta) { renderPessoaDetalhe(pessoaAberta); return; }
-            const pessoas = dados.pessoas || [];
-            let html = `<div class="fade-in">
-                <div class="tela-titulo"><span class="material-symbols-rounded" style="color:var(--purple);">groups</span> Por Pessoa</div>
-                <div class="tela-sub">Selecione uma pessoa para ver o detalhe da avaliação e o PDI.</div>
-                <div class="pessoa-sel-grid">
-                    ${pessoas.map(p=>{ const n=notaPessoa(p.id); return `<div class="card pessoa-card" onclick="abrirPessoa('${p.id}')"><div class="pessoa-avatar">${escH(iniciais(p.nome))}</div><div class="pessoa-card-info"><div class="pessoa-card-nome">${escH(p.nome)}</div><div class="pessoa-card-cargo">${escH(nomeCargo(p.cargo_id))}</div></div><div class="pessoa-card-nota" style="color:${corNota(n)};">${n!==null?n.toFixed(1):'—'}</div></div>`; }).join('')}
+        function nineBoxGrid(compact){
+            const cells=nineBoxData();
+            let grid='';
+            for(let pot=2;pot>=0;pot--) for(let des=0;des<=2;des++) grid+=nbCellHtml(pot,des,cells,compact);
+            return `<div class="ninebox-wrap">
+                <div class="ninebox-yaxis"><div class="axis-label">Potencial →</div></div>
+                <div class="ninebox">
+                    <div class="nb-grid">${grid}</div>
+                    <div style="text-align:center; margin-top:12px; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--ink-soft);">Desempenho →</div>
                 </div>
             </div>`;
-            document.getElementById('conteudo').innerHTML = html;
         }
-        function abrirPessoa(id){ pessoaAberta=id; renderPessoaDetalhe(id); }
+        function nineBoxMini(){
+            return `<div class="card-h"><div class="card-t">Matriz Nine Box</div><div class="card-s">Desempenho × Potencial · clique para explorar</div></div>${nineBoxGrid(true)}`;
+        }
+        function renderNineBox(full){
+            const cells=nineBoxData();
+            const total=Object.values(cells).reduce((a,b)=>a+b.length,0);
+            let h=`<div class="fade">
+                <div class="head"><div class="head-l"><div class="eyebrow">Matriz estratégica</div><div class="title">Nine Box</div><div class="subtitle">Cruzamento de desempenho e potencial · ${total} pessoas posicionadas</div></div></div>
+                <div class="grid" style="grid-template-columns:1.5fr 1fr; align-items:start;">
+                    <div class="card">${nineBoxGrid(false)}</div>
+                    <div class="card"><div class="card-h"><div class="card-t">Como ler a matriz</div><div class="card-s">Cada quadrante sugere uma ação de gestão</div></div>
+                        <div class="nb-legend">
+                            ${nbLeg('#1fb589','Estrelas','Reter e desenvolver para posições de liderança.')}
+                            ${nbLeg('#f5a83d','Enigmas','Alto potencial subutilizado — investigar barreiras.')}
+                            ${nbLeg('#6c9fd8','Especialistas','Excelentes no que fazem — valorizar a expertise.')}
+                            ${nbLeg('#f0616d','Risco','Desempenho e potencial baixos — plano de ação ou realocação.')}
+                        </div>
+                    </div>
+                </div>
+                <div id="quadrante-detalhe"></div>
+            </div>`;
+            document.getElementById('main').innerHTML=h;
+        }
+        function nbLeg(cor,titulo,desc){ return `<div class="nb-leg-item"><span class="nb-leg-dot" style="background:${cor};"></span><div class="nb-leg-txt"><b>${titulo}</b><span>${desc}</span></div></div>`; }
+        function filtrarQuadrante(key){
+            const cells=nineBoxData(); const gente=cells[key]||[]; const meta=NB_META[key];
+            const el=document.getElementById('quadrante-detalhe');
+            if(!el) return;
+            el.innerHTML=`<div class="sec">${meta.nome} · ${gente.length} ${gente.length===1?'pessoa':'pessoas'}</div>
+                ${gente.length?`<div class="people-grid">${gente.map(p=>personCard(p)).join('')}</div>`:'<div class="card empty" style="padding:40px;"><p>Nenhuma pessoa neste quadrante.</p></div>'}`;
+            el.scrollIntoView({behavior:'smooth',block:'start'});
+        }
 
-        function renderPessoaDetalhe(pessoaId) {
-            const p = (dados.pessoas||[]).find(x=>x.id===pessoaId);
-            const nota = notaPessoa(pessoaId);
-            const pot = potencialPessoa(pessoaId);
-            const fmt = dados.ciclo.formato;
-            // gap auto vs gestor (180/360)
-            const notaGestor = notaPorPapel(pessoaId,'gestor');
-            const notaAuto = notaPorPapel(pessoaId,'autoavaliacao');
-            // competências da pessoa (média dos itens dela)
-            const compsPessoa = {};
-            const avalIds = (dados.avaliacoes||[]).filter(a=>a.pessoa_id===pessoaId && a.status==='concluida').map(a=>a.id);
-            (dados.itens||[]).filter(i=>avalIds.includes(i.avaliacao_id) && i.nota!=null).forEach(i=>{
-                const comp=(dados.competencias||[]).find(c=>c.id===i.competencia_id); if(!comp) return;
-                compsPessoa[comp.nome]=compsPessoa[comp.nome]||{soma:0,n:0}; compsPessoa[comp.nome].soma+=Number(i.nota); compsPessoa[comp.nome].n++;
+        // ===== COMPETÊNCIAS =====
+        function renderCompetencias(){
+            // agrega média por competência (nome) no ciclo todo
+            const mapa={};
+            (dados.competencias||[]).forEach(c=>{ if(!mapa[c.nome]) mapa[c.nome]={nome:c.nome,tipo:c.tipo,soma:0,n:0}; });
+            const avalConcl=new Set((dados.avaliacoes||[]).filter(a=>a.status==='concluida').map(a=>a.id));
+            const compById={}; (dados.competencias||[]).forEach(c=>compById[c.id]=c);
+            (dados.itens||[]).forEach(i=>{ if(!avalConcl.has(i.avaliacao_id)||i.nota==null) return; const c=compById[i.competencia_id]; if(!c) return; const m=mapa[c.nome]; if(m){ m.soma+=Number(i.nota); m.n++; } });
+            const comps=Object.values(mapa).map(m=>({nome:m.nome,tipo:m.tipo,media:m.n?m.soma/m.n:null})).filter(c=>c.media!==null).sort((a,b)=>b.media-a.media);
+            const porTipo={tecnica:[],comportamental:[],resultado:[]};
+            comps.forEach(c=>{ (porTipo[c.tipo]||porTipo.tecnica).push(c); });
+
+            let h=`<div class="fade">
+                <div class="head"><div class="head-l"><div class="eyebrow">Competências</div><div class="title">Análise por competência</div><div class="subtitle">Média da equipe em cada competência avaliada</div></div></div>`;
+            if(!comps.length){ h+=`<div class="card empty" style="padding:60px;"><span class="material-symbols-rounded">radar</span><h3>Sem avaliações</h3><p>Ainda não há avaliações concluídas neste ciclo.</p></div></div>`; document.getElementById('main').innerHTML=h; return; }
+            // radar geral + barras por tipo
+            h+=`<div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+                <div class="card"><div class="card-h"><div class="card-t">Panorama de competências</div><div class="card-s">Visão radar da equipe</div></div>${radarComps(comps)}</div>
+                <div class="card"><div class="card-h"><div class="card-t">Ranking de competências</div><div class="card-s">Da mais forte à mais frágil</div></div>${barrasComps(comps)}</div>
+            </div>`;
+            document.getElementById('main').innerHTML=h;
+        }
+        function radarComps(comps){
+            const id='ch_radar'; const use=comps.slice(0,8);
+            agendarChart(id,{ ...CHART_ANIM,
+                tooltip:{textStyle:{fontFamily:FONT,fontSize:12}},
+                radar:{ indicator:use.map(c=>({name:c.nome,max:5})), radius:'66%', center:['50%','54%'],
+                    axisName:{fontSize:10,color:'#4a5069',fontFamily:FONT}, splitLine:{lineStyle:{color:'#e9ecf3'}}, splitArea:{areaStyle:{color:['#fbfcfe','#f4f6fa']}}, axisLine:{lineStyle:{color:'#e9ecf3'}} },
+                series:[{type:'radar',data:[{value:use.map(c=>+c.media.toFixed(2)),name:'Média',areaStyle:{color:'rgba(108,92,231,0.18)'},lineStyle:{color:'#6c5ce7',width:2},itemStyle:{color:'#6c5ce7'}}]}]
             });
-            const compArr = Object.entries(compsPessoa).map(([nome,v])=>({nome,media:v.soma/v.n})).sort((a,b)=>b.media-a.media);
-            // comentários
-            const comentarios = (dados.itens||[]).filter(i=>avalIds.includes(i.avaliacao_id) && i.comentario && i.comentario.trim()).map(i=>i.comentario.trim());
+            return `<div id="${id}" class="echart" style="height:340px;"></div>`;
+        }
+        function barrasComps(comps){
+            const id='ch_bcomp';
+            const nomes=comps.map(c=>c.nome).reverse();
+            const vals=comps.map(c=>({value:+c.media.toFixed(2), itemStyle:{color:corN(c.media),borderRadius:[0,6,6,0]}})).reverse();
+            const alt=Math.max(180, comps.length*40);
+            agendarChart(id,{ ...CHART_ANIM, grid:{left:4,right:44,top:6,bottom:4,containLabel:true},
+                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].name}<br/><b>${p[0].value}</b> / 5.0`},
+                xAxis:{type:'value',max:5,splitLine:{show:false},axisLabel:{show:false},axisLine:{show:false},axisTick:{show:false}},
+                yAxis:{type:'category',data:nomes,axisLine:{show:false},axisTick:{show:false},axisLabel:{fontSize:11.5,fontWeight:600,color:'#141726',fontFamily:FONT}},
+                series:[{type:'bar',data:vals,barWidth:15,label:{show:true,position:'right',fontSize:12,fontWeight:800,fontFamily:FONT,color:'#141726',formatter:p=>p.value.toFixed(1)},showBackground:true,backgroundStyle:{color:'#eef0f6',borderRadius:6}}]
+            });
+            return `<div id="${id}" class="echart" style="height:${alt}px;"></div>`;
+        }
+
+        // ===== PESSOAS =====
+        function personCard(p){ const n=p.nota!==undefined?p.nota:notaPessoa(p.id); return `<div class="person" onclick="abrirPessoa('${p.id}')"><div class="avatar" style="background:${corAvatar(p.nome)};">${escH(iniciais(p.nome))}</div><div class="person-info"><div class="person-nm">${escH(p.nome)}</div><div class="person-cg">${escH(nomeCargo(p.cargo_id))}</div></div><div class="person-badge" style="color:${corN(n)}; background:${corNsoft(n)};">${n!==null&&n!==undefined?n.toFixed(1):'—'}</div></div>`; }
+        function renderPessoas(){
+            const ps=pessoasComNota().sort((a,b)=>(b.nota||0)-(a.nota||0));
+            let h=`<div class="fade">
+                <div class="head"><div class="head-l"><div class="eyebrow">Pessoas</div><div class="title">Avaliação individual</div><div class="subtitle">${ps.length} participantes · clique para ver o detalhe</div></div></div>
+                <div class="people-grid">${ps.map(p=>personCard(p)).join('')}</div>
+            </div>`;
+            document.getElementById('main').innerHTML=h;
+        }
+        function abrirPessoa(id){ pessoaAberta=id; render(); document.getElementById('main').scrollTop=0; }
+
+        function renderDetalhePessoa(id){
+            const p=(dados.pessoas||[]).find(x=>x.id===id);
+            if(!p){ pessoaAberta=null; render(); return; }
+            const nota=notaPessoa(id), pot=potencialPessoa(id);
+            const notaGestor=notaPorPapel(id,'gestor'), notaAuto=notaPorPapel(id,'autoavaliacao');
+            const comps=competenciasPessoa(id);
+            const pdis=(dados.pdis||[]).filter(x=>x.pessoa_id===id);
+            let h=`<div class="fade">
+                <div class="back" onclick="pessoaAberta=null; render();"><span class="material-symbols-rounded" style="font-size:17px;">arrow_back</span> Voltar</div>
+                <div class="head"><div class="head-l" style="display:flex; align-items:center; gap:16px;">
+                    <div class="avatar" style="width:56px; height:56px; font-size:19px; border-radius:15px !important; background:${corAvatar(p.nome)};">${escH(iniciais(p.nome))}</div>
+                    <div><div class="title" style="font-size:23px;">${escH(p.nome)}</div><div class="subtitle">${escH(nomeCargo(p.cargo_id))}</div></div>
+                </div></div>
+                <div class="grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:4px;">
+                    ${kpiBig('Desempenho', nota!==null?nota.toFixed(1):'—', 'de 5.0', 'star', corN(nota))}
+                    ${kpiBig('Potencial', pot!==null?pot.toFixed(1):'—', 'Nine Box', 'trending_up', corN(pot))}
+                    ${kpiBig('PDIs', String(pdis.length), 'planos ativos', 'checklist', '#6c5ce7')}
+                </div>`;
+            // gap gestor x auto (se houver)
+            if(notaGestor!==null && notaAuto!==null){
+                const dif=notaAuto-notaGestor;
+                h+=`<div class="sec">Percepção</div><div class="card"><div class="card-h"><div class="card-t">Gestor × Autoavaliação</div><div class="card-s">Diferença de percepção sobre o desempenho</div></div>
+                    <div class="gap-box">
+                        <div class="gap-n"><div class="v" style="color:${corN(notaGestor)};">${notaGestor.toFixed(1)}</div><div class="l">Gestor</div></div>
+                        <div class="gap-mid"><div class="d" style="color:${Math.abs(dif)<0.3?'#8b91a7':dif>0?'#f5a83d':'#6c9fd8'};">${dif>0?'+':''}${dif.toFixed(1)}</div><div class="l">gap</div></div>
+                        <div class="gap-n"><div class="v" style="color:${corN(notaAuto)};">${notaAuto.toFixed(1)}</div><div class="l">Autoavaliação</div></div>
+                    </div></div>`;
+            }
+            // competências
+            h+=`<div class="sec">Competências</div><div class="card">${comps.length?comps.map(c=>`<div class="comp-row"><div class="comp-top"><span class="comp-nm">${escH(c.nome)}<span class="comp-tp">${escH(c.tipo)}</span></span><span class="comp-vl" style="color:${corN(c.media)};">${c.media.toFixed(1)}</span></div><div class="comp-track"><div class="comp-fill" data-w="${c.media/5*100}" style="width:0; background:${corN(c.media)};"></div></div></div>`).join(''):'<div style="color:var(--ink-mute); font-size:13px;">Sem avaliações concluídas.</div>'}</div>`;
             // PDI
-            const pdis = (dados.pdis||[]).filter(x=>x.pessoa_id===pessoaId);
-
-            let gapHtml = '';
-            if ((fmt==='180'||fmt==='360') && notaGestor!==null && notaAuto!==null){
-                const gap = (notaAuto-notaGestor);
-                gapHtml = `<div class="card gap-card">
-                    <div class="gap-nota"><div class="n" style="color:${corNota(notaGestor)};">${notaGestor.toFixed(1)}</div><div class="l">Gestor</div></div>
-                    <div class="gap-div"></div>
-                    <div class="gap-nota"><div class="n" style="color:${corNota(notaAuto)};">${notaAuto.toFixed(1)}</div><div class="l">Autoavaliação</div></div>
-                    <div class="gap-div"></div>
-                    <div class="gap-nota"><div class="n" style="color:${gap>0?'#eab308':gap<0?'#7371ff':'#14b8a6'};">${gap>0?'+':''}${gap.toFixed(1)}</div><div class="l">Gap de percepção</div></div>
-                </div>`;
+            if(pdis.length){
+                h+=`<div class="sec">Plano de desenvolvimento</div><div class="card">${pdis.map(pd=>{ const st=pd.status||'pendente'; const cor=st==='concluido'?'#1fb589':st==='em_andamento'?'#f5a83d':'#8b91a7'; const bg=st==='concluido'?'#e4f7f1':st==='em_andamento'?'#fef3e2':'#eef0f6'; return `<div class="pdi-item"><div style="flex-grow:1;"><div style="font-size:12.5px; font-weight:700; margin-bottom:3px;">${escH(pd.competencia_nome||'—')}</div><div style="font-size:12px; color:var(--ink-soft); line-height:1.5;">${escH(pd.acao||'')}</div>${pd.prazo?`<div style="font-size:10.5px; color:var(--ink-mute); font-weight:600; margin-top:5px;">Prazo: ${escH(String(pd.prazo).slice(0,10))}</div>`:''}</div><span class="pdi-st" style="color:${cor}; background:${bg};">${st.replace('_',' ')}</span></div>`; }).join('')}</div>`;
             }
+            h+=`</div>`;
+            document.getElementById('main').innerHTML=h;
+            animBars();
+        }
 
-            let html = `<div class="fade-in">
-                <div class="voltar-btn" onclick="voltarPessoas()"><span class="material-symbols-rounded" style="font-size:18px;">arrow_back</span> Todas as pessoas</div>
-                <div class="tela-titulo">${escH(p.nome)}</div>
-                <div class="tela-sub">${escH(nomeCargo(p.cargo_id))}</div>
-                <div class="kpi-row" style="grid-template-columns: repeat(3,1fr);">
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">star</span></div><span class="kpi-lbl">Desempenho</span></div><div class="kpi-num" style="color:${corNota(nota)};">${nota!==null?nota.toFixed(1):'—'}</div><div class="kpi-sub">de 5.0</div></div>
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">trending_up</span></div><span class="kpi-lbl">Potencial</span></div><div class="kpi-num" style="color:${corNota(pot)};">${pot!==null?pot.toFixed(1):'—'}</div><div class="kpi-sub">Nine Box</div></div>
-                    <div class="card kpi"><div class="kpi-top"><div class="kpi-ico"><span class="material-symbols-rounded">checklist</span></div><span class="kpi-lbl">Ações PDI</span></div><div class="kpi-num">${pdis.length}</div><div class="kpi-sub">${pdis.filter(x=>x.status==='concluido').length} concluídas</div></div>
-                </div>
-                ${gapHtml}
-                <div class="secao-label">Competências</div>
-                <div class="card" style="padding:28px;">${compArr.length?`<div class="comp-list">${compArr.map(c=>{ const cor=corNota(c.media); return `<div class="comp-bar-row"><div class="comp-bar-top"><span class="comp-bar-nome">${escH(c.nome)}</span><span class="comp-bar-val" style="color:${cor};">${c.media.toFixed(1)}</span></div><div class="comp-bar-track"><div class="comp-bar-fill" data-w="${c.media/5*100}" style="width:0%; background:${cor};"></div></div></div>`; }).join('')}</div>`:'<div style="color:var(--text-muted); font-size:13px;">Sem avaliações concluídas para esta pessoa.</div>'}</div>
-                ${comentarios.length?`<div class="secao-label">Comentários dos avaliadores</div><div class="card" style="padding:24px 26px;">${comentarios.map(c=>`<div style="background:var(--bg-board); padding:13px 15px; border-radius:9px; border-left:3px solid var(--purple); font-size:12.5px; line-height:1.55; color:var(--text-soft); margin-bottom:8px;">${escH(c)}</div>`).join('')}</div>`:''}
-                <div class="secao-label" style="display:flex; justify-content:space-between; align-items:center;">Plano de Desenvolvimento (PDI) <button class="btn-mini" onclick="novoPdi('${pessoaId}')"><span class="material-symbols-rounded" style="font-size:15px;">add</span> Nova ação</button></div>
-                <div class="card" style="padding:8px 26px 20px;">
-                    ${pdis.length?pdis.map(x=>`<div class="pdi-item"><div class="pdi-check ${x.status==='concluido'?'done':''}" onclick="togglePdi('${x.id}','${x.status}')">${x.status==='concluido'?'<span class="material-symbols-rounded">check</span>':''}</div><div class="pdi-body"><div class="pdi-comp">${escH(x.competencia_nome||'Geral')}</div><div class="pdi-acao">${escH(x.acao||'')}</div>${x.prazo?`<div class="pdi-prazo">Prazo: ${escH(x.prazo)}</div>`:''}</div><div class="icon-btn" onclick="excluirPdi('${x.id}')" style="cursor:pointer; color:var(--text-muted);"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div></div>`).join(''):'<div style="padding:24px 0; font-size:13px; color:var(--text-muted); text-align:center;">Nenhuma ação de desenvolvimento ainda. Crie a primeira com base nas competências mais fracas.</div>'}
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML = html;
-            requestAnimationFrame(()=>document.querySelectorAll('.comp-bar-fill').forEach(f=>f.style.width=(f.dataset.w||0)+'%'));
-        }
-        function voltarPessoas(){ pessoaAberta=null; renderPessoas(); }
-
-        // ===== PDI =====
-        function novoPdi(pessoaId){ ctxPdi={pessoa_id:pessoaId}; document.getElementById('pdiComp').value=''; document.getElementById('pdiAcao').value=''; document.getElementById('pdiPrazo').value=''; document.getElementById('modalPdi').classList.add('show'); }
-        async function salvarPdi(){
-            const acao=document.getElementById('pdiAcao').value.trim(); if(!acao){showToast('Descreva a ação.','error');return;}
-            const p={ciclo_id:dados.ciclo.id, pessoa_id:ctxPdi.pessoa_id, competencia_nome:document.getElementById('pdiComp').value.trim(), acao, prazo:document.getElementById('pdiPrazo').value};
-            const r=await fetch('/api/gd/pdi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
-            if(r.ok){ showToast('Ação salva!','success'); fecharModal('modalPdi'); await recarregar(); } else showToast('Erro.','error');
-        }
-        async function togglePdi(id, statusAtual){
-            const novo = statusAtual==='concluido'?'pendente':'concluido';
-            const r=await fetch('/api/gd/pdi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id, status:novo})});
-            if(r.ok) await recarregar();
-        }
-        async function excluirPdi(id){ if(!confirm('Excluir esta ação?'))return; const r=await fetch('/api/gd/pdi/'+id,{method:'DELETE'}); if(r.ok) await recarregar(); }
-        async function recarregar(){ const keep=pessoaAberta; const res=await fetch('/api/gd/resultados/'+dados.ciclo.id); dados=await res.json(); pessoaAberta=keep; renderTela(); }
-        const icon_btn_style = '';
+        function animBars(){ requestAnimationFrame(()=>{ document.querySelectorAll('.rank-bar,.comp-fill').forEach(b=>{ b.style.width=(b.dataset.w||0)+'%'; }); }); }
     </script>
 </body>
 </html>
