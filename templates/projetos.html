@@ -8,124 +8,259 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     
     <style>
-        :root { 
-            --bg-board: #f4f4f5; 
-            --glass-bg: rgba(255, 255, 255, 0.6);
-            --text-main: #1e1e1e;
-            --text-muted: #71717a;
-            --primary-purple: #7371ff; 
-            --accent-lime: #bef533; 
-            --light-purple: #dbbfff; 
-            --accent-pink: #ff43c0; 
+        :root {
+            /* ===== TOKENS NOVOS ===== */
+            --papel:#ffffff; --papel-2:#f7f7f9;
+            --linha-1:#e4e4ea; --linha-2:#d3d3dc;
+            --tinta:#17171a; --tinta-2:#56565f; --tinta-3:#7c7c88;
+            --acao:#6c5ce7; --acao-fraco:#f1effe;
+            --ok:#0e9f6e; --ok-fraco:#e6f7f0;
+            --atencao:#c2660b; --critico:#d42f2f;
+
+            /* Tingimento de estado — intensidade FORTE */
+            --at-fundo:#fff0d6; --at-borda:#e5be7f; --at-hover:#ffe9c4;
+            --cr-fundo:#fbe3e3; --cr-borda:#e9a9a9; --cr-hover:#f9d9d9;
+
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha-1);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha-1);
+            --e-pop:0 12px 34px rgba(23,23,26,.16), 0 0 0 1px var(--linha-1);
+
+            /* ===== NOMES ANTIGOS (mantidos: 90 usos no arquivo) ===== */
+            --bg-board:#efeff3;
+            --glass-bg:#ffffff;
+            --text-main:#17171a;
+            --text-muted:#7c7c88;
+            --primary-purple:#6c5ce7;
+            --accent-lime:#bef533;
+            --light-purple:#dbbfff;
+            --accent-pink:#ff43c0;
         }
 
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        /* Reset sem a guerra de border-radius: o raio agora é sistema, não exceção */
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; -webkit-font-smoothing: antialiased; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        ::-webkit-scrollbar-thumb { background: var(--linha-2); border-radius: 99px; }
+        /* Normalização dirigida: o reset antigo zerava border/radius de TUDO.
+           Aqui só os controles de formulário, para os modais seguirem idênticos. */
+        button, input, select, textarea { font-family: inherit; border: none; border-radius: 0; }
+        :focus-visible { outline: 2px solid var(--acao); outline-offset: 2px; border-radius: 4px; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-        .top-bar { 
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
-            height: 70px; min-height: 70px; flex-shrink: 0;
-            padding: 0 40px; display: flex; justify-content: space-between; 
-            align-items: center; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); z-index: 10; 
+        /* Camada numérica: mono tabular para o contador não "pular" a cada segundo */
+        .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; letter-spacing: -.2px; }
+
+        .top-bar {
+            background: var(--papel); height: 60px; min-height: 60px; flex-shrink: 0;
+            padding: 0 24px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid var(--linha-1); z-index: 10;
         }
-        
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; display: flex; align-items: center;}
+        .top-bar-logo { font-size: 18px; font-weight: 700; letter-spacing: -.4px; cursor: pointer; display: flex; align-items: center; }
         .top-bar-logo span.roxo { color: var(--primary-purple); }
-        .top-bar-logo:hover { opacity: 0.8; }
+        .top-bar-logo:hover { opacity: .75; }
 
-        .bell-container { position: relative; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; transition: 0.2s;}
-        .bell-container:hover { background: #fff; color: var(--text-main); transform: scale(1.05);}
-        .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; font-size: 10px; font-weight: 900; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(255,67,192,0.3);}
+        .bell-container { position: relative; cursor: pointer; color: var(--tinta-3); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: var(--papel-2); border-radius: 50%; transition: .15s; }
+        .bell-container:hover { background: var(--linha-1); color: var(--tinta); }
+        .bell-badge { position: absolute; top: -1px; right: -1px; background: var(--critico); color: #fff; font-size: 10px; font-weight: 600; min-width: 16px; height: 16px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 99px; border: 2px solid var(--papel); }
 
         .notifications-dropdown {
-            position: fixed; top: 78px; right: 40px; width: 380px;
-            background: #fff; backdrop-filter: blur(20px);
-            border-radius: 18px !important; box-shadow: 0 20px 60px rgba(0,0,0,0.18);
-            border: 1px solid #f0f0f1; z-index: 9999; display: none;
-            flex-direction: column; overflow: hidden;
+            position: fixed; top: 68px; right: 24px; width: 380px;
+            background: var(--papel); border-radius: 14px; box-shadow: var(--e-pop);
+            z-index: 9999; display: none; flex-direction: column; overflow: hidden;
         }
-        .notifications-header { padding: 18px 22px; border-bottom: 1px solid #f4f4f5; font-weight: 900; font-size: 15px; display: flex; justify-content: space-between; align-items: center; letter-spacing: -0.3px; }
+        .notifications-header { padding: 15px 18px; border-bottom: 1px solid var(--linha-1); font-weight: 650; font-size: 14px; display: flex; justify-content: space-between; align-items: center; letter-spacing: -.2px; }
         .notifications-body { max-height: 440px; overflow-y: auto; }
-        .notification-item { padding: 16px 22px; border-bottom: 1px solid #f7f7f8; cursor: pointer; transition: 0.18s; display: flex; gap: 13px; align-items: flex-start; }
-        .notification-item:hover { background: #faf9ff; }
-        .notif-avatar { width: 38px; height: 38px; min-width: 38px; border-radius: 11px !important; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+        .notification-item { padding: 14px 18px; border-bottom: 1px solid var(--papel-2); cursor: pointer; transition: .15s; display: flex; gap: 12px; align-items: flex-start; }
+        .notification-item:hover { background: var(--acao-fraco); }
+        .notif-avatar { width: 34px; height: 34px; min-width: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
         .notif-content { flex-grow: 1; min-width: 0; }
         .notif-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 3px; }
-        .notif-autor { font-size: 13px; font-weight: 800; color: var(--text-main); }
-        .notif-autor span { font-weight: 600; color: var(--text-muted); }
-        .notif-projeto { font-size: 9px; font-weight: 800; color: var(--primary-purple); text-transform: uppercase; letter-spacing: 0.4px; background: #f0efff; padding: 2px 8px; border-radius: 20px !important; display: inline-block; margin-bottom: 6px; }
-        .notif-texto { font-size: 12px; color: #52525b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; background: #f7f7f8; padding: 8px 12px; border-radius: 10px !important; }
-        .notif-data { font-size: 10px; color: #a1a1aa; font-weight: 700; white-space: nowrap; }
-        .notif-empty { padding: 50px 30px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 600;}
-        .notif-empty .material-symbols-rounded { font-size: 44px; opacity: 0.2; display: block; margin-bottom: 12px; }
+        .notif-autor { font-size: 13px; font-weight: 650; color: var(--tinta); }
+        .notif-autor span { font-weight: 500; color: var(--tinta-3); }
+        .notif-projeto { font-size: 10px; font-weight: 600; color: var(--acao); letter-spacing: .3px; background: var(--acao-fraco); padding: 2px 8px; border-radius: var(--r-pill); display: inline-block; margin-bottom: 6px; }
+        .notif-texto { font-size: 12px; color: var(--tinta-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; background: var(--papel-2); padding: 8px 11px; border-radius: 8px; }
+        .notif-data { font-size: 10px; color: var(--tinta-3); font-weight: 500; white-space: nowrap; }
+        .notif-empty { padding: 46px 30px; text-align: center; color: var(--tinta-3); font-size: 12.5px; font-weight: 500; }
+        .notif-empty .material-symbols-rounded { font-size: 40px; opacity: .25; display: block; margin-bottom: 12px; }
 
-        .btn-logout {
-            display: flex; align-items: center; justify-content: center;
-            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
-            border-radius: 50% !important; color: var(--text-muted); cursor: pointer;
-            transition: all 0.2s; border: none; outline: none;
+        .btn-logout { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: var(--papel-2); border-radius: 50%; color: var(--tinta-3); cursor: pointer; transition: .15s; border: none; }
+        .btn-logout:hover { background: #fdeded; color: var(--critico); }
+
+        /* ===== BARRA DE COMANDO ÚNICA (substitui command-bar + view-switcher + filter-bar) ===== */
+        .cmd {
+            display: flex; align-items: center; gap: 12px;
+            padding: 0 24px; height: 58px; flex-shrink: 0;
+            background: var(--papel); border-bottom: 1px solid var(--linha-1);
         }
-        .btn-logout:hover { background: #fee2e2; color: #ef4444; transform: scale(1.05); }
+        .cmd-titulo { font-size: 16px; font-weight: 650; letter-spacing: -.35px; white-space: nowrap; }
+        .cmd-cont { font-size: 12px; font-weight: 600; color: var(--tinta-2); background: var(--papel-2); padding: 4px 10px; border-radius: var(--r-pill); white-space: nowrap; }
+        .cmd-sep { width: 1px; height: 22px; background: var(--linha-1); flex-shrink: 0; }
+        .cmd-dir { margin-left: auto; display: flex; align-items: center; gap: 9px; }
 
-        .btn-acao { background-color: var(--primary-purple); color: white; padding: 12px 24px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
-        .btn-acao:hover { background-color: var(--text-main); }
-        .btn-acao:disabled { background-color: var(--text-muted); cursor: not-allowed; }
+        .segm { display: flex; background: var(--papel-2); border-radius: var(--r-ctrl); padding: 3px; gap: 2px; }
+        .segm-btn { font: inherit; font-size: 12.5px; font-weight: 500; color: var(--tinta-2); background: none; border: none; cursor: pointer; padding: 6px 13px; border-radius: 6px; display: flex; align-items: center; gap: 6px; transition: .15s; white-space: nowrap; }
+        .segm-btn:hover { color: var(--tinta); }
+        .segm-btn.active { background: var(--papel); color: var(--tinta); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.07); }
+        .segm-btn .material-symbols-rounded { font-size: 17px; }
 
-        .command-bar { padding: 25px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .busca { position: relative; width: 260px; }
+        .busca .material-symbols-rounded { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--tinta-3); pointer-events: none; }
+        .busca input { width: 100%; font: inherit; font-size: 13px; color: var(--tinta); padding: 8px 12px 8px 35px; background: var(--papel-2); border: 1px solid transparent; border-radius: var(--r-ctrl); outline: none; transition: .15s; }
+        .busca input::placeholder { color: var(--tinta-3); }
+        .busca input:focus { background: var(--papel); border-color: var(--acao); box-shadow: 0 0 0 3px var(--acao-fraco); }
 
-        .view-switcher { 
-            display: flex; gap: 20px; padding: 0 40px 15px 40px; 
-            border-bottom: 1px solid #e4e4e7; margin-bottom: 15px; 
+        .btn { font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; padding: 8px 14px; border-radius: var(--r-ctrl); border: 1px solid transparent; transition: .15s; }
+        .btn .material-symbols-rounded { font-size: 18px; }
+        .btn-fantasma { background: var(--papel-2); color: var(--tinta-2); }
+        .btn-fantasma:hover { background: var(--linha-1); color: var(--tinta); }
+        .btn-fantasma.ativo { background: var(--acao-fraco); color: var(--acao); }
+        .btn-acao { background: var(--acao); color: #fff; box-shadow: 0 1px 2px rgba(108,92,231,.35); }
+        .btn-acao:hover { background: #5a4bd4; }
+        .btn-acao:disabled { background: var(--tinta-3); cursor: not-allowed; box-shadow: none; }
+        .chip-filtro { font-size: 11px; font-weight: 600; background: var(--acao); color: #fff; min-width: 17px; height: 17px; padding: 0 5px; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; }
+
+        /* ===== GAVETA DE FILTROS ===== */
+        .filtros {
+            display: none; align-items: center; gap: 12px; flex-wrap: wrap;
+            padding: 12px 24px; background: var(--papel); border-bottom: 1px solid var(--linha-1); flex-shrink: 0;
         }
-        .view-tab { 
-            font-size: 13px; font-weight: 800; color: var(--text-muted); 
-            cursor: pointer; padding-bottom: 10px; border-bottom: 3px solid transparent; 
-            transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase;
+        .filtros.on { display: flex; }
+        .filtro-campo { display: flex; align-items: center; gap: 7px; }
+        .filtro-campo > label { font-size: 11px; font-weight: 600; color: var(--tinta-3); letter-spacing: .3px; text-transform: uppercase; }
+        .filter-input { padding: 7px 12px; font-size: 12.5px; font-weight: 500; color: var(--tinta); background: var(--papel-2); border: 1px solid transparent; border-radius: var(--r-ctrl); outline: none; cursor: pointer; transition: .15s; font-family: inherit; }
+        .filter-input:focus { background: var(--papel); border-color: var(--acao); box-shadow: 0 0 0 3px var(--acao-fraco); }
+        .filter-date { background: var(--papel-2); font-size: 12.5px; font-weight: 500; padding: 7px 10px; border-radius: var(--r-ctrl); border: 1px solid transparent; outline: none; color: var(--tinta); cursor: pointer; font-family: inherit; }
+        .filter-date:focus { background: var(--papel); border-color: var(--acao); }
+        .filter-checkbox-wrapper { display: flex; align-items: center; gap: 7px; background: var(--papel-2); padding: 7px 13px; border-radius: var(--r-ctrl); cursor: pointer; transition: .15s; }
+        .filter-checkbox-wrapper:hover { background: var(--linha-1); }
+        .filter-checkbox-wrapper input { cursor: pointer; width: 14px; height: 14px; accent-color: var(--acao); }
+        .filter-checkbox-wrapper span { font-size: 12.5px; font-weight: 500; color: var(--tinta-2); }
+        .btn-limpar { background: transparent; color: var(--tinta-3); font-size: 12.5px; font-weight: 600; cursor: pointer; border-radius: var(--r-ctrl); padding: 7px 13px; transition: .15s; border: none; font-family: inherit; }
+        .btn-limpar:hover { background: #fdeded; color: var(--critico); }
+
+        /* ===== TRILHA DO KANBAN ===== */
+        .kanban-board { display: flex; padding: 16px 24px 20px; gap: 12px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
+        .kanban-column { width: 272px; min-width: 272px; display: flex; flex-direction: column; max-height: 100%; background: rgba(255,255,255,.5); border-radius: var(--r-card); padding: 8px; transition: background .18s, box-shadow .18s; }
+        .kanban-column.drag-over { background: var(--acao-fraco); box-shadow: inset 0 0 0 1.5px var(--acao); }
+
+        .column-header { display: flex; align-items: center; gap: 8px; padding: 5px 6px 11px; flex-shrink: 0; }
+        .col-ponto { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .column-title { font-size: 12.5px; font-weight: 650; letter-spacing: -.1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--tinta); }
+        .col-count { font-size: 11.5px; font-weight: 600; color: var(--tinta-3); margin-left: auto; flex-shrink: 0; }
+        .col-recolher { color: var(--tinta-3); cursor: pointer; display: flex; opacity: 0; transition: .15s; border-radius: 5px; padding: 2px; flex-shrink: 0; }
+        .kanban-column:hover .col-recolher { opacity: 1; }
+        .col-recolher:hover { background: var(--linha-1); color: var(--tinta); }
+        .col-recolher .material-symbols-rounded { font-size: 17px; }
+
+        .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 1px 2px 6px; min-height: 60px; }
+        .kanban-cards::-webkit-scrollbar { width: 5px; }
+        .col-vazia { border: 1.5px dashed var(--linha-2); border-radius: 10px; padding: 18px 12px; text-align: center; font-size: 12px; color: var(--tinta-3); font-weight: 500; line-height: 1.5; }
+
+        /* Coluna recolhida — resolve as 13 fases do RH Estratégico */
+        .kanban-column.min { width: 44px; min-width: 44px; padding: 10px 0; cursor: pointer; align-items: center; gap: 11px; }
+        .kanban-column.min:hover { background: var(--papel); box-shadow: var(--e1); }
+        .kanban-column.min .column-header, .kanban-column.min .kanban-cards { display: none; }
+        .kanban-column.min .col-min-txt { writing-mode: vertical-rl; font-size: 11.5px; font-weight: 600; color: var(--tinta-2); white-space: nowrap; }
+        .kanban-column.min .col-min-qtd { font-size: 11px; font-weight: 600; color: var(--tinta-3); }
+        .col-min-face { display: none; flex-direction: column; align-items: center; gap: 10px; }
+        .kanban-column.min .col-min-face { display: flex; }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--papel); border-radius: var(--r-card); box-shadow: var(--e1);
+            padding: 12px 13px 0; cursor: grab; position: relative; overflow: hidden;
+            transition: box-shadow .16s, transform .16s, background .16s;
         }
-        .view-tab:hover { color: var(--primary-purple); }
-        .view-tab.active { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
+        .card:hover { box-shadow: var(--e2); transform: translateY(-1px); }
+        .card:active { cursor: grabbing; }
+        .card.dragging { opacity: .4; }
 
-        .filter-bar { padding: 0 40px 15px 40px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-        .filter-input { 
-            padding: 10px 20px; font-size: 12px; font-weight: 600; color: var(--text-main);
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
-            border-radius: 50px !important; outline: none; cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s;
+        /* Estado tingido — intensidade forte. O nome do projeto NUNCA muda de cor. */
+        .card.atencao { background: var(--at-fundo); box-shadow: 0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--at-borda); }
+        .card.atencao:hover { background: var(--at-hover); box-shadow: 0 4px 14px rgba(194,102,11,.14), 0 0 0 1px var(--at-borda); }
+        .card.atrasado { background: var(--cr-fundo); box-shadow: 0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--cr-borda); }
+        .card.atrasado:hover { background: var(--cr-hover); box-shadow: 0 4px 14px rgba(212,47,47,.14), 0 0 0 1px var(--cr-borda); }
+
+        .c-topo { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+        .c-cliente { font-size: 10.5px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--tinta-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .c-marca { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,.045); color: var(--tinta-2); flex-shrink: 0; }
+        .c-alerta { margin-left: auto; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .c-ponto { width: 6px; height: 6px; border-radius: 50%; background: var(--acao); flex-shrink: 0; }
+        .c-nome { font-size: 14px; font-weight: 600; line-height: 1.35; letter-spacing: -.15px; color: var(--tinta); margin-bottom: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .c-rodape { display: flex; align-items: center; gap: 8px; padding-bottom: 11px; }
+        .c-pessoa { display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .av { width: 21px; height: 21px; min-width: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #fff; }
+        .c-resp { font-size: 12px; font-weight: 500; color: var(--tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .c-tempo { margin-left: auto; display: flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 11.5px; font-weight: 500; color: var(--tinta-3); }
+        .c-tempo .material-symbols-rounded { font-size: 14px; }
+
+        /* Trilho de prazo — substitui os badges concorrentes */
+        .trilho { height: 26px; margin: 0 -13px; padding: 0 13px; border-top: 1px solid rgba(0,0,0,.055); display: flex; align-items: center; gap: 7px; }
+        .trilho-barra { flex: 1; height: 3px; background: rgba(0,0,0,.06); border-radius: 99px; overflow: hidden; }
+        .trilho-fill { height: 100%; border-radius: 99px; }
+        .trilho-txt { font-size: 10.5px; font-weight: 500; color: var(--tinta-3); white-space: nowrap; flex-shrink: 0; }
+        .trilho-txt b { font-weight: 600; color: var(--tinta-2); }
+        .t-ok .trilho-fill { background: var(--ok); }
+        .t-atencao .trilho-fill { background: var(--atencao); }
+        .t-atencao .trilho-txt b { color: var(--atencao); }
+        .t-critico .trilho-fill { background: var(--critico); }
+        .t-critico .trilho-txt b { color: var(--critico); }
+
+        /* Botão play — progressive disclosure */
+        .btn-play {
+            position: absolute; right: 10px; bottom: 34px; width: 27px; height: 27px;
+            border-radius: 50%; background: var(--tinta); color: #fff; border: none;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            opacity: 0; transform: scale(.85); transition: .16s; box-shadow: 0 3px 10px rgba(0,0,0,.22);
         }
-        .filter-input:focus { background: #fff; box-shadow: 0 4px 15px rgba(115, 113, 255, 0.1); }
-        
-        .date-wrapper, .filter-checkbox-wrapper {
-            display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.7); 
-            backdrop-filter: blur(10px); padding: 5px 20px; border-radius: 50px !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        .card:hover .btn-play, .card.pick-aberto .btn-play { opacity: 1; transform: scale(1); }
+        .btn-play:hover { background: var(--acao); }
+        .card.pick-aberto .btn-play { background: var(--acao); }
+        .btn-play .material-symbols-rounded { font-size: 16px; }
+
+        /* Bloco de timer: o preto só aparece quando está rodando */
+        .card-timer-area { margin: 0 -13px; padding: 8px 13px; background: var(--tinta); display: flex; align-items: center; gap: 9px; }
+        .timer-display { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); letter-spacing: -.2px; }
+        .timer-display.ativo { color: var(--accent-lime); }
+        .c-timer-tarefa { font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,.62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .btn-timer { width: 24px; height: 24px; min-width: 24px; border-radius: 50%; background: var(--accent-lime); display: flex; align-items: center; justify-content: center; color: var(--tinta); cursor: pointer; margin-left: auto; flex-shrink: 0; border: none; position: relative; transition: .15s; }
+        .btn-timer.parar { animation: pulse-lime 2s ease-out infinite; }
+        .btn-timer:disabled { opacity: .6; cursor: wait; animation: none; }
+        .btn-timer .material-symbols-rounded { font-size: 15px; }
+        @keyframes pulse-lime {
+            0% { box-shadow: 0 0 0 0 rgba(190,245,51,.55); }
+            70% { box-shadow: 0 0 0 7px rgba(190,245,51,0); }
+            100% { box-shadow: 0 0 0 0 rgba(190,245,51,0); }
         }
-        .date-wrapper span, .filter-checkbox-wrapper span { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;}
-        .filter-date { background: transparent; font-size: 12px; font-weight: 600; outline: none; color: var(--text-main); cursor: pointer; }
-        
-        .filter-checkbox-wrapper { padding: 10px 20px; cursor: pointer; transition: 0.2s; }
-        .filter-checkbox-wrapper:hover { background: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15); }
-        .filter-checkbox-wrapper input { cursor: pointer; width: 14px; height: 14px; accent-color: #3b82f6;}
-        .filter-checkbox-wrapper span { color: #3b82f6; font-size: 11px; letter-spacing: 0.5px;}
 
-        .btn-limpar {
-            background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 800;
-            cursor: pointer; text-transform: uppercase; border-radius: 50px !important; padding: 10px 20px;
-            transition: 0.2s; border: 1px solid #e4e4e7;
+        .notification-dot { display: none; }
+
+        /* ===== SELETOR DE ATIVIDADE ===== */
+        .pick-veu { position: fixed; inset: 0; z-index: 880; display: none; }
+        .pick-veu.on { display: block; }
+        .pick {
+            position: fixed; z-index: 900; width: 298px; background: var(--papel);
+            border-radius: 13px; box-shadow: var(--e-pop); overflow: hidden;
+            display: none; flex-direction: column;
         }
-        .btn-limpar:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
-
-        .kanban-board { display: flex; padding: 0 40px 30px 40px; gap: 20px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
-        .kanban-column { background: transparent; min-width: 320px; width: 320px; display: flex; flex-direction: column; max-height: 100%; }
-        
-        .column-header { padding: 0 0 15px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
-        .column-title { font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-        .col-count { background-color: #e4e4e7; color: var(--text-muted); padding: 4px 10px; font-size: 11px; font-weight: 800; }
-
-        .kanban-cards { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; padding-right: 5px; min-height: 150px;}
-
+        .pick.on { display: flex; animation: pick-pop .14s ease-out; }
+        @keyframes pick-pop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+        .pick-topo { padding: 11px 13px; border-bottom: 1px solid var(--linha-1); display: flex; align-items: center; gap: 8px; }
+        .pick-topo .material-symbols-rounded { font-size: 18px; color: var(--tinta-3); }
+        .pick-topo input { flex: 1; font: inherit; font-size: 13px; border: none; outline: none; background: none; color: var(--tinta); }
+        .pick-topo input::placeholder { color: var(--tinta-3); }
+        .pick-esc { font-size: 10px; font-weight: 600; color: var(--tinta-3); background: var(--papel-2); padding: 2px 6px; border-radius: 4px; }
+        .pick-lista { max-height: 264px; overflow-y: auto; padding: 5px; }
+        .pick-grupo { font-size: 10px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: var(--tinta-3); padding: 9px 9px 5px; }
+        .pick-item { display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--tinta-2); cursor: pointer; line-height: 1.35; }
+        .pick-item .material-symbols-rounded { font-size: 16px; color: var(--tinta-3); flex-shrink: 0; }
+        .pick-item:hover, .pick-item.sel { background: var(--acao-fraco); color: var(--acao); }
+        .pick-item:hover .material-symbols-rounded, .pick-item.sel .material-symbols-rounded { color: var(--acao); }
+        .pick-vazio { padding: 26px 16px; text-align: center; font-size: 12.5px; color: var(--tinta-3); line-height: 1.55; }
+        .pick-pe { padding: 8px 13px; border-top: 1px solid var(--linha-1); font-size: 11px; color: var(--tinta-3); display: flex; gap: 12px; }
+        .pick-pe b { font-weight: 600; color: var(--tinta-2); }
         /* LIST VIEW BOARD APRIMORADO */
         .list-view-container { padding: 8px 40px 30px 40px; flex-grow: 1; overflow-y: auto; display: none; }
         .list-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; min-width: 900px; }
@@ -161,50 +296,6 @@
         }
         .status-pill-select:hover { transform: scale(1.05); }
         .status-pill-select option { background: white; color: var(--text-main); font-weight: 600; text-transform: none; }
-
-        .card { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 20px; cursor: grab; transition: all 0.3s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04); position: relative;}
-        .card:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-4px); box-shadow: 0 12px 40px 0 rgba(115, 113, 255, 0.15); }
-        .card.dragging { opacity: 0.4; }
-        .drag-over { background-color: rgba(115, 113, 255, 0.05); }
-
-        .card.atrasado { background: rgba(254, 226, 226, 0.95); }
-        .card.atrasado:hover { box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2); }
-        .card.atrasado .card-nome { color: #991b1b; }
-
-        .notification-dot {
-            position: absolute; top: -6px; right: -6px; width: 14px; height: 14px; 
-            background-color: var(--accent-pink); border-radius: 50% !important;
-            border: 2px solid var(--bg-board); animation: pulse-dot 2s infinite; z-index: 5;
-        }
-        @keyframes pulse-dot { 
-            0% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0.6); } 
-            70% { box-shadow: 0 0 0 6px rgba(255, 67, 192, 0); } 
-            100% { box-shadow: 0 0 0 0 rgba(255, 67, 192, 0); } 
-        }
-
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;}
-        .card-area { color: var(--primary-purple); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;}
-        .card-empresa { color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase;}
-        
-        .badge-scrum { background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px !important; font-size: 9px; font-weight: 900; letter-spacing: 0.5px; }
-        
-        .card-nome { font-size: 18px; font-weight: 900; margin-bottom: 6px; line-height: 1.1; letter-spacing: -0.5px;}
-        .card-resp { font-size: 12px; color: var(--text-main); font-weight: 600; margin-bottom: 15px;}
-        
-        .dias-aberto { display: inline-block; color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px !important;}
-
-        .select-atividade { width: 100%; padding: 10px; font-size: 12px; font-weight: 600; background: #f4f4f5; color: var(--text-main); outline: none; margin-bottom: 10px; border-bottom: 2px solid transparent; transition: 0.2s; cursor: pointer;}
-        .select-atividade:focus { border-bottom: 2px solid var(--primary-purple); background: #ffffff;}
-        .select-atividade:disabled { cursor: not-allowed; opacity: 0.6; }
-
-        .card-timer-area { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 10px 15px; border-radius: 30px !important; }
-        .timer-display { font-family: monospace; font-size: 16px; font-weight: 800; color: #ffffff; }
-        .timer-display.ativo { color: var(--accent-lime); }
-        
-        .btn-play { background-color: var(--accent-lime); color: var(--text-main); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; border-radius: 50% !important; }
-        .btn-play:hover { transform: scale(1.1); }
-        .btn-play.parar { background-color: var(--accent-pink); color: white; animation: pulse 1.5s infinite; }
-        .btn-play:disabled { opacity: 0.7; cursor: wait; animation: none; }
 
         .floating-player {
             position: fixed; bottom: 30px; right: 30px;
@@ -323,51 +414,56 @@
         <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
 
-    <div class="command-bar">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <h1 id="tituloWorkspace" style="font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">Carregando...</h1>
-            <span id="contadorAbertos" style="background: var(--text-main); color: white; padding: 6px 14px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 50px !important; transition: 0.3s;">0 Em Aberto</span>
+    <div class="cmd">
+        <span class="cmd-titulo" id="tituloWorkspace">Carregando...</span>
+        <span class="cmd-cont" id="contadorAbertos">0 em aberto</span>
+        <div class="cmd-sep"></div>
+        <div class="segm" role="tablist">
+            <button class="segm-btn active" id="tab-kanban" role="tab" aria-selected="true" onclick="mudarVisao('kanban')"><span class="material-symbols-rounded">view_kanban</span>Quadro</button>
+            <button class="segm-btn" id="tab-lista" role="tab" aria-selected="false" onclick="mudarVisao('lista')"><span class="material-symbols-rounded">format_list_bulleted</span>Lista</button>
         </div>
-        <button class="btn-acao" onclick="abrirModalProjeto()">
-            <span class="material-symbols-rounded">add</span> NOVO PROJETO
-        </button>
+        <div class="cmd-dir">
+            <div class="busca">
+                <span class="material-symbols-rounded">search</span>
+                <input type="text" id="filtroBusca" placeholder="Buscar projeto ou cliente" autocomplete="off" oninput="renderizarProjetos()">
+            </div>
+            <button class="btn btn-fantasma" id="btnFiltros" onclick="toggleFiltros()">
+                <span class="material-symbols-rounded">tune</span>Filtros<span class="chip-filtro" id="chipFiltros" style="display:none;">0</span>
+            </button>
+            <button class="btn btn-acao" onclick="abrirModalProjeto()">
+                <span class="material-symbols-rounded">add</span>Novo projeto
+            </button>
+        </div>
     </div>
 
-    <div class="view-switcher">
-        <div class="view-tab active" onclick="mudarVisao('kanban')" id="tab-kanban"><span class="material-symbols-rounded" style="font-size: 18px;">view_kanban</span> Kanban</div>
-        <div class="view-tab" onclick="mudarVisao('lista')" id="tab-lista"><span class="material-symbols-rounded" style="font-size: 18px;">format_list_bulleted</span> Lista</div>
-    </div>
-
-    <div class="filter-bar">
-        <select id="filtroOrdenacao" class="filter-input" onchange="renderizarProjetos()">
-            <option value="padrao">Ordenar por: Criação</option>
-            <option value="az">A-Z (Nome do Projeto)</option>
-            <option value="za">Z-A (Nome do Projeto)</option>
-            <option value="prazo_curto">Prazo: Mais Próximo</option>
-            <option value="prazo_longo">Prazo: Mais Distante</option>
+    <div class="filtros" id="gavetaFiltros">
+        <div class="filtro-campo">
+            <label for="filtroOrdenacao">Ordenar</label>
+            <select id="filtroOrdenacao" class="filter-input" onchange="renderizarProjetos()">
+                <option value="padrao">Criação</option>
+                <option value="az">Nome A-Z</option>
+                <option value="za">Nome Z-A</option>
+                <option value="prazo_curto">Prazo mais próximo</option>
+                <option value="prazo_longo">Prazo mais distante</option>
+            </select>
+        </div>
+        <select id="filtroCliente" class="filter-input" onchange="renderizarProjetos()">
+            <option value="">Todos os clientes</option>
         </select>
-
+        <select id="filtroResp" class="filter-input" onchange="renderizarProjetos()">
+            <option value="">Todos os responsáveis</option>
+        </select>
+        <div class="filtro-campo">
+            <label for="filtroDataInicio">Criado entre</label>
+            <input type="date" id="filtroDataInicio" class="filter-date" onchange="renderizarProjetos()">
+            <span style="font-size:12px;color:var(--tinta-3);">e</span>
+            <input type="date" id="filtroDataFim" class="filter-date" onchange="renderizarProjetos()">
+        </div>
         <label class="filter-checkbox-wrapper">
             <input type="checkbox" id="filtroScrum" onchange="renderizarProjetos()">
             <span>Apenas Scrum</span>
         </label>
-        
-        <select id="filtroCliente" class="filter-input" onchange="renderizarProjetos()">
-            <option value="">Todos os Clientes</option>
-        </select>
-        
-        <select id="filtroResp" class="filter-input" onchange="renderizarProjetos()">
-            <option value="">Todos os Responsáveis</option>
-        </select>
-        
-        <div class="date-wrapper">
-            <span>DE:</span>
-            <input type="date" id="filtroDataInicio" class="filter-date" onchange="renderizarProjetos()">
-            <span>ATÉ:</span>
-            <input type="date" id="filtroDataFim" class="filter-date" onchange="renderizarProjetos()">
-        </div>
-        
-        <button class="btn-limpar" onclick="limparFiltros()">Limpar Filtros</button>
+        <button class="btn-limpar" onclick="limparFiltros()">Limpar filtros</button>
     </div>
 
     <div class="kanban-board" id="boardDinamico"></div>
@@ -856,8 +952,9 @@
 
         function mudarVisao(novaVisao) {
             visaoAtual = novaVisao;
-            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab-${novaVisao}`).classList.add('active');
+            document.querySelectorAll('.segm-btn').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+            const aba = document.getElementById(`tab-${novaVisao}`);
+            aba.classList.add('active'); aba.setAttribute('aria-selected','true');
             
             document.getElementById('boardDinamico').style.display = novaVisao === 'kanban' ? 'flex' : 'none';
             document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'block' : 'none';
@@ -873,13 +970,22 @@
 
             const board = document.getElementById('boardDinamico');
             board.innerHTML = '';
+            const recolhidas = JSON.parse(localStorage.getItem('cx_cols_recolhidas_' + QUADRO_ATUAL) || '[]');
             cfg.colunas.forEach(col => {
                 const colHTMLId = 'col-' + col.id.replace(/[^a-zA-Z0-9]/g, '');
+                const min = recolhidas.includes(col.id) ? ' min' : '';
                 const html = `
-                <div class="kanban-column" id="${colHTMLId}" data-status="${col.id}">
+                <div class="kanban-column${min}" id="${colHTMLId}" data-status="${col.id}" onclick="cliqueColuna(event, '${escAttr(col.id)}')">
+                    <div class="col-min-face">
+                        <span class="material-symbols-rounded" style="font-size:16px;color:var(--tinta-3);">chevron_right</span>
+                        <span class="col-min-txt">${escH(col.nome)}</span>
+                        <span class="col-min-qtd num">0</span>
+                    </div>
                     <div class="column-header">
-                        <div class="column-title" style="color: ${col.cor};">${col.nome}</div>
+                        <span class="col-ponto" style="background:${col.cor};"></span>
+                        <span class="column-title">${escH(col.nome)}</span>
                         <span class="col-count">0</span>
+                        <span class="col-recolher" title="Recolher coluna" onclick="recolherColuna(event,'${escAttr(col.id)}')"><span class="material-symbols-rounded">chevron_left</span></span>
                     </div>
                     <div class="kanban-cards" ondrop="soltarCard(event)" ondragover="permitirSoltar(event)" ondragenter="entrarDrop(event)" ondragleave="sairDrop(event)"></div>
                 </div>`;
@@ -903,6 +1009,7 @@
         }
 
         function limparFiltros() {
+            document.getElementById('filtroBusca').value = '';
             document.getElementById('filtroOrdenacao').value = 'padrao';
             document.getElementById('filtroScrum').checked = false;
             document.getElementById('filtroCliente').value = '';
@@ -1120,7 +1227,9 @@
 
         function atualizarContadores() {
             document.querySelectorAll('.kanban-column').forEach(col => {
-                col.querySelector('.col-count').innerText = col.querySelectorAll('.card').length;
+                const n = col.querySelectorAll('.card').length;
+                const a = col.querySelector('.col-count'); if (a) a.innerText = n;
+                const b = col.querySelector('.col-min-qtd'); if (b) b.innerText = n;
             });
         }
 
@@ -1210,7 +1319,14 @@
             const fDataInic = document.getElementById('filtroDataInicio').value;
             const fDataFim = document.getElementById('filtroDataFim').value;
 
+            const fBusca = (document.getElementById('filtroBusca').value || '').trim().toLowerCase();
+
             projetosFiltrados = projetosFiltrados.filter(p => {
+                let passaBusca = !fBusca
+                    || (p.nome_projeto || '').toLowerCase().includes(fBusca)
+                    || (p.empresa || '').toLowerCase().includes(fBusca)
+                    || (p.responsavel || '').toLowerCase().includes(fBusca);
+                if (!passaBusca) return false;
                 let passaScrum = fScrum ? p.is_scrum === true : true;
                 let passaCliente = fCliente === "" || p.empresa === fCliente;
                 let passaResp = fResp === "" || p.responsavel === fResp;
@@ -1240,7 +1356,8 @@
 
             const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
             const badgeContador = document.getElementById('contadorAbertos');
-            if (badgeContador) badgeContador.innerText = `${qtdAbertos} Em Aberto`;
+            if (badgeContador) badgeContador.innerText = `${qtdAbertos} em aberto`;
+            atualizarChipFiltros();
 
             if (visaoAtual === 'kanban') {
                 renderizarKanban(projetosFiltrados);
@@ -1252,6 +1369,46 @@
             if(activeTimerData) iniciarRelogioVisual();
         }
 
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escAttr(s){ return escH(s).replace(/'/g,'&#39;'); }
+
+        // Calcula o estado de prazo do projeto -> alimenta o trilho e o tingimento do card
+        function estadoPrazo(p) {
+            const naoIniciado = (p.status === 'Backlog' || p.status === 'Não Iniciado');
+            if (naoIniciado || !p.prazo_data) return { classe:'', trilho:null };
+
+            const partes = p.prazo_data.split('T')[0].split('-');
+            const alvo = new Date(partes[0], partes[1]-1, partes[2]);
+            const base = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
+            alvo.setHours(0,0,0,0); base.setHours(0,0,0,0);
+            const faltam = Math.ceil((alvo - base) / 86400000);
+
+            const inicio = new Date(p.data_inicio || p.criado_em); inicio.setHours(0,0,0,0);
+            const totalPrazo = Math.max(1, Math.ceil((alvo - inicio) / 86400000));
+            const decorrido = Math.max(0, Math.ceil((base - inicio) / 86400000));
+            const pct = Math.min(100, Math.round((decorrido / totalPrazo) * 100));
+
+            const encerrado = (p.status === 'Finalizado' || p.status === 'Cancelado');
+            if (encerrado) {
+                return faltam < 0
+                    ? { classe:'', trilho:{ tom:'t-critico', pct:100, txt:'entregue com <b>'+Math.abs(faltam)+'</b> dias de atraso' } }
+                    : { classe:'', trilho:{ tom:'t-ok', pct:100, txt:'entregue no prazo' } };
+            }
+            if (faltam < 0)  return { classe:'atrasado', trilho:{ tom:'t-critico', pct:100, txt:'<b>'+Math.abs(faltam)+'</b> dias de atraso' } };
+            if (faltam === 0) return { classe:'atencao',  trilho:{ tom:'t-atencao', pct:100, txt:'<b>vence hoje</b>' } };
+            if (faltam <= 3)  return { classe:'atencao',  trilho:{ tom:'t-atencao', pct:pct, txt:'vence em <b>'+faltam+'</b> dias' } };
+            return { classe:'', trilho:{ tom:'t-ok', pct:pct, txt:'<b>'+decorrido+'</b> de '+totalPrazo+' dias' } };
+        }
+
+        // Tempo acumulado em formato curto para o rodapé do card (12h30, 45min)
+        function tempoCurto(seg) {
+            seg = seg || 0;
+            if (seg < 60) return '0min';
+            const h = Math.floor(seg/3600), m = Math.floor((seg%3600)/60);
+            if (h === 0) return m + 'min';
+            return h + 'h' + String(m).padStart(2,'0');
+        }
+
         function renderizarKanban(projetosFiltrados) {
             document.querySelectorAll('.kanban-cards').forEach(col => col.innerHTML = '');
 
@@ -1261,92 +1418,86 @@
                 const container = document.querySelector(`#${colHTMLId} .kanban-cards`);
                 if(!container) return;
 
-                let isMeuProjeto = (p.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
-                let hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
-                
-                let htmlBolinha = hasUnread ? `<div class="notification-dot" title="Mensagens novas!"></div>` : '';
+                const isMeuProjeto = (p.responsavel || '').trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase();
+                const hasUnread = isMeuProjeto && (p.qtd_nao_lidos > 0);
 
-                let isRodando = activeTimerData && activeTimerData.id === p.id && !activeTimerData.paused;
-                let isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
-                
-                let displayTempo = formatarSegundosTick(p.tempo_total_segundos || 0);
-                let listaAtiv = atividadesDisponiveis(p);
-                let options = listaAtiv.length > 0
-                    ? listaAtiv.map(a => `<option value="${a}">${a}</option>`).join('')
-                    : '<option value="">Sem atividades nesta fase</option>';
+                const isRodando = activeTimerData && activeTimerData.id === p.id && !activeTimerData.paused;
+                const isPausado = activeTimerData && activeTimerData.id === p.id && activeTimerData.paused;
+                const comTimer = isRodando || isPausado;
 
-                let btnClass = isRodando ? 'parar' : '';
-                let btnIcon = isRodando ? 'stop' : (isPausado ? 'pause' : 'play_arrow');
-                let btnStyle = isPausado ? 'style="background-color: #f59e0b; color: white;"' : '';
+                const est = estadoPrazo(p);
+                const iniciais = (p.responsavel || '?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
 
-                let arrayBadges = [];
-                let isAtrasadoClass = '';
-                
-                if (p.is_scrum) arrayBadges.push(`<span class="dias-aberto" style="background: #3b82f6; margin-bottom: 0;">SCRUM</span>`);
+                // Alertas do topo: ponto de comentário não lido
+                const alerta = hasUnread
+                    ? '<span class="c-ponto" title="Comentários não lidos"></span>'
+                    : '';
 
-                if(p.status !== 'Backlog' && p.status !== 'Não Iniciado') {
-                    const diasTotal = calcularDias(p.data_inicio, p.data_conclusao);
-                    const diasEtapa = calcularDias(p.data_status_atual || p.criado_em, p.data_conclusao);
-                    const tagCongelado = p.data_conclusao ? ' (Pausado)' : '';
-                    
-                    arrayBadges.push(`<span class="dias-aberto" style="background: var(--text-main); margin-bottom: 0;">${diasTotal}d Total${tagCongelado}</span>`);
-                    arrayBadges.push(`<span class="dias-aberto" style="background: var(--primary-purple); margin-bottom: 0;">${diasEtapa}d na Etapa</span>`);
+                const marcaScrum = p.is_scrum ? '<span class="c-marca">Scrum</span>' : '';
 
-                    if (p.prazo_data) {
-                        const partes = p.prazo_data.split('T')[0].split('-');
-                        const dataAlvo = new Date(partes[0], partes[1] - 1, partes[2]);
-                        const dataComparacao = p.data_conclusao ? new Date(p.data_conclusao) : new Date();
-                        dataAlvo.setHours(0,0,0,0); dataComparacao.setHours(0,0,0,0);
-                        const diffDias = Math.ceil((dataAlvo - dataComparacao) / (1000 * 60 * 60 * 24));
+                // Rodapé: quando o timer roda, o tempo migra para o bloco preto
+                const blocoTempo = comTimer ? '' :
+                    `<span class="c-tempo"><span class="material-symbols-rounded">schedule</span><span class="num">${tempoCurto(p.tempo_total_segundos)}</span></span>`;
 
-                        if (p.status !== 'Finalizado' && p.status !== 'Cancelado') {
-                            if (diffDias < 0) {
-                                isAtrasadoClass = 'atrasado'; 
-                                arrayBadges.push(`<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;" title="O prazo estourou!">Atrasado ${Math.abs(diffDias)}d</span>`);
-                            } else if (diffDias === 0) {
-                                arrayBadges.push(`<span class="dias-aberto" style="background: #f59e0b; margin-bottom: 0;">Vence Hoje</span>`);
-                            } else {
-                                const corPrazo = diffDias <= 2 ? '#f59e0b' : '#10b981'; 
-                                arrayBadges.push(`<span class="dias-aberto" style="background: ${corPrazo}; margin-bottom: 0;">Faltam ${diffDias}d</span>`);
-                            }
-                        } else {
-                            if (diffDias < 0) { arrayBadges.push(`<span class="dias-aberto" style="background: #ef4444; margin-bottom: 0;">Entregue c/ Atraso</span>`); } 
-                            else { arrayBadges.push(`<span class="dias-aberto" style="background: #10b981; margin-bottom: 0;">No Prazo</span>`); }
-                        }
-                    }
+                // Trilho de prazo (some enquanto o timer está ativo)
+                const blocoTrilho = (!comTimer && est.trilho)
+                    ? `<div class="trilho ${est.trilho.tom}">
+                           <span class="trilho-barra"><span class="trilho-fill" style="width:${est.trilho.pct}%"></span></span>
+                           <span class="trilho-txt">${est.trilho.txt}</span>
+                       </div>`
+                    : '';
+
+                // Timer ativo: bloco preto. Senão: play sob demanda (escondido até o hover).
+                let blocoAcao;
+                if (comTimer) {
+                    const disp = formatarSegundosTick((activeTimerData.baseSegundosOriginal || 0) + (activeTimerData.sessaoAtualSegundos || 0));
+                    blocoAcao = `
+                        <div class="card-timer-area">
+                            <span class="timer-display ${isRodando ? 'ativo' : ''}" id="disp-${p.id}">${disp}</span>
+                            <span class="c-timer-tarefa">${escH(activeTimerData.tarefa)}</span>
+                            <button class="btn-timer ${isRodando ? 'parar' : ''}" id="btn-${p.id}" title="${isRodando ? 'Parar' : 'Retomar'}"
+                                    onclick="event.stopPropagation(); alternarTimerCard('${escAttr(p.id)}')">
+                                <span class="material-symbols-rounded">${isRodando ? 'stop' : 'play_arrow'}</span>
+                            </button>
+                        </div>`;
+                } else {
+                    blocoAcao = `<button class="btn-play" title="Registrar tempo" aria-label="Registrar tempo neste projeto"
+                                         onclick="abrirPick(event, '${escAttr(p.id)}')">
+                                     <span class="material-symbols-rounded">play_arrow</span>
+                                 </button>`;
                 }
 
-                let htmlBadgesFinal = arrayBadges.length > 0 ? `<div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">${arrayBadges.join('')}</div>` : '';
-
                 const cardHTML = `
-                <div class="card ${isAtrasadoClass}" id="${p.id}" draggable="true" ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)">
-                    ${htmlBolinha}
-                    <div style="cursor: pointer;" onclick="abrirDetalhes('${p.id}', event)">
-                        <div class="card-header">
-                            <span class="card-area">${p.area}</span>
-                            <span class="card-empresa">${p.empresa}</span>
-                        </div>
-                        <div class="card-nome">${p.nome_projeto}</div>
-                        <div class="card-resp">${p.responsavel}</div>
-                        ${htmlBadgesFinal}
+                <div class="card ${est.classe}" id="${p.id}" draggable="true"
+                     ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)"
+                     onclick="abrirDetalhes('${escAttr(p.id)}', event)">
+                    <div class="c-topo">
+                        <span class="c-cliente">${escH(p.empresa)}</span>
+                        ${marcaScrum}
+                        <span class="c-alerta">${alerta}</span>
                     </div>
-                    
-                    <div style="margin-top: 10px;">
-                        <select class="select-atividade" id="select-${p.id}" ${isRodando || isPausado ? 'disabled' : ''}>
-                            <option value="">Selecione a atividade...</option>
-                            ${options}
-                        </select>
-                        <div class="card-timer-area">
-                            <div class="timer-display ${isRodando ? 'ativo' : ''}" id="disp-${p.id}">${displayTempo}</div>
-                            <button class="btn-play ${btnClass}" id="btn-${p.id}" ${btnStyle} onclick="iniciarTimerCard('${p.id}', '${p.nome_projeto}', '${p.area}', ${p.tempo_total_segundos || 0})">
-                                <span class="material-symbols-rounded">${btnIcon}</span>
-                            </button>
+                    <div class="c-nome">${escH(p.nome_projeto)}</div>
+                    <div class="c-rodape">
+                        <div class="c-pessoa">
+                            <span class="av" style="background:${corResponsavel(p.responsavel)};">${iniciais}</span>
+                            <span class="c-resp">${escH(p.responsavel)}</span>
                         </div>
+                        ${blocoTempo}
                     </div>
+                    ${blocoAcao}
+                    ${blocoTrilho}
                 </div>`;
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
-            // Sincroniza visualmente o card que tem timer ativo (vindo de outra página/aba)
+
+            // Colunas sem cards ganham um convite em vez de vácuo
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                const cx = col.querySelector('.kanban-cards');
+                if (cx && cx.children.length === 0) {
+                    cx.innerHTML = '<div class="col-vazia">Arraste um projeto para cá</div>';
+                }
+            });
+
             sincronizarCardComTimer();
             atualizarContadores();
         }
@@ -1468,50 +1619,60 @@
 
         // Garante que o card do projeto com timer ativo mostre o estado correto
         // mesmo quando o timer foi iniciado em outra página (ex: Planejamento)
+        // Mantém o card coerente quando o timer foi iniciado em outra página/aba.
         function sincronizarCardComTimer() {
             if (!activeTimerData) return;
-            const id = activeTimerData.id;
-            const btn = document.getElementById(`btn-${id}`);
-            const disp = document.getElementById(`disp-${id}`);
-            const sel = document.getElementById(`select-${id}`);
-            if (!btn) return; // o projeto ativo não está visível neste quadro
+            const btn  = document.getElementById(`btn-${activeTimerData.id}`);
+            const disp = document.getElementById(`disp-${activeTimerData.id}`);
+            if (!btn) return; // projeto ativo não está visível neste quadro
 
+            const ico = btn.querySelector('.material-symbols-rounded');
             if (activeTimerData.paused) {
-                // Pausado: botão âmbar com play, tempo congelado
                 btn.classList.remove('parar');
-                btn.style.backgroundColor = '#f59e0b';
-                btn.innerHTML = `<span class="material-symbols-rounded">pause</span>`;
+                btn.title = 'Retomar';
+                if (ico) ico.innerText = 'play_arrow';
                 if (disp) {
                     disp.innerText = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos);
                     disp.classList.remove('ativo');
                 }
             } else {
-                // Rodando: botão de parar, tempo acumulando (o setInterval cuida da contagem)
                 btn.classList.add('parar');
-                btn.style.backgroundColor = '';
-                btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`;
+                btn.title = 'Parar';
+                if (ico) ico.innerText = 'stop';
                 if (disp) disp.classList.add('ativo');
             }
-            if (sel) { sel.value = activeTimerData.tarefa; sel.disabled = true; }
         }
 
-        function iniciarTimerCard(id, nomeProjeto, areaProjeto, baseSegundos) {
-            if (activeTimerData && activeTimerData.id === id) {
-                if(activeTimerData.paused) togglePauseTimer(); else pararTimer();
+        // Clique no bloco preto: pausa/retoma ou encerra o timer deste card.
+        function alternarTimerCard(id) {
+            if (!activeTimerData || activeTimerData.id !== id) return;
+            if (activeTimerData.paused) togglePauseTimer(); else pararTimer();
+        }
+
+        // Inicia o timer já com a atividade escolhida no seletor.
+        function iniciarTimerComAtividade(id, tarefa) {
+            if (activeTimerData && activeTimerData.id !== id) {
+                showToast('Você já tem um timer ativo em outro projeto. Finalize-o primeiro.', 'error');
                 return;
             }
-            if (activeTimerData && activeTimerData.id !== id) { showToast(`Você já tem um timer ativo em outro projeto. Finalize-o primeiro!`, "error"); return; }
-
-            const selectAtiv = document.getElementById(`select-${id}`);
-            const tarefaEscolhida = selectAtiv.value;
-            if(!tarefaEscolhida) { showToast("Selecione uma atividade antes de iniciar o timer.", "error"); return; }
             const proj = projetosGlobais.find(p => p.id === id);
+            if (!proj) return;
 
             activeTimerData = {
-                id: id, nome: nomeProjeto, area: areaProjeto, tarefa: tarefaEscolhida, colaborador: proj.responsavel,
-                baseSegundosOriginal: baseSegundos, sessaoAtualSegundos: 0, startTime: Date.now(), isoInicio: new Date().toISOString(), paused: false
+                id: id,
+                nome: proj.nome_projeto,
+                area: proj.area,
+                tarefa: tarefa,
+                colaborador: proj.responsavel,
+                baseSegundosOriginal: proj.tempo_total_segundos || 0,
+                sessaoAtualSegundos: 0,
+                startTime: Date.now(),
+                isoInicio: new Date().toISOString(),
+                paused: false
             };
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+            registrarAtividadeRecente(tarefa);
+            renderizarProjetos();
             iniciarRelogioVisual();
         }
 
@@ -1549,10 +1710,15 @@
                 const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + decorridoAgora);
                 document.getElementById('fpTempo').innerText = tempoTela;
                 const disp = document.getElementById(`disp-${activeTimerData.id}`);
-                if (disp) { disp.innerText = tempoTela; disp.classList.add('ativo');
+                if (disp) {
+                    disp.innerText = tempoTela;
+                    disp.classList.add('ativo');
                     const btn = document.getElementById(`btn-${activeTimerData.id}`);
-                    if(btn) { btn.classList.add('parar'); btn.style.backgroundColor = ''; btn.innerHTML = `<span class="material-symbols-rounded">stop</span>`; }
-                    const sel = document.getElementById(`select-${activeTimerData.id}`); if(sel) { sel.value = activeTimerData.tarefa; sel.disabled = true; }
+                    if (btn) {
+                        btn.classList.add('parar');
+                        const ico = btn.querySelector('.material-symbols-rounded');
+                        if (ico) ico.innerText = 'stop';
+                    }
                 }
             }, 1000);
         }
@@ -1565,8 +1731,8 @@
             const dadosPraSalvar = { ...activeTimerData, tempoFinalSessao };
             
             localStorage.removeItem('cxdata_timer_ativo'); activeTimerData = null; document.getElementById('floatingPlayer').style.display = 'none';
-            const btn = document.getElementById(`btn-${dadosPraSalvar.id}`);
-            if(btn) { btn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span>`; btn.classList.remove('parar'); btn.style.backgroundColor = ''; const disp = document.getElementById(`disp-${dadosPraSalvar.id}`); if(disp) disp.classList.remove('ativo'); const sel = document.getElementById(`select-${dadosPraSalvar.id}`); if(sel) sel.disabled = false; }
+            // Devolve o card ao estado com play + trilho na hora; carregarProjetos() abaixo traz o tempo real.
+            if (visaoAtual === 'kanban') renderizarKanban(projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area)));
 
             try {
                 const req = await fetch(`/api/projetos/${dadosPraSalvar.id}/timer`, {
@@ -1841,6 +2007,171 @@
                 }
             }, 100);
         }
+
+        /* ==========================================================
+           SELETOR DE ATIVIDADE
+           Substitui o <select> fixo do card. Escolher a atividade
+           é o que inicia o timer — não existe mais estado de erro
+           "selecione uma atividade antes de iniciar".
+           ========================================================== */
+        const CHAVE_RECENTES = 'cx_ativ_recentes_' + QUADRO_ATUAL;
+        let pickProjetoId = null, pickIdx = 0, pickVisiveis = [];
+
+        function atividadesRecentes() {
+            try { return JSON.parse(localStorage.getItem(CHAVE_RECENTES) || '[]'); }
+            catch(e) { return []; }
+        }
+        function registrarAtividadeRecente(tarefa) {
+            let r = atividadesRecentes().filter(x => x !== tarefa);
+            r.unshift(tarefa);
+            localStorage.setItem(CHAVE_RECENTES, JSON.stringify(r.slice(0, 3)));
+        }
+
+        function abrirPick(ev, id) {
+            ev.stopPropagation();
+            if (activeTimerData && activeTimerData.id !== id) {
+                showToast('Você já tem um timer ativo em outro projeto. Finalize-o primeiro.', 'error');
+                return;
+            }
+            if (pickProjetoId === id) { fecharPick(); return; }
+            fecharPick();
+
+            pickProjetoId = id;
+            const card = document.getElementById(id);
+            if (card) card.classList.add('pick-aberto');
+
+            const pick = document.getElementById('pickAtividade');
+            pick.classList.add('on');
+            document.getElementById('pickVeu').classList.add('on');
+
+            // posiciona ancorado ao botão, sem sair da janela
+            const r = ev.currentTarget.getBoundingClientRect();
+            const alt = pick.offsetHeight, larg = pick.offsetWidth;
+            let top = r.bottom + 6;
+            if (r.bottom + alt + 10 > window.innerHeight) top = Math.max(10, r.top - alt - 6);
+            let left = r.right - larg;
+            if (left < 12) left = 12;
+            if (left + larg > window.innerWidth - 12) left = window.innerWidth - larg - 12;
+            pick.style.top = top + 'px';
+            pick.style.left = left + 'px';
+
+            document.getElementById('pickBusca').value = '';
+            renderPick('');
+            setTimeout(() => document.getElementById('pickBusca').focus(), 30);
+        }
+
+        function renderPick(termo) {
+            const proj = projetosGlobais.find(p => p.id === pickProjetoId);
+            const todas = atividadesDisponiveis(proj) || [];
+            const t = (termo || '').trim().toLowerCase();
+            const casa = a => a.toLowerCase().includes(t);
+            const recentes = atividadesRecentes().filter(a => todas.includes(a)).filter(casa);
+            const lista = todas.filter(casa);
+            const alvo = document.getElementById('pickLista');
+
+            pickVisiveis = [];
+            if (!lista.length && !recentes.length) {
+                alvo.innerHTML = `<div class="pick-vazio">Nenhuma atividade encontrada para <b>${escH(termo)}</b>.<br>Esta fase tem ${todas.length} atividade(s) disponível(is).</div>`;
+                return;
+            }
+            let h = '';
+            if (recentes.length && !t) {
+                h += '<div class="pick-grupo">Usadas recentemente</div>';
+                recentes.forEach(a => { pickVisiveis.push(a); h += itemPick(a, 'history'); });
+                h += '<div class="pick-grupo">Todas desta fase</div>';
+            }
+            lista.forEach(a => { pickVisiveis.push(a); h += itemPick(a, 'play_arrow'); });
+            alvo.innerHTML = h;
+            pickIdx = 0;
+            marcarPick();
+        }
+        function itemPick(a, ico) {
+            return `<div class="pick-item" onclick="escolherAtividade('${escAttr(a)}')"><span class="material-symbols-rounded">${ico}</span>${escH(a)}</div>`;
+        }
+        function marcarPick() {
+            const els = document.querySelectorAll('.pick-item');
+            els.forEach((e, i) => e.classList.toggle('sel', i === pickIdx));
+            if (els[pickIdx]) els[pickIdx].scrollIntoView({ block: 'nearest' });
+        }
+        function escolherAtividade(tarefa) {
+            const id = pickProjetoId;
+            fecharPick();
+            if (id) iniciarTimerComAtividade(id, tarefa);
+        }
+        function fecharPick() {
+            document.getElementById('pickAtividade').classList.remove('on');
+            document.getElementById('pickVeu').classList.remove('on');
+            if (pickProjetoId) {
+                const c = document.getElementById(pickProjetoId);
+                if (c) c.classList.remove('pick-aberto');
+            }
+            pickProjetoId = null;
+        }
+
+        /* ===== GAVETA DE FILTROS ===== */
+        function toggleFiltros() {
+            const g = document.getElementById('gavetaFiltros');
+            const b = document.getElementById('btnFiltros');
+            const aberta = g.classList.toggle('on');
+            b.classList.toggle('ativo', aberta);
+        }
+        function atualizarChipFiltros() {
+            let n = 0;
+            if (document.getElementById('filtroScrum').checked) n++;
+            if (document.getElementById('filtroCliente').value) n++;
+            if (document.getElementById('filtroResp').value) n++;
+            if (document.getElementById('filtroDataInicio').value) n++;
+            if (document.getElementById('filtroDataFim').value) n++;
+            if (document.getElementById('filtroOrdenacao').value !== 'padrao') n++;
+            const chip = document.getElementById('chipFiltros');
+            chip.innerText = n;
+            chip.style.display = n ? 'inline-flex' : 'none';
+        }
+
+        /* ===== COLUNAS RECOLHÍVEIS (13 fases no RH Estratégico) ===== */
+        function chaveRecolhidas() { return 'cx_cols_recolhidas_' + QUADRO_ATUAL; }
+        function recolherColuna(ev, statusId) {
+            ev.stopPropagation();
+            const lista = JSON.parse(localStorage.getItem(chaveRecolhidas()) || '[]');
+            if (!lista.includes(statusId)) lista.push(statusId);
+            localStorage.setItem(chaveRecolhidas(), JSON.stringify(lista));
+            const col = document.getElementById('col-' + statusId.replace(/[^a-zA-Z0-9]/g, ''));
+            if (col) col.classList.add('min');
+        }
+        function cliqueColuna(ev, statusId) {
+            const col = ev.currentTarget;
+            if (!col.classList.contains('min')) return; // só expande quando recolhida
+            const lista = JSON.parse(localStorage.getItem(chaveRecolhidas()) || '[]').filter(x => x !== statusId);
+            localStorage.setItem(chaveRecolhidas(), JSON.stringify(lista));
+            col.classList.remove('min');
+        }
+
+        /* Teclado do seletor: setas, Enter e Esc */
+        document.addEventListener('keydown', function(e) {
+            if (!document.getElementById('pickAtividade').classList.contains('on')) return;
+            if (e.key === 'Escape') { fecharPick(); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); pickIdx = Math.min(pickIdx + 1, pickVisiveis.length - 1); marcarPick(); }
+            else if (e.key === 'ArrowUp')   { e.preventDefault(); pickIdx = Math.max(pickIdx - 1, 0); marcarPick(); }
+            else if (e.key === 'Enter')     { e.preventDefault(); if (pickVisiveis[pickIdx]) escolherAtividade(pickVisiveis[pickIdx]); }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const b = document.getElementById('pickBusca');
+            if (b) b.addEventListener('input', e => renderPick(e.target.value));
+        });
+
     </script>
+
+    <!-- ===== SELETOR DE ATIVIDADE ===== -->
+    <div class="pick-veu" id="pickVeu" onclick="fecharPick()"></div>
+    <div class="pick" id="pickAtividade" role="dialog" aria-label="Escolher atividade">
+        <div class="pick-topo">
+            <span class="material-symbols-rounded">search</span>
+            <input type="text" id="pickBusca" placeholder="Buscar atividade" autocomplete="off">
+            <span class="pick-esc">esc</span>
+        </div>
+        <div class="pick-lista" id="pickLista"></div>
+        <div class="pick-pe"><span><b>&uarr;&darr;</b> navegar</span><span><b>Enter</b> iniciar</span></div>
+    </div>
+
 </body>
 </html>
