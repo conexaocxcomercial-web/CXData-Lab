@@ -1,106 +1,97 @@
 <style>
 /* ============================================================
-   SIDEBAR CXProjetos
-   Reescrita para caber na tela: a versão anterior pedia 690px
-   parada e ~1004px com o mouse em cima, contra 648px úteis num
-   notebook 1366x768. Três mudanças resolvem:
-   1. grupos recolhíveis  2. item de 44 -> 38px  3. barra de
-   rolagem visível (antes width:0, o que escondia o transbordo).
+   SIDEBAR CXProjetos — v2
+
+   Por que o hover saiu:
+   as 15 telas reservam padding-left:68px fixo. A sidebar expandia
+   para 236px e passava POR CIMA do conteúdo. Ao mover o mouse para
+   ler o que ficou coberto, ela recolhia — dando a sensação de que
+   o mouse minimizava. Agora o controle é explícito e o conteúdo
+   acompanha a largura, então nada nunca fica coberto.
    ============================================================ */
 :root{
-  --sb-rail:60px;
-  --sb-aberta:236px;
+  --cx-sb-rail:64px;
+  --cx-sb-aberta:238px;
+  --cx-sb-w:64px;          /* largura corrente — o JS troca este valor */
+}
+
+/* Vence a regra body{padding-left:68px} das telas por especificidade,
+   sem !important e sem precisar editar 15 templates. */
+html body{
+  padding-left:var(--cx-sb-w);
+  transition:padding-left .2s cubic-bezier(.4,0,.2,1);
 }
 
 .cxsidebar{
   position:fixed; left:0; top:0; bottom:0;
-  width:var(--sb-rail);
+  width:var(--cx-sb-w);
   background:#fff;
   z-index:200;
   display:flex; flex-direction:column;
-  transition:width .22s cubic-bezier(.4,0,.2,1);
+  transition:width .2s cubic-bezier(.4,0,.2,1);
   box-shadow:inset -1px 0 0 #E4E4EA;
   font-family:'Inter',sans-serif;
 }
-/* Expande por hover OU por fixação. Fixar é o modo confiável:
-   hover não existe em toque e falha ao mover o mouse rápido. */
-.cxsidebar:hover,
-.cxsidebar.fixa{
-  width:var(--sb-aberta);
-  box-shadow:12px 0 40px rgba(23,23,26,.09), inset -1px 0 0 #E4E4EA;
-}
-.cxsidebar.fixa{ box-shadow:inset -1px 0 0 #E4E4EA; }
 
 .cxsb-header{
   height:56px; min-height:56px;
   display:flex; align-items:center;
-  padding:0 15px; gap:11px;
-  overflow:hidden;
+  padding:0 12px; gap:10px;
   border-bottom:1px solid #EFEFF3;
+  overflow:hidden;
 }
 .cxsb-logo-icon{ width:26px; height:26px; min-width:26px; object-fit:contain; flex-shrink:0; }
 .cxsb-brand-text{
   font-size:14px; font-weight:700; color:#17171A; white-space:nowrap;
-  opacity:0; transition:opacity .18s .05s; letter-spacing:-.3px;
+  letter-spacing:-.3px; opacity:0; transition:opacity .16s;
 }
-.cxsidebar:hover .cxsb-brand-text,
-.cxsidebar.fixa .cxsb-brand-text{ opacity:1; }
+.cxsidebar.aberta .cxsb-brand-text{ opacity:1; }
 
-/* alfinete de fixação */
-.cxsb-pin{
-  margin-left:auto; width:26px; height:26px; min-width:26px;
-  border-radius:7px; border:none; background:transparent; cursor:pointer;
+/* botão de recolher/expandir */
+.cxsb-toggle{
+  width:30px; height:30px; min-width:30px;
+  border-radius:8px; border:none; background:transparent; cursor:pointer;
   display:flex; align-items:center; justify-content:center; color:#7C7C88;
-  opacity:0; transition:.16s;
+  transition:.15s; flex-shrink:0;
 }
-.cxsidebar:hover .cxsb-pin,
-.cxsidebar.fixa .cxsb-pin{ opacity:1; }
-.cxsb-pin:hover{ background:#F7F7F9; color:#17171A; }
-.cxsb-pin .material-symbols-rounded{ font-size:17px; }
-.cxsidebar.fixa .cxsb-pin{ color:#6C5CE7; }
+.cxsb-toggle:hover{ background:#F7F7F9; color:#17171A; }
+.cxsb-toggle .material-symbols-rounded{ font-size:19px; transition:transform .2s; }
+.cxsidebar.aberta .cxsb-toggle{ margin-left:auto; }
+.cxsidebar:not(.aberta) .cxsb-header{ padding:0; justify-content:center; }
+.cxsidebar:not(.aberta) .cxsb-logo-icon{ display:none; }
+.cxsidebar:not(.aberta) .cxsb-toggle .material-symbols-rounded{ transform:rotate(180deg); }
 
 .cxsb-body{
   padding:8px; display:flex; flex-direction:column; gap:1px;
   flex-grow:1; overflow-y:auto; overflow-x:hidden;
 }
-/* A barra de rolagem PRECISA aparecer: era ela, oculta, que fazia
-   os itens simplesmente parecerem cortados. */
-.cxsb-body::-webkit-scrollbar{ width:6px; }
+/* visível de propósito: era esta barra, com width:0, que fazia os
+   itens simplesmente parecerem cortados quando havia transbordo */
+.cxsb-body::-webkit-scrollbar{ width:5px; }
 .cxsb-body::-webkit-scrollbar-track{ background:transparent; }
 .cxsb-body::-webkit-scrollbar-thumb{ background:#D3D3DC; border-radius:99px; }
-.cxsidebar:not(:hover):not(.fixa) .cxsb-body::-webkit-scrollbar-thumb{ background:transparent; }
 
-/* ===== GRUPO RECOLHÍVEL ===== */
+/* ===== GRUPO ===== */
 .cxsb-grupo{
-  display:flex; align-items:center; gap:8px;
-  padding:10px 10px 7px; margin-top:3px;
+  display:none; align-items:center; gap:8px;
+  padding:11px 10px 6px; margin-top:2px;
   font-size:10px; font-weight:600; letter-spacing:.7px; text-transform:uppercase;
   color:#7C7C88; white-space:nowrap; cursor:pointer;
   border-radius:7px; transition:.15s;
-  opacity:0; height:0; padding-top:0; padding-bottom:0; overflow:hidden;
+  border:none; background:none; width:100%; font-family:inherit; text-align:left;
 }
-.cxsidebar:hover .cxsb-grupo,
-.cxsidebar.fixa .cxsb-grupo{ opacity:1; height:auto; padding:10px 10px 7px; }
-.cxsb-grupo:hover{ background:#F7F7F9; color:#56565F; }
-.cxsb-grupo-qtd{
-  font-size:10px; font-weight:600; color:#7C7C88;
-  background:#F7F7F9; padding:1px 6px; border-radius:99px;
-}
-.cxsb-grupo-caret{ font-size:15px !important; min-width:15px !important; margin-left:auto; transition:transform .2s; }
+.cxsidebar.aberta .cxsb-grupo{ display:flex; }
+.cxsb-grupo:hover{ color:#56565F; }
+.cxsb-grupo-qtd{ font-size:10px; font-weight:600; color:#7C7C88; background:#F7F7F9; padding:1px 6px; border-radius:99px; }
+.cxsb-grupo .cxsb-grupo-caret{ font-size:15px; min-width:15px; margin-left:auto; transition:transform .2s; }
 .cxsb-grupo.fechado .cxsb-grupo-caret{ transform:rotate(-90deg); }
 
-/* separador que aparece só no modo estreito, no lugar do título do grupo */
-.cxsb-sep{ height:1px; background:#EFEFF3; margin:7px 6px; flex-shrink:0; }
-.cxsidebar:hover .cxsb-sep,
-.cxsidebar.fixa .cxsb-sep{ display:none; }
+/* no rail, o título vira um traço */
+.cxsb-sep{ height:1px; background:#EFEFF3; margin:7px 8px; flex-shrink:0; }
+.cxsidebar.aberta .cxsb-sep{ display:none; }
 
-.cxsb-lista{
-  display:flex; flex-direction:column; gap:1px;
-  overflow:hidden; transition:max-height .24s ease; max-height:800px;
-}
-/* recolhido só faz sentido com a sidebar aberta; estreita, tudo aparece como ícone */
-.cxsidebar:hover .cxsb-lista.fechada,
-.cxsidebar.fixa .cxsb-lista.fechada{ max-height:0; }
+.cxsb-lista{ display:flex; flex-direction:column; gap:1px; overflow:hidden; transition:max-height .22s ease; max-height:900px; }
+.cxsidebar.aberta .cxsb-lista.fechada{ max-height:0; }
 
 /* ===== ITEM ===== */
 .cxsb-item{
@@ -109,35 +100,48 @@
   border-radius:8px; cursor:pointer;
   color:#56565F; white-space:nowrap; position:relative;
   transition:background .14s, color .14s;
-  border:none; background:none; width:100%; text-align:left;
-  font-family:inherit;
+  border:none; background:none; width:100%; text-align:left; font-family:inherit;
 }
 .cxsb-item:hover{ background:#F7F7F9; color:#17171A; }
 .cxsb-item.active{ background:#6C5CE7; color:#fff; }
 .cxsb-item.active .material-symbols-rounded{ color:#fff; }
 .cxsb-item .material-symbols-rounded{ font-size:19px; min-width:19px; flex-shrink:0; color:#7C7C88; transition:color .14s; }
 .cxsb-item:hover .material-symbols-rounded{ color:#17171A; }
-.cxsb-item-label{ font-size:13px; font-weight:500; opacity:0; transition:opacity .18s .05s; }
+.cxsb-item-label{ font-size:13px; font-weight:500; opacity:0; transition:opacity .16s; }
 .cxsb-item.active .cxsb-item-label{ font-weight:600; }
-.cxsidebar:hover .cxsb-item-label,
-.cxsidebar.fixa .cxsb-item-label{ opacity:1; }
+.cxsidebar.aberta .cxsb-item-label{ opacity:1; }
+.cxsidebar:not(.aberta) .cxsb-item{ justify-content:center; padding:0; }
+.cxsidebar:not(.aberta) .cxsb-item-label{ display:none; }
 
-.cxsb-caret{ font-size:17px !important; min-width:17px !important; margin-left:auto; opacity:0; transition:opacity .18s, transform .22s; color:#7C7C88; }
-.cxsidebar:hover .cxsb-parent .cxsb-caret,
-.cxsidebar.fixa .cxsb-parent .cxsb-caret{ opacity:1; }
+/* ===== BALÃO NO RAIL =====
+   Recolhida, o ícone sozinho não diz o que é. O balão resolve isso
+   sem precisar expandir a sidebar inteira. */
+.cxsb-item[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute; left:calc(100% + 10px); top:50%; transform:translateY(-50%);
+  background:#17171A; color:#fff; font-size:12px; font-weight:500;
+  padding:6px 10px; border-radius:7px; white-space:nowrap;
+  opacity:0; pointer-events:none; transition:opacity .14s;
+  box-shadow:0 4px 14px rgba(23,23,26,.2); z-index:300;
+}
+.cxsidebar:not(.aberta) .cxsb-item[data-tip]:hover::after{ opacity:1; }
+.cxsidebar.aberta .cxsb-item[data-tip]::after{ display:none; }
+
+.cxsb-item .cxsb-caret{ font-size:17px; min-width:17px; margin-left:auto; opacity:0; transition:opacity .16s, transform .22s; color:#7C7C88; }
+.cxsidebar.aberta .cxsb-parent .cxsb-caret{ opacity:1; }
+.cxsidebar:not(.aberta) .cxsb-caret{ display:none; }
 .cxsb-parent.active .cxsb-caret{ color:#fff; }
 .cxsb-parent.aberto .cxsb-caret{ transform:rotate(180deg); }
 
-/* ===== SUBMENU (OKR / Clima / Desempenho) ===== */
-.cxsb-sub{ max-height:0; overflow:hidden; transition:max-height .24s cubic-bezier(.4,0,.2,1); position:relative; }
+/* ===== SUBMENU ===== */
+.cxsb-sub{ max-height:0; overflow:hidden; transition:max-height .22s cubic-bezier(.4,0,.2,1); position:relative; }
 .cxsb-sub::before{
   content:''; position:absolute; left:20px; top:3px; bottom:4px; width:1.5px;
-  background:#EFEFF3; border-radius:2px; opacity:0; transition:opacity .18s;
+  background:#EFEFF3; border-radius:2px; opacity:0; transition:opacity .16s;
 }
-.cxsidebar:hover .cxsb-sub::before,
-.cxsidebar.fixa .cxsb-sub::before{ opacity:1; }
-.cxsidebar:hover .cxsb-parent.aberto + .cxsb-sub,
-.cxsidebar.fixa .cxsb-parent.aberto + .cxsb-sub{ max-height:100px; }
+.cxsidebar.aberta .cxsb-sub::before{ opacity:1; }
+.cxsidebar.aberta .cxsb-parent.aberto + .cxsb-sub{ max-height:100px; }
+.cxsidebar:not(.aberta) .cxsb-sub{ display:none; }
 
 .cxsb-subitem{
   display:flex; align-items:center; gap:11px;
@@ -149,77 +153,65 @@
 .cxsb-subitem.active{ background:#F1EFFE; color:#6C5CE7; font-weight:600; }
 .cxsb-subitem.active .material-symbols-rounded{ color:#6C5CE7; }
 .cxsb-subitem .material-symbols-rounded{ font-size:17px; min-width:17px; flex-shrink:0; color:#7C7C88; }
-.cxsb-subitem-label{ font-size:12.5px; font-weight:500; opacity:0; transition:opacity .18s .05s; }
-.cxsidebar:hover .cxsb-subitem-label,
-.cxsidebar.fixa .cxsb-subitem-label{ opacity:1; }
+.cxsb-subitem-label{ font-size:12.5px; font-weight:500; }
 
-/* ===== MOBILE: vira gaveta ===== */
+/* ===== MOBILE ===== */
 .cxsb-hamburguer{
-  display:none;
-  position:fixed; top:11px; left:12px; z-index:190;
+  display:none; position:fixed; top:10px; left:12px; z-index:190;
   width:38px; height:38px; border-radius:10px; border:none;
   background:#fff; color:#17171A; cursor:pointer;
   align-items:center; justify-content:center;
   box-shadow:0 2px 10px rgba(23,23,26,.12), 0 0 0 1px #E4E4EA;
 }
 .cxsb-hamburguer .material-symbols-rounded{ font-size:21px; }
-.cxsb-veu{
-  display:none; position:fixed; inset:0; z-index:199;
-  background:rgba(23,23,26,.45);
-  opacity:0; transition:opacity .2s;
-}
+.cxsb-veu{ display:none; position:fixed; inset:0; z-index:199; background:rgba(23,23,26,.45); opacity:0; transition:opacity .2s; }
 .cxsb-veu.on{ opacity:1; }
 
 @media (max-width:900px){
-  /* as páginas reservam 68px à esquerda para a sidebar fixa; no celular não há reserva */
-  body{ padding-left:0 !important; }
-
+  html body{ padding-left:0; }
   .cxsb-hamburguer{ display:flex; }
   .cxsb-veu{ display:block; pointer-events:none; }
   .cxsb-veu.on{ pointer-events:auto; }
 
   .cxsidebar{
-    width:var(--sb-aberta);
+    width:var(--cx-sb-aberta);
     transform:translateX(-100%);
     transition:transform .24s cubic-bezier(.4,0,.2,1);
-    box-shadow:none;
   }
-  .cxsidebar.gaveta-on{
-    transform:translateX(0);
-    box-shadow:14px 0 44px rgba(23,23,26,.2);
-  }
-  /* na gaveta tudo já nasce legível — não existe estado estreito */
-  .cxsidebar .cxsb-brand-text,
-  .cxsidebar .cxsb-item-label,
-  .cxsidebar .cxsb-subitem-label,
-  .cxsidebar .cxsb-caret{ opacity:1; }
-  .cxsidebar .cxsb-grupo{ opacity:1; height:auto; padding:10px 10px 7px; }
+  .cxsidebar.gaveta-on{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.22); }
+  /* na gaveta não existe estado estreito: tudo legível */
+  .cxsidebar .cxsb-brand-text{ opacity:1; }
+  .cxsidebar .cxsb-item-label{ opacity:1; display:inline; }
+  .cxsidebar .cxsb-grupo{ display:flex; }
   .cxsidebar .cxsb-sep{ display:none; }
-  .cxsidebar .cxsb-lista.fechada{ max-height:0; }
+  .cxsidebar .cxsb-item{ justify-content:flex-start; padding:0 11px; height:44px; min-height:44px; }
+  .cxsidebar .cxsb-caret{ display:flex; opacity:1; }
+  .cxsidebar .cxsb-sub{ display:block; }
   .cxsidebar .cxsb-parent.aberto + .cxsb-sub{ max-height:100px; }
-  .cxsidebar .cxsb-pin{ display:none; }
-  .cxsidebar .cxsb-body::-webkit-scrollbar-thumb{ background:#D3D3DC; }
-  /* alvos de toque confortáveis */
-  .cxsb-item{ height:44px; min-height:44px; }
-  .cxsb-subitem{ height:40px; }
+  .cxsidebar .cxsb-lista.fechada{ max-height:0; }
+  .cxsidebar .cxsb-subitem{ height:40px; }
+  .cxsidebar .cxsb-toggle{ display:none; }
+  .cxsidebar .cxsb-item[data-tip]::after{ display:none; }
+  .cxsidebar:not(.aberta) .cxsb-header{ padding:0 12px; justify-content:flex-start; }
+  .cxsidebar:not(.aberta) .cxsb-logo-icon{ display:block; }
 }
 
 @media (prefers-reduced-motion:reduce){
-  .cxsidebar, .cxsb-lista, .cxsb-sub, .cxsb-veu{ transition:none !important; }
+  html body, .cxsidebar, .cxsb-lista, .cxsb-sub, .cxsb-veu{ transition:none !important; }
 }
 </style>
 
-<button class="cxsb-hamburguer" id="cxsbHam" onclick="cxsbAbrirGaveta()" aria-label="Abrir menu">
+<button class="cxsb-hamburguer" onclick="cxsbAbrirGaveta()" aria-label="Abrir menu">
   <span class="material-symbols-rounded">menu</span>
 </button>
 <div class="cxsb-veu" id="cxsbVeu" onclick="cxsbFecharGaveta()"></div>
 
 <nav class="cxsidebar" id="cxSidebar" aria-label="Navegação principal">
   <div class="cxsb-header">
-    <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="Logo" class="cxsb-logo-icon">
+    <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="CXProjetos" class="cxsb-logo-icon">
     <span class="cxsb-brand-text">CXProjetos</span>
-    <button class="cxsb-pin" id="cxsbPin" onclick="cxsbFixar(event)" aria-label="Fixar menu aberto" title="Fixar menu">
-      <span class="material-symbols-rounded">keep</span>
+    <button class="cxsb-toggle" onclick="cxsbAlternar()" aria-label="Recolher ou expandir menu" title="Recolher / expandir">
+      <span class="material-symbols-rounded">menu_open</span>
     </button>
   </div>
 
@@ -228,149 +220,119 @@
     {% set eh_person = (nivel_acesso == 'personalizado') %}
 
     {% if eh_externo %}
-    <div class="cxsb-grupo" data-grupo="acomp">Acompanhamento<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></div>
-    <div class="cxsb-lista" id="g-acomp">
-      <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
-        <span class="material-symbols-rounded">calendar_today</span>
-        <span class="cxsb-item-label">Agenda do Projeto</span>
-      </div>
+    <div class="cxsb-item" data-path="/agenda" data-tip="Agenda do Projeto" onclick="window.location.href='/agenda'">
+      <span class="material-symbols-rounded">calendar_today</span>
+      <span class="cxsb-item-label">Agenda do Projeto</span>
     </div>
 
     {% else %}
-    <div class="cxsb-item" data-path="/" onclick="window.location.href='/'">
+    <div class="cxsb-item" data-path="/" data-tip="Hub" onclick="window.location.href='/'">
       <span class="material-symbols-rounded">home</span>
       <span class="cxsb-item-label">Hub</span>
     </div>
 
-    {# ============ QUADROS DE TRABALHO (com timer) ============ #}
+    {# ===== QUADROS DE TRABALHO (com timer) ===== #}
     <div class="cxsb-sep"></div>
-    <div class="cxsb-grupo" data-grupo="quadros" onclick="cxsbGrupo(this)">Quadros de trabalho<span class="cxsb-grupo-qtd">6</span><span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></div>
+    <button class="cxsb-grupo" data-grupo="quadros" onclick="cxsbGrupo(this)">Quadros de trabalho<span class="cxsb-grupo-qtd">6</span><span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></button>
     <div class="cxsb-lista" id="g-quadros">
       {% if not eh_person or 'recrutamento' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/recrutamento" onclick="window.location.href='/board/recrutamento'">
-        <span class="material-symbols-rounded">group_add</span>
-        <span class="cxsb-item-label">R&amp;S</span>
+      <div class="cxsb-item" data-path="/board/recrutamento" data-tip="R&amp;S" onclick="window.location.href='/board/recrutamento'">
+        <span class="material-symbols-rounded">group_add</span><span class="cxsb-item-label">R&amp;S</span>
       </div>
       {% endif %}
       {% if not eh_person or 'rhestrategico' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
-        <span class="material-symbols-rounded">psychology</span>
-        <span class="cxsb-item-label">RH Estratégico</span>
+      <div class="cxsb-item" data-path="/board/rhestrategico" data-tip="RH Estratégico" onclick="window.location.href='/board/rhestrategico'">
+        <span class="material-symbols-rounded">psychology</span><span class="cxsb-item-label">RH Estratégico</span>
       </div>
       {% endif %}
       {% if not eh_person or 'cxdata' in perm_modulos or 'geral' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/cxdata" onclick="window.location.href='/board/cxdata'">
-        <span class="material-symbols-rounded">database</span>
-        <span class="cxsb-item-label">CX Data</span>
+      <div class="cxsb-item" data-path="/board/cxdata" data-tip="CX Data" onclick="window.location.href='/board/cxdata'">
+        <span class="material-symbols-rounded">database</span><span class="cxsb-item-label">CX Data</span>
       </div>
       {% endif %}
       {% if not eh_person or 'comercial' in perm_modulos or 'geral' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/comercial" onclick="window.location.href='/board/comercial'">
-        <span class="material-symbols-rounded">handshake</span>
-        <span class="cxsb-item-label">Comercial</span>
+      <div class="cxsb-item" data-path="/board/comercial" data-tip="Comercial" onclick="window.location.href='/board/comercial'">
+        <span class="material-symbols-rounded">handshake</span><span class="cxsb-item-label">Comercial</span>
       </div>
       {% endif %}
       {% if not eh_person or 'marketing' in perm_modulos or 'geral' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/marketing" onclick="window.location.href='/board/marketing'">
-        <span class="material-symbols-rounded">campaign</span>
-        <span class="cxsb-item-label">Marketing</span>
+      <div class="cxsb-item" data-path="/board/marketing" data-tip="Marketing" onclick="window.location.href='/board/marketing'">
+        <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-label">Marketing</span>
       </div>
       {% endif %}
       {% if not eh_person or 'financeiro' in perm_modulos or 'geral' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/financeiro" onclick="window.location.href='/board/financeiro'">
-        <span class="material-symbols-rounded">payments</span>
-        <span class="cxsb-item-label">Financeiro</span>
+      <div class="cxsb-item" data-path="/board/financeiro" data-tip="Financeiro" onclick="window.location.href='/board/financeiro'">
+        <span class="material-symbols-rounded">payments</span><span class="cxsb-item-label">Financeiro</span>
       </div>
       {% endif %}
     </div>
 
-    {# ============ FERRAMENTAS (sem timer) ============ #}
+    {# ===== FERRAMENTAS (sem timer) ===== #}
     {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('okr' in perm_modulos or 'clima' in perm_modulos or 'desempenho' in perm_modulos)) %}
     <div class="cxsb-sep"></div>
-    <div class="cxsb-grupo" data-grupo="ferramentas" onclick="cxsbGrupo(this)">Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></div>
+    <button class="cxsb-grupo" data-grupo="ferramentas" onclick="cxsbGrupo(this)">Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></button>
     <div class="cxsb-lista" id="g-ferramentas">
       {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'okr' in perm_modulos) %}
-      <div class="cxsb-item cxsb-parent" data-path="/okr" onclick="cxsbModulo(event,'/okr/gestao')">
-        <span class="material-symbols-rounded">target</span>
-        <span class="cxsb-item-label">OKR</span>
+      <div class="cxsb-item cxsb-parent" data-path="/okr" data-tip="OKR" onclick="cxsbModulo(event,'/okr/gestao')">
+        <span class="material-symbols-rounded">target</span><span class="cxsb-item-label">OKR</span>
         <span class="material-symbols-rounded cxsb-caret">expand_more</span>
       </div>
       <div class="cxsb-sub">
-        <div class="cxsb-subitem" data-path="/okr/gestao" onclick="window.location.href='/okr/gestao'">
-          <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-label">Gestão</span>
-        </div>
-        <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="window.location.href='/okr/dashboard'">
-          <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
-        </div>
+        <div class="cxsb-subitem" data-path="/okr/gestao" onclick="window.location.href='/okr/gestao'"><span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-label">Gestão</span></div>
+        <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="window.location.href='/okr/dashboard'"><span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span></div>
       </div>
       {% endif %}
       {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clima' in perm_modulos) %}
-      <div class="cxsb-item cxsb-parent" data-path="/clima" onclick="cxsbModulo(event,'/clima/gestao')">
-        <span class="material-symbols-rounded">mood</span>
-        <span class="cxsb-item-label">Clima</span>
+      <div class="cxsb-item cxsb-parent" data-path="/clima" data-tip="Clima" onclick="cxsbModulo(event,'/clima/gestao')">
+        <span class="material-symbols-rounded">mood</span><span class="cxsb-item-label">Clima</span>
         <span class="material-symbols-rounded cxsb-caret">expand_more</span>
       </div>
       <div class="cxsb-sub">
-        <div class="cxsb-subitem" data-path="/clima/gestao" onclick="window.location.href='/clima/gestao'">
-          <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span>
-        </div>
-        <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="window.location.href='/clima/dashboard'">
-          <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
-        </div>
+        <div class="cxsb-subitem" data-path="/clima/gestao" onclick="window.location.href='/clima/gestao'"><span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span></div>
+        <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="window.location.href='/clima/dashboard'"><span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span></div>
       </div>
       {% endif %}
       {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'desempenho' in perm_modulos) %}
-      <div class="cxsb-item cxsb-parent" data-path="/desempenho" onclick="cxsbModulo(event,'/desempenho/gestao')">
-        <span class="material-symbols-rounded">leaderboard</span>
-        <span class="cxsb-item-label">Desempenho</span>
+      <div class="cxsb-item cxsb-parent" data-path="/desempenho" data-tip="Desempenho" onclick="cxsbModulo(event,'/desempenho/gestao')">
+        <span class="material-symbols-rounded">leaderboard</span><span class="cxsb-item-label">Desempenho</span>
         <span class="material-symbols-rounded cxsb-caret">expand_more</span>
       </div>
       <div class="cxsb-sub">
-        <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="window.location.href='/desempenho/gestao'">
-          <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span>
-        </div>
-        <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="window.location.href='/desempenho/dashboard'">
-          <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
-        </div>
+        <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="window.location.href='/desempenho/gestao'"><span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span></div>
+        <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="window.location.href='/desempenho/dashboard'"><span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span></div>
       </div>
       {% endif %}
     </div>
     {% endif %}
 
-    {# ============ GESTÃO ============ #}
+    {# ===== GESTÃO ===== #}
     <div class="cxsb-sep"></div>
-    <div class="cxsb-grupo" data-grupo="gestao" onclick="cxsbGrupo(this)">Gestão<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></div>
+    <button class="cxsb-grupo" data-grupo="gestao" onclick="cxsbGrupo(this)">Gestão<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span></button>
     <div class="cxsb-lista" id="g-gestao">
       {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
-      <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
-        <span class="material-symbols-rounded">monitoring</span>
-        <span class="cxsb-item-label">Dashboard</span>
+      <div class="cxsb-item" data-path="/dashboard" data-tip="Dashboard" onclick="window.location.href='/dashboard'">
+        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-label">Dashboard</span>
       </div>
       {% endif %}
       {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clientes' in perm_modulos) %}
-      <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
-        <span class="material-symbols-rounded">apartment</span>
-        <span class="cxsb-item-label">Clientes</span>
+      <div class="cxsb-item" data-path="/clientes" data-tip="Clientes" onclick="window.location.href='/clientes'">
+        <span class="material-symbols-rounded">apartment</span><span class="cxsb-item-label">Clientes</span>
       </div>
       {% endif %}
       {% if not eh_person or 'agenda' in perm_modulos %}
-      <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
-        <span class="material-symbols-rounded">calendar_today</span>
-        <span class="cxsb-item-label">Agenda</span>
+      <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="window.location.href='/agenda'">
+        <span class="material-symbols-rounded">calendar_today</span><span class="cxsb-item-label">Agenda</span>
       </div>
       {% endif %}
       {% if nivel_acesso == 'admin' %}
-      <div class="cxsb-item" data-path="/configuracoes" onclick="window.location.href='/configuracoes'">
-        <span class="material-symbols-rounded">settings</span>
-        <span class="cxsb-item-label">Configurações</span>
+      <div class="cxsb-item" data-path="/configuracoes" data-tip="Configurações" onclick="window.location.href='/configuracoes'">
+        <span class="material-symbols-rounded">settings</span><span class="cxsb-item-label">Configurações</span>
       </div>
-      <div class="cxsb-item" data-path="/externos" onclick="window.location.href='/externos'">
-        <span class="material-symbols-rounded">badge</span>
-        <span class="cxsb-item-label">Usuários Externos</span>
+      <div class="cxsb-item" data-path="/externos" data-tip="Usuários Externos" onclick="window.location.href='/externos'">
+        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-label">Usuários Externos</span>
       </div>
-      <div class="cxsb-item" data-path="/lixeira" onclick="window.location.href='/lixeira'">
-        <span class="material-symbols-rounded">delete</span>
-        <span class="cxsb-item-label">Lixeira</span>
+      <div class="cxsb-item" data-path="/lixeira" data-tip="Lixeira" onclick="window.location.href='/lixeira'">
+        <span class="material-symbols-rounded">delete</span><span class="cxsb-item-label">Lixeira</span>
       </div>
       {% endif %}
     </div>
@@ -381,11 +343,25 @@
 <script>
 (function(){
   var sb = document.getElementById('cxSidebar');
+  var raiz = document.documentElement;
 
-  /* ---- fixação (persistida) ---- */
-  try{
-    if (localStorage.getItem('cx_sb_fixa') === '1') sb.classList.add('fixa');
-  }catch(e){}
+  /* ---- largura: aberta ou rail, persistida ---- */
+  function aplicarLargura(aberta){
+    sb.classList.toggle('aberta', aberta);
+    var v = getComputedStyle(raiz).getPropertyValue(aberta ? '--cx-sb-aberta' : '--cx-sb-rail');
+    raiz.style.setProperty('--cx-sb-w', v.trim());
+  }
+  var salva = null;
+  try{ salva = localStorage.getItem('cx_sb_aberta'); }catch(e){}
+  /* padrão: aberta em tela larga, rail em tela apertada */
+  var inicial = (salva === null) ? (window.innerWidth >= 1280) : (salva === '1');
+  aplicarLargura(inicial);
+
+  window.cxsbAlternar = function(){
+    var vai = !sb.classList.contains('aberta');
+    aplicarLargura(vai);
+    try{ localStorage.setItem('cx_sb_aberta', vai ? '1' : '0'); }catch(e){}
+  };
 
   /* ---- item ativo ---- */
   var curr = window.location.pathname;
@@ -393,76 +369,63 @@
   if (curr === '/okr') curr = '/okr/gestao';
   if (curr === '/clima') curr = '/clima/gestao';
   if (curr === '/desempenho') curr = '/desempenho/gestao';
-  if (curr === '/board/geral') curr = '/board/cxdata';   // quadro Geral aposentado do menu
+  if (curr === '/board/geral') curr = '/board/cxdata';
 
   var grupoAtivo = null;
   document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item){
-    var path = item.getAttribute('data-path');
-    var bate = path === '/' ? curr === '/' : (curr === path || curr.indexOf(path + '/') === 0);
-    if (bate) {
+    var p = item.getAttribute('data-path');
+    var bate = p === '/' ? curr === '/' : (curr === p || curr.indexOf(p + '/') === 0);
+    if (bate){
       item.classList.add('active');
-      var lista = item.closest('.cxsb-lista');
-      if (lista) grupoAtivo = lista.id;
+      var l = item.closest('.cxsb-lista'); if (l) grupoAtivo = l.id;
     }
   });
-  document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(sub){
-    var path = sub.getAttribute('data-path');
-    if (curr === path || curr.indexOf(path + '/') === 0) {
-      sub.classList.add('active');
-      var pai = sub.closest('.cxsb-sub').previousElementSibling;
+  document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(s){
+    var p = s.getAttribute('data-path');
+    if (curr === p || curr.indexOf(p + '/') === 0){
+      s.classList.add('active');
+      var pai = s.closest('.cxsb-sub').previousElementSibling;
       if (pai && pai.classList.contains('cxsb-parent')) pai.classList.add('aberto');
-      var lista = sub.closest('.cxsb-lista');
-      if (lista) grupoAtivo = lista.id;
+      var l = s.closest('.cxsb-lista'); if (l) grupoAtivo = l.id;
     }
   });
 
-  /* ---- grupos ----
-     Padrão: só o grupo da página atual nasce aberto. Sem isso, um admin
-     abriria com 792px de menu contra 648px de tela. Preferência explícita
-     do usuário (aberto OU fechado) sempre vence o padrão. */
+  /* ---- grupos: só o da página atual nasce aberto ---- */
   var pref = {};
   try{ pref = JSON.parse(localStorage.getItem('cx_sb_grupos') || '{}') || {}; }catch(e){}
   document.querySelectorAll('.cxsb-grupo[data-grupo]').forEach(function(g){
-    var chave = g.getAttribute('data-grupo');
-    var lista = document.getElementById('g-' + chave);
+    var k = g.getAttribute('data-grupo');
+    var lista = document.getElementById('g-' + k);
     if (!lista) return;
-    var aberto = (pref.hasOwnProperty(chave)) ? pref[chave] === true : (lista.id === grupoAtivo);
+    var aberto = pref.hasOwnProperty(k) ? pref[k] === true : (lista.id === grupoAtivo);
     g.classList.toggle('fechado', !aberto);
     lista.classList.toggle('fechada', !aberto);
   });
 })();
 
 function cxsbGrupo(el){
-  var chave = el.getAttribute('data-grupo');
-  var lista = document.getElementById('g-' + chave);
+  var k = el.getAttribute('data-grupo');
+  var lista = document.getElementById('g-' + k);
   if (!lista) return;
-  var sb = document.getElementById('cxSidebar');
-  /* estreita e sem fixar: clicar no título não faz sentido, tudo já é ícone */
-  if (sb.offsetWidth < 100) return;
   var fechou = el.classList.toggle('fechado');
   lista.classList.toggle('fechada', fechou);
   try{
     var p = JSON.parse(localStorage.getItem('cx_sb_grupos') || '{}') || {};
-    p[chave] = !fechou;
+    p[k] = !fechou;
     localStorage.setItem('cx_sb_grupos', JSON.stringify(p));
   }catch(e){}
 }
 
 function cxsbModulo(e, rotaGestao){
   var sb = document.getElementById('cxSidebar');
-  if (sb.offsetWidth < 100) { window.location.href = rotaGestao; return; }
+  /* no rail o submenu não aparece: vai direto para a gestão */
+  if (!sb.classList.contains('aberta') && window.innerWidth > 900){
+    window.location.href = rotaGestao; return;
+  }
   e.stopPropagation();
   e.currentTarget.classList.toggle('aberto');
 }
 
-function cxsbFixar(e){
-  e.stopPropagation();
-  var sb = document.getElementById('cxSidebar');
-  var fixa = sb.classList.toggle('fixa');
-  try{ localStorage.setItem('cx_sb_fixa', fixa ? '1' : '0'); }catch(err){}
-}
-
-/* ---- gaveta mobile ---- */
 function cxsbAbrirGaveta(){
   document.getElementById('cxSidebar').classList.add('gaveta-on');
   document.getElementById('cxsbVeu').classList.add('on');
@@ -471,7 +434,5 @@ function cxsbFecharGaveta(){
   document.getElementById('cxSidebar').classList.remove('gaveta-on');
   document.getElementById('cxsbVeu').classList.remove('on');
 }
-document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape') cxsbFecharGaveta();
-});
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') cxsbFecharGaveta(); });
 </script>
