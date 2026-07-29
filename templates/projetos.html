@@ -766,6 +766,108 @@
         const USUARIO_LOGADO = "{{ usuario_nome }}";
 
         const WORKSPACES = {
+            'cxdata': {
+                titulo: 'CX Data',
+                areasPermitidas: ['CX Data'],
+                atividades: [
+                    "Produção de dashboard",
+                    "Construção de dashboard",
+                    "Atualização de base de dados",
+                    "Construção de automação",
+                    "Construção de ferramenta",
+                    "Relatório de desempenho (métricas + análise)",
+                    "Reunião com cliente",
+                    "Reunião interna",
+                    "Reunião de alinhamento",
+                    "Planejamento de atividades (semanal/diário)"
+                ],
+                statusInicial: 'Não Iniciado',
+                colunas: [
+                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
+                ]
+            },
+            'comercial': {
+                titulo: 'Comercial',
+                areasPermitidas: ['Comercial'],
+                atividades: [
+                    "Prospecções",
+                    "Geração de leads",
+                    "Produção de proposta",
+                    "Reunião de proposta",
+                    "Reunião com cliente",
+                    "Prospecção de parceiros",
+                    "Construção de OKR",
+                    "Reunião interna",
+                    "Reunião de alinhamento",
+                    "Planejamento de atividades (semanal/diário)"
+                ],
+                statusInicial: 'Não Iniciado',
+                colunas: [
+                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
+                ]
+            },
+            'marketing': {
+                titulo: 'Marketing',
+                areasPermitidas: ['Marketing'],
+                atividades: [
+                    "Planejamento de conteúdo mensal",
+                    "Planejamento de campanhas",
+                    "Planejamento de evento",
+                    "Roteiro de vídeos",
+                    "Gravação de vídeo",
+                    "Edição de vídeo",
+                    "Edição de material — on",
+                    "Edição de material — off",
+                    "Edição de material — Treinamentos",
+                    "Card de vagas",
+                    "Postar card de vaga",
+                    "LinkedIn post",
+                    "Gravação de stories",
+                    "Publicar stories",
+                    "Blog — criação e publicação de post",
+                    "Qui_Conexão — criação e disparo",
+                    "E-mail marketing — criação e disparo",
+                    "Follow up — redes sociais",
+                    "Follow up — ações de marketing",
+                    "Relatório de desempenho (métricas + análise)",
+                    "Reunião interna",
+                    "Reunião de alinhamento",
+                    "Planejamento de atividades (semanal/diário)"
+                ],
+                statusInicial: 'Não Iniciado',
+                colunas: [
+                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
+                ]
+            },
+            'financeiro': {
+                titulo: 'Financeiro',
+                areasPermitidas: ['Adm/Fin'],
+                atividades: [
+                    "Cobrança",
+                    "Reunião com BPO",
+                    "Levantamento de orçamentos",
+                    "Produção de proposta",
+                    "Reunião interna",
+                    "Reunião de alinhamento",
+                    "Planejamento de atividades (semanal/diário)"
+                ],
+                statusInicial: 'Não Iniciado',
+                colunas: [
+                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
+                ]
+            },
             'geral': {
                 titulo: 'Quadro Geral',
                 areasPermitidas: ['CX Data', 'Comercial', 'Marketing', 'Adm/Fin'],
