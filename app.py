@@ -91,7 +91,8 @@ def pode_acessar_modulo(modulo):
         return True
     if nivel == 'colaborador':
         # Legado: colaborador acessa quadros e agenda
-        return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda')
+        return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda',
+                          'cxdata', 'comercial', 'marketing', 'financeiro')
     # comum, personalizado e externo: usam a lista explícita de módulos
     modulos = session.get('perm_modulos') or []
     return modulo in modulos
@@ -296,10 +297,24 @@ def criar_projeto():
             "responsavel": dados.get("responsavel", "Não definido"),
             "status": dados.get("status_inicial", "Backlog"),
             "progresso": 0,
-            "anotacoes": "",
+            # Antes era "" fixo, o que descartava a descrição enviada.
+            # A solicitação entre quadros depende deste campo.
+            "anotacoes": dados.get("anotacoes", "") or "",
             "prazo_data": dados.get("prazo_data") if dados.get("prazo_data") else None,
             "is_scrum": bool(dados.get("is_scrum", False))
         }
+
+        # Solicitação entre quadros: só grava o elo quando ele existe.
+        # solicitado_por vem da sessão, nunca do corpo da requisição, para
+        # ninguém conseguir assinar uma solicitação com o nome de outra pessoa.
+        if dados.get("origem_projeto_id"):
+            novo_projeto.update({
+                "origem_projeto_id": dados.get("origem_projeto_id"),
+                "origem_area": dados.get("origem_area"),
+                "tipo_solicitacao": dados.get("tipo_solicitacao"),
+                "solicitado_por": session.get("usuario_nome")
+            })
+
         supabase.table("projetos").insert(novo_projeto).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
