@@ -266,6 +266,75 @@
         .pick-vazio { padding: 26px 16px; text-align: center; font-size: 12.5px; color: var(--tinta-3); line-height: 1.55; }
         .pick-pe { padding: 8px 13px; border-top: 1px solid var(--linha-1); font-size: 11px; color: var(--tinta-3); display: flex; gap: 12px; }
         .pick-pe b { font-weight: 600; color: var(--tinta-2); }
+
+        /* ===== ABAS DE FASE (mobile) ===== */
+        .m-fases { display: none; gap: 6px; padding: 9px 16px; overflow-x: auto; background: var(--papel); border-bottom: 1px solid var(--linha-1); flex-shrink: 0; }
+        .m-fases::-webkit-scrollbar { display: none; }
+        .m-fase { font-size: 12px; font-weight: 550; padding: 8px 13px; border-radius: var(--r-pill); background: var(--papel-2); color: var(--tinta-2); white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer; border: none; font-family: inherit; }
+        .m-fase-ponto { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .m-fase.on { background: var(--tinta); color: #fff; }
+        .m-fase-qtd { font-size: 11px; opacity: .7; }
+
+        /* ============================================================
+           RESPONSIVO
+           A tela nunca teve media query. O gargalo era duplo:
+           .cmd precisa de 1108px de largura, e body{height:100vh;
+           overflow:hidden} impede rolar o que não coube.
+           ============================================================ */
+        @media (max-width: 1180px) {
+            .cmd { gap: 9px; padding: 0 16px; }
+            .busca { width: 190px; }
+            .cmd-cont { display: none; }
+            .kanban-board { padding: 14px 16px 18px; }
+            .list-view-container { padding: 12px 16px 24px; }
+        }
+        @media (max-width: 980px) {
+            .cmd-titulo { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .segm-btn span:not(.material-symbols-rounded) { display: none; }
+            .segm-btn { padding: 6px 10px; }
+        }
+        @media (max-width: 900px) {
+            /* a página passa a rolar; sem isso o que excede a viewport some */
+            body { height: auto; min-height: 100vh; overflow: visible; padding-left: 0; }
+            .top-bar { padding: 0 16px 0 60px; }  /* espaço para o hambúrguer da sidebar */
+            .top-bar-logo { font-size: 16px; }
+
+            .cmd { flex-wrap: wrap; height: auto; padding: 10px 16px; row-gap: 9px; }
+            .cmd-sep { display: none; }
+            .cmd-titulo { max-width: none; flex: 1; }
+            .cmd-dir { width: 100%; margin-left: 0; }
+            .busca { flex: 1; width: auto; min-width: 0; }
+            .btn-acao span:not(.material-symbols-rounded) { display: none; }
+            .btn-acao { padding: 8px 11px; }
+
+            .filtros { padding: 12px 16px; }
+            .filtro-campo { width: 100%; }
+            .filter-input, .filter-date { flex: 1; }
+
+            /* uma fase por vez: 11 colunas de 272px não cabem em 390px */
+            .m-fases { display: flex; }
+            .kanban-board { flex-direction: column; padding: 12px 16px 24px; overflow-x: visible; }
+            .kanban-column { width: 100%; min-width: 0; max-height: none; background: transparent; padding: 0; display: none; }
+            .kanban-column.fase-ativa { display: flex; }
+            .kanban-column .column-header { display: none; }
+            .kanban-column.min { width: 100%; min-width: 0; }
+            .kanban-column.min .col-min-face { display: none; }
+            .kanban-cards { overflow-y: visible; }
+            .card { cursor: pointer; }
+            /* alvos de toque: o play fica sempre visível, já que não há hover */
+            .btn-play { opacity: 1; pointer-events: auto; transform: scale(1); width: 32px; height: 32px; min-width: 32px; }
+            .btn-timer { width: 30px; height: 30px; min-width: 30px; }
+
+            .list-view-container { overflow-x: auto; }
+            .modal-content, .modal-box { width: 94% !important; max-width: none !important; max-height: 88vh !important; }
+        }
+        @media (max-width: 560px) {
+            .cmd-titulo { font-size: 15px; }
+            .top-bar { height: 54px; min-height: 54px; }
+            .kanban-board { padding: 10px 12px 20px; }
+            .m-fases { padding: 9px 12px; }
+        }
+
         /* ===== VISÃO EM LISTA — mesmo sistema do quadro ===== */
         .list-view-container { padding: 12px 24px 28px; flex-grow: 1; overflow-y: auto; display: none; }
         .list-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; min-width: 940px; }
@@ -518,6 +587,7 @@
         <button class="btn-limpar" onclick="limparFiltros()">Limpar filtros</button>
     </div>
 
+    <div class="m-fases" id="mFases"></div>
     <div class="kanban-board" id="boardDinamico"></div>
 
     <div class="list-view-container" id="listViewDinamico">
@@ -1146,6 +1216,7 @@
                 </div>`;
                 board.insertAdjacentHTML('beforeend', html);
             });
+            montarChipsFase();
         }
 
         function atualizarDropdownsFiltro(projetosWorkspace) {
@@ -1386,6 +1457,7 @@
                 const a = col.querySelector('.col-count'); if (a) a.innerText = n;
                 const b = col.querySelector('.col-min-qtd'); if (b) b.innerText = n;
             });
+            atualizarChipsFase();
         }
 
         async function carregarProjetos() {
@@ -2186,6 +2258,49 @@
                     clearInterval(intervalo);
                 }
             }, 100);
+        }
+
+        /* ==========================================================
+           ABAS DE FASE (mobile)
+           No celular só uma coluna aparece por vez: onze colunas de
+           272px exigiriam 3.0km de rolagem lateral numa tela de 390px.
+           ========================================================== */
+        let faseMobileAtiva = null;
+
+        function montarChipsFase() {
+            const barra = document.getElementById('mFases');
+            if (!barra) return;
+            barra.innerHTML = cfg.colunas.map(c => `
+                <button class="m-fase" data-fase="${escAttr(c.id)}" onclick="selecionarFase('${escAttr(c.id)}')">
+                    <span class="m-fase-ponto" style="background:${c.cor};"></span>
+                    ${escH(c.nome)}
+                    <span class="m-fase-qtd">0</span>
+                </button>`).join('');
+
+            // Preferência salva, senão a primeira fase que tiver algum card
+            let inicial = null;
+            try { inicial = localStorage.getItem('cx_fase_' + QUADRO_ATUAL); } catch(e) {}
+            if (!inicial || !cfg.colunas.some(c => c.id === inicial)) inicial = cfg.colunas[0].id;
+            selecionarFase(inicial, true);
+        }
+
+        function selecionarFase(statusId, silencioso) {
+            faseMobileAtiva = statusId;
+            document.querySelectorAll('.m-fase').forEach(b =>
+                b.classList.toggle('on', b.getAttribute('data-fase') === statusId));
+            document.querySelectorAll('.kanban-column').forEach(col =>
+                col.classList.toggle('fase-ativa', col.getAttribute('data-status') === statusId));
+            if (!silencioso) {
+                try { localStorage.setItem('cx_fase_' + QUADRO_ATUAL, statusId); } catch(e) {}
+            }
+        }
+
+        function atualizarChipsFase() {
+            document.querySelectorAll('.m-fase').forEach(b => {
+                const col = document.querySelector(`.kanban-column[data-status="${CSS.escape(b.getAttribute('data-fase'))}"]`);
+                const q = b.querySelector('.m-fase-qtd');
+                if (col && q) q.innerText = col.querySelectorAll('.card').length;
+            });
         }
 
         /* ==========================================================
