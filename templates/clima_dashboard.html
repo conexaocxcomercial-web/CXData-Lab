@@ -4,167 +4,194 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clima · Dashboard | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>    <style>
-        :root {
-            --bg-board:#eef0f4; --surface:#ffffff; --text-main:#1a1d29; --text-soft:#5a5f6e; --text-muted:#9AA0AE; --line:#e7e9ef;
-            --purple:#7371ff; --purple-soft:#f0efff;
-            --lk1:#E5484D; --lk2:#F2A98C; --lk3:#F5D06B; --lk4:#8AD9B1; --lk5:#2FA875;
-            --pos:#2FA875; --neu:#F5D06B; --neg:#E5484D;
+    <style>
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --critico:#D42F2F; --neutro:#C8C8D0;
+            --pos1:#7FCDB0; --neg1:#EE8A8A;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --e3:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #cfd3dd; border-radius: 6px !important; } ::-webkit-scrollbar-track { background: transparent; }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select,textarea{ font-family:inherit; border:none; }
+        body{
+            font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+            height:100vh; overflow:hidden; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased;
+        }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; }
+        ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .top-bar { background: var(--surface); height: 60px; min-height: 60px; flex-shrink: 0; padding: 0 28px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 var(--line); z-index: 30; }
-        .top-bar-logo { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; cursor: pointer; }
-        .top-bar-logo span { color: var(--purple); }
-        .top-bar-right { display: flex; align-items: center; gap: 14px; }
-        .pesq-sel { padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--text-main); background: var(--bg-board); outline: none; cursor: pointer; border-radius: 9px !important; min-width: 240px; }
+        .top-bar{
+            background:var(--papel); height:56px; min-height:56px; flex-shrink:0; padding:0 22px;
+            display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha); z-index:10;
+        }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
 
-        .dash-body { flex-grow: 1; display: flex; min-height: 0; padding-left: 22px; }
+        .cmd{
+            display:flex; align-items:center; gap:12px; padding:0 22px; height:56px; flex-shrink:0;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap;
+        }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .sel{
+            font-size:13px; font-weight:500; color:var(--tinta); padding:7px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; cursor:pointer; max-width:300px;
+        }
+        .sel:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+        .btn-sec{
+            font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+            padding:8px 14px; border-radius:var(--r-ctrl); background:var(--papel-2); color:var(--tinta-2); transition:.15s;
+        }
+        .btn-sec:hover{ background:var(--linha); color:var(--tinta); }
 
-        /* NAV lateral */
-        .nav-lateral { width: 218px; min-width: 218px; background: transparent; overflow-y: auto; padding: 20px 10px 20px 0; flex-shrink: 0; }
-        .nav-grupo { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin: 16px 0 8px; }
-        .nav-grupo:first-child { margin-top: 0; }
-        .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 9px !important; cursor: pointer; transition: 0.13s; margin-bottom: 2px; }
-        .nav-item:hover { background: var(--bg-board); }
-        .nav-item.ativo { background: var(--purple); box-shadow: 0 4px 12px rgba(115,113,255,0.3); }
-        .nav-item.ativo .nav-nome, .nav-item.ativo .material-symbols-rounded, .nav-item.ativo .nav-pct { color: #fff !important; }
-        .nav-item .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
-        .nav-nome { flex-grow: 1; font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .nav-pct { font-size: 11px; font-weight: 800; }
-        .nav-dot { width: 7px; height: 7px; border-radius: 50% !important; flex-shrink: 0; }
+        .corpo{ flex:1; display:grid; grid-template-columns:200px 1fr; min-height:0; }
+        .nav{ background:var(--papel); border-right:1px solid var(--linha); padding:12px 10px; overflow-y:auto; }
+        .nav-g{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3); padding:10px 9px 6px; }
+        .nav-i{
+            display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:8px;
+            font-size:12.5px; font-weight:500; color:var(--tinta-2); cursor:pointer; transition:.14s; margin-bottom:1px;
+        }
+        .nav-i:hover{ background:var(--papel-2); color:var(--tinta); }
+        .nav-i.on{ background:var(--acao); color:#fff; font-weight:600; }
+        .nav-i .material-symbols-rounded{ font-size:17px; color:var(--tinta-3); flex-shrink:0; }
+        .nav-i.on .material-symbols-rounded{ color:#fff; }
+        .nav-i-txt{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .nav-i-pct{ font-size:11px; font-weight:600; font-family:'IBM Plex Mono',monospace; flex-shrink:0; }
+        .nav-i.on .nav-i-pct{ color:#fff !important; }
 
-        /* Filtros topo */
-        .filtros { background: var(--surface); padding: 12px 26px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); flex-shrink: 0; }
-        .filtro { display: flex; align-items: center; gap: 7px; background: var(--bg-board); padding: 0 6px 0 13px; height: 36px; border-radius: 9px !important; }
-        .filtro .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
-        .filtro label { font-size: 11px; font-weight: 700; color: var(--text-soft); }
-        .filtro select { border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); outline: none; cursor: pointer; padding: 7px 4px; font-family: 'Inter'; max-width: 150px; }
-        .filtro-limpar { font-size: 12px; font-weight: 700; color: var(--purple); cursor: pointer; padding: 0 10px; height: 36px; display: flex; align-items: center; gap: 4px; border-radius: 9px !important; }
-        .filtro-limpar:hover { background: var(--purple-soft); }
-        .filtro-cont { margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--text-soft); display: flex; align-items: center; gap: 7px; }
-        .filtro-cont b { color: var(--text-main); font-weight: 800; }
-        .filtro-cont .d { width: 7px; height: 7px; border-radius: 50% !important; background: var(--pos); }
+        .conteudo{ overflow-y:auto; padding:18px 22px 28px; }
+        .loading{ text-align:center; padding:60px; color:var(--tinta-3); font-size:13px; font-weight:500; }
+        .empty{ text-align:center; padding:70px 24px; color:var(--tinta-3); }
+        .empty .material-symbols-rounded{ font-size:46px; opacity:.25; display:block; margin-bottom:14px; }
+        .empty h3{ font-size:15px; font-weight:650; color:var(--tinta-2); margin-bottom:6px; }
+        .empty p{ font-size:13px; font-weight:500; line-height:1.6; max-width:400px; margin:0 auto; }
 
-        .conteudo { flex-grow: 1; overflow-y: auto; padding: 22px 26px 60px; }
-        .tela-cab { margin-bottom: 20px; }
-        .tela-titulo { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 11px; }
-        .tela-titulo .material-symbols-rounded { color: var(--purple); font-size: 24px; }
-        .tela-sub { font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
-        .fade { animation: f 0.3s ease; } @keyframes f { from{opacity:0; transform:translateY(6px);} to{opacity:1;} }
+        .tela-cab{ margin-bottom:16px; }
+        .tela-titulo{ font-size:18px; font-weight:700; letter-spacing:-.5px; display:flex; align-items:center; gap:9px; }
+        .tela-titulo .material-symbols-rounded{ font-size:21px; color:var(--tinta-3); }
+        .tela-sub{ font-size:12.5px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
 
-        .empty, .loading { text-align: center; padding: 90px 20px; color: var(--text-muted); }
-        .empty .material-symbols-rounded { font-size: 54px; opacity: 0.2; display: block; margin-bottom: 14px; }
-        .empty h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 5px; }
-        .empty p { font-size: 13px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
-        .spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: sp 0.7s linear infinite; margin: 0 auto 16px; } @keyframes sp { to{transform:rotate(360deg);} }
+        /* ===== FILTROS ===== */
+        .filtros{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:16px; }
+        .filtro-sel{
+            font-size:12.5px; font-weight:500; color:var(--tinta); padding:7px 11px; background:var(--papel);
+            border:1px solid var(--linha); border-radius:var(--r-ctrl); outline:none; cursor:pointer;
+        }
+        .filtro-sel:focus{ border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .btn-limpar{ font-size:12.5px; font-weight:600; color:var(--tinta-3); background:transparent; cursor:pointer; padding:7px 11px; border-radius:var(--r-ctrl); }
+        .btn-limpar:hover{ background:var(--papel-2); color:var(--critico); }
 
-        /* Cartão base estilo BI */
-        .painel { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 18px; display: flex; flex-direction: column; }
-        .painel-tit { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; line-height: 1.35; }
-        .painel-sub { font-size: 10.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
-        .grid { display: grid; gap: 14px; }
+        /* ===== KPIs ===== */
+        .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; margin-bottom:18px; }
+        .kpi{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:14px 15px; }
+        .kpi-lbl{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:6px; }
+        .kpi-val{ font-size:24px; font-weight:700; letter-spacing:-.8px; line-height:1; }
+        .kpi-desc{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:5px; }
 
-        /* KPIs faixa topo */
-        .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 14px; }
-        .kpi { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 16px 18px; position: relative; overflow: hidden; }
-        .kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .kpi-ico { width: 30px; height: 30px; border-radius: 8px !important; display: flex; align-items: center; justify-content: center; }
-        .kpi-ico .material-symbols-rounded { font-size: 17px; }
-        .kpi-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
-        .kpi-val { font-size: 30px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
-        .kpi-desc { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 5px; }
+        /* ===== PAINEL ===== */
+        .painel{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:16px 18px; margin-bottom:14px; }
+        .painel-cab{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+        .painel-tit{ font-size:13.5px; font-weight:650; letter-spacing:-.2px; flex:1; }
+        .painel-sub{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
 
-        /* Gauge */
-        .gauge-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .gauge-val { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; }
-        .gauge-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+        /* ===== BARRA DIVERGENTE ===== */
+        .dv-legenda{ display:flex; align-items:center; gap:14px; font-size:11px; color:var(--tinta-3); font-weight:500; margin-bottom:12px; flex-wrap:wrap; }
+        .dv-legenda span{ display:flex; align-items:center; gap:5px; }
+        .lg{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+        .dv-linha{ display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--linha); }
+        .dv-linha:last-child{ border-bottom:none; }
+        .dv-linha.clic{ cursor:pointer; border-radius:7px; transition:background .14s; }
+        .dv-linha.clic:hover{ background:var(--papel-2); }
+        .dv-rot{ width:190px; flex-shrink:0; font-size:12.5px; font-weight:550; color:var(--tinta); line-height:1.35; }
+        .dv-rot small{ display:block; font-size:10.5px; color:var(--tinta-3); font-weight:500; margin-top:2px; }
+        .dv-graf{ flex:1; display:flex; align-items:center; position:relative; height:22px; min-width:120px; }
+        .dv-meio{ position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:var(--linha-2); z-index:1; }
+        .dv-lado{ flex:1; display:flex; height:16px; overflow:hidden; }
+        .dv-lado.esq{ justify-content:flex-end; border-radius:3px 0 0 3px; }
+        .dv-lado.dir{ border-radius:0 3px 3px 0; }
+        .seg{ height:100%; transition:width .4s; }
+        .s-neg2{ background:var(--critico); }
+        .s-neg1{ background:var(--neg1); }
+        .s-neu{ background:var(--neutro); }
+        .s-pos1{ background:var(--pos1); }
+        .s-pos2{ background:var(--ok); }
+        .dv-fav{ width:50px; flex-shrink:0; text-align:right; font-size:13px; font-weight:650; font-family:'IBM Plex Mono',monospace; }
+        .dv-n{ width:44px; flex-shrink:0; text-align:right; font-size:11px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; }
 
-        /* Barra 0-10 distribuição (vertical) */
-        .barras10 { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding-top: 10px; }
-        .barra-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
-        .barra-fill { width: 100%; border-radius: 4px 4px 0 0 !important; transition: height 0.6s cubic-bezier(0.34,1.1,0.64,1); min-height: 2px; }
-        .barra-x { font-size: 9px; font-weight: 700; color: var(--text-muted); }
-        .barra-n { font-size: 9px; font-weight: 800; color: var(--text-soft); }
+        /* ===== DESTAQUES ===== */
+        .dest{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .dest-item{ display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--papel-2); }
+        .dest-item:last-child{ border-bottom:none; }
+        .dest-pos{
+            width:20px; height:20px; min-width:20px; border-radius:6px; display:flex; align-items:center;
+            justify-content:center; font-size:10px; font-weight:700; font-family:'IBM Plex Mono',monospace; margin-top:1px;
+        }
+        .dest-txt{ flex:1; min-width:0; font-size:12.5px; font-weight:500; color:var(--tinta-2); line-height:1.45; }
+        .dest-val{ font-size:12.5px; font-weight:650; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .vazio-msg{ font-size:12.5px; color:var(--tinta-3); font-weight:500; padding:14px 0; text-align:center; }
 
-        /* Pizza Likert */
-        .pie-row { display: flex; align-items: center; gap: 16px; }
-        .pie-box { position: relative; width: 108px; height: 108px; flex-shrink: 0; }
-        .pie-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .pie-pct { font-size: 20px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; }
-        .pie-cap { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-top: 2px; }
-        .pie-leg { display: flex; flex-direction: column; gap: 6px; flex-grow: 1; min-width: 0; }
-        .pie-leg-item { display: flex; align-items: center; gap: 7px; font-size: 10.5px; }
-        .pie-leg-dot { width: 8px; height: 8px; border-radius: 2px !important; flex-shrink: 0; }
-        .pie-leg-nome { color: var(--text-soft); font-weight: 500; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pie-leg-val { font-weight: 800; color: var(--text-main); }
+        /* ===== COMENTÁRIOS ===== */
+        .coment{ background:var(--papel-2); border-radius:10px; padding:11px 13px; margin-bottom:8px; font-size:12.5px; color:var(--tinta-2); line-height:1.55; }
+        .coment-meta{ font-size:10.5px; color:var(--tinta-3); font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:5px; }
 
-        /* Ranking horizontal (líderes, setores) */
-        .rank-item { display: flex; align-items: center; gap: 11px; margin-bottom: 13px; }
-        .rank-item:last-child { margin-bottom: 0; }
-        .rank-pos { width: 20px; height: 20px; border-radius: 6px !important; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; background: #eef0f4; color: var(--text-muted); flex-shrink: 0; }
-        .rank-pos.top { background: var(--purple); color: #fff; }
-        .rank-mid { flex-grow: 1; min-width: 0; }
-        .rank-l { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; gap: 8px; }
-        .rank-nome { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-v { font-size: 12.5px; font-weight: 800; flex-shrink: 0; }
-        .rank-track { height: 7px; background: #eef0f4; border-radius: 50px !important; overflow: hidden; }
-        .rank-bar { height: 100%; border-radius: 50px !important; transition: width 0.7s cubic-bezier(0.34,1.2,0.64,1); }
-        .rank-sub { font-size: 9.5px; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
-
-        /* Painel de leitura (textos) */
-        .leitura { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding-right: 4px; }
-        .leitura-item { background: var(--bg-board); padding: 13px 15px; font-size: 12px; line-height: 1.6; color: var(--text-soft); border-radius: 10px !important; }
-        .leitura-vazio { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 20px; text-align: center; }
-
-        /* Análise IA */
-        .ia { background: linear-gradient(135deg, #1a1d29 0%, #2b2942 100%); border-radius: 12px !important; padding: 20px 22px; position: relative; overflow: hidden; }
-        .ia::before { content:''; position:absolute; top:-60px; right:-30px; width:180px; height:180px; background: radial-gradient(circle, rgba(115,113,255,0.4), transparent 70%); }
-        .ia-h { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; position: relative; }
-        .ia-badge { width: 32px; height: 32px; background: linear-gradient(135deg, var(--purple), #9d7bff); display: flex; align-items: center; justify-content: center; border-radius: 9px !important; }
-        .ia-badge .material-symbols-rounded { font-size: 18px; color: #fff; }
-        .ia-t { font-size: 13px; font-weight: 800; color: #fff; }
-        .ia-s { font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 500; }
-        .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative; }
-        .ia-item { display: flex; gap: 10px; align-items: flex-start; background: rgba(255,255,255,0.05); padding: 12px 14px; border-radius: 9px !important; }
-        .ia-ic { width: 26px; height: 26px; border-radius: 7px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .ia-ic .material-symbols-rounded { font-size: 15px; }
-        .ia-pos { background: rgba(47,168,117,0.2); color: #4ade80; } .ia-neg { background: rgba(229,72,77,0.2); color: #ff7a7f; } .ia-neu { background: rgba(115,113,255,0.22); color: #b0aeff; }
-        .ia-tx { font-size: 11.5px; line-height: 1.5; color: rgba(255,255,255,0.8); } .ia-tx b { color: #fff; font-weight: 700; }
-
-        .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 22px 0 12px; }
-        .lider-nota-badge { display:inline-flex; align-items:center; gap:5px; background:var(--purple-soft); color:var(--purple); font-size:11px; font-weight:800; padding:4px 10px; border-radius:50px !important; }
-        /* Containers ECharts */
-        .echart-pie { width: 130px; height: 130px; flex-shrink: 0; }
-        .echart-gauge { width: 100%; height: 180px; }
-        .echart-bar { width: 100%; height: 180px; }
-        /* Layout escala 0-10: gauge + barras lado a lado */
-        .escala-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: center; }
-        .escala-gauge { border-right: 1px solid var(--line); padding-right: 16px; }
-        .escala-barras { min-width: 0; }
-        @media (max-width: 720px) { .escala-layout { grid-template-columns: 1fr; } .escala-gauge { border-right: none; padding-right: 0; } }
+        @media (max-width:820px){ .dest{ grid-template-columns:1fr; } .corpo{ grid-template-columns:1fr; } .nav{ border-right:none; border-bottom:1px solid var(--linha); } }
+        @media (max-width:900px){
+            body{ height:auto; min-height:100vh; overflow:visible; }
+            .top-bar{ padding:0 16px 0 60px; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            .sel{ flex:1; max-width:none; }
+            .conteudo{ padding:14px 16px 24px; }
+            .dv-rot{ width:110px; font-size:11.5px; }
+            .dv-fav{ width:40px; font-size:12px; }
+            .dv-n{ display:none; }
+            .nav{ display:flex; gap:6px; overflow-x:auto; padding:10px 14px; }
+            .nav-g{ display:none; }
+            .nav-i{ white-space:nowrap; margin:0; }
+        }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
-        <div class="top-bar-right">
-            <select class="pesq-sel" id="selPesquisa" onchange="carregar()"><option value="">Selecione uma pesquisa...</option></select>
-            {% include '_usermenu.html' %}
-        </div>
+        {% include '_usermenu.html' %}
     </div>
     {% include '_sidebar.html' %}
 
-    <div id="filtrosArea"></div>
+    <div class="cmd">
+        <span class="cmd-tit">Clima</span>
+        <div class="cmd-sep"></div>
+        <select class="sel" id="selPesquisa" onchange="carregar()">
+            <option value="">Selecione uma pesquisa...</option>
+        </select>
+        <div class="cmd-dir">
+            <button class="btn-sec" onclick="window.location.href='/clima/gestao'">
+                <span class="material-symbols-rounded" style="font-size:17px;">tune</span>Gestão
+            </button>
+        </div>
+    </div>
 
-    <div class="dash-body">
-        <div class="nav-lateral" id="nav" style="display:none;"></div>
+    <div class="corpo">
+        <div class="nav" id="nav" style="display:none;"></div>
         <div class="conteudo" id="conteudo">
-            <div class="empty"><span class="material-symbols-rounded">analytics</span><h3>Selecione uma pesquisa</h3><p>Escolha uma pesquisa para ver a análise completa dos resultados.</p></div>
+            <div class="empty">
+                <span class="material-symbols-rounded">analytics</span>
+                <h3>Selecione uma pesquisa</h3>
+                <p>Escolha uma pesquisa para ver a análise.</p>
+            </div>
         </div>
     </div>
 
@@ -243,306 +270,314 @@
         function favDim(dim,itens){ const ids=(dim.perguntas||[]).filter(p=>p.tipo==='likert').map(p=>p.id); return positivas(itens.filter(i=>ids.includes(i.pergunta_id))); }
         function dimEscala(dim){ return (dim.perguntas||[]).find(p=>p.tipo==='escala10'); }
 
-        // ===== NAV =====
-        function montarNav() {
-            const resps=respostasFiltradas(); const itens=itensDe(resps.map(r=>r.id));
-            const nav=document.getElementById('nav'); nav.style.display='block';
-            let h=`<div class="nav-grupo">Geral</div>`;
-            h+=navItem('geral','dashboard','Visão Geral',null);
-            h+=navItem('lideres','supervisor_account','Lideranças',null);
-            h+=`<div class="nav-grupo">Dimensões</div>`;
-            (dados.dimensoes||[]).forEach(d=>{ const f=favDim(d,itens); h+=navItem(d.id,dimIcon(d.nome),d.nome,f); });
-            nav.innerHTML=h;
-        }
-        function navItem(id,ic,nome,fav){
-            const at=telaAtiva===id;
-            const dir=(fav!==null&&fav!==undefined)?`<span class="nav-dot" style="background:${corPct(fav)};"></span><span class="nav-pct" style="color:${corPct(fav)};">${fav}%</span>`:'';
-            return `<div class="nav-item ${at?'ativo':''}" onclick="irPara('${id}')"><span class="material-symbols-rounded">${ic}</span><span class="nav-nome">${escH(nome)}</span>${dir}</div>`;
-        }
-        function irPara(id){ telaAtiva=id; montarNav(); render(); document.getElementById('conteudo').scrollTop=0; }
-
-        function render() {
-            limparCharts();
-            const resps=respostasFiltradas(); const itens=itensDe(resps.map(r=>r.id));
-            const c=document.getElementById('cont'); if(c)c.innerHTML=`<b>${resps.length}</b> resposta${resps.length!==1?'s':''}`;
-            const lm=document.getElementById('fLimpar'); if(lm)lm.style.display=(filtros.setor||filtros.tempo||filtros.lider)?'flex':'none';
-            if(!resps.length){ document.getElementById('conteudo').innerHTML=`<div class="empty"><span class="material-symbols-rounded">filter_alt_off</span><h3>Sem respostas para este filtro</h3><p>Ajuste os filtros.</p></div>`; return; }
-            if(telaAtiva==='geral') renderGeral(itens,resps);
-            else if(telaAtiva==='lideres') renderLideres(resps);
-            else renderDimensao(telaAtiva,itens,resps);
-            requestAnimationFrame(montarCharts);
-        }
-
-        // ========== SISTEMA DE GRÁFICOS ECHARTS ==========
-        // Registra configs para inicializar após inserir o HTML
-        let chartQueue = [];
-        let chartInstances = [];
-        function limparCharts() { chartInstances.forEach(c=>{ try{c.dispose();}catch(e){} }); chartInstances=[]; chartQueue=[]; }
-        function agendarChart(id, option) { chartQueue.push({id, option}); }
-        function montarCharts() {
-            chartQueue.forEach(({id, option})=>{
-                const el = document.getElementById(id);
-                if (!el) return;
-                const inst = echarts.init(el, null, { renderer: 'svg' });
-                inst.setOption(option);
-                chartInstances.push(inst);
-            });
-            chartQueue = [];
-        }
-        window.addEventListener('resize', ()=>{ chartInstances.forEach(c=>{ try{c.resize();}catch(e){} }); });
-
-        const FONT = 'Inter, sans-serif';
-        const CHART_ANIM = { animationDuration: 700, animationEasing: 'cubicOut' };
-
-        // Pizza/rosca Likert com ECharts
-        let pieCounter = 0;
-        function pizzaLikert(itens) {
-            const id = 'chart_pie_' + (pieCounter++);
-            const d = distLikert(itens); const total = Object.values(d).reduce((a,b)=>a+b,0);
-            const pct = positivas(itens);
-            const data = [5,4,3,2,1].filter(n=>d[n]>0).map(n=>({ value:d[n], name:LK_LBL[n], itemStyle:{color:LK[n]} }));
-            if (total) {
-                agendarChart(id, {
-                    ...CHART_ANIM,
-                    tooltip: { trigger:'item', formatter: p=>`${p.name}<br/><b>${p.value}</b> resposta${p.value!==1?'s':''} (${p.percent}%)`, textStyle:{fontFamily:FONT, fontSize:12} },
-                    legend: { show:false },
-                    series: [{
-                        type:'pie', radius:['58%','82%'], center:['50%','50%'], avoidLabelOverlap:true,
-                        itemStyle:{ borderColor:'#fff', borderWidth:2, borderRadius:3 },
-                        label:{show:false}, labelLine:{show:false},
-                        data
-                    }],
-                    graphic: [
-                        { type:'text', left:'center', top:'40%', style:{ text: pct!==null?pct+'%':'—', fontSize:22, fontWeight:800, fill:corPct(pct), fontFamily:FONT } },
-                        { type:'text', left:'center', top:'56%', style:{ text:'POSITIVAS', fontSize:8, fontWeight:800, fill:'#9AA0AE', fontFamily:FONT } }
-                    ]
-                });
-            }
-            const leg = [5,4,3,2,1].filter(n=>d[n]>0).map(n=>{ const p=Math.round(d[n]/total*100); return `<div class="pie-leg-item"><span class="pie-leg-dot" style="background:${LK[n]};"></span><span class="pie-leg-nome">${LK_LBL[n]}</span><span class="pie-leg-val">${p}%</span></div>`; }).join('');
-            return `<div class="pie-row"><div id="${id}" class="echart-pie"></div><div class="pie-leg">${leg||'<span style="font-size:11px;color:var(--text-muted);">Sem respostas</span>'}</div></div>`;
-        }
-
-        // Gauge ECharts
-        let gaugeCounter = 0;
-        function gauge(valor, min, max, cor, sufixo) {
-            const id = 'chart_gauge_' + (gaugeCounter++);
-            const v = parseFloat(valor) || 0;
-            agendarChart(id, {
-                ...CHART_ANIM,
-                series: [{
-                    type:'gauge', min, max, startAngle:200, endAngle:-20, radius:'96%', center:['50%','62%'],
-                    progress:{ show:true, width:12, roundCap:true, itemStyle:{color:cor} },
-                    axisLine:{ lineStyle:{ width:12, color:[[1,'#eef0f4']] } },
-                    axisTick:{ show:false }, splitLine:{ show:false },
-                    axisLabel:{ show:true, distance:-2, fontSize:9, color:'#9AA0AE', fontFamily:FONT },
-                    pointer:{ show:false }, anchor:{ show:false },
-                    title:{ show:false },
-                    detail:{ valueAnimation:true, offsetCenter:[0,'-2%'], fontSize:26, fontWeight:800, color:cor, fontFamily:FONT, formatter:'{value}'+(sufixo||'') },
-                    data:[{ value:v }]
-                }]
-            });
-            return `<div id="${id}" class="echart-gauge"></div>`;
-        }
-
-        // Barras verticais 0-10 ECharts
-        let barCounter = 0;
-        function barras10(itens) {
-            const id = 'chart_bar_' + (barCounter++);
-            const d = dist10(itens);
-            const vals = []; const cores = [];
-            for (let n=0;n<=10;n++){ vals.push(d[n]); cores.push(n>=9?'#2FA875':n>=7?'#8AD9B1':n>=5?'#F5D06B':'#E5484D'); }
-            agendarChart(id, {
-                ...CHART_ANIM,
-                grid:{ left:6, right:6, top:20, bottom:4, containLabel:true },
-                tooltip:{ trigger:'axis', formatter:p=>`Nota ${p[0].axisValue}<br/><b>${p[0].value}</b> resposta${p[0].value!==1?'s':''}`, textStyle:{fontFamily:FONT, fontSize:12} },
-                xAxis:{ type:'category', data:[0,1,2,3,4,5,6,7,8,9,10], axisLine:{lineStyle:{color:'#e7e9ef'}}, axisTick:{show:false}, axisLabel:{fontSize:10, color:'#9AA0AE', fontFamily:FONT} },
-                yAxis:{ type:'value', splitLine:{lineStyle:{color:'#f2f3f6'}}, axisLabel:{show:false}, axisLine:{show:false} },
-                series:[{ type:'bar', data: vals.map((v,i)=>({value:v, itemStyle:{color:cores[i], borderRadius:[4,4,0,0]}})), barWidth:'62%',
-                    label:{show:true, position:'top', fontSize:9, fontWeight:700, color:'#5a5f6e', fontFamily:FONT, formatter:p=>p.value||''} }]
-            });
-            return `<div id="${id}" class="echart-bar"></div>`;
-        }
-
-        // Barra horizontal de ranking ECharts (para dimensões/setores/líderes)
-        let rankCounter = 0;
-        function rankBarChart(itens, maxVal, sufixo) {
-            // itens: [{nome, valor, cor, sub}]
-            const id = 'chart_rank_' + (rankCounter++);
-            const nomes = itens.map(x=>x.nome).reverse();
-            const valores = itens.map(x=>({ value:x.valor, itemStyle:{color:x.cor, borderRadius:[0,5,5,0]} })).reverse();
-            const altura = Math.max(120, itens.length * 42);
-            agendarChart(id, {
-                ...CHART_ANIM,
-                grid:{ left:4, right:44, top:6, bottom:4, containLabel:true },
-                tooltip:{ trigger:'axis', axisPointer:{type:'shadow'}, formatter:p=>`${p[0].name}<br/><b>${p[0].value}${sufixo||''}</b>`, textStyle:{fontFamily:FONT, fontSize:12} },
-                xAxis:{ type:'value', max:maxVal, splitLine:{show:false}, axisLabel:{show:false}, axisLine:{show:false}, axisTick:{show:false} },
-                yAxis:{ type:'category', data:nomes, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{fontSize:12, fontWeight:600, color:'#1a1d29', fontFamily:FONT} },
-                series:[{ type:'bar', data:valores, barWidth:14,
-                    label:{show:true, position:'right', fontSize:12, fontWeight:800, fontFamily:FONT, color:'#1a1d29', formatter:p=>p.value+(sufixo||'')},
-                    showBackground:true, backgroundStyle:{color:'#eef0f4', borderRadius:5} }]
-            });
-            return `<div id="${id}" style="width:100%; height:${altura}px;"></div>`;
-        }
-
-        // ========== TELA: VISÃO GERAL ==========
-        function renderGeral(itens, resps) {
-            // fav global
-            const idsLk=[]; (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{if(p.tipo==='likert')idsLk.push(p.id);}));
-            const favG=positivas(itens.filter(i=>idsLk.includes(i.pergunta_id)))??0;
-            const enps=npsDim(itens,'enps'), npsv=npsDim(itens,'nps');
-            const nSet=new Set(resps.map(r=>r.setor_id).filter(Boolean)).size;
-            // ranking dimensões
-            const dimRank=(dados.dimensoes||[]).map(d=>({nome:d.nome,fav:favDim(d,itens),lideranca:d.eh_lideranca})).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-            // ranking setores
-            const setRank=(dados.setores||[]).map(s=>{ const ids=resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id); const its=itensDe(ids).filter(i=>idsLk.includes(i.pergunta_id)); return {nome:s.nome,fav:positivas(its),n:ids.length}; }).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">dashboard</span> Visão Geral</div><div class="tela-sub">${escH(dados.pesquisa.titulo)} · panorama consolidado</div></div>
-                <div class="kpis">
-                    ${kpi('Favorabilidade', favG+'%', 'Concordância geral', 'sentiment_satisfied', corPct(favG), corPct(favG)+'22')}
-                    ${kpiNPS('eNPS', enps, 'Recomendaria trabalhar')}
-                    ${kpiNPS('NPS', npsv, 'Recomendaria serviços')}
-                    ${kpi('Respostas', String(resps.length), 'Participantes', 'groups', '#7371ff', '#f0efff')}
-                    ${kpi('Setores', String(nSet||'—'), 'Departamentos', 'domain', '#5a5f6e', '#eef0f4')}
-                </div>
-                <div class="grid" style="grid-template-columns: 1fr 1fr; align-items:start;">
-                    <div class="painel">
-                        <div class="painel-tit">Favorabilidade por dimensão</div>
-                        <div class="painel-sub">% de respostas positivas em cada tema</div>
-                        ${dimRank.length?rankBarChart(dimRank.map(d=>({nome:d.nome, valor:d.fav, cor:corPct(d.fav)})), 100, '%'):'<div class="leitura-vazio">Sem dados</div>'}
-                    </div>
-                    <div class="painel">
-                        <div class="painel-tit">Favorabilidade por departamento</div>
-                        <div class="painel-sub">Ranking dos setores</div>
-                        ${setRank.length?rankBarChart(setRank.map(s=>({nome:s.nome, valor:s.fav, cor:corPct(s.fav)})), 100, '%'):'<div class="leitura-vazio">Sem dados por setor</div>'}
-                    </div>
-                </div>
-                <div class="sec-lbl">Análise automática</div>
-                ${renderIA(itens,resps)}
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
         function npsDim(itens,chave){ const dim=(dados.dimensoes||[]).find(d=>(d.nome||'').toLowerCase().replace(/[^a-z]/g,'').includes(chave)); if(!dim)return null; const p=(dim.perguntas||[]).find(x=>x.tipo==='escala10'); if(!p)return null; return nps(itens.filter(i=>i.pergunta_id===p.id)); }
-        function kpi(lbl,val,desc,ic,cor,bg){ return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${ic}</span></div><span class="kpi-lbl">${lbl}</span></div><div class="kpi-val" style="color:${cor};">${val}</div><div class="kpi-desc">${desc}</div></div>`; }
-        function kpiNPS(lbl,val,desc){ if(val===null)return kpi(lbl,'—',desc,'remove','#9AA0AE','#eef0f4'); const cor=val>=50?'#2FA875':val>=0?'#F5D06B':'#E5484D'; const bg=cor+'22'; return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${val>=0?'trending_up':'trending_down'}</span></div><span class="kpi-lbl">${lbl}</span></div><div class="kpi-val" style="color:${cor};">${val>0?'+':''}${val}</div><div class="kpi-desc">${desc}</div></div>`; }
-        function rankItem(nome,valTxt,pct,cor,i,sub){ return `<div class="rank-item"><div class="rank-pos ${i===0?'top':''}">${i+1}</div><div class="rank-mid"><div class="rank-l"><span class="rank-nome">${escH(nome)}</span><span class="rank-v" style="color:${cor};">${valTxt}</span></div><div class="rank-track"><div class="rank-bar" data-w="${pct}" style="width:0%;background:${cor};"></div></div>${sub?`<div class="rank-sub">${escH(sub)}</div>`:''}</div></div>`; }
 
-        function renderIA(itens,resps){
-            const out=[]; const idsLk=[]; (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{if(p.tipo==='likert')idsLk.push(p.id);}));
-            const dimF=(dados.dimensoes||[]).map(d=>({nome:d.nome,fav:favDim(d,itens)})).filter(x=>x.fav!==null);
-            if(dimF.length){ const mel=dimF.reduce((a,b)=>b.fav>a.fav?b:a),pio=dimF.reduce((a,b)=>b.fav<a.fav?b:a);
-                out.push({t:'pos',i:'trending_up',x:`<b>${escH(mel.nome)}</b> é o ponto mais forte, com <b>${mel.fav}%</b> de favorabilidade.`});
-                if(pio.nome!==mel.nome)out.push({t:'neg',i:'trending_down',x:`<b>${escH(pio.nome)}</b> requer atenção: apenas <b>${pio.fav}%</b>.`}); }
-            const setR=(dados.setores||[]).map(s=>{const ids=resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id);return{nome:s.nome,fav:positivas(itensDe(ids).filter(i=>idsLk.includes(i.pergunta_id)))};}).filter(x=>x.fav!==null).sort((a,b)=>b.fav-a.fav);
-            if(setR.length>=2)out.push({t:'neu',i:'domain',x:`<b>${escH(setR[0].nome)}</b> (${setR[0].fav}%) lidera; <b>${escH(setR[setR.length-1].nome)}</b> (${setR[setR.length-1].fav}%) é o mais crítico.`});
-            const enps=npsDim(itens,'enps');
-            if(enps!==null){ if(enps>=50)out.push({t:'pos',i:'favorite',x:`eNPS <b>+${enps}</b>: forte engajamento dos colaboradores.`}); else if(enps<0)out.push({t:'neg',i:'heart_broken',x:`eNPS <b>${enps}</b>: mais detratores que promotores. Prioridade.`}); else out.push({t:'neu',i:'sentiment_neutral',x:`eNPS <b>+${enps}</b>: intermediário, com espaço para evoluir.`}); }
-            // líder destaque
-            const lr=rankLideres(resps); if(lr.length>=2){ const dif=lr[0].nota-lr[lr.length-1].nota; if(dif>=2)out.push({t:'neg',i:'balance',x:`Diferença de <b>${dif.toFixed(1)} pts</b> entre a melhor e a pior liderança avaliada.`}); else out.push({t:'pos',i:'balance',x:`Lideranças equilibradas (variação de ${dif.toFixed(1)} pts).`}); }
-            if(!out.length)out.push({t:'neu',i:'info',x:'Dados insuficientes para análise.'});
-            return `<div class="ia"><div class="ia-h"><div class="ia-badge"><span class="material-symbols-rounded">auto_awesome</span></div><div><div class="ia-t">Análise automática</div><div class="ia-s">Gerada dos resultados filtrados</div></div></div><div class="ia-grid">${out.map(o=>`<div class="ia-item"><div class="ia-ic ia-${o.t}"><span class="material-symbols-rounded">${o.i}</span></div><div class="ia-tx">${o.x}</div></div>`).join('')}</div></div>`;
+        // ===================== BARRA DIVERGENTE =====================
+        // Distribuição 1-5 num eixo central. Negativos crescem para a
+        // esquerda, positivos para a direita, e o neutro é dividido ao
+        // meio nos dois lados — é o que mantém o eixo comparável entre linhas.
+        function dvBarra(itens){
+            const d = distLikert(itens);
+            const tot = d[1]+d[2]+d[3]+d[4]+d[5];
+            if (!tot) return null;
+            const p = n => (d[n]/tot)*100;
+            const neg2=p(1), neg1=p(2), neu=p(3), pos1=p(4), pos2=p(5);
+            // Cada lado vale 100 pontos percentuais. Usar 50 fazia qualquer lado
+            // acima de 50pp estourar e ser cortado — 65% e 86% ficavam idênticos.
+            // Como neg+neu/2 e neu/2+pos nunca passam de 100, aqui nada é cortado.
+            const esc = v => v;
+            return {
+                tot,
+                html: `<div class="dv-graf">
+                    <span class="dv-meio"></span>
+                    <span class="dv-lado esq">
+                        <span class="seg s-neg2" style="width:${esc(neg2)}%"></span>
+                        <span class="seg s-neg1" style="width:${esc(neg1)}%"></span>
+                        <span class="seg s-neu" style="width:${esc(neu/2)}%"></span>
+                    </span>
+                    <span class="dv-lado dir">
+                        <span class="seg s-neu" style="width:${esc(neu/2)}%"></span>
+                        <span class="seg s-pos1" style="width:${esc(pos1)}%"></span>
+                        <span class="seg s-pos2" style="width:${esc(pos2)}%"></span>
+                    </span>
+                </div>`
+            };
         }
 
-        // ========== TELA: LIDERANÇAS ==========
-        function rankLideres(resps){
-            const respIdSet=new Set(resps.map(r=>r.id));
-            // pega a pergunta de performance (escala10 na dimensão liderança)
-            const dimLid=(dados.dimensoes||[]).find(d=>d.eh_lideranca);
-            const pPerf=dimLid?(dimLid.perguntas||[]).find(p=>p.tipo==='escala10'):null;
-            return (dados.lideres||[]).map(l=>{
-                const itsLid=(dados.itens||[]).filter(i=>String(i.lider_id)===String(l.id)&&respIdSet.has(i.resposta_id));
-                const perf=pPerf?media(itsLid.filter(i=>i.pergunta_id===pPerf.id)):null;
-                const fav=positivas(itsLid.filter(i=>ehLikert(i.pergunta_id)));
-                const nResp=new Set(itsLid.map(i=>i.resposta_id)).size;
-                return {nome:l.nome, nota:perf, fav:fav, n:nResp};
-            }).filter(x=>x.nota!==null||x.fav!==null).sort((a,b)=>(b.nota||0)-(a.nota||0));
-        }
-        function renderLideres(resps) {
-            const rank=rankLideres(resps);
-            const dimLid=(dados.dimensoes||[]).find(d=>d.eh_lideranca);
-            const respIdSet=new Set(resps.map(r=>r.id));
-            // textos de liderança (pontos fortes / a melhorar)
-            const textosLid=(dimLid?(dimLid.perguntas||[]).filter(p=>p.tipo==='texto'):[]);
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">supervisor_account</span> Lideranças</div><div class="tela-sub">Avaliação individual de cada liderança (notas separadas por líder)</div></div>`;
-            if(!rank.length){ h+=`<div class="empty" style="padding:60px;"><span class="material-symbols-rounded">supervisor_account</span><h3>Sem dados de liderança</h3><p>Não há avaliações de liderança para este filtro.</p></div></div>`; document.getElementById('conteudo').innerHTML=h; return; }
-            const notas=rank.filter(r=>r.nota!==null).map(r=>r.nota);
-            const mediaGeral=notas.length?notas.reduce((a,b)=>a+b,0)/notas.length:null;
-            h+=`<div class="kpis" style="grid-template-columns:repeat(4,1fr);">
-                ${kpi('Média geral','∅ '+(mediaGeral!==null?mediaGeral.toFixed(1):'—'),'Performance 0-10','star',corNota10(mediaGeral),corNota10(mediaGeral)+'22')}
-                ${kpi('Líderes','' + rank.length,'Avaliados','groups','#7371ff','#f0efff')}
-                ${kpi('Melhor', rank[0]&&rank[0].nota!==null?rank[0].nota.toFixed(1):'—','' + escH((rank[0]||{}).nome||''),'workspace_premium','#2FA875','#2FA87522')}
-                ${kpi('Menor', (()=>{const cn=rank.filter(r=>r.nota!==null);return cn.length?cn[cn.length-1].nota.toFixed(1):'—';})(),escH((()=>{const cn=rank.filter(r=>r.nota!==null);return cn.length?cn[cn.length-1].nome:'';})()),'priority_high','#E5484D','#E5484D22')}
-            </div>
-            <div class="painel" style="margin-bottom:14px;">
-                <div class="painel-tit">Ranking de performance das lideranças</div>
-                <div class="painel-sub">Nota média 0-10 recebida por cada líder</div>
-                ${rankBarChart(rank.filter(r=>r.nota!==null).map(r=>({nome:r.nome, valor:parseFloat(r.nota.toFixed(1)), cor:corNota10(r.nota)})), 10, '')}
+        function dvLegenda(){
+            return `<div class="dv-legenda">
+                <span><span class="lg" style="background:var(--critico)"></span>Discordo totalmente</span>
+                <span><span class="lg" style="background:var(--neg1)"></span>Discordo</span>
+                <span><span class="lg" style="background:var(--neutro)"></span>Indiferente</span>
+                <span><span class="lg" style="background:var(--pos1)"></span>Concordo</span>
+                <span><span class="lg" style="background:var(--ok)"></span>Concordo totalmente</span>
+                <span style="margin-left:auto">Concordam</span>
             </div>`;
-            // painéis de texto
-            if(textosLid.length){
-                h+=`<div class="grid" style="grid-template-columns:1fr 1fr;">`;
-                textosLid.slice(0,2).forEach(p=>{
-                    const txts=(dados.itens||[]).filter(i=>i.pergunta_id===p.id&&respIdSet.has(i.resposta_id)&&i.valor_texto&&i.valor_texto.trim()).map(i=>i.valor_texto.trim());
-                    h+=`<div class="painel"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">${txts.length} resposta${txts.length!==1?'s':''}</div><div class="leitura">${txts.length?txts.map(t=>`<div class="leitura-item">${escH(t)}</div>`).join(''):'<div class="leitura-vazio">Nenhuma resposta.</div>'}</div></div>`;
-                });
-                h+=`</div>`;
-            }
-            h+=`</div>`;
-            document.getElementById('conteudo').innerHTML=h;
         }
 
-        // ========== TELA: DIMENSÃO ==========
-        function renderDimensao(dimId, itens, resps) {
-            const dim=(dados.dimensoes||[]).find(d=>d.id===dimId);
-            if(!dim){ telaAtiva='geral'; render(); return; }
-            const fav=favDim(dim,itens);
-            const perguntas=dim.perguntas||[];
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">${dimIcon(dim.nome)}</span> ${escH(dim.nome)} ${dim.eh_lideranca?'<span class="lider-nota-badge">Liderança</span>':''}</div><div class="tela-sub">${perguntas.length} pergunta${perguntas.length!==1?'s':''} nesta dimensão</div></div>`;
-            // resumo topo se tem likert
-            if(fav!==null){
-                const nR=new Set(itens.filter(i=>perguntas.some(p=>p.id===i.pergunta_id)).map(i=>i.resposta_id)).size;
-                h+=`<div class="kpis" style="grid-template-columns:repeat(3,1fr);">
-                    ${kpi('Favorabilidade',fav+'%','Positivas na dimensão','sentiment_satisfied',corPct(fav),corPct(fav)+'22')}
-                    ${kpi('Respostas',''+nR,'Nesta dimensão','groups','#7371ff','#f0efff')}
-                    ${kpi('Perguntas',''+perguntas.length,'Avaliadas','quiz','#5a5f6e','#eef0f4')}
+        function dvLinha(rotulo, sub, itens, aoClicar){
+            const b = dvBarra(itens);
+            const conc = positivas(itens);
+            if (!b) return '';
+            return `<div class="dv-linha ${aoClicar?'clic':''}" ${aoClicar?`onclick="${aoClicar}"`:''}>
+                <div class="dv-rot">${escH(rotulo)}${sub?`<small>${escH(sub)}</small>`:''}</div>
+                ${b.html}
+                <span class="dv-fav num" style="color:${corPct(conc)};">${conc}%</span>
+                <span class="dv-n num">${b.tot}</span>
+            </div>`;
+        }
+
+        // ids das perguntas Likert de uma dimensão (ou de todas)
+        function idsLikert(dim){
+            const ids=[];
+            const dims = dim ? [dim] : (dados.dimensoes||[]);
+            dims.forEach(d=>(d.perguntas||[]).forEach(p=>{ if(p.tipo==='likert') ids.push(p.id); }));
+            return ids;
+        }
+
+        // ===================== NAVEGAÇÃO =====================
+        function montarNav() {
+            const resps = respostasFiltradas();
+            const itens = itensDe(resps.map(r=>r.id));
+            const nav = document.getElementById('nav');
+            nav.style.display = '';
+
+            let h = `<div class="nav-g">Geral</div>`;
+            h += navItem('geral','dashboard','Visão geral',null);
+            const temLid = (dados.dimensoes||[]).some(d=>d.eh_lideranca);
+            if (temLid) h += navItem('lideres','supervisor_account','Lideranças',null);
+            const temAberta = (dados.dimensoes||[]).some(d=>(d.perguntas||[]).some(p=>p.tipo==='texto'));
+            if (temAberta) h += navItem('coment','forum','Comentários',null);
+
+            const dims = (dados.dimensoes||[])
+                .map(d=>({ d, conc: favDim(d, itens) }))
+                .filter(x=>x.conc!==null)
+                .sort((a,b)=>a.conc-b.conc);   // pior primeiro: é onde se age
+            if (dims.length) {
+                h += `<div class="nav-g">Dimensões</div>`;
+                dims.forEach(x => { h += navItem('dim:'+x.d.id, dimIcon(x.d.nome), x.d.nome, x.conc); });
+            }
+            nav.innerHTML = h;
+        }
+
+        function navItem(id, icone, rotulo, pct){
+            const on = telaAtiva === id;
+            return `<div class="nav-i ${on?'on':''}" onclick="irPara('${id}')">
+                <span class="material-symbols-rounded">${icone}</span>
+                <span class="nav-i-txt">${escH(rotulo)}</span>
+                ${pct!==null && pct!==undefined ? `<span class="nav-i-pct" style="color:${corPct(pct)};">${pct}%</span>` : ''}
+            </div>`;
+        }
+
+        function irPara(id){ telaAtiva = id; montarNav(); render(); document.getElementById('conteudo').scrollTop = 0; }
+
+        // ===================== RENDER =====================
+        function render() {
+            const resps = respostasFiltradas();
+            const itens = itensDe(resps.map(r=>r.id));
+            if (telaAtiva === 'geral')       return renderGeral(itens, resps);
+            if (telaAtiva === 'lideres')     return renderLideres(itens, resps);
+            if (telaAtiva === 'coment')      return renderComentarios(itens, resps);
+            if (telaAtiva.startsWith('dim:'))return renderDimensao(telaAtiva.slice(4), itens, resps);
+            return renderGeral(itens, resps);
+        }
+
+        function kpi(lbl, val, desc, cor){
+            return `<div class="kpi"><div class="kpi-lbl">${lbl}</div>
+                <div class="kpi-val num" ${cor?`style="color:${cor};"`:''}>${val}</div>
+                <div class="kpi-desc">${desc}</div></div>`;
+        }
+
+        // ===== VISÃO GERAL =====
+        function renderGeral(itens, resps) {
+            const idsLk = idsLikert(null);
+            const itensLk = itens.filter(i=>idsLk.includes(i.pergunta_id));
+            const conc = positivas(itensLk);
+            const enps = npsDim(itens,'enps');
+            const nSet = new Set(resps.map(r=>r.setor_id).filter(Boolean)).size;
+
+            // dimensões da pior para a melhor
+            const dims = (dados.dimensoes||[])
+                .map(d=>({ d, conc: favDim(d, itens) }))
+                .filter(x=>x.conc!==null)
+                .sort((a,b)=>a.conc-b.conc);
+
+            // perguntas extremas
+            const porPergunta = [];
+            (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{
+                if (p.tipo!=='likert') return;
+                const its = itens.filter(i=>i.pergunta_id===p.id);
+                const c = positivas(its);
+                if (c!==null) porPergunta.push({ texto:p.texto, conc:c });
+            }));
+            const piores = porPergunta.slice().sort((a,b)=>a.conc-b.conc).slice(0,3);
+            const melhores = porPergunta.slice().sort((a,b)=>b.conc-a.conc).slice(0,3);
+
+            let h = `
+                <div class="tela-cab">
+                    <div class="tela-titulo"><span class="material-symbols-rounded">dashboard</span>Visão geral</div>
+                    <div class="tela-sub">${escH(dados.pesquisa.titulo)}</div>
+                </div>
+                <div class="kpis">
+                    ${kpi('Concordância', (conc===null?'—':conc+'%'), 'respostas 4 e 5', corPct(conc))}
+                    ${kpi('eNPS', (enps===null?'—':(enps>0?'+':'')+enps), 'promotores − detratores', enps===null?null:(enps>=50?'var(--ok)':enps>=0?'var(--atencao)':'var(--critico)'))}
+                    ${kpi('Respostas', String(resps.length), 'participantes', 'var(--acao)')}
+                    ${kpi('Setores', String(nSet||'—'), 'com resposta', null)}
+                </div>`;
+
+            if (dims.length) {
+                h += `<div class="painel">
+                    <div class="painel-cab"><span class="painel-tit">Dimensões, da pior para a melhor</span><span class="painel-sub">n = ${resps.length}</span></div>
+                    ${dvLegenda()}
+                    ${dims.map(x => dvLinha(x.d.nome, (x.d.perguntas||[]).length+' pergunta'+((x.d.perguntas||[]).length!==1?'s':''),
+                        itens.filter(i=>idsLikert(x.d).includes(i.pergunta_id)), `irPara('dim:${x.d.id}')`)).join('')}
                 </div>`;
             }
-            // grid de perguntas — pizza p/ likert, gauge+barras p/ escala10, leitura p/ texto
-            const likertPergs=perguntas.filter(p=>p.tipo==='likert');
-            const escalaPergs=perguntas.filter(p=>p.tipo==='escala10');
-            const textoPergs=perguntas.filter(p=>p.tipo==='texto');
 
-            if(likertPergs.length){
-                // 2 colunas fixas quando há 2+, 1 quando há só 1 mas centralizado e largo
-                const cols = likertPergs.length===1 ? '1fr' : 'repeat(auto-fit,minmax(380px,1fr))';
-                h+=`<div class="sec-lbl">Perguntas de escala</div><div class="grid" style="grid-template-columns:${cols};">`;
-                likertPergs.forEach(p=>{ const its=itens.filter(i=>i.pergunta_id===p.id); h+=`<div class="painel"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">Distribuição das respostas</div>${pizzaLikert(its)}</div>`; });
-                h+=`</div>`;
+            if (piores.length) {
+                h += `<div class="dest">
+                    <div class="painel" style="margin:0">
+                        <div class="painel-cab"><span class="painel-tit">Onde agir primeiro</span></div>
+                        ${piores.map((p,i)=>`<div class="dest-item">
+                            <span class="dest-pos" style="background:#FDEDED;color:var(--critico);">${i+1}</span>
+                            <span class="dest-txt">${escH(p.texto)}</span>
+                            <span class="dest-val" style="color:${corPct(p.conc)};">${p.conc}%</span></div>`).join('')}
+                    </div>
+                    <div class="painel" style="margin:0">
+                        <div class="painel-cab"><span class="painel-tit">O que sustenta</span></div>
+                        ${melhores.map((p,i)=>`<div class="dest-item">
+                            <span class="dest-pos" style="background:var(--ok-fraco);color:var(--ok);">${i+1}</span>
+                            <span class="dest-txt">${escH(p.texto)}</span>
+                            <span class="dest-val" style="color:${corPct(p.conc)};">${p.conc}%</span></div>`).join('')}
+                    </div>
+                </div>`;
             }
-            if(escalaPergs.length){
-                h+=`<div class="sec-lbl">Escala 0-10</div>`;
-                escalaPergs.forEach(p=>{ const its=itens.filter(i=>i.pergunta_id===p.id); const m=media(its); const n=nps(its);
-                    // gauge + barras LADO A LADO ocupando a largura toda
-                    h+=`<div class="painel" style="margin-bottom:14px;"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">Média ${m!==null?m.toFixed(1):'—'} · NPS ${n!==null?(n>0?'+':'')+n:'—'}</div>
-                        <div class="escala-layout">
-                            <div class="escala-gauge">${gauge(m!==null?m.toFixed(1):'0',0,10,corNota10(m),'')}</div>
-                            <div class="escala-barras">${barras10(its)}</div>
-                        </div>
-                    </div>`; });
+
+            // setores
+            const setores = (dados.setores||[]).map(s=>{
+                const ids = resps.filter(r=>String(r.setor_id)===String(s.id)).map(r=>r.id);
+                const its = itensDe(ids).filter(i=>idsLk.includes(i.pergunta_id));
+                return { nome:s.nome, itens:its, n:ids.length, conc:positivas(its) };
+            }).filter(x=>x.conc!==null).sort((a,b)=>a.conc-b.conc);
+
+            if (setores.length) {
+                h += `<div class="painel">
+                    <div class="painel-cab"><span class="painel-tit">Concordância por setor</span></div>
+                    ${dvLegenda()}
+                    ${setores.map(s=>dvLinha(s.nome, s.n+' resposta'+(s.n!==1?'s':''), s.itens, null)).join('')}
+                </div>`;
             }
-            if(textoPergs.length){
-                // textos em 2 colunas quando há 2+, aproveitando o espaço
-                const colsT = textoPergs.length===1 ? '1fr' : 'repeat(auto-fit,minmax(440px,1fr))';
-                h+=`<div class="sec-lbl">Respostas abertas</div><div class="grid" style="grid-template-columns:${colsT}; align-items:start;">`;
-                textoPergs.forEach(p=>{ const txts=itens.filter(i=>i.pergunta_id===p.id&&i.valor_texto&&i.valor_texto.trim()).map(i=>i.valor_texto.trim());
-                    h+=`<div class="painel"><div class="painel-tit">${escH(p.texto)}</div><div class="painel-sub">${txts.length} resposta${txts.length!==1?'s':''}</div><div class="leitura">${txts.length?txts.map(t=>`<div class="leitura-item">${escH(t)}</div>`).join(''):'<div class="leitura-vazio">Nenhuma resposta.</div>'}</div></div>`; });
-                h+=`</div>`;
+
+            if (!dims.length && !setores.length) {
+                h += `<div class="empty"><span class="material-symbols-rounded">bar_chart</span>
+                    <h3>Ainda sem respostas suficientes</h3><p>Assim que houver respostas, os resultados aparecem aqui.</p></div>`;
             }
-            h+=`</div>`;
-            document.getElementById('conteudo').innerHTML=h;
+            document.getElementById('conteudo').innerHTML = h;
         }
+
+        // ===== LIDERANÇAS =====
+        function renderLideres(itens, resps) {
+            const dimsLid = (dados.dimensoes||[]).filter(d=>d.eh_lideranca);
+            const ids = [];
+            dimsLid.forEach(d=>(d.perguntas||[]).forEach(p=>{ if(p.tipo==='likert') ids.push(p.id); }));
+
+            const lideres = (dados.lideres||[]).map(l=>{
+                const its = itens.filter(i=>ids.includes(i.pergunta_id) && String(i.lider_id)===String(l.id));
+                return { nome:l.nome, cargo:l.cargo, itens:its, conc:positivas(its), n:its.length };
+            }).filter(x=>x.conc!==null).sort((a,b)=>a.conc-b.conc);
+
+            let h = `<div class="tela-cab">
+                <div class="tela-titulo"><span class="material-symbols-rounded">supervisor_account</span>Lideranças</div>
+                <div class="tela-sub">Avaliação das dimensões de liderança, por líder</div>
+            </div>`;
+
+            if (!lideres.length) {
+                h += `<div class="empty"><span class="material-symbols-rounded">supervisor_account</span>
+                    <h3>Sem avaliação de liderança</h3><p>Nenhuma resposta associada a um líder foi registrada nesta pesquisa.</p></div>`;
+            } else {
+                h += `<div class="painel">
+                    <div class="painel-cab"><span class="painel-tit">Da menor para a maior concordância</span></div>
+                    ${dvLegenda()}
+                    ${lideres.map(l=>dvLinha(l.nome, l.cargo||null, l.itens, null)).join('')}
+                </div>`;
+            }
+            document.getElementById('conteudo').innerHTML = h;
+        }
+
+        // ===== COMENTÁRIOS =====
+        function renderComentarios(itens, resps) {
+            let h = `<div class="tela-cab">
+                <div class="tela-titulo"><span class="material-symbols-rounded">forum</span>Comentários</div>
+                <div class="tela-sub">Respostas às perguntas abertas</div>
+            </div>`;
+            let algum = false;
+            (dados.dimensoes||[]).forEach(d=>(d.perguntas||[]).forEach(p=>{
+                if (p.tipo!=='texto') return;
+                const txts = itens.filter(i=>i.pergunta_id===p.id && i.valor_texto && String(i.valor_texto).trim());
+                if (!txts.length) return;
+                algum = true;
+                h += `<div class="painel">
+                    <div class="painel-cab"><span class="painel-tit">${escH(p.texto)}</span><span class="painel-sub">${txts.length} resposta${txts.length!==1?'s':''}</span></div>
+                    ${txts.map(t=>`<div class="coment">${escH(t.valor_texto)}</div>`).join('')}
+                </div>`;
+            }));
+            if (!algum) h += `<div class="empty"><span class="material-symbols-rounded">forum</span>
+                <h3>Nenhum comentário</h3><p>Não há respostas às perguntas abertas com os filtros atuais.</p></div>`;
+            document.getElementById('conteudo').innerHTML = h;
+        }
+
+        // ===== DIMENSÃO =====
+        function renderDimensao(dimId, itens, resps) {
+            const dim = (dados.dimensoes||[]).find(d=>String(d.id)===String(dimId));
+            if (!dim) return renderGeral(itens, resps);
+
+            const idsLk = idsLikert(dim);
+            const itensLk = itens.filter(i=>idsLk.includes(i.pergunta_id));
+            const conc = positivas(itensLk);
+            const md = media(itensLk);
+            const esc = dimEscala(dim);
+            const npsEsc = esc ? nps(itens.filter(i=>i.pergunta_id===esc.id)) : null;
+
+            let h = `<div class="tela-cab">
+                <div class="tela-titulo"><span class="material-symbols-rounded">${dimIcon(dim.nome)}</span>${escH(dim.nome)}</div>
+                <div class="tela-sub">${(dim.perguntas||[]).length} pergunta${(dim.perguntas||[]).length!==1?'s':''}${dim.eh_lideranca?' · avaliada por líder':''}</div>
+            </div>
+            <div class="kpis">
+                ${kpi('Concordância', (conc===null?'—':conc+'%'), 'nesta dimensão', corPct(conc))}
+                ${kpi('Média', (md===null?'—':md.toFixed(1)), 'escala 1 a 5', null)}
+                ${npsEsc!==null ? kpi('NPS', (npsEsc>0?'+':'')+npsEsc, 'pergunta de 0 a 10', npsEsc>=50?'var(--ok)':npsEsc>=0?'var(--atencao)':'var(--critico)') : ''}
+                ${kpi('Respostas', String(resps.length), 'com os filtros atuais', 'var(--acao)')}
+            </div>`;
+
+            const perguntas = (dim.perguntas||[]).filter(p=>p.tipo==='likert').map(p=>{
+                const its = itens.filter(i=>i.pergunta_id===p.id);
+                return { texto:p.texto, itens:its, conc:positivas(its) };
+            }).filter(x=>x.conc!==null).sort((a,b)=>a.conc-b.conc);
+
+            if (perguntas.length) {
+                h += `<div class="painel">
+                    <div class="painel-cab"><span class="painel-tit">Pergunta a pergunta</span><span class="painel-sub">da pior para a melhor</span></div>
+                    ${dvLegenda()}
+                    ${perguntas.map(p=>dvLinha(p.texto, null, p.itens, null)).join('')}
+                </div>`;
+            } else {
+                h += `<div class="painel"><div class="vazio-msg">Sem respostas de escala nesta dimensão.</div></div>`;
+            }
+
+            // comentários da própria dimensão
+            (dim.perguntas||[]).forEach(p=>{
+                if (p.tipo!=='texto') return;
+                const txts = itens.filter(i=>i.pergunta_id===p.id && i.valor_texto && String(i.valor_texto).trim());
+                if (!txts.length) return;
+                h += `<div class="painel">
+                    <div class="painel-cab"><span class="painel-tit">${escH(p.texto)}</span><span class="painel-sub">${txts.length} resposta${txts.length!==1?'s':''}</span></div>
+                    ${txts.map(t=>`<div class="coment">${escH(t.valor_texto)}</div>`).join('')}
+                </div>`;
+            });
+
+            document.getElementById('conteudo').innerHTML = h;
+        }
+
     </script>
 </body>
 </html>
