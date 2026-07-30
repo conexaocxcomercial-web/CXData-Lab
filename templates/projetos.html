@@ -53,11 +53,11 @@
         .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; letter-spacing: -.2px; }
 
         .top-bar {
-            background: var(--papel); height: 60px; min-height: 60px; flex-shrink: 0;
-            padding: 0 24px; display: flex; justify-content: space-between;
+            background: var(--papel); height: 56px; min-height: 56px; flex-shrink: 0;
+            padding: 0 22px; display: flex; justify-content: space-between;
             align-items: center; border-bottom: 1px solid var(--linha-1); z-index: 10;
         }
-        .top-bar-logo { font-size: 18px; font-weight: 700; letter-spacing: -.4px; cursor: pointer; display: flex; align-items: center; }
+        .top-bar-logo { font-size: 17px; font-weight: 700; letter-spacing: -.4px; cursor: pointer; display: flex; align-items: center; }
         .top-bar-logo span.roxo { color: var(--primary-purple); }
         .top-bar-logo:hover { opacity: .75; }
 
@@ -91,7 +91,7 @@
         /* ===== BARRA DE COMANDO ÚNICA (substitui command-bar + view-switcher + filter-bar) ===== */
         .cmd {
             display: flex; align-items: center; gap: 12px;
-            padding: 0 24px; height: 58px; flex-shrink: 0;
+            padding: 0 22px; height: 56px; flex-shrink: 0;
             background: var(--papel); border-bottom: 1px solid var(--linha-1);
         }
         .cmd-titulo { font-size: 16px; font-weight: 650; letter-spacing: -.35px; white-space: nowrap; }
@@ -124,7 +124,7 @@
         /* ===== GAVETA DE FILTROS ===== */
         .filtros {
             display: none; align-items: center; gap: 12px; flex-wrap: wrap;
-            padding: 12px 24px; background: var(--papel); border-bottom: 1px solid var(--linha-1); flex-shrink: 0;
+            padding: 12px 22px; background: var(--papel); border-bottom: 1px solid var(--linha-1); flex-shrink: 0;
         }
         .filtros.on { display: flex; }
         .filtro-campo { display: flex; align-items: center; gap: 7px; }
@@ -141,7 +141,7 @@
         .btn-limpar:hover { background: #fdeded; color: var(--critico); }
 
         /* ===== TRILHA DO KANBAN ===== */
-        .kanban-board { display: flex; padding: 16px 24px 20px; gap: 12px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
+        .kanban-board { display: flex; padding: 16px 22px 20px; gap: 12px; overflow-x: auto; flex-grow: 1; align-items: flex-start; }
         .kanban-column { width: 272px; min-width: 272px; display: flex; flex-direction: column; max-height: 100%; background: rgba(255,255,255,.5); border-radius: var(--r-card); padding: 8px; transition: background .18s, box-shadow .18s; }
         .kanban-column.drag-over { background: var(--acao-fraco); box-shadow: inset 0 0 0 1.5px var(--acao); }
 
@@ -349,7 +349,7 @@
         }
 
         /* ===== VISÃO EM LISTA — mesmo sistema do quadro ===== */
-        .list-view-container { padding: 12px 24px 28px; flex-grow: 1; overflow-y: auto; display: none; }
+        .list-view-container { padding: 12px 22px 28px; flex-grow: 1; overflow-y: auto; display: none; }
         .list-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; min-width: 940px; }
         .list-table thead th {
             position: sticky; top: 0; z-index: 2; background: var(--bg-board);
@@ -634,10 +634,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <div class="top-bar">
-        <div class="top-bar-logo" onclick="window.location.href='/'">
-            <span class="material-symbols-rounded" style="margin-right: 8px; font-size: 22px;">arrow_back</span>
-            CX<span class="roxo" style="margin-left: 5px;">Projetos</span>
-        </div>
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span class="roxo">Projetos</span></div>
         
         <div style="display: flex; align-items: center; gap: 15px;">
             <div class="bell-container" onclick="toggleDropdownNotificacoes()" title="Notificações Pendentes">
