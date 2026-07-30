@@ -4,135 +4,232 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clima | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
-        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0;
-                --green:#14b8a6; --amber:#eab308; --red:#f87171; }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --e3:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
+            /* nomes antigos usados por estilos herdados */
+            --text-muted:#7C7C88; --text-main:#17171A; --primary-purple:#6C5CE7;
+            --accent-lime:#BEF533; --accent-pink:#FF43C0;
+        }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select,textarea{ font-family:inherit; border:none; }
+        body{
+            font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+            height:100vh; overflow:hidden; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased;
+        }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; }
+        ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
-        .top-bar-logo span { color: var(--primary-purple); }
+        .top-bar{
+            background:var(--papel); height:56px; min-height:56px; flex-shrink:0; padding:0 22px;
+            display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha); z-index:10;
+        }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
 
-        .command-bar { padding: 22px 40px 6px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px; }
-        .cb-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
-        .cb-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
-        .cb-title .material-symbols-rounded { color: var(--primary-purple); }
-        .cliente-sel { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--text-main); background: #fff; border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); min-width: 230px; }
-        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; white-space: nowrap; }
-        .btn-acao:hover { background-color: var(--text-main); }
-        .btn-sec { background: #fff; color: var(--text-main); padding: 10px 18px; font-weight: 800; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:7px; transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .btn-sec:hover { background: #f4f4f5; }
-        .btn-ghost { background: transparent; color: var(--text-muted); padding: 9px 14px; font-weight: 700; font-size: 12px; cursor: pointer; border-radius: 50px !important; display:flex; align-items:center; gap:6px; transition: 0.15s; }
-        .btn-ghost:hover { background: rgba(0,0,0,0.04); color: var(--text-main); }
+        .cmd{
+            display:flex; align-items:center; gap:12px; padding:0 22px; height:56px; flex-shrink:0;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap;
+        }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .cliente-sel{
+            font-size:13px; font-weight:500; color:var(--tinta); padding:7px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; cursor:pointer; max-width:250px;
+        }
+        .cliente-sel:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
 
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 14px 40px 60px 40px; }
+        .btn-acao,.btn-sec,.btn-ghost{
+            font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+            padding:8px 14px; border-radius:var(--r-ctrl); transition:.15s; white-space:nowrap;
+        }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+        .btn-sec{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-sec:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-ghost{ background:transparent; color:var(--tinta-2); }
+        .btn-ghost:hover{ background:var(--linha); }
 
-        .empty { text-align: center; padding: 90px 20px; color: var(--text-muted); }
-        .empty .material-symbols-rounded { font-size: 64px; opacity: 0.18; display: block; margin-bottom: 16px; }
-        .empty h3 { font-size: 17px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
-        .empty p { font-size: 13px; max-width: 380px; margin: 0 auto 20px; line-height: 1.5; }
-        .loading { text-align: center; padding: 80px; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+        .scroll-area{ flex:1; overflow-y:auto; padding:18px 22px 26px; }
+        .loading{ text-align:center; padding:60px; color:var(--tinta-3); font-size:13px; font-weight:500; }
+        .empty{ text-align:center; padding:66px 24px; color:var(--tinta-3); }
+        .empty .material-symbols-rounded{ font-size:46px; opacity:.25; display:block; margin-bottom:14px; }
+        .empty h3{ font-size:15px; font-weight:650; color:var(--tinta-2); margin-bottom:6px; }
+        .empty p{ font-size:13px; font-weight:500; line-height:1.6; max-width:400px; margin:0 auto 18px; }
 
-        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 20px; }
-        .breadcrumb .crumb { cursor: pointer; transition: 0.15s; display: flex; align-items: center; gap: 6px; }
-        .breadcrumb .crumb:hover { color: var(--primary-purple); }
-        .breadcrumb .crumb.active { color: var(--text-main); font-weight: 800; cursor: default; }
-        .breadcrumb .sep { opacity: 0.4; }
+        /* ===== CARD DE PESQUISA ===== */
+        .pesq-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); gap:12px; }
+        .pesq-card{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:15px 16px;
+            cursor:pointer; transition:box-shadow .16s, transform .16s;
+        }
+        .pesq-card:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .pesq-top{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+        .pesq-cliente{ font-size:10.5px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--tinta-3); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .status-badge{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0; }
+        .status-rascunho{ background:var(--papel-2); color:var(--tinta-3); }
+        .status-ativa{ background:var(--ok-fraco); color:var(--ok); }
+        .status-encerrada{ background:var(--acao-fraco); color:var(--acao); }
+        .pesq-titulo{ font-size:14px; font-weight:600; line-height:1.35; letter-spacing:-.15px; margin-bottom:12px; }
+        .pesq-num{ display:flex; align-items:baseline; gap:6px; margin-bottom:8px; }
+        .pesq-val{ font-size:22px; font-weight:700; letter-spacing:-.7px; line-height:1; }
+        .pesq-de{ font-size:12px; color:var(--tinta-3); font-weight:500; }
+        .barra{ height:5px; background:rgba(0,0,0,.07); border-radius:99px; overflow:hidden; }
+        .barra-fill{ height:100%; border-radius:99px; transition:width .4s; }
+        .pesq-pe{ display:flex; align-items:center; gap:11px; margin-top:11px; font-size:11px; color:var(--tinta-3); font-weight:500; flex-wrap:wrap; }
+        .pesq-pe span{ display:flex; align-items:center; gap:4px; }
+        .pesq-pe .material-symbols-rounded{ font-size:14px; }
+        .pe-critico{ color:var(--critico); font-weight:600; }
 
-        /* ===== LISTA DE PESQUISAS ===== */
-        .pesq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
-        .pesq-card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; cursor: pointer; transition: 0.18s; display: flex; flex-direction: column; gap: 14px; position: relative; }
-        .pesq-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
-        .pesq-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-        .pesq-titulo { font-size: 16px; font-weight: 800; line-height: 1.3; }
-        .pesq-cliente { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 3px; }
-        .status-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 10px; border-radius: 50px !important; white-space: nowrap; flex-shrink: 0; }
-        .status-rascunho { background: #f4f4f5; color: var(--text-muted); }
-        .status-ativa { background: #e7fbf5; color: var(--green); }
-        .status-encerrada { background: #fef2f2; color: var(--red); }
-        .pesq-foot { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); border-top: 1px solid #f0f0f1; padding-top: 14px; }
-        .pesq-foot .material-symbols-rounded { font-size: 16px; }
-        .pesq-resp-num { color: var(--primary-purple); }
+        /* ===== ESTEIRA DE STATUS ===== */
+        .esteira{
+            display:flex; align-items:center; background:var(--papel); border-radius:var(--r-card);
+            box-shadow:var(--e1); padding:13px 18px; margin-bottom:16px; flex-wrap:wrap; gap:0;
+        }
+        .et{ display:flex; align-items:center; gap:9px; padding-right:16px; }
+        .et-bola{ width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--papel-2); color:var(--tinta-3); }
+        .et-bola .material-symbols-rounded{ font-size:15px; }
+        .et.feito .et-bola{ background:var(--ok-fraco); color:var(--ok); }
+        .et.agora .et-bola{ background:var(--acao); color:#fff; }
+        .et-txt{ font-size:12px; font-weight:550; color:var(--tinta-3); white-space:nowrap; }
+        .et.feito .et-txt{ color:var(--tinta-2); }
+        .et.agora .et-txt{ color:var(--tinta); font-weight:650; }
+        .et-linha{ width:26px; height:1.5px; background:var(--linha); margin-right:16px; flex-shrink:0; }
+        .esteira-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
 
-        /* ===== EDITOR DE PESQUISA ===== */
-        .editor-head { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 26px 30px; margin-bottom: 20px; }
-        .editor-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-        .editor-titulo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
-        .editor-desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; max-width: 600px; }
-        .editor-acoes { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        .migalha{ display:flex; align-items:center; gap:7px; margin-bottom:14px; font-size:12.5px; color:var(--tinta-3); font-weight:500; flex-wrap:wrap; }
+        .migalha a{ color:var(--acao); cursor:pointer; font-weight:550; }
+        .migalha a:hover{ text-decoration:underline; }
+        .migalha .material-symbols-rounded{ font-size:15px; }
+        .migalha b{ color:var(--tinta); font-weight:600; }
 
-        .link-box { display: flex; align-items: center; gap: 10px; background: #f9f9fb; padding: 12px 16px; margin-top: 18px; }
-        .link-box input { flex-grow: 1; background: transparent; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; font-family: 'Inter', monospace; }
-        .link-box .material-symbols-rounded { color: var(--primary-purple); }
+        /* ===== EDITOR ===== */
+        .editor{ display:grid; grid-template-columns:1fr 292px; gap:14px; align-items:start; }
+        .dim-bloco{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); margin-bottom:10px; overflow:hidden; }
+        .dim-head{ padding:12px 15px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--linha); }
+        .dim-nome{ font-size:13.5px; font-weight:600; letter-spacing:-.15px; flex:1; min-width:0; }
+        .dim-lideranca-tag{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; background:var(--acao-fraco); color:var(--acao); white-space:nowrap; margin-left:6px; }
+        .dim-qtd{ font-size:11px; font-weight:600; color:var(--tinta-3); }
+        .dim-acoes,.perg-acoes{ display:flex; gap:3px; opacity:0; transition:.15s; }
+        .dim-head:hover .dim-acoes, .perg-item:hover .perg-acoes{ opacity:1; }
+        .icon-btn{
+            width:24px; height:24px; border-radius:6px; background:rgba(0,0,0,.05); color:var(--tinta-3);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s; flex-shrink:0;
+        }
+        .icon-btn:hover{ background:var(--acao); color:#fff; }
+        .icon-btn.danger:hover{ background:var(--critico); color:#fff; }
+        .icon-btn .material-symbols-rounded{ font-size:15px; }
 
-        /* Abas do editor */
-        .tabs { display: flex; gap: 4px; margin-bottom: 22px; background: #fff; padding: 6px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); width: fit-content; }
-        .tab { padding: 10px 20px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: 0.15s; border-radius: 50px !important; }
-        .tab:hover { color: var(--text-main); }
-        .tab.active { background: var(--primary-purple); color: #fff; }
+        .perg-item{ padding:10px 15px; border-bottom:1px solid var(--papel-2); display:flex; align-items:center; gap:10px; transition:background .14s; }
+        .perg-item:last-of-type{ border-bottom:none; }
+        .perg-item:hover{ background:var(--papel-2); }
+        .perg-tipo{ font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:4px; background:var(--papel-2); color:var(--tinta-3); white-space:nowrap; flex-shrink:0; }
+        .perg-item:hover .perg-tipo{ background:var(--linha); }
+        .perg-texto{ flex:1; min-width:0; font-size:12.5px; color:var(--tinta-2); line-height:1.45; }
+        .perg-vazia{ padding:14px 15px; font-size:12px; color:var(--tinta-3); font-weight:500; }
 
-        /* Dimensões e perguntas */
-        .dim-bloco { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); margin-bottom: 16px; overflow: hidden; }
-        .dim-head { padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #f0f0f1; }
-        .dim-nome { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-        .dim-lideranca-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: #f0efff; color: var(--primary-purple); padding: 4px 9px; border-radius: 50px !important; }
-        .dim-acoes { display: flex; gap: 6px; }
-        .icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: 0.15s; border-radius: 9px !important; }
-        .icon-btn:hover { background: #f4f4f5; color: var(--text-main); }
-        .icon-btn.danger:hover { background: #fef2f2; color: var(--red); }
+        .add-inline{
+            display:flex; align-items:center; justify-content:center; gap:7px; padding:9px;
+            border:1.5px dashed var(--linha-2); border-radius:10px; cursor:pointer;
+            font-size:12.5px; font-weight:550; color:var(--tinta-3); transition:.15s; margin:10px 15px;
+        }
+        .add-inline:hover{ border-color:var(--acao); color:var(--acao); background:var(--acao-fraco); }
+        .add-inline .material-symbols-rounded{ font-size:17px; }
 
-        .perg-lista { padding: 8px 0; }
-        .perg-item { padding: 12px 24px; display: flex; align-items: center; gap: 14px; transition: 0.12s; }
-        .perg-item:hover { background: #fafafb; }
-        .perg-tipo-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #f4f4f5; flex-shrink: 0; border-radius: 8px !important; }
-        .perg-tipo-icon .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
-        .perg-texto { flex-grow: 1; font-size: 13px; font-weight: 600; line-height: 1.4; }
-        .perg-tipo-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-        .perg-acoes { display: flex; gap: 4px; opacity: 0; transition: 0.15s; }
-        .perg-item:hover .perg-acoes { opacity: 1; }
-        .add-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--primary-purple); cursor: pointer; padding: 10px 24px; transition: 0.15s; }
-        .add-inline:hover { opacity: 0.7; }
+        /* ===== COLUNA DE APOIO ===== */
+        .lado{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:15px 16px; margin-bottom:12px; }
+        .lado-tit{ font-size:12px; font-weight:650; letter-spacing:-.1px; margin-bottom:11px; display:flex; align-items:center; gap:7px; }
+        .lado-tit .material-symbols-rounded{ font-size:16px; color:var(--tinta-3); }
+        .lado-qtd{ margin-left:auto; font-size:11px; color:var(--tinta-3); font-weight:600; }
+        .cfg-hint{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-bottom:11px; }
+        .chip-item{
+            display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500;
+            background:var(--papel-2); color:var(--tinta-2); padding:5px 6px 5px 10px; border-radius:99px; margin:0 5px 5px 0;
+        }
+        .chip-cargo{ color:var(--tinta-3); }
+        .chip-item .icon-btn{ width:18px; height:18px; background:transparent; }
+        .chip-item .icon-btn .material-symbols-rounded{ font-size:13px; }
+        .add-row{ display:flex; gap:7px; margin-top:9px; }
+        .add-row input{
+            flex:1; min-width:0; font-size:12.5px; padding:8px 10px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; color:var(--tinta);
+        }
+        .add-row input:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .add-row button{
+            width:34px; height:34px; border-radius:var(--r-ctrl); background:var(--acao); color:#fff;
+            display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:.15s;
+        }
+        .add-row button:hover{ background:#5a4bd4; }
+        .link-box{ display:flex; align-items:center; gap:8px; background:var(--papel-2); border-radius:var(--r-ctrl); padding:8px 10px; }
+        .link-box input{
+            flex:1; min-width:0; background:transparent; font-size:11.5px;
+            font-family:'IBM Plex Mono',monospace; color:var(--tinta-2); outline:none;
+        }
+        .link-copiar{ color:var(--acao); cursor:pointer; display:flex; flex-shrink:0; }
+        .link-copiar .material-symbols-rounded{ font-size:16px; }
 
-        /* Líderes e setores */
-        .cfg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .cfg-card { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.03); padding: 24px; }
-        .cfg-titulo { font-size: 14px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .cfg-titulo .material-symbols-rounded { color: var(--primary-purple); font-size: 19px; }
-        .cfg-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.4; }
-        .chip-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-        .chip-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: #f9f9fb; }
-        .chip-nome { flex-grow: 1; font-size: 13px; font-weight: 700; }
-        .chip-cargo { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-        .add-row { display: flex; gap: 8px; }
-        .add-row input { flex-grow: 1; padding: 11px 14px; font-size: 13px; background: #f9f9fb; outline: none; font-weight: 600; }
-        .add-row input:focus { box-shadow: inset 0 0 0 2px var(--primary-purple); }
-        .add-row button { background: var(--primary-purple); color: #fff; width: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; }
-        .add-row button:hover { background: var(--text-main); }
+        /* ===== MODAIS ===== */
+        .modal-overlay{
+            position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            display:none; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal-overlay.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; box-shadow:var(--e3); width:100%; max-width:470px; overflow:hidden; padding:20px; }
+        .modal-titulo{ font-size:16px; font-weight:650; letter-spacing:-.3px; margin-bottom:17px; }
+        .input-group{ margin-bottom:14px; }
+        .input-group label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .input-group input, .input-group textarea, .input-group select{
+            width:100%; font-size:13px; color:var(--tinta); padding:9px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; transition:.15s;
+        }
+        .input-group textarea{ resize:vertical; min-height:70px; line-height:1.5; }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus{
+            background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco);
+        }
+        .check-row{ display:flex; align-items:center; gap:9px; margin-bottom:14px; cursor:pointer; }
+        .check-row input{ width:15px; height:15px; accent-color:var(--acao); cursor:pointer; }
+        .check-row label{ font-size:12.5px; color:var(--tinta-2); font-weight:500; cursor:pointer; }
+        .modal-acoes{ display:flex; gap:9px; justify-content:flex-end; margin-top:18px; }
 
-        /* Modais */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(20,20,25,0.4); backdrop-filter: blur(3px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-overlay.show { display: flex; }
-        .modal { background: #fff; width: 100%; max-width: 500px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
-        .modal-titulo { font-size: 18px; font-weight: 900; margin-bottom: 22px; }
-        .input-group { margin-bottom: 16px; }
-        .input-group label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 7px; }
-        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px 14px; font-size: 14px; background: #f9f9fb; outline: none; font-family: 'Inter', sans-serif; font-weight: 500; }
-        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { box-shadow: inset 0 0 0 2px var(--primary-purple); }
-        .input-group textarea { resize: vertical; min-height: 70px; }
-        .check-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; cursor: pointer; }
-        .check-row input { width: auto; }
-        .check-row label { font-size: 13px; font-weight: 600; color: var(--text-main); text-transform: none; letter-spacing: 0; cursor: pointer; }
-        .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        /* ===== TOAST ===== */
+        .toast{
+            position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(14px);
+            background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
+            opacity:0; pointer-events:none; transition:.25s; z-index:10001;
+        }
+        .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+        .toast.error{ background:var(--critico); }
 
-        /* Toast */
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: #fff; padding: 14px 24px; font-size: 13px; font-weight: 700; z-index: 200; opacity: 0; transition: all 0.3s; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.success { background: var(--green); }
-        .toast.error { background: var(--red); }
+        /* ===== RESPONSIVO ===== */
+        @media (max-width:960px){ .editor{ grid-template-columns:1fr; } }
+        @media (max-width:900px){
+            body{ height:auto; min-height:100vh; overflow:visible; }
+            .top-bar{ padding:0 16px 0 60px; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            .cliente-sel{ flex:1; max-width:none; }
+            .cmd-dir{ width:100%; margin-left:0; }
+            .scroll-area{ padding:14px 16px 24px; }
+            .pesq-grid{ grid-template-columns:1fr; }
+            .dim-acoes,.perg-acoes{ opacity:1; }
+        }
     </style>
 </head>
 <body>
@@ -142,16 +239,15 @@
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="command-bar">
-        <div class="cb-left">
-            <span class="cb-title"><span class="material-symbols-rounded">mood</span> <span id="tituloBarra">Pesquisa de Clima</span></span>
-            <select class="cliente-sel" id="selCliente" onchange="filtrarPorCliente()" style="display:none;">
-                <option value="">Todos os clientes</option>
-            </select>
-        </div>
-        <div class="cb-left" id="acoesTopo">
-            <button class="btn-sec" onclick="abrirModelo()"><span class="material-symbols-rounded" style="font-size:17px;">tune</span> Modelo base</button>
-            <button class="btn-acao" onclick="abrirNovaPesquisa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Nova pesquisa</button>
+    <div class="cmd">
+        <span class="cmd-tit" id="tituloBarra">Clima</span>
+        <div class="cmd-sep"></div>
+        <select class="cliente-sel" id="selCliente" onchange="filtrarPorCliente()" style="display:none;">
+            <option value="">Todos os clientes</option>
+        </select>
+        <div class="cmd-dir" id="acoesTopo">
+            <button class="btn-sec" onclick="abrirModelo()"><span class="material-symbols-rounded" style="font-size:17px;">tune</span>Modelo base</button>
+            <button class="btn-acao" onclick="abrirNovaPesquisa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span>Nova pesquisa</button>
         </div>
     </div>
 
@@ -159,8 +255,7 @@
         <div class="loading">Carregando...</div>
     </div>
 
-    <!-- MODAL: Nova/Editar Pesquisa -->
-    <div class="modal-overlay" id="modalPesquisa">
+<div class="modal-overlay" id="modalPesquisa">
         <div class="modal">
             <div class="modal-titulo" id="modalPesqTitulo">Nova pesquisa</div>
             <div class="input-group">
@@ -223,16 +318,14 @@
             </div>
         </div>
     </div>
-
     <div class="toast" id="toast"></div>
 
     <script>
         const NIVEL_ACESSO = "{{ nivel_acesso }}";
         let pesquisas = [], clientes = [], mostraSeletor = true;
-        let pesquisaAberta = null;   // objeto da pesquisa em edição
-        let abaAtual = 'perguntas';
+        let pesquisaAberta = null;
         let modeloAberto = false;
-        let ctxDim = {};             // contexto para modais
+        let ctxDim = {};
 
         document.addEventListener('DOMContentLoaded', carregarLista);
 
@@ -241,6 +334,7 @@
         function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
         function tipoLabel(t){ return {likert:'Likert', escala10:'Escala 0-10', texto:'Aberta', multipla:'Múltipla'}[t]||t; }
         function tipoIcon(t){ return {likert:'linear_scale', escala10:'pin', texto:'notes', multipla:'checklist'}[t]||'help'; }
+        function statusLabel(s){ return {rascunho:'Rascunho', ativa:'Coletando', encerrada:'Encerrada'}[s]||s; }
 
         // ===== LISTA DE PESQUISAS =====
         async function carregarLista() {
@@ -251,7 +345,6 @@
                 pesquisas = data.pesquisas || [];
                 clientes = data.clientes || [];
                 mostraSeletor = data.mostra_seletor !== false;
-                // popula selects de cliente
                 const sc = document.getElementById('selCliente');
                 sc.innerHTML = '<option value="">Todos os clientes</option>' + clientes.map(c=>`<option value="${c.id}">${escH(c.nome)}</option>`).join('');
                 if (mostraSeletor && clientes.length > 1) sc.style.display = 'block';
@@ -263,10 +356,22 @@
 
         function nomeCliente(id){ const c = clientes.find(x=>String(x.id)===String(id)); return c?c.nome:'—'; }
 
+        // Contagem de dimensões e perguntas quando a lista já traz o resumo
+        function contaPerguntas(p){
+            if (typeof p.total_perguntas === 'number') return p.total_perguntas;
+            let n=0; (p.dimensoes||[]).forEach(d=>n+=(d.perguntas||[]).length); return n;
+        }
+        function contaDimensoes(p){
+            if (typeof p.total_dimensoes === 'number') return p.total_dimensoes;
+            return (p.dimensoes||[]).length;
+        }
+
         function renderLista() {
             pesquisaAberta = null; modeloAberto = false;
             document.getElementById('acoesTopo').style.display = 'flex';
-            document.getElementById('tituloBarra').textContent = 'Pesquisa de Clima';
+            document.getElementById('tituloBarra').textContent = 'Clima';
+            if (mostraSeletor && clientes.length > 1) document.getElementById('selCliente').style.display = 'block';
+
             const filtro = document.getElementById('selCliente').value;
             let lista = pesquisas;
             if (filtro) lista = lista.filter(p => String(p.cliente_id)===String(filtro));
@@ -277,24 +382,50 @@
                         <span class="material-symbols-rounded">mood</span>
                         <h3>Nenhuma pesquisa ainda</h3>
                         <p>Crie a primeira pesquisa de clima. Ela parte do modelo base e você ajusta as perguntas para cada cliente.</p>
-                        <button class="btn-acao" style="margin:0 auto;" onclick="abrirNovaPesquisa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Nova pesquisa</button>
+                        <button class="btn-acao" style="margin:0 auto;" onclick="abrirNovaPesquisa()"><span class="material-symbols-rounded" style="font-size:17px;">add</span>Nova pesquisa</button>
                     </div>`;
                 return;
             }
-            const cards = lista.map(p => `
-                <div class="pesq-card" onclick="abrirPesquisa('${p.id}')">
-                    <div class="pesq-card-top">
-                        <div>
-                            <div class="pesq-titulo">${escH(p.titulo)}</div>
-                            <div class="pesq-cliente">${escH(nomeCliente(p.cliente_id))}</div>
-                        </div>
-                        <span class="status-badge status-${p.status}">${p.status}</span>
+
+            const cards = lista.map(p => {
+                const n = p.total_respostas || 0;
+                const nd = contaDimensoes(p), np = contaPerguntas(p);
+                let bloco, rodape;
+
+                if (p.status === 'rascunho') {
+                    bloco = `<div class="pesq-num"><span class="pesq-val num" style="color:var(--tinta-3);">—</span><span class="pesq-de">ainda não publicada</span></div>
+                             <div class="barra"><div class="barra-fill" style="width:0%;"></div></div>`;
+                    rodape = `<span><span class="material-symbols-rounded">category</span>${nd} dimensõe${nd!==1?'s':''}</span>`;
+                    if (np) rodape += `<span><span class="material-symbols-rounded">help</span>${np} pergunta${np!==1?'s':''}</span>`;
+                } else {
+                    // Sem total de convidados no banco, mostramos a contagem absoluta.
+                    // A barra usa 30 respostas como referência visual de massa crítica.
+                    const ref = 30, pctVis = Math.min(100, Math.round(n/ref*100));
+                    const tom = n >= 30 ? 'var(--ok)' : (n >= 15 ? 'var(--atencao)' : 'var(--critico)');
+                    bloco = `<div class="pesq-num"><span class="pesq-val num" style="color:${tom};">${n}</span><span class="pesq-de">resposta${n!==1?'s':''}</span></div>
+                             <div class="barra"><div class="barra-fill" style="width:${pctVis}%; background:${tom};"></div></div>`;
+                    if (p.status === 'ativa' && n < 15) {
+                        rodape = `<span class="pe-critico"><span class="material-symbols-rounded">error</span>amostra ainda pequena</span>`;
+                    } else if (p.status === 'encerrada') {
+                        rodape = `<span><span class="material-symbols-rounded">event</span>encerrada</span>
+                                  <span><span class="material-symbols-rounded">category</span>${nd} dimensõe${nd!==1?'s':''}</span>`;
+                    } else {
+                        rodape = `<span><span class="material-symbols-rounded">category</span>${nd} dimensõe${nd!==1?'s':''}</span>`;
+                        if (np) rodape += `<span><span class="material-symbols-rounded">help</span>${np} pergunta${np!==1?'s':''}</span>`;
+                    }
+                }
+
+                return `<div class="pesq-card" onclick="abrirPesquisa('${p.id}')">
+                    <div class="pesq-top">
+                        <span class="pesq-cliente">${escH(nomeCliente(p.cliente_id))}</span>
+                        <span class="status-badge status-${p.status}">${statusLabel(p.status)}</span>
                     </div>
-                    <div class="pesq-foot">
-                        <span class="material-symbols-rounded">group</span>
-                        <span class="pesq-resp-num">${p.total_respostas||0}</span> resposta${(p.total_respostas||0)!==1?'s':''}
-                    </div>
-                </div>`).join('');
+                    <div class="pesq-titulo">${escH(p.titulo)}</div>
+                    ${bloco}
+                    <div class="pesq-pe">${rodape}</div>
+                </div>`;
+            }).join('');
+
             document.getElementById('conteudo').innerHTML = `<div class="pesq-grid">${cards}</div>`;
         }
 
@@ -321,7 +452,7 @@
             } catch(e) { showToast('Erro de conexão.', 'error'); }
         }
 
-        // ===== ABRIR PESQUISA (EDITOR) =====
+        // ===== EDITOR =====
         async function abrirPesquisa(pid) {
             document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando pesquisa...</div>';
             try {
@@ -331,139 +462,129 @@
                 pesquisaAberta = data.pesquisa;
                 document.getElementById('acoesTopo').style.display = 'none';
                 document.getElementById('selCliente').style.display = 'none';
-                document.getElementById('tituloBarra').textContent = 'Pesquisa de Clima';
-                abaAtual = 'perguntas';
                 renderEditor();
             } catch(e) { showToast('Erro de conexão.', 'error'); }
         }
 
         function renderEditor() {
             const p = pesquisaAberta;
-            const linkCompleto = window.location.origin + '/clima/responder/' + p.token;
-            let html = `
-                <div class="breadcrumb">
-                    <span class="crumb" onclick="renderLista()"><span class="material-symbols-rounded" style="font-size:16px;">arrow_back</span> Pesquisas</span>
-                    <span class="sep">/</span>
-                    <span class="crumb active">${escH(p.titulo)}</span>
-                </div>
+            const link = window.location.origin + '/clima/responder/' + p.token;
+            const n = p.total_respostas || 0;
+            document.getElementById('tituloBarra').textContent = p.titulo;
 
-                <div class="editor-head">
-                    <div class="editor-head-top">
-                        <div>
-                            <div class="editor-titulo">${escH(p.titulo)}</div>
-                            <div class="editor-desc">${escH(nomeCliente(p.cliente_id))}${p.descricao?' · '+escH(p.descricao):''}</div>
-                        </div>
-                        <div class="editor-acoes">
-                            <span class="status-badge status-${p.status}">${p.status}</span>
-                            ${p.status==='rascunho' ? `<button class="btn-acao" onclick="mudarStatus('ativa')"><span class="material-symbols-rounded" style="font-size:16px;">play_arrow</span> Ativar</button>` : ''}
-                            ${p.status==='ativa' ? `<button class="btn-sec" onclick="mudarStatus('encerrada')"><span class="material-symbols-rounded" style="font-size:16px;">stop</span> Encerrar</button>` : ''}
-                            ${p.status==='encerrada' ? `<button class="btn-sec" onclick="mudarStatus('ativa')"><span class="material-symbols-rounded" style="font-size:16px;">refresh</span> Reabrir</button>` : ''}
-                        </div>
+            // esteira: montagem -> coletando -> resultados
+            const emColeta = p.status === 'ativa';
+            const encerrada = p.status === 'encerrada';
+            const esteira = `
+                <div class="esteira">
+                    <div class="et ${p.status!=='rascunho'?'feito':'agora'}">
+                        <span class="et-bola"><span class="material-symbols-rounded">${p.status!=='rascunho'?'check':'edit_note'}</span></span>
+                        <span class="et-txt">Montagem</span>
                     </div>
-                    ${p.status==='ativa' ? `
-                    <div class="link-box">
-                        <span class="material-symbols-rounded">link</span>
-                        <input type="text" id="linkResp" value="${linkCompleto}" readonly onclick="this.select()">
-                        <button class="btn-sec" onclick="copiarLink()"><span class="material-symbols-rounded" style="font-size:15px;">content_copy</span> Copiar</button>
-                    </div>` : `
-                    <div class="editor-desc" style="margin-top:14px; font-style:italic;">Ative a pesquisa para gerar o link de resposta anônimo.</div>`}
-                </div>
+                    <span class="et-linha"></span>
+                    <div class="et ${encerrada?'feito':(emColeta?'agora':'')}">
+                        <span class="et-bola"><span class="material-symbols-rounded">${encerrada?'check':'campaign'}</span></span>
+                        <span class="et-txt">${emColeta? 'Coletando · '+n+' resposta'+(n!==1?'s':'') : 'Coleta'}</span>
+                    </div>
+                    <span class="et-linha"></span>
+                    <div class="et ${encerrada?'agora':''}">
+                        <span class="et-bola"><span class="material-symbols-rounded">insights</span></span>
+                        <span class="et-txt">Resultados</span>
+                    </div>
+                    <div class="esteira-dir">
+                        ${p.status==='rascunho' ? `<button class="btn-acao" onclick="mudarStatus('ativa')"><span class="material-symbols-rounded" style="font-size:16px;">play_arrow</span>Publicar</button>` : ''}
+                        ${emColeta ? `<button class="btn-sec" onclick="mudarStatus('encerrada')"><span class="material-symbols-rounded" style="font-size:16px;">lock</span>Encerrar coleta</button>` : ''}
+                        ${encerrada ? `<button class="btn-sec" onclick="mudarStatus('ativa')"><span class="material-symbols-rounded" style="font-size:16px;">refresh</span>Reabrir</button>` : ''}
+                        ${n>0 ? `<button class="btn-acao" onclick="window.location.href='/clima/dashboard'"><span class="material-symbols-rounded" style="font-size:16px;">insights</span>Ver dashboard</button>` : ''}
+                    </div>
+                </div>`;
 
-                <div class="tabs">
-                    <div class="tab ${abaAtual==='perguntas'?'active':''}" onclick="trocarAba('perguntas')">Perguntas</div>
-                    <div class="tab ${abaAtual==='config'?'active':''}" onclick="trocarAba('config')">Líderes & Setores</div>
-                </div>
-                <div id="abaConteudo"></div>`;
-            document.getElementById('conteudo').innerHTML = html;
-            renderAba();
-        }
-
-        function trocarAba(aba) { abaAtual = aba; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); event.target.classList.add('active'); renderAba(); }
-
-        function renderAba() {
-            if (abaAtual === 'perguntas') renderPerguntas();
-            else renderConfig();
-        }
-
-        // ===== ABA PERGUNTAS =====
-        function renderPerguntas() {
-            const dims = pesquisaAberta.dimensoes || [];
-            let html = '';
-            dims.forEach(d => {
+            const dims = p.dimensoes || [];
+            let principal = dims.map(d => {
                 const perbs = d.perguntas || [];
-                html += `
-                <div class="dim-bloco">
+                return `<div class="dim-bloco">
                     <div class="dim-head">
-                        <div class="dim-nome">${escH(d.nome)} ${d.eh_lideranca?'<span class="dim-lideranca-tag">Liderança</span>':''}</div>
+                        <span class="dim-nome">${escH(d.nome)}${d.eh_lideranca?'<span class="dim-lideranca-tag">avaliada por líder</span>':''}</span>
+                        <span class="dim-qtd num">${perbs.length}</span>
                         <div class="dim-acoes">
-                            <div class="icon-btn" onclick="editarDimensao('${d.id}')" title="Editar"><span class="material-symbols-rounded" style="font-size:18px;">edit</span></div>
-                            <div class="icon-btn danger" onclick="excluirDimensao('${d.id}')" title="Excluir"><span class="material-symbols-rounded" style="font-size:18px;">delete</span></div>
+                            <div class="icon-btn" title="Editar" onclick="editarDimensao('${d.id}')"><span class="material-symbols-rounded">edit</span></div>
+                            <div class="icon-btn danger" title="Excluir" onclick="excluirDimensao('${d.id}')"><span class="material-symbols-rounded">delete</span></div>
                         </div>
                     </div>
-                    <div class="perg-lista">
-                        ${perbs.map(pg => `
-                            <div class="perg-item">
-                                <div class="perg-tipo-icon"><span class="material-symbols-rounded">${tipoIcon(pg.tipo)}</span></div>
-                                <div class="perg-texto">${escH(pg.texto)}<div class="perg-tipo-label">${tipoLabel(pg.tipo)}</div></div>
-                                <div class="perg-acoes">
-                                    <div class="icon-btn" onclick="editarPergunta('${d.id}','${pg.id}')" title="Editar"><span class="material-symbols-rounded" style="font-size:17px;">edit</span></div>
-                                    <div class="icon-btn danger" onclick="excluirPergunta('${pg.id}')" title="Excluir"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
-                                </div>
-                            </div>`).join('') || '<div style="padding:14px 24px; font-size:12px; color:var(--text-muted);">Sem perguntas nesta dimensão.</div>'}
-                        <div class="add-inline" onclick="novaPergunta('${d.id}')"><span class="material-symbols-rounded" style="font-size:16px;">add</span> Adicionar pergunta</div>
-                    </div>
+                    ${perbs.map(pg => `
+                        <div class="perg-item">
+                            <span class="perg-tipo">${tipoLabel(pg.tipo)}</span>
+                            <span class="perg-texto">${escH(pg.texto)}</span>
+                            <div class="perg-acoes">
+                                <div class="icon-btn" title="Editar" onclick="editarPergunta('${d.id}','${pg.id}')"><span class="material-symbols-rounded">edit</span></div>
+                                <div class="icon-btn danger" title="Excluir" onclick="excluirPergunta('${pg.id}')"><span class="material-symbols-rounded">delete</span></div>
+                            </div>
+                        </div>`).join('') || '<div class="perg-vazia">Sem perguntas nesta dimensão.</div>'}
+                    <div class="add-inline" onclick="novaPergunta('${d.id}')"><span class="material-symbols-rounded">add</span>Nova pergunta</div>
                 </div>`;
-            });
-            html += `<button class="btn-sec" style="margin-top:6px;" onclick="novaDimensao()"><span class="material-symbols-rounded" style="font-size:17px;">add</span> Adicionar dimensão</button>`;
-            document.getElementById('abaConteudo').innerHTML = html;
-        }
+            }).join('');
+            principal += `<div class="add-inline" style="margin:0;" onclick="novaDimensao()"><span class="material-symbols-rounded">add</span>Nova dimensão</div>`;
 
-        // ===== ABA CONFIG (líderes e setores) =====
-        function renderConfig() {
-            const lideres = pesquisaAberta.lideres || [];
-            const setores = pesquisaAberta.setores || [];
-            document.getElementById('abaConteudo').innerHTML = `
-                <div class="cfg-grid">
-                    <div class="cfg-card">
-                        <div class="cfg-titulo"><span class="material-symbols-rounded">supervisor_account</span> Lideranças</div>
-                        <div class="cfg-hint">Cadastre os líderes deste cliente. O respondente marca o(s) dele(s), e as perguntas de liderança se repetem para cada um.</div>
-                        <div class="chip-lista">
-                            ${lideres.map(l => `<div class="chip-item">
-                                <span class="chip-nome">${escH(l.nome)}${l.cargo?` <span class="chip-cargo">· ${escH(l.cargo)}</span>`:''}</span>
-                                <div class="icon-btn danger" onclick="excluirLider('${l.id}')"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
-                            </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted); padding:4px 0;">Nenhum líder cadastrado.</div>'}
+            const lideres = p.lideres || [];
+            const setores = p.setores || [];
+            const lado = `
+                <div class="lado">
+                    <div class="lado-tit"><span class="material-symbols-rounded">link</span>Link da pesquisa</div>
+                    ${emColeta ? `
+                        <div class="link-box">
+                            <input type="text" id="linkResp" value="${link}" readonly onclick="this.select()">
+                            <span class="link-copiar" onclick="copiarLink()" title="Copiar"><span class="material-symbols-rounded">content_copy</span></span>
                         </div>
-                        <div class="add-row">
-                            <input type="text" id="novoLiderNome" placeholder="Nome do líder" onkeydown="if(event.key==='Enter')addLider()">
-                            <button onclick="addLider()"><span class="material-symbols-rounded" style="font-size:20px;">add</span></button>
-                        </div>
+                        <div class="cfg-hint" style="margin:8px 0 0;">Anônimo. Nenhum dado de identificação é gravado junto da resposta.</div>`
+                        : `<div class="cfg-hint" style="margin:0;">Publique a pesquisa para gerar o link de resposta anônimo.</div>`}
+                </div>
+
+                <div class="lado">
+                    <div class="lado-tit"><span class="material-symbols-rounded">domain</span>Setores<span class="lado-qtd num">${setores.length}</span></div>
+                    <div class="cfg-hint">O respondente escolhe o dele — permite cruzar o clima por área.</div>
+                    <div>${setores.map(s => `<span class="chip-item"><span>${escH(s.nome)}</span>
+                        <div class="icon-btn danger" onclick="excluirSetor('${s.id}')"><span class="material-symbols-rounded">close</span></div></span>`).join('')
+                        || '<div class="cfg-hint" style="margin:0;">Nenhum setor cadastrado.</div>'}</div>
+                    <div class="add-row">
+                        <input type="text" id="novoSetorNome" placeholder="Nome do setor" onkeydown="if(event.key==='Enter')addSetor()">
+                        <button onclick="addSetor()" title="Adicionar"><span class="material-symbols-rounded" style="font-size:19px;">add</span></button>
                     </div>
-                    <div class="cfg-card">
-                        <div class="cfg-titulo"><span class="material-symbols-rounded">domain</span> Setores</div>
-                        <div class="cfg-hint">Os setores/departamentos deste cliente. O respondente escolhe o dele — permite cruzar o clima por área.</div>
-                        <div class="chip-lista">
-                            ${setores.map(s => `<div class="chip-item">
-                                <span class="chip-nome">${escH(s.nome)}</span>
-                                <div class="icon-btn danger" onclick="excluirSetor('${s.id}')"><span class="material-symbols-rounded" style="font-size:17px;">delete</span></div>
-                            </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted); padding:4px 0;">Nenhum setor cadastrado.</div>'}
-                        </div>
-                        <div class="add-row">
-                            <input type="text" id="novoSetorNome" placeholder="Nome do setor" onkeydown="if(event.key==='Enter')addSetor()">
-                            <button onclick="addSetor()"><span class="material-symbols-rounded" style="font-size:20px;">add</span></button>
-                        </div>
+                </div>
+
+                <div class="lado">
+                    <div class="lado-tit"><span class="material-symbols-rounded">supervisor_account</span>Líderes<span class="lado-qtd num">${lideres.length}</span></div>
+                    <div class="cfg-hint">O respondente marca o(s) dele(s), e as perguntas de liderança se repetem para cada um.</div>
+                    <div>${lideres.map(l => `<span class="chip-item"><span>${escH(l.nome)}${l.cargo?` <span class="chip-cargo">· ${escH(l.cargo)}</span>`:''}</span>
+                        <div class="icon-btn danger" onclick="excluirLider('${l.id}')"><span class="material-symbols-rounded">close</span></div></span>`).join('')
+                        || '<div class="cfg-hint" style="margin:0;">Nenhum líder cadastrado.</div>'}</div>
+                    <div class="add-row">
+                        <input type="text" id="novoLiderNome" placeholder="Nome do líder" onkeydown="if(event.key==='Enter')addLider()">
+                        <button onclick="addLider()" title="Adicionar"><span class="material-symbols-rounded" style="font-size:19px;">add</span></button>
                     </div>
                 </div>`;
+
+            document.getElementById('conteudo').innerHTML = `
+                <div class="migalha">
+                    <a onclick="renderLista()">Pesquisas</a>
+                    <span class="material-symbols-rounded">chevron_right</span>
+                    <span>${escH(nomeCliente(p.cliente_id))}</span>
+                    <span class="material-symbols-rounded">chevron_right</span>
+                    <b>${escH(p.titulo)}</b>
+                </div>
+                ${esteira}
+                <div class="editor"><div>${principal}</div><div>${lado}</div></div>`;
         }
 
         // ===== AÇÕES: STATUS, LINK =====
         async function mudarStatus(novo) {
             try {
                 const res = await fetch('/api/clima/pesquisa/' + pesquisaAberta.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: novo }) });
-                if (res.ok) { pesquisaAberta.status = novo; showToast(novo==='ativa'?'Pesquisa ativada!':novo==='encerrada'?'Pesquisa encerrada.':'Atualizado.', 'success'); renderEditor(); }
+                if (res.ok) { pesquisaAberta.status = novo; showToast(novo==='ativa'?'Pesquisa publicada!':novo==='encerrada'?'Coleta encerrada.':'Atualizado.', 'success'); renderEditor(); }
                 else showToast('Erro ao atualizar.', 'error');
             } catch(e) { showToast('Erro de conexão.', 'error'); }
         }
         function copiarLink() { const el=document.getElementById('linkResp'); el.select(); navigator.clipboard.writeText(el.value).then(()=>showToast('Link copiado!', 'success')); }
+
 
         // ===== DIMENSÕES =====
         function novaDimensao() { ctxDim={modo:'nova'}; document.getElementById('modalDimTitulo').textContent='Nova dimensão'; document.getElementById('dimNome').value=''; document.getElementById('dimLideranca').checked=false; document.getElementById('modalDimensao').classList.add('show'); }
@@ -618,6 +739,13 @@
             const res=await fetch('/api/clima/modelo/pergunta', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
             if(res.ok){ showToast('Salvo!', 'success'); fecharModal('modalPergunta'); abrirModelo(); } else showToast('Erro.', 'error');
         };
+
+        document.querySelectorAll('.modal-overlay').forEach(function(m){
+            m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('show'); });
+        });
+        document.addEventListener('keydown', function(e){
+            if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+        });
     </script>
 </body>
 </html>
