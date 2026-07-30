@@ -4,173 +4,390 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
-        :root {
-            --bg-board:#f6f6f7; --surface:#ffffff; --text-main:#18181b; --text-soft:#52525b; --text-muted:#9497a0;
-            --purple:#7371ff; --purple-soft:#f0efff; --line:#ececf0; --lime:#bef533; --pink:#ff43c0; --green:#14b8a6;
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); min-height: 100vh; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #d8d8dd; }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select{ font-family:inherit; border:none; }
+        body{
+            font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+            min-height:100vh; -webkit-font-smoothing:antialiased;
+        }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .usermenu-fixo { position: fixed; top: 20px; right: 32px; z-index: 50; }
-        .hub-wrap { max-width: 1120px; margin: 0 auto; padding: 54px 40px 80px; }
+        .topo{
+            background:var(--papel); height:56px; display:flex; align-items:center;
+            justify-content:space-between; padding:0 22px; border-bottom:1px solid var(--linha);
+            position:sticky; top:0; z-index:20;
+        }
+        .topo-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .topo-logo span{ color:var(--acao); }
 
-        /* Saudação */
-        .hub-hero { margin-bottom: 40px; }
-        .hub-saud { font-size: 34px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.1; }
-        .hub-saud span { color: var(--purple); }
-        .hub-data { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-top: 8px; text-transform: capitalize; }
+        .wrap{ max-width:1080px; margin:0 auto; padding:30px 22px 70px; }
 
-        /* Pulso / resumo */
-        .pulso { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
-        .pulso-card { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 16px !important; padding: 22px 24px; display: flex; align-items: center; gap: 16px; transition: 0.2s; }
-        .pulso-card.clicavel { cursor: pointer; }
-        .pulso-card.clicavel:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07), 0 0 0 1px var(--line); }
-        .pulso-ico { width: 46px; height: 46px; border-radius: 13px !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .pulso-ico .material-symbols-rounded { font-size: 24px; }
-        .pulso-info { min-width: 0; }
-        .pulso-num { font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-        .pulso-num.vazio { color: var(--text-muted); }
-        .pulso-lbl { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
-        .pulso-skel { width: 34px; height: 28px; background: linear-gradient(90deg,#eee,#f5f5f5,#eee); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 6px !important; }
-        @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+        /* ===== SAUDAÇÃO ===== */
+        .hero{ margin-bottom:24px; }
+        .saud{ font-size:27px; font-weight:700; letter-spacing:-1px; line-height:1.15; }
+        .saud span{ color:var(--acao); }
+        .data{ font-size:13px; color:var(--tinta-3); font-weight:500; margin-top:6px; text-transform:capitalize; }
 
-        /* Seções de módulos */
-        .secao { margin-bottom: 40px; }
-        .secao-titulo { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
-        .secao-titulo::after { content: ''; flex-grow: 1; height: 1px; background: var(--line); }
-        .mod-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        /* ===== TIMER ATIVO ===== */
+        .timer-ativo{
+            background:var(--tinta); border-radius:var(--r-card); padding:13px 16px;
+            display:flex; align-items:center; gap:12px; margin-bottom:16px; cursor:pointer;
+        }
+        .timer-pulso{ width:9px; height:9px; border-radius:50%; background:var(--lime); flex-shrink:0; animation:pulsar 2s ease-out infinite; }
+        @keyframes pulsar{ 0%{ box-shadow:0 0 0 0 rgba(190,245,51,.5); } 70%{ box-shadow:0 0 0 8px rgba(190,245,51,0); } 100%{ box-shadow:0 0 0 0 rgba(190,245,51,0); } }
+        .timer-info{ flex:1; min-width:0; }
+        .timer-nome{ font-size:13px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .timer-tarefa{ font-size:11px; color:rgba(255,255,255,.6); font-weight:500; margin-top:2px; }
+        .timer-relogio{ font-size:15px; font-weight:650; color:var(--lime); font-family:'IBM Plex Mono',monospace; flex-shrink:0; }
 
-        .mod-card { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px var(--line); border-radius: 18px !important; padding: 26px; cursor: pointer; transition: 0.22s cubic-bezier(0.34,1.1,0.64,1); position: relative; overflow: hidden; }
-        .mod-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.09), 0 0 0 1px var(--line); }
-        .mod-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 60%, var(--glow, rgba(115,113,255,0.06))); opacity: 0; transition: 0.3s; pointer-events: none; }
-        .mod-card:hover::after { opacity: 1; }
-        .mod-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .mod-ico { width: 52px; height: 52px; border-radius: 15px !important; display: flex; align-items: center; justify-content: center; }
-        .mod-ico .material-symbols-rounded { font-size: 27px; }
-        .mod-seta { width: 34px; height: 34px; border-radius: 10px !important; background: var(--bg-board); display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: 0.2s; }
-        .mod-card:hover .mod-seta { background: var(--purple); color: #fff; transform: translateX(2px); }
-        .mod-nome { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 6px; }
-        .mod-desc { font-size: 13px; color: var(--text-muted); font-weight: 500; line-height: 1.5; }
-        .mod-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--green); background: #e7fbf5; padding: 4px 10px; border-radius: 50px !important; margin-top: 14px; }
+        /* ===== SEÇÃO ===== */
+        .secao{ margin-bottom:26px; }
+        .secao-cab{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .secao-tit{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; color:var(--tinta-3); }
+        .secao-linha{ flex:1; height:1px; background:var(--linha); }
+        .secao-link{ font-size:12px; font-weight:600; color:var(--acao); cursor:pointer; white-space:nowrap; }
+        .secao-link:hover{ text-decoration:underline; }
 
-        @media (max-width: 900px) { .pulso { grid-template-columns: 1fr 1fr; } .mod-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 600px) { .mod-grid { grid-template-columns: 1fr; } }
+        /* ===== ATENÇÃO: lista de projetos ===== */
+        .lista{ display:flex; flex-direction:column; gap:8px; }
+        .item{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;
+            transition:box-shadow .16s, transform .16s, background .16s;
+        }
+        .item:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .item.critico{ background:var(--cr-fundo); box-shadow:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--cr-borda); }
+        .item.atencao{ background:var(--at-fundo); box-shadow:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--at-borda); }
+        .item-corpo{ flex:1; min-width:0; }
+        .item-topo{ display:flex; align-items:center; gap:7px; margin-bottom:3px; }
+        .item-cliente{ font-size:10.5px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--tinta-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .item-quadro{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; background:rgba(0,0,0,.05); color:var(--tinta-2); white-space:nowrap; flex-shrink:0; }
+        .item-nome{ font-size:13.5px; font-weight:600; letter-spacing:-.15px; color:var(--tinta); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .item-dir{ display:flex; align-items:center; gap:9px; flex-shrink:0; }
+        .selo{
+            font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:99px; white-space:nowrap;
+            display:inline-flex; align-items:center; gap:4px; background:var(--papel-2); color:var(--tinta-3);
+        }
+        .selo .material-symbols-rounded{ font-size:13px; }
+        .selo.cr{ background:rgba(212,47,47,.12); color:var(--critico); }
+        .selo.at{ background:rgba(194,102,11,.14); color:var(--atencao); }
+        .selo.rx{ background:var(--acao-fraco); color:var(--acao); }
+        .item-seta{ color:var(--tinta-3); display:flex; }
+        .item-seta .material-symbols-rounded{ font-size:18px; }
+
+        .tudo-certo{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            padding:26px 20px; text-align:center;
+        }
+        .tudo-certo .material-symbols-rounded{ font-size:30px; color:var(--ok); display:block; margin-bottom:9px; }
+        .tudo-certo p{ font-size:13px; font-weight:550; color:var(--tinta-2); }
+        .tudo-certo small{ display:block; font-size:12px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+
+        /* ===== PULSO ===== */
+        .pulso{ display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:11px; }
+        .pz{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:14px 15px; }
+        .pz.clic{ cursor:pointer; transition:box-shadow .16s, transform .16s; }
+        .pz.clic:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .pz-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:6px; }
+        .pz-val{ font-size:23px; font-weight:700; letter-spacing:-.7px; line-height:1; }
+        .pz-val.vazio{ color:var(--tinta-3); }
+        .skel{ width:36px; height:23px; background:linear-gradient(90deg,var(--papel-2),var(--linha),var(--papel-2)); background-size:200% 100%; animation:brilho 1.2s infinite; border-radius:5px; }
+        @keyframes brilho{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+
+        /* ===== ATALHOS ===== */
+        .atalhos{ display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:9px; }
+        .at{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            padding:13px 14px; cursor:pointer; display:flex; align-items:center; gap:11px;
+            transition:box-shadow .16s, transform .16s;
+        }
+        .at:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .at-ico{ width:32px; height:32px; min-width:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; }
+        .at-ico .material-symbols-rounded{ font-size:18px; }
+        .at-txt{ min-width:0; }
+        .at-nome{ font-size:12.5px; font-weight:600; letter-spacing:-.1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .at-qtd{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:1px; }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width:900px){
+            .topo{ padding:0 16px 0 60px; }
+            .wrap{ padding:22px 16px 60px; }
+            .saud{ font-size:23px; }
+            .atalhos{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+            .item{ padding:11px 12px; }
+            .item-dir .selo:not(:first-child){ display:none; }
+        }
+        @media (max-width:560px){
+            .saud{ font-size:21px; letter-spacing:-.7px; }
+            .pulso{ grid-template-columns:1fr 1fr; }
+            .atalhos{ grid-template-columns:1fr 1fr; }
+            .item-seta{ display:none; }
+            .item-quadro{ display:none; }
+        }
     </style>
 </head>
 <body>
     {% include '_sidebar.html' %}
-    <span id="nomeUsuario" style="display:none;">{{ usuario_nome }}</span>
-    <div class="usermenu-fixo">{% include '_usermenu.html' %}</div>
 
-    <div class="hub-wrap">
-        <div class="hub-hero">
-            <div class="hub-saud" id="saudacao">Olá<span>.</span></div>
-            <div class="hub-data" id="dataHoje"></div>
+    <div class="topo">
+        <div class="topo-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+
+    <div class="wrap">
+        <div class="hero">
+            <div class="saud" id="saudacao">Olá<span>.</span></div>
+            <div class="data" id="dataHoje"></div>
         </div>
 
-        <div class="pulso" id="pulso">
-            <div class="pulso-card"><div class="pulso-ico" style="background:var(--purple-soft);"><span class="material-symbols-rounded" style="color:var(--purple);">apartment</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Clientes</div></div></div>
-            <div class="pulso-card"><div class="pulso-ico" style="background:#e7fbf5;"><span class="material-symbols-rounded" style="color:var(--green);">mood</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Pesquisas de clima ativas</div></div></div>
-            <div class="pulso-card"><div class="pulso-ico" style="background:#fdeaf7;"><span class="material-symbols-rounded" style="color:var(--pink);">leaderboard</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Ciclos de desempenho ativos</div></div></div>
-            <div class="pulso-card"><div class="pulso-ico" style="background:#f4f4f5;"><span class="material-symbols-rounded" style="color:var(--text-soft);">view_kanban</span></div><div class="pulso-info"><div class="pulso-num"><div class="pulso-skel"></div></div><div class="pulso-lbl">Projetos ativos</div></div></div>
-        </div>
-
-        <div id="modulos"></div>
+        <div id="timerAtivo"></div>
+        <div id="atencao"></div>
+        <div id="pulsoArea"></div>
+        <div id="atalhosArea"></div>
     </div>
 
     <script>
         const NIVEL = "{{ nivel_acesso }}";
-        const TIPO = "{{ tipo_usuario }}";
-        const PERM = {{ perm_modulos | tojson }};
-        const NOME = "{{ usuario_nome }}";
+        const TIPO  = "{{ tipo_usuario }}";
+        const PERM  = {{ perm_modulos | tojson }};
+        const NOME  = "{{ usuario_nome }}";
 
         const ehExterno = TIPO === 'externo';
-        const ehPerson = NIVEL === 'personalizado';
+        const ehPerson  = NIVEL === 'personalizado';
         function temModulo(m){ return (NIVEL==='admin'||NIVEL==='gestor') || (!ehPerson) || PERM.includes(m); }
         function temAnalise(m){ return (NIVEL==='admin'||NIVEL==='gestor') || (ehPerson && PERM.includes(m)); }
 
-        // Saudação por horário
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+
+        // Mapa area -> quadro, espelhando o cfg de projetos.html
+        const QUADROS = [
+            { chave:'recrutamento',  nome:'R&S',            area:'Recrutamento e seleção', ico:'group_add',      cor:'#6C5CE7', bg:'#F1EFFE' },
+            { chave:'rhestrategico', nome:'RH Estratégico', area:'RH Estratégico',         ico:'psychology',     cor:'#0E9F6E', bg:'#E6F7F0' },
+            { chave:'projetos',      nome:'Projetos',       area:'Projetos',               ico:'folder_managed', cor:'#6C5CE7', bg:'#F1EFFE' },
+            { chave:'rhinterno',     nome:'RH Interno',     area:'RH Interno',             ico:'badge',          cor:'#C2660B', bg:'#FDF3E4' },
+            { chave:'cxdata',        nome:'CX Data',        area:'CX Data',                ico:'database',       cor:'#0EA5E9', bg:'#E4F4FD' },
+            { chave:'comercial',     nome:'Comercial',      area:'Comercial',              ico:'handshake',      cor:'#C2660B', bg:'#FDF3E4' },
+            { chave:'marketing',     nome:'Marketing',      area:'Marketing',              ico:'campaign',       cor:'#DB2777', bg:'#FCE7F3' },
+            { chave:'financeiro',    nome:'Financeiro',     area:'Adm/Fin',                ico:'payments',       cor:'#0891B2', bg:'#E0F5F9' }
+        ];
+        function quadroDaArea(area){ return QUADROS.find(q => q.area === area) || null; }
+
+        // ===== SAUDAÇÃO =====
         (function(){
             const h = new Date().getHours();
-            const saud = h<12 ? 'Bom dia' : h<18 ? 'Boa tarde' : 'Boa noite';
+            const s = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
             const primeiro = (NOME||'').trim().split(/\s+/)[0] || '';
-            document.getElementById('saudacao').innerHTML = `${saud}, ${primeiro}<span>.</span>`;
-            const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
-            document.getElementById('dataHoje').textContent = new Date().toLocaleDateString('pt-BR', opts);
+            document.getElementById('saudacao').innerHTML = `${s}, ${escH(primeiro)}<span>.</span>`;
+            document.getElementById('dataHoje').textContent =
+                new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
         })();
 
-        // Definição dos módulos por seção
-        const SECOES = [
-            { titulo:'Módulos', mods:[
-                { cond:temModulo('rhestrategico'), nome:'RH Estratégico', desc:'Projetos e iniciativas de RH estratégico.', ico:'psychology', cor:'#7371ff', bg:'#f0efff', rota:'/board/rhestrategico' },
-                { cond:temModulo('recrutamento'), nome:'R&S', desc:'Processos seletivos em andamento.', ico:'group_add', cor:'#14b8a6', bg:'#e7fbf5', rota:'/board/recrutamento' },
-                { cond:temModulo('geral'), nome:'Quadro Geral', desc:'Comercial, marketing, CX Data e demandas pontuais.', ico:'dashboard', cor:'#ff43c0', bg:'#fdeaf7', rota:'/board/geral' },
-                { cond:temAnalise('okr'), nome:'OKR', desc:'Objetivos e resultados-chave por cliente.', ico:'target', cor:'#f59e0b', bg:'#fef3e2', rota:'/okr/gestao' },
-                { cond:temAnalise('clima'), nome:'Clima', desc:'Pesquisas de clima organizacional e resultados.', ico:'mood', cor:'#14b8a6', bg:'#e7fbf5', rota:'/clima/gestao' },
-                { cond:temAnalise('desempenho'), nome:'Desempenho', desc:'Avaliações, Nine Box e planos de desenvolvimento.', ico:'leaderboard', cor:'#ff43c0', bg:'#fdeaf7', rota:'/desempenho/gestao' },
-            ]},
-            { titulo:'Gestão', mods:[
-                { cond:temAnalise('dashboard'), nome:'Dashboard', desc:'Visão consolidada de projetos e produtividade.', ico:'monitoring', cor:'#7371ff', bg:'#f0efff', rota:'/dashboard' },
-                { cond:temModulo('clientes'), nome:'Clientes', desc:'Cadastro e gestão da carteira de clientes.', ico:'apartment', cor:'#7371ff', bg:'#f0efff', rota:'/clientes' },
-                { cond:(!ehPerson || PERM.includes('agenda')), nome:'Agenda', desc:'Compromissos e planejamento dos projetos.', ico:'calendar_today', cor:'#52525b', bg:'#f4f4f5', rota:'/agenda' },
-                { cond:(NIVEL==='admin'), nome:'Configurações', desc:'Usuários, acessos e permissões da plataforma.', ico:'settings', cor:'#52525b', bg:'#f4f4f5', rota:'/configuracoes' },
-                { cond:(NIVEL==='admin'), nome:'Usuários Externos', desc:'Acessos de clientes e parceiros externos.', ico:'badge', cor:'#52525b', bg:'#f4f4f5', rota:'/externos' },
-            ]},
-        ];
+        // ===== PRAZO =====
+        function hoje0(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+        function dataDe(s){ if(!s) return null; const p=String(s).split('T')[0].split('-'); if(p.length!==3) return null; const d=new Date(+p[0],+p[1]-1,+p[2]); d.setHours(0,0,0,0); return d; }
+        function diasAte(s){ const d=dataDe(s); if(!d) return null; return Math.round((d-hoje0())/86400000); }
 
-        function render() {
-            // Externo: hub simplificado só com agenda
-            if (ehExterno) {
-                document.getElementById('pulso').style.display='none';
-                document.getElementById('modulos').innerHTML = `<div class="secao"><div class="secao-titulo">Acompanhamento</div><div class="mod-grid">${cardHtml({nome:'Agenda do Projeto', desc:'Acompanhe os compromissos e o planejamento do seu projeto.', ico:'calendar_today', cor:'#7371ff', bg:'#f0efff', rota:'/agenda'})}</div></div>`;
+        // ===== TIMER ATIVO =====
+        function renderTimer(){
+            let t = null;
+            try { t = JSON.parse(localStorage.getItem('cxdata_timer_ativo') || 'null'); } catch(e){}
+            if (!t || !t.id) return;
+            const base = (t.baseSegundosOriginal||0) + (t.sessaoAtualSegundos||0);
+            const extra = t.paused ? 0 : Math.floor((Date.now() - (t.startTime||Date.now()))/1000);
+            const seg = base + extra;
+            const hh = String(Math.floor(seg/3600)).padStart(2,'0');
+            const mm = String(Math.floor((seg%3600)/60)).padStart(2,'0');
+            const ss = String(seg%60).padStart(2,'0');
+            const q = quadroDaArea(t.area);
+            document.getElementById('timerAtivo').innerHTML = `
+                <div class="timer-ativo" onclick="window.location.href='/board/${q?q.chave:'geral'}'">
+                    <span class="timer-pulso"></span>
+                    <div class="timer-info">
+                        <div class="timer-nome">${escH(t.nome)}</div>
+                        <div class="timer-tarefa">${t.paused?'Pausado':'Cronometrando'} · ${escH(t.tarefa||'')}</div>
+                    </div>
+                    <span class="timer-relogio">${hh}:${mm}:${ss}</span>
+                </div>`;
+        }
+
+        // ===== O QUE PRECISA DE ATENÇÃO =====
+        function renderAtencao(projetos){
+            const meus = projetos.filter(p =>
+                (p.responsavel||'').trim().toLowerCase() === (NOME||'').trim().toLowerCase());
+
+            const abertos = meus.filter(p => p.status !== 'Finalizado' && p.status !== 'Cancelado');
+
+            const marcados = abertos.map(p => {
+                const d = diasAte(p.prazo_data);
+                const naoIniciado = (p.status === 'Backlog' || p.status === 'Não Iniciado');
+                let peso = 0, selo = '', classe = '';
+                if (d !== null && !naoIniciado) {
+                    if (d < 0)       { peso = 3; classe='critico'; selo = `<span class="selo cr"><span class="material-symbols-rounded">error</span>${Math.abs(d)} dia${Math.abs(d)!==1?'s':''} de atraso</span>`; }
+                    else if (d === 0){ peso = 2; classe='atencao'; selo = `<span class="selo at"><span class="material-symbols-rounded">today</span>vence hoje</span>`; }
+                    else if (d <= 3) { peso = 2; classe='atencao'; selo = `<span class="selo at"><span class="material-symbols-rounded">schedule</span>vence em ${d} dia${d!==1?'s':''}</span>`; }
+                }
+                let seloCom = '';
+                if (p.qtd_nao_lidos > 0) {
+                    peso = Math.max(peso, 1);
+                    seloCom = `<span class="selo rx"><span class="material-symbols-rounded">chat</span>${p.qtd_nao_lidos}</span>`;
+                }
+                return { p, peso, selo, seloCom, classe, d };
+            }).filter(x => x.peso > 0)
+              .sort((a,b) => b.peso - a.peso || ((a.d===null?999:a.d) - (b.d===null?999:b.d)));
+
+            const alvo = document.getElementById('atencao');
+            const atrasados = marcados.filter(x=>x.peso===3).length;
+            const comentarios = marcados.filter(x=>x.seloCom).length;
+
+            if (!marcados.length) {
+                alvo.innerHTML = `
+                    <div class="secao">
+                        <div class="secao-cab"><span class="secao-tit">Precisa de você</span><span class="secao-linha"></span></div>
+                        <div class="tudo-certo">
+                            <span class="material-symbols-rounded">task_alt</span>
+                            <p>Nada atrasado nem vencendo</p>
+                            <small>${abertos.length? abertos.length+' projeto'+(abertos.length!==1?'s':'')+' em aberto com você' : 'Você não tem projetos em aberto'}</small>
+                        </div>
+                    </div>`;
                 return;
             }
-            let html = '';
-            SECOES.forEach(sec => {
-                const visiveis = sec.mods.filter(m => m.cond);
-                if (!visiveis.length) return;
-                html += `<div class="secao"><div class="secao-titulo">${sec.titulo}</div><div class="mod-grid">${visiveis.map(cardHtml).join('')}</div></div>`;
-            });
-            document.getElementById('modulos').innerHTML = html;
-        }
-        function cardHtml(m) {
-            return `<div class="mod-card" style="--glow:${m.cor}14;" onclick="window.location.href='${m.rota}'">
-                <div class="mod-top">
-                    <div class="mod-ico" style="background:${m.bg};"><span class="material-symbols-rounded" style="color:${m.cor};">${m.ico}</span></div>
-                    <div class="mod-seta"><span class="material-symbols-rounded" style="font-size:19px;">arrow_forward</span></div>
-                </div>
-                <div class="mod-nome">${m.nome}</div>
-                <div class="mod-desc">${m.desc}</div>
-            </div>`;
-        }
-        render();
 
-        // Pulso (dados reais)
-        (async function(){
-            if (ehExterno) return;
-            try {
-                const res = await fetch('/api/hub/resumo');
-                const data = await res.json();
-                const r = data.resumo || {};
-                const cards = document.querySelectorAll('#pulso .pulso-card');
-                setNum(cards[0], r.clientes);
-                setNum(cards[1], r.clima_ativas);
-                setNum(cards[2], r.desempenho_ativos);
-                setNum(cards[3], r.projetos);
-            } catch(e) {
-                document.querySelectorAll('#pulso .pulso-num').forEach(n=>n.innerHTML='<span class="vazio">—</span>');
-            }
-        })();
-        function setNum(card, val) {
-            if (!card) return;
-            const el = card.querySelector('.pulso-num');
-            if (val===null || val===undefined) { el.innerHTML = '<span style="color:var(--text-muted);">—</span>'; return; }
-            el.textContent = val;
+            const linhas = marcados.slice(0, 6).map(x => {
+                const q = quadroDaArea(x.p.area);
+                return `<div class="item ${x.classe}" onclick="window.location.href='/board/${q?q.chave:'geral'}'">
+                    <div class="item-corpo">
+                        <div class="item-topo">
+                            <span class="item-cliente">${escH(x.p.empresa)}</span>
+                            ${q?`<span class="item-quadro">${escH(q.nome)}</span>`:''}
+                        </div>
+                        <div class="item-nome">${escH(x.p.nome_projeto)}</div>
+                    </div>
+                    <div class="item-dir">
+                        ${x.selo}${x.seloCom}
+                        <span class="item-seta"><span class="material-symbols-rounded">chevron_right</span></span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            let resumo = [];
+            if (atrasados)   resumo.push(atrasados+' atrasado'+(atrasados!==1?'s':''));
+            if (comentarios) resumo.push(comentarios+' com comentário novo');
+
+            alvo.innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab">
+                        <span class="secao-tit">Precisa de você${resumo.length? ' · '+resumo.join(' · ') : ''}</span>
+                        <span class="secao-linha"></span>
+                        ${marcados.length>6 ? `<span class="secao-tit">+${marcados.length-6}</span>` : ''}
+                    </div>
+                    <div class="lista">${linhas}</div>
+                </div>`;
         }
+
+        // ===== PULSO =====
+        function renderPulso(r, projetos){
+            const meus = projetos.filter(p => (p.responsavel||'').trim().toLowerCase() === (NOME||'').trim().toLowerCase()
+                && p.status!=='Finalizado' && p.status!=='Cancelado').length;
+            const cards = [];
+            cards.push(pz('Meus projetos', meus, "window.location.href='/dashboard'", temAnalise('dashboard')));
+            cards.push(pz('Projetos ativos', r.projetos, "window.location.href='/dashboard'", temAnalise('dashboard')));
+            if (temModulo('clientes'))    cards.push(pz('Clientes', r.clientes, "window.location.href='/clientes'", true));
+            if (temAnalise('clima'))      cards.push(pz('Pesquisas de clima', r.clima_ativas, "window.location.href='/clima/gestao'", true));
+            if (temAnalise('desempenho')) cards.push(pz('Ciclos de desempenho', r.desempenho_ativos, "window.location.href='/desempenho/gestao'", true));
+            document.getElementById('pulsoArea').innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab"><span class="secao-tit">Panorama</span><span class="secao-linha"></span></div>
+                    <div class="pulso">${cards.filter(Boolean).join('')}</div>
+                </div>`;
+        }
+        function pz(rot, val, acao, clic){
+            const v = (val===null||val===undefined) ? '<span class="pz-val vazio">—</span>' : `<span class="pz-val num">${val}</span>`;
+            return `<div class="pz ${clic?'clic':''}" ${clic?`onclick="${acao}"`:''}>
+                <div class="pz-rot">${rot}</div>${v}</div>`;
+        }
+
+        // ===== ATALHOS =====
+        function renderAtalhos(projetos){
+            const visiveis = QUADROS.filter(q => temModulo(q.chave) || (ehPerson && PERM.includes('geral')));
+            if (!visiveis.length) return;
+            const cards = visiveis.map(q => {
+                const n = projetos.filter(p => p.area===q.area && p.status!=='Finalizado' && p.status!=='Cancelado').length;
+                return `<div class="at" onclick="window.location.href='/board/${q.chave}'">
+                    <div class="at-ico" style="background:${q.bg};"><span class="material-symbols-rounded" style="color:${q.cor};">${q.ico}</span></div>
+                    <div class="at-txt">
+                        <div class="at-nome">${escH(q.nome)}</div>
+                        <div class="at-qtd num">${n} em aberto</div>
+                    </div>
+                </div>`;
+            }).join('');
+            document.getElementById('atalhosArea').innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab"><span class="secao-tit">Quadros de trabalho</span><span class="secao-linha"></span></div>
+                    <div class="atalhos">${cards}</div>
+                </div>`;
+        }
+
+        // ===== EXTERNO: hub simplificado =====
+        function renderExterno(){
+            document.getElementById('atencao').innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab"><span class="secao-tit">Acompanhamento</span><span class="secao-linha"></span></div>
+                    <div class="atalhos">
+                        <div class="at" onclick="window.location.href='/agenda'">
+                            <div class="at-ico" style="background:#F1EFFE;"><span class="material-symbols-rounded" style="color:#6C5CE7;">calendar_today</span></div>
+                            <div class="at-txt"><div class="at-nome">Agenda do Projeto</div><div class="at-qtd">Compromissos e etapas</div></div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // ===== CARGA =====
+        (async function(){
+            if (ehExterno) { renderExterno(); return; }
+            renderTimer();
+            setInterval(renderTimer, 1000);
+
+            // esqueleto do panorama enquanto carrega
+            document.getElementById('pulsoArea').innerHTML = `
+                <div class="secao"><div class="secao-cab"><span class="secao-tit">Panorama</span><span class="secao-linha"></span></div>
+                <div class="pulso">${Array(4).fill('<div class="pz"><div class="pz-rot">&nbsp;</div><div class="skel"></div></div>').join('')}</div></div>`;
+
+            let projetos = [];
+            try {
+                const rp = await fetch('/api/projetos');
+                const dp = await rp.json();
+                projetos = (dp.projetos || dp || []).filter(p => !p.excluido_em);
+            } catch(e) { projetos = []; }
+
+            renderAtencao(projetos);
+            renderAtalhos(projetos);
+
+            try {
+                const rr = await fetch('/api/hub/resumo');
+                const dr = await rr.json();
+                renderPulso(dr.resumo || {}, projetos);
+            } catch(e) { renderPulso({}, projetos); }
+        })();
     </script>
 </body>
 </html>
