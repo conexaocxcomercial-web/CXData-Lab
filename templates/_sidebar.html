@@ -228,7 +228,7 @@ html body{
     {# ===== QUADROS DE TRABALHO ===== #}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="quadros" onclick="cxsbGrupo(this)">
-      Quadros de trabalho<span class="cxsb-grupo-qtd">6</span>
+      Quadros de trabalho<span class="cxsb-grupo-qtd">8</span>
       <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
     <div class="cxsb-lista" id="gr-quadros">
@@ -240,6 +240,11 @@ html body{
       {% if not eh_person or 'rhestrategico' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/rhestrategico" data-tip="RH Estratégico" onclick="location.href='/board/rhestrategico'">
         <span class="material-symbols-rounded">psychology</span><span class="cxsb-item-txt">RH Estratégico</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'projetos' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/projetos" data-tip="Projetos" onclick="location.href='/board/projetos'">
+        <span class="material-symbols-rounded">folder_managed</span><span class="cxsb-item-txt">Projetos</span>
       </div>
       {% endif %}
       {% if not eh_person or 'cxdata' in perm_modulos or 'geral' in perm_modulos %}
@@ -260,6 +265,11 @@ html body{
       {% if not eh_person or 'financeiro' in perm_modulos or 'geral' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/financeiro" data-tip="Financeiro" onclick="location.href='/board/financeiro'">
         <span class="material-symbols-rounded">payments</span><span class="cxsb-item-txt">Financeiro</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'rhinterno' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/rhinterno" data-tip="RH Interno" onclick="location.href='/board/rhinterno'">
+        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-txt">RH Interno</span>
       </div>
       {% endif %}
     </div>
