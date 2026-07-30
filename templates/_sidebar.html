@@ -91,10 +91,11 @@ html body{
 .cxsidebar.aberta .cxsb-sep{ display:none; }
 
 .cxsb-lista{ display:flex; flex-direction:column; gap:1px; overflow:hidden; transition:max-height .22s ease; max-height:900px; }
-/* O recolhimento vale nos DOIS estados. Antes só valia com .aberta, então
-   o rail mostrava todos os 16 ícones e a expandida mostrava 4 linhas —
-   expandir a sidebar *tirava* itens da tela. */
-.cxsb-lista.fechada{ max-height:0; }
+/* O recolhimento SÓ vale com a sidebar expandida.
+   No rail não existe título de grupo para reabrir — aplicar o recolhimento
+   ali deixava o usuário preso, vendo apenas o Hub e os separadores, sem
+   nenhuma forma de recuperar o menu. O rail sempre mostra tudo. */
+.cxsidebar.aberta .cxsb-lista.fechada{ max-height:0; }
 
 /* ===== ITEM ===== */
 .cxsb-item{
@@ -432,7 +433,7 @@ html body{
 
   /* ---- grupos: só o da página atual nasce aberto ---- */
   var pref = {};
-  try{ pref = JSON.parse(localStorage.getItem('cx_sb_grupos') || '{}') || {}; }catch(e){}
+  try{ pref = JSON.parse(localStorage.getItem('cx_sb_grupos_v2') || '{}') || {}; }catch(e){}
   document.querySelectorAll('.cxsb-grupo[data-grupo]').forEach(function(g){
     var k = g.getAttribute('data-grupo');
     var lista = document.getElementById('g-' + k);
@@ -457,9 +458,9 @@ function cxsbGrupo(el){
   var fechou = el.classList.toggle('fechado');
   lista.classList.toggle('fechada', fechou);
   try{
-    var p = JSON.parse(localStorage.getItem('cx_sb_grupos') || '{}') || {};
+    var p = JSON.parse(localStorage.getItem('cx_sb_grupos_v2') || '{}') || {};
     p[k] = !fechou;
-    localStorage.setItem('cx_sb_grupos', JSON.stringify(p));
+    localStorage.setItem('cx_sb_grupos_v2', JSON.stringify(p));
   }catch(e){}
 }
 
