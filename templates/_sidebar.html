@@ -2,11 +2,19 @@
 /* ============================================================
    SIDEBAR CXProjetos — reescrita a partir da proposta v3
 
-   REGRA QUE SUSTENTA TUDO: no modo estreito (.rail), o que não
-   aparece usa display:none — NUNCA opacity:0. Elementos com
-   opacity:0 continuam ocupando largura, e foi isso que na versão
-   anterior empurrou o botão de expandir para fora do cabeçalho
-   de 60px, deixando a sidebar presa sem saída.
+   DUAS REGRAS SUSTENTAM TUDO:
+
+   1. O que não aparece no estreito usa display:none, NUNCA
+      opacity:0. Elemento com opacity:0 segue ocupando largura, e
+      foi isso que antes empurrou o botão para fora do cabeçalho.
+
+   2. A aparência BASE é a expandida. O estreito é a exceção,
+      escrita como :not(:hover):not(.fixa) dentro de min-width:901px.
+      Assim o celular simplesmente não herda o modo estreito, e o
+      hover não precisa duplicar nenhuma regra.
+
+   Comportamento: passar o mouse expande SOBREPONDO (empurrar a
+   cada passada faria a tela pular). O botão fixa, e aí sim empurra.
    ============================================================ */
 :root{
   --cx-rail:60px;
@@ -20,10 +28,12 @@ html body{
   padding-left:var(--cx-sb-w);
   transition:padding-left .22s cubic-bezier(.4,0,.2,1);
 }
+/* Só a sidebar FIXA empurra o conteúdo. No hover ela sobrepõe,
+   senão a página inteira saltaria a cada passada de mouse. */
 
 .cxsidebar{
   position:fixed; left:0; top:0; bottom:0;
-  width:var(--cx-sb-w);
+  width:var(--cx-aberta);
   background:#fff; z-index:200;
   display:flex; flex-direction:column; overflow:hidden;
   box-shadow:inset -1px 0 0 #E4E4EA;
@@ -107,32 +117,45 @@ html body{
 .cxsb-sep{ height:1px; background:#E4E4EA; margin:7px 4px; flex-shrink:0; display:none; }
 
 /* ============================================================
-   MODO ESTREITO (.rail) — tudo que some usa display:none
+   MODO ESTREITO
+   Escrito como exceção dentro de min-width:901px, para que o
+   celular não herde nada disso. Passar o mouse anula todas as
+   regras abaixo de uma vez — é o que faz o painel abrir sozinho.
    ============================================================ */
-.cxsidebar.rail{ width:var(--cx-rail); }
-.cxsidebar.rail .cxsb-item-txt,
-.cxsidebar.rail .cxsb-subitem-txt,
-.cxsidebar.rail .cxsb-grupo,
-.cxsidebar.rail .cxsb-marca,
-.cxsidebar.rail .cxsb-toggle,
-.cxsidebar.rail .cxsb-caret{ display:none; }
-.cxsidebar.rail .cxsb-sep{ display:block; }
-.cxsidebar.rail .cxsb-item{ justify-content:center; padding:0; }
-.cxsidebar.rail .cxsb-subitem{ justify-content:center; padding:0; }
-.cxsidebar.rail .cxsb-head{ padding:0; justify-content:center; cursor:pointer; }
-.cxsidebar.rail .cxsb-head:hover{ background:#F7F7F9; }
-/* no rail o recolhimento de grupo é ignorado: não há título para reabrir,
-   e esconder ícones aqui deixaria o usuário sem saída */
-.cxsidebar.rail .cxsb-lista.fechada{ max-height:900px; }
-.cxsidebar.rail .cxsb-pai.aberto + .cxsb-sub{ max-height:0; }
+@media (min-width:901px){
+  .cxsidebar:not(:hover):not(.fixa){ width:var(--cx-rail); }
 
-/* balão de ajuda no rail */
-.cxsidebar.rail .cxsb-item[data-tip]:hover::after{
-  content:attr(data-tip); position:absolute; left:calc(100% + 8px); top:50%;
-  transform:translateY(-50%); background:#17171A; color:#fff;
-  font-size:11.5px; font-weight:500; padding:5px 9px; border-radius:6px;
-  white-space:nowrap; z-index:300; pointer-events:none;
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item-txt,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem-txt,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-grupo,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-marca,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-toggle,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-caret{ display:none; }
+
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-sep{ display:block; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item{ justify-content:center; padding:0; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem{ justify-content:center; padding:0; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-head{ padding:0; justify-content:center; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-pai.aberto + .cxsb-sub{ max-height:0; }
+
+  /* Sombra só quando sobrepõe. Fixa não sobrepõe, então não projeta. */
+  .cxsidebar:hover:not(.fixa){
+    box-shadow:14px 0 44px rgba(23,23,26,.13), inset -1px 0 0 #E4E4EA;
+  }
+
+  /* balão de ajuda, só no estreito */
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item[data-tip]:hover::after{
+    content:attr(data-tip); position:absolute; left:calc(100% + 8px); top:50%;
+    transform:translateY(-50%); background:#17171A; color:#fff;
+    font-size:11.5px; font-weight:500; padding:5px 9px; border-radius:6px;
+    white-space:nowrap; z-index:300; pointer-events:none;
+  }
 }
+
+/* CONSISTÊNCIA: grupo recolhido fica recolhido nos dois estados.
+   Isso é seguro porque o hover expande e devolve os títulos —
+   sempre há como reabrir. */
+.cxsb-lista.fechada{ max-height:0; }
 
 /* ============================================================
    MOBILE — vira gaveta
@@ -152,26 +175,16 @@ html body{
   .cxsb-ham{ display:flex; }
   .cxsb-veu.on{ display:block; }
 
+  /* Não existe modo estreito no toque: as regras do rail vivem em
+     min-width:901px, então aqui a sidebar já nasce inteira. */
   .cxsidebar{
-    width:var(--cx-aberta) !important;
+    width:var(--cx-aberta);
     transform:translateX(-100%);
     transition:transform .24s cubic-bezier(.4,0,.2,1);
+    box-shadow:none;
   }
   .cxsidebar.gaveta{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.2); }
-
-  /* na gaveta não existe modo estreito: tudo volta a aparecer */
-  .cxsidebar.rail .cxsb-grupo{ display:flex; }
-  .cxsidebar.rail .cxsb-caret{ display:block; }
-  .cxsidebar.rail .cxsb-item-txt,
-  .cxsidebar.rail .cxsb-subitem-txt,
-  .cxsidebar.rail .cxsb-marca{ display:inline; }
-  .cxsidebar.rail .cxsb-toggle,
-  .cxsidebar.rail .cxsb-sep{ display:none; }
-  .cxsidebar.rail .cxsb-item{ justify-content:flex-start; padding:0 10px; }
-  .cxsidebar.rail .cxsb-subitem{ justify-content:flex-start; padding:0 10px 0 34px; }
-  .cxsidebar.rail .cxsb-head{ padding:0 16px; justify-content:flex-start; cursor:default; }
-  .cxsidebar.rail .cxsb-lista.fechada{ max-height:0; }
-  .cxsidebar.rail .cxsb-pai.aberto + .cxsb-sub{ max-height:90px; }
+  .cxsb-toggle{ display:none; }
 
   .cxsb-item{ height:44px; min-height:44px; }
   .cxsb-subitem{ height:40px; }
@@ -188,11 +201,11 @@ html body{
 <div class="cxsb-veu" id="cxsbVeu" onclick="cxsbGaveta(false)"></div>
 
 <nav class="cxsidebar" id="cxSidebar" aria-label="Navegação principal">
-  <div class="cxsb-head" onclick="cxsbCliqueHead(event)">
+  <div class="cxsb-head">
     <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="CXProjetos" class="cxsb-logo">
     <span class="cxsb-marca">CXProjetos</span>
-    <button class="cxsb-toggle" onclick="cxsbAlternar(event)" aria-label="Recolher menu" title="Recolher menu">
-      <span class="material-symbols-rounded">left_panel_close</span>
+    <button class="cxsb-toggle" id="cxsbToggle" onclick="cxsbAlternar(event)" aria-label="Fixar menu aberto" title="Fixar menu aberto">
+      <span class="material-symbols-rounded">keep</span>
     </button>
   </div>
 
@@ -345,30 +358,35 @@ html body{
   var sb   = document.getElementById('cxSidebar');
   var raiz = document.documentElement;
 
+  /* Só a sidebar FIXA reserva espaço. No hover ela sobrepõe, então
+     o padding do body continua o do rail e a página não salta. */
   function aplicarLargura(){
-    raiz.style.setProperty('--cx-sb-w', sb.classList.contains('rail') ? '60px' : '248px');
+    raiz.style.setProperty('--cx-sb-w', sb.classList.contains('fixa') ? '248px' : '60px');
   }
 
-  /* ---- estado inicial: lembrado; senão rail em tela apertada ---- */
-  var rail = null;
-  try { rail = localStorage.getItem('cx_sb_rail'); } catch(e){}
-  if (rail === null) rail = (window.innerWidth < 1280) ? '1' : '0';
-  sb.classList.toggle('rail', rail === '1');
+  var fixa = null;
+  try { fixa = localStorage.getItem('cx_sb_fixa'); } catch(e){}
+  if (fixa === null) fixa = (window.innerWidth >= 1600) ? '1' : '0';
+  sb.classList.toggle('fixa', fixa === '1');
   aplicarLargura();
+  atualizarBotao();
+
+  function atualizarBotao(){
+    var b = document.getElementById('cxsbToggle');
+    if (!b) return;
+    var f = sb.classList.contains('fixa');
+    b.title = f ? 'Soltar menu' : 'Fixar menu aberto';
+    b.setAttribute('aria-label', b.title);
+    b.setAttribute('aria-pressed', f ? 'true' : 'false');
+    b.querySelector('.material-symbols-rounded').innerText = f ? 'left_panel_close' : 'keep';
+  }
 
   window.cxsbAlternar = function(e){
     if (e) e.stopPropagation();
-    var virouRail = sb.classList.toggle('rail');
+    var f = sb.classList.toggle('fixa');
     aplicarLargura();
-    try { localStorage.setItem('cx_sb_rail', virouRail ? '1' : '0'); } catch(err){}
-  };
-
-  /* No rail o botão fica escondido, então o cabeçalho inteiro expande.
-     Garante que nunca exista estado sem saída. */
-  window.cxsbCliqueHead = function(e){
-    if (!sb.classList.contains('rail')) return;
-    if (e.target.closest('.cxsb-toggle')) return;
-    window.cxsbAlternar();
+    atualizarBotao();
+    try { localStorage.setItem('cx_sb_fixa', f ? '1' : '0'); } catch(err){}
   };
 
   window.cxsbGaveta = function(abrir){
@@ -404,7 +422,7 @@ html body{
     }
   });
 
-  /* ---- grupos: abertos por padrão ---- */
+  /* ---- grupos: abertos por padrão, e o estado vale nos dois modos ---- */
   var pref = {};
   try { pref = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {}; } catch(e){}
   document.querySelectorAll('.cxsb-grupo[data-g]').forEach(function(g){
@@ -412,13 +430,12 @@ html body{
     var lista = document.getElementById('gr-' + k);
     if (!lista) return;
     var aberto = pref.hasOwnProperty(k) ? (pref[k] === true) : true;
-    if (lista.id === listaAtiva) aberto = true;   /* o grupo da página nunca nasce fechado */
+    if (lista.id === listaAtiva) aberto = true;
     g.classList.toggle('fechado', !aberto);
     lista.classList.toggle('fechada', !aberto);
   });
 
   window.cxsbGrupo = function(el){
-    if (sb.classList.contains('rail') && window.innerWidth > 900) return;
     var k = el.getAttribute('data-g');
     var lista = document.getElementById('gr-' + k);
     if (!lista) return;
@@ -431,8 +448,9 @@ html body{
     } catch(e){}
   };
 
+  /* No estreito o item pai navega; expandido, abre o submenu. */
   window.cxsbModulo = function(e, rota){
-    if (sb.classList.contains('rail') && window.innerWidth > 900) { location.href = rota; return; }
+    if (sb.offsetWidth < 100) { location.href = rota; return; }
     e.stopPropagation();
     e.currentTarget.classList.toggle('aberto');
   };
