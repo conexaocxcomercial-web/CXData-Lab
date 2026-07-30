@@ -242,6 +242,19 @@
 
         .notification-dot { display: none; }
 
+
+        /* ===== COMBO DE CLIENTE (formulário de projeto) =====
+           O contêiner tinha estilos inline no arquivo original e ficou sem
+           nenhuma regra ao trocar o bloco de estilo: era montado pelo JS,
+           mas sem posicionamento, fundo ou z-index — logo, invisível. */
+        #clienteDropdown {
+            display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: var(--papel); border-radius: var(--r-ctrl);
+            box-shadow: var(--e-pop); max-height: 280px; overflow-y: auto; z-index: 60;
+        }
+        #clienteDropdown::-webkit-scrollbar { width: 5px; }
+        #clienteDropdown::-webkit-scrollbar-thumb { background: var(--linha-2); border-radius: 99px; }
+
         /* ===== SELETOR DE ATIVIDADE ===== */
         .pick-veu { position: fixed; inset: 0; z-index: 880; display: none; }
         .pick-veu.on { display: block; }
@@ -757,7 +770,7 @@
                 <div class="input-group">
                     <label for="clienteBusca">Cliente</label>
                     <div id="clienteCombo" style="position:relative;" onclick="event.stopPropagation()">
-                        <input type="text" id="clienteBusca" class="input-item" placeholder="Buscar ou cadastrar cliente" autocomplete="off">
+                        <input type="text" id="clienteBusca" class="input-item" placeholder="Buscar ou cadastrar cliente" autocomplete="off" oninput="filtrarClientesCombo()" onfocus="abrirDropdownClientes()">
                         <input type="hidden" id="projClienteId">
                         <div id="clienteDropdown"></div>
                     </div>
@@ -766,7 +779,20 @@
                 <div class="md-linha2">
                     <div class="input-group">
                         <label for="projResp">Responsável</label>
-                        <select id="projResp" class="input-item"></select>
+                        <select id="projResp" class="input-item">
+                            <option value="Jhonattan Luiz">Jhonattan Luiz</option>
+                            <option value="Gabriela Farias">Gabriela Farias</option>
+                            <option value="Mirian Meireles">Mirian Meireles</option>
+                            <option value="Itiana Andrade">Itiana Andrade</option>
+                            <option value="Matheus Alves">Matheus Alves</option>
+                            <option value="Clara Viana">Clara Viana</option>
+                            <option value="Alisson Maciel">Alisson Maciel</option>
+                            <option value="Juliete Cadete">Juliete Cadete</option>
+                            <option value="Ana Medeiros">Ana Medeiros</option>
+                            <option value="Thallya Rodrigues">Thallya Rodrigues</option>
+                            <option value="Patrick Guilherme">Patrick Guilherme</option>
+                            <option value="Bárbara Cazé">Bárbara Cazé</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label for="projPrazo">Prazo de entrega</label>
