@@ -1527,6 +1527,174 @@ def planejamento():
         return redirect(url_for('login'))
     return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
+@app.route('/crm')
+def pagina_crm():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('crm.html',
+                           usuario_nome=session.get('usuario_nome', ''),
+                           nivel_acesso=session.get('nivel_acesso', ''),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+
+# Para onde o lead cai ao trocar de funil. Espelha ENTRADA no crm.html;
+# a validação fica aqui porque o cliente não pode ser a fonte da verdade.
+ENTRADA_FUNIL = {"qualificacao": "Prospecção", "fechamento": "Agendamento", "nutricao": "Backlog"}
+FUNIS_VALIDOS = set(ENTRADA_FUNIL.keys())
+
+
+@app.route('/api/leads', methods=['GET'])
+def listar_leads():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = (supabase.table("leads").select("*")
+               .is_("excluido_em", "null")
+               .order("movido_em", desc=True).execute())
+        return jsonify({"status": "sucesso", "leads": res.data or []}), 200
+    except Exception as e:
+        print("Erro em listar_leads:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar leads."}), 500
+
+
+@app.route('/api/leads', methods=['POST'])
+def criar_lead():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        if not (d.get("empresa") or d.get("contato")):
+            return jsonify({"status": "erro", "mensagem": "Informe a empresa ou o contato."}), 400
+        funil = d.get("funil", "qualificacao")
+        if funil not in FUNIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Funil inválido."}), 400
+
+        agora = datetime.now(timezone.utc).isoformat()
+        novo = {
+            "empresa": (d.get("empresa") or "").strip(),
+            "contato": (d.get("contato") or "").strip(),
+            "telefone": (d.get("telefone") or "").strip(),
+            "email": (d.get("email") or "").strip(),
+            "produto": d.get("produto") or None,
+            "responsavel": d.get("responsavel") or session.get('usuario_nome', ''),
+            "origem": d.get("origem") or None,
+            "anotacoes": (d.get("anotacoes") or "").strip(),
+            "proximo_contato": d.get("proximo_contato") or None,
+            "valor_estimado": d.get("valor_estimado") or None,
+            "funil": funil,
+            "coluna": d.get("coluna") or ENTRADA_FUNIL[funil],
+            "movido_em": agora,
+        }
+        res = supabase.table("leads").insert(novo).execute()
+        return jsonify({"status": "sucesso", "lead": (res.data or [None])[0]}), 201
+    except Exception as e:
+        print("Erro em criar_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao criar lead."}), 500
+
+
+@app.route('/api/leads/<lead_id>', methods=['PUT'])
+def atualizar_lead(lead_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        # Lista fechada: funil e coluna só mudam pela rota de mover,
+        # que registra a trilha e aplica as passagens.
+        campos = ["empresa", "contato", "telefone", "email", "produto", "responsavel",
+                  "origem", "anotacoes", "proximo_contato", "valor_estimado"]
+        upd = {k: d[k] for k in campos if k in d}
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+        supabase.table("leads").update(upd).eq("id", lead_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao atualizar lead."}), 500
+
+
+@app.route('/api/leads/<lead_id>', methods=['DELETE'])
+def excluir_lead(lead_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('nivel_acesso') not in ('admin', 'gestor'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        # Exclusão lógica: o histórico de movimentos continua fazendo sentido.
+        supabase.table("leads").update(
+            {"excluido_em": datetime.now(timezone.utc).isoformat()}
+        ).eq("id", lead_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir lead."}), 500
+
+
+@app.route('/api/leads/<lead_id>/mover', methods=['POST'])
+def mover_lead(lead_id):
+    """Move o lead de coluna e, quando a coluna é de saída, troca de funil.
+    Registra a trilha em lead_movimentos — é dela que sai o tempo por etapa
+    e o relatório de objeções."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        coluna = d.get("coluna")
+        if not coluna:
+            return jsonify({"status": "erro", "mensagem": "Informe a coluna."}), 400
+
+        atual = supabase.table("leads").select("*").eq("id", lead_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
+        lead = atual.data[0]
+
+        destino = d.get("destino_funil")
+        if destino and destino not in FUNIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Funil de destino inválido."}), 400
+
+        agora = datetime.now(timezone.utc).isoformat()
+        upd = {"movido_em": agora}
+        if destino:
+            upd["funil"] = destino
+            upd["coluna"] = ENTRADA_FUNIL[destino]
+        else:
+            upd["coluna"] = coluna
+        if d.get("proximo_contato"):
+            upd["proximo_contato"] = d["proximo_contato"]
+
+        supabase.table("leads").update(upd).eq("id", lead_id).execute()
+
+        # Trilha. Falhar aqui não desfaz o movimento: o lead já andou.
+        try:
+            supabase.table("lead_movimentos").insert({
+                "lead_id": lead_id,
+                "de_funil": lead.get("funil"),
+                "de_coluna": lead.get("coluna"),
+                "para_funil": upd.get("funil", lead.get("funil")),
+                "para_coluna": upd["coluna"],
+                "objecao": d.get("objecao"),
+                "objecao_detalhe": (d.get("objecao_detalhe") or "").strip() or None,
+                "autor": session.get('usuario_nome', ''),
+            }).execute()
+        except Exception as e:
+            print("Aviso: movimento nao registrado em lead_movimentos:", e)
+
+        lead.update(upd)
+        return jsonify({"status": "sucesso", "lead": lead}), 200
+    except Exception as e:
+        print("Erro em mover_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao mover lead."}), 500
+
+
 @app.route('/api/timelogs', methods=['GET'])
 def listar_timelogs():
     """Registros de tempo num intervalo de datas, com as permissões do usuário aplicadas.
