@@ -1558,7 +1558,7 @@ def listar_leads():
         return jsonify({"status": "sucesso", "leads": res.data or []}), 200
     except Exception as e:
         print("Erro em listar_leads:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar leads."}), 500
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar leads.", "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/leads', methods=['POST'])
@@ -1595,7 +1595,9 @@ def criar_lead():
         return jsonify({"status": "sucesso", "lead": (res.data or [None])[0]}), 201
     except Exception as e:
         print("Erro em criar_lead:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao criar lead."}), 500
+        # Ferramenta interna e autenticada: devolver o motivo economiza
+        # uma ida ao log do servidor a cada erro.
+        return jsonify({"status": "erro", "mensagem": "Erro ao criar lead.", "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/leads/<lead_id>', methods=['PUT'])
@@ -1617,7 +1619,7 @@ def atualizar_lead(lead_id):
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         print("Erro em atualizar_lead:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao atualizar lead."}), 500
+        return jsonify({"status": "erro", "mensagem": "Erro ao atualizar lead.", "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/leads/<lead_id>', methods=['DELETE'])
@@ -1692,7 +1694,7 @@ def mover_lead(lead_id):
         return jsonify({"status": "sucesso", "lead": lead}), 200
     except Exception as e:
         print("Erro em mover_lead:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao mover lead."}), 500
+        return jsonify({"status": "erro", "mensagem": "Erro ao mover lead.", "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/timelogs', methods=['GET'])
