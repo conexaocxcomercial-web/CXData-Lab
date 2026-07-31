@@ -627,6 +627,69 @@
             .md-pe .btn-md{ flex:1; }
         }
 
+
+        /* ===== PAINEL DE FILTROS (ancorado ao botão) ===== */
+        .pf-veu { position: fixed; inset: 0; z-index: 55; display: none; }
+        .pf-veu.on { display: block; }
+        .pf { position: fixed; z-index: 60; width: 322px; background: var(--papel); border-radius: 14px; box-shadow: var(--e-pop); overflow: hidden; display: none; flex-direction: column; }
+        .pf.on { display: flex; }
+        .pf-cab { padding: 13px 16px; border-bottom: 1px solid var(--linha-1); display: flex; align-items: center; gap: 9px; }
+        .pf-tit { font-size: 13.5px; font-weight: 650; letter-spacing: -.15px; flex: 1; }
+        .pf-fechar { width: 26px; height: 26px; border-radius: 7px; background: var(--papel-2); color: var(--tinta-3); display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+        .pf-fechar .material-symbols-rounded { font-size: 16px; }
+        .pf-corpo { padding: 14px 16px; max-height: 400px; overflow-y: auto; }
+        .pf-grupo { margin-bottom: 16px; }
+        .pf-grupo:last-child { margin-bottom: 0; }
+        .pf-rot { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--tinta-3); margin-bottom: 8px; }
+        .pf-sel { width: 100%; font-size: 13px; color: var(--tinta); padding: 9px 11px; background: var(--papel-2); border: 1px solid transparent; border-radius: var(--r-ctrl); outline: none; cursor: pointer; }
+        .pf-sel:focus { background: var(--papel); border-color: var(--acao); box-shadow: 0 0 0 3px var(--acao-fraco); }
+        .pf-datas { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+        .pf-datas span { font-size: 12px; color: var(--tinta-3); }
+        .pf-data { width: 100%; font-size: 12.5px; padding: 8px 9px; background: var(--papel-2); border: 1px solid transparent; border-radius: var(--r-ctrl); outline: none; color: var(--tinta); cursor: pointer; }
+        .pf-atalhos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+        .pf-atalho { font-size: 11.5px; font-weight: 550; padding: 5px 10px; border-radius: var(--r-pill); background: var(--papel-2); color: var(--tinta-2); cursor: pointer; transition: .15s; border: none; }
+        .pf-atalho:hover { background: var(--linha-1); }
+        .pf-atalho.on { background: var(--acao); color: #fff; }
+        .pf-check { display: flex; align-items: center; gap: 9px; padding: 9px 11px; background: var(--papel-2); border-radius: var(--r-ctrl); cursor: pointer; }
+        .pf-check input { width: 15px; height: 15px; accent-color: var(--acao); cursor: pointer; }
+        .pf-check span { font-size: 12.5px; font-weight: 500; color: var(--tinta-2); }
+        .pf-pe { padding: 12px 16px; border-top: 1px solid var(--linha-1); display: flex; gap: 9px; background: var(--papel-2); }
+        .pf-pe .btn { flex: 1; justify-content: center; }
+
+        /* ===== CHIPS DO QUE ESTÁ ATIVO ===== */
+        .chips { display: none; align-items: center; gap: 7px; padding: 9px 22px; background: var(--papel); border-bottom: 1px solid var(--linha-1); flex-wrap: wrap; flex-shrink: 0; }
+        .chips.on { display: flex; }
+        .chips-rot { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--tinta-3); }
+        .chip-f { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 550; background: var(--acao-fraco); color: var(--acao); padding: 5px 7px 5px 10px; border-radius: var(--r-pill); }
+        .chip-f b { font-weight: 600; }
+        .chip-f .x { display: flex; cursor: pointer; border-radius: 50%; padding: 1px; opacity: .7; }
+        .chip-f .x:hover { opacity: 1; background: rgba(108,92,231,.16); }
+        .chip-f .material-symbols-rounded { font-size: 14px; }
+        .chips-limpar { font-size: 12px; font-weight: 600; color: var(--tinta-3); cursor: pointer; padding: 5px 9px; border-radius: var(--r-ctrl); margin-left: auto; background: none; border: none; }
+        .chips-limpar:hover { background: #FDEDED; color: var(--critico); }
+
+        /* ===== MOVER CARD (celular) ===== */
+        .btn-mover { display: none; position: absolute; top: 9px; right: 9px; width: 30px; height: 30px; border-radius: 8px; background: rgba(0,0,0,.05); color: var(--tinta-3); align-items: center; justify-content: center; cursor: pointer; border: none; z-index: 2; }
+        .btn-mover .material-symbols-rounded { font-size: 17px; }
+        .folha-veu { position: fixed; inset: 0; background: rgba(23,23,26,.45); z-index: 900; display: none; align-items: flex-end; }
+        .folha-veu.on { display: flex; }
+        .folha { width: 100%; background: var(--papel); border-radius: 18px 18px 0 0; padding-bottom: 10px; max-height: 78vh; display: flex; flex-direction: column; }
+        .folha-alca { width: 38px; height: 4px; background: var(--linha-2); border-radius: 99px; margin: 9px auto 6px; flex-shrink: 0; }
+        .folha-cab { padding: 6px 16px 12px; border-bottom: 1px solid var(--linha-1); flex-shrink: 0; }
+        .folha-rot { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--tinta-3); margin-bottom: 4px; }
+        .folha-tit { font-size: 13.5px; font-weight: 650; letter-spacing: -.15px; line-height: 1.35; }
+        .folha-lista { overflow-y: auto; padding: 6px; }
+        .folha-item { display: flex; align-items: center; gap: 11px; padding: 13px 10px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--tinta-2); cursor: pointer; }
+        .folha-item:active { background: var(--papel-2); }
+        .folha-item .pt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .folha-item.atual { background: var(--papel-2); color: var(--tinta-3); cursor: default; }
+        .folha-item .marca { margin-left: auto; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+
+        @media (max-width: 900px) {
+            .btn-mover { display: flex; }
+            .pf { left: 12px !important; right: 12px; width: auto; top: auto !important; bottom: 0; border-radius: 16px 16px 0 0; max-height: 82vh; }
+            .chips { padding: 9px 16px; }
+        }
     </style>
 </head>
 <body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
@@ -678,34 +741,56 @@
         </div>
     </div>
 
-    <div class="filtros" id="gavetaFiltros">
-        <div class="filtro-campo">
-            <label for="filtroOrdenacao">Ordenar</label>
-            <select id="filtroOrdenacao" class="filter-input" onchange="renderizarProjetos()">
-                <option value="padrao">Criação</option>
-                <option value="az">Nome A-Z</option>
-                <option value="za">Nome Z-A</option>
-                <option value="prazo_curto">Prazo mais próximo</option>
-                <option value="prazo_longo">Prazo mais distante</option>
-            </select>
+    <div class="chips" id="chipsFiltros"></div>
+
+    <div class="pf-veu" id="pfVeu" onclick="toggleFiltros(false)"></div>
+    <div class="pf" id="painelFiltros" role="dialog" aria-label="Filtros">
+        <div class="pf-cab">
+            <span class="pf-tit">Filtros</span>
+            <button class="pf-fechar" onclick="toggleFiltros(false)" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
         </div>
-        <select id="filtroCliente" class="filter-input" onchange="renderizarProjetos()">
-            <option value="">Todos os clientes</option>
-        </select>
-        <select id="filtroResp" class="filter-input" onchange="renderizarProjetos()">
-            <option value="">Todos os responsáveis</option>
-        </select>
-        <div class="filtro-campo">
-            <label for="filtroDataInicio">Criado entre</label>
-            <input type="date" id="filtroDataInicio" class="filter-date" onchange="renderizarProjetos()">
-            <span style="font-size:12px;color:var(--tinta-3);">e</span>
-            <input type="date" id="filtroDataFim" class="filter-date" onchange="renderizarProjetos()">
+        <div class="pf-corpo">
+            <div class="pf-grupo">
+                <div class="pf-rot">Ordenar por</div>
+                <select id="filtroOrdenacao" class="pf-sel">
+                    <option value="padrao">Criação</option>
+                    <option value="az">Nome A-Z</option>
+                    <option value="za">Nome Z-A</option>
+                    <option value="prazo_curto">Prazo mais próximo</option>
+                    <option value="prazo_longo">Prazo mais distante</option>
+                </select>
+            </div>
+            <div class="pf-grupo">
+                <div class="pf-rot">Cliente</div>
+                <select id="filtroCliente" class="pf-sel"><option value="">Todos os clientes</option></select>
+            </div>
+            <div class="pf-grupo">
+                <div class="pf-rot">Responsável</div>
+                <select id="filtroResp" class="pf-sel"><option value="">Todos os responsáveis</option></select>
+            </div>
+            <div class="pf-grupo">
+                <div class="pf-rot">Criado em</div>
+                <div class="pf-atalhos">
+                    <button class="pf-atalho" data-dias="7" onclick="atalhoPeriodo(7)">7 dias</button>
+                    <button class="pf-atalho" data-dias="30" onclick="atalhoPeriodo(30)">30 dias</button>
+                    <button class="pf-atalho" data-dias="90" onclick="atalhoPeriodo(90)">90 dias</button>
+                    <button class="pf-atalho" data-dias="ano" onclick="atalhoPeriodo('ano')">Este ano</button>
+                </div>
+                <div class="pf-datas">
+                    <input type="date" id="filtroDataInicio" class="pf-data" onchange="limparAtalhos()">
+                    <span>até</span>
+                    <input type="date" id="filtroDataFim" class="pf-data" onchange="limparAtalhos()">
+                </div>
+            </div>
+            <div class="pf-grupo">
+                <div class="pf-rot">Outros</div>
+                <label class="pf-check"><input type="checkbox" id="filtroScrum"><span>Apenas projetos Scrum</span></label>
+            </div>
         </div>
-        <label class="filter-checkbox-wrapper">
-            <input type="checkbox" id="filtroScrum" onchange="renderizarProjetos()">
-            <span>Apenas Scrum</span>
-        </label>
-        <button class="btn-limpar" onclick="limparFiltros()">Limpar filtros</button>
+        <div class="pf-pe">
+            <button class="btn btn-fantasma" onclick="limparFiltros()">Limpar</button>
+            <button class="btn btn-acao" onclick="aplicarFiltros()">Aplicar</button>
+        </div>
     </div>
 
     <div class="m-fases" id="mFases"></div>
@@ -1771,7 +1856,12 @@
 
             const qtdAbertos = projetosFiltrados.filter(p => p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
             const badgeContador = document.getElementById('contadorAbertos');
-            if (badgeContador) badgeContador.innerText = `${qtdAbertos} em aberto`;
+            // "7 de 32": a diferença entre os números denuncia que há filtro ativo
+            const totalQuadro = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area)
+                && p.status !== 'Pausado' && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
+            if (badgeContador) badgeContador.innerText = (qtdAbertos === totalQuadro)
+                ? `${qtdAbertos} em aberto`
+                : `${qtdAbertos} de ${totalQuadro}`;
             atualizarChipFiltros();
 
             if (visaoAtual === 'kanban') {
@@ -1894,6 +1984,10 @@
                 <div class="card ${est.classe}" id="${p.id}" draggable="true"
                      ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)"
                      onclick="abrirDetalhes('${escAttr(p.id)}', event)">
+                    <button class="btn-mover" title="Mover para outra fase" aria-label="Mover ${escAttr(p.nome_projeto)}"
+                            onclick="abrirMover(event, '${escAttr(p.id)}')">
+                        <span class="material-symbols-rounded">swap_horiz</span>
+                    </button>
                     <div class="c-topo">
                         <span class="c-cliente">${escH(p.empresa)}</span>
                         ${marcaScrum}${chipElo(p)}
@@ -2682,23 +2776,139 @@
         }
 
         /* ===== GAVETA DE FILTROS ===== */
-        function toggleFiltros() {
-            const g = document.getElementById('gavetaFiltros');
+        /* Painel ancorado ao botão. Os chips do que está ativo ficam FORA
+           dele: com a gaveta antiga dava para ter 3 filtros ligados e não
+           saber quais — o quadro parecia vazio sem explicação. */
+        function toggleFiltros(abrir) {
+            const p = document.getElementById('painelFiltros');
+            const v = document.getElementById('pfVeu');
             const b = document.getElementById('btnFiltros');
-            const aberta = g.classList.toggle('on');
-            b.classList.toggle('ativo', aberta);
+            const vai = (abrir === undefined) ? !p.classList.contains('on') : abrir;
+            p.classList.toggle('on', vai);
+            v.classList.toggle('on', vai);
+            b.classList.toggle('ativo', vai);
+            if (!vai || window.innerWidth <= 900) return;
+            const r = b.getBoundingClientRect();
+            let top = r.bottom + 6;
+            if (top + p.offsetHeight > window.innerHeight - 10) top = Math.max(10, r.top - p.offsetHeight - 6);
+            let left = Math.max(12, r.right - p.offsetWidth);
+            p.style.top = top + 'px';
+            p.style.left = left + 'px';
+        }
+
+        function aplicarFiltros() { renderizarProjetos(); toggleFiltros(false); }
+
+        function atalhoPeriodo(dias) {
+            const hoje = new Date();
+            let ini;
+            if (dias === 'ano') ini = new Date(hoje.getFullYear(), 0, 1);
+            else { ini = new Date(hoje); ini.setDate(ini.getDate() - dias); }
+            const fmt = x => x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0');
+            document.getElementById('filtroDataInicio').value = fmt(ini);
+            document.getElementById('filtroDataFim').value = fmt(hoje);
+            document.querySelectorAll('.pf-atalho').forEach(a => a.classList.toggle('on', a.getAttribute('data-dias') === String(dias)));
+            renderizarProjetos();
+        }
+        function limparAtalhos() {
+            document.querySelectorAll('.pf-atalho').forEach(a => a.classList.remove('on'));
+            renderizarProjetos();
+        }
+        function limparUm(id) {
+            const el = document.getElementById(id);
+            if (el.type === 'checkbox') el.checked = false;
+            else el.value = (id === 'filtroOrdenacao') ? 'padrao' : '';
+            renderizarProjetos();
+        }
+        function limparPeriodo() {
+            document.getElementById('filtroDataInicio').value = '';
+            document.getElementById('filtroDataFim').value = '';
+            document.querySelectorAll('.pf-atalho').forEach(a => a.classList.remove('on'));
+            renderizarProjetos();
+        }
+        function fmtDataBr(s) { const p = String(s).split('-'); return p.length === 3 ? p[2] + '/' + p[1] : s; }
+
+        /* ===== MOVER CARD (celular) =====
+           draggable do HTML5 não dispara evento no toque, e com as fases em
+           abas o destino nem está na tela. Vira escolha numa lista. */
+        let moverProjetoId = null;
+
+        function abrirMover(ev, id) {
+            ev.stopPropagation();
+            const p = projetosGlobais.find(x => x.id === id);
+            if (!p) return;
+            moverProjetoId = id;
+            document.getElementById('folhaTitulo').innerText = p.nome_projeto;
+            document.getElementById('folhaLista').innerHTML = cfg.colunas.map(function(c) {
+                const atual = (c.id === p.status);
+                return '<div class="folha-item ' + (atual ? 'atual' : '') + '"' +
+                    (atual ? '' : ' onclick="confirmarMover(\'' + escAttr(c.id) + '\')"') + '>' +
+                    '<span class="pt" style="background:' + c.cor + ';"></span>' + escH(c.nome) +
+                    (atual ? '<span class="marca">atual</span>' : '') + '</div>';
+            }).join('');
+            document.getElementById('folhaMover').classList.add('on');
+        }
+
+        function fecharMover(ev) {
+            if (ev && ev.target && ev.target.id !== 'folhaMover') return;
+            document.getElementById('folhaMover').classList.remove('on');
+            moverProjetoId = null;
+        }
+
+        async function confirmarMover(novoStatus) {
+            const id = moverProjetoId;
+            document.getElementById('folhaMover').classList.remove('on');
+            moverProjetoId = null;
+            if (!id) return;
+            const p = projetosGlobais.find(x => x.id === id);
+            if (!p || p.status === novoStatus) return;
+            const anterior = p.status;
+            p.status = novoStatus;
+            if (visaoAtual === 'kanban') selecionarFase(novoStatus);
+            renderizarProjetos();
+            try {
+                const res = await fetch('/api/projetos/' + id, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                if (!res.ok) throw new Error('falha');
+                showToast('Movido para ' + novoStatus, 'success');
+            } catch (e) {
+                p.status = anterior;            // desfaz se o servidor recusar
+                renderizarProjetos();
+                showToast('Não foi possível mover.', 'error');
+            }
         }
         function atualizarChipFiltros() {
-            let n = 0;
-            if (document.getElementById('filtroScrum').checked) n++;
-            if (document.getElementById('filtroCliente').value) n++;
-            if (document.getElementById('filtroResp').value) n++;
-            if (document.getElementById('filtroDataInicio').value) n++;
-            if (document.getElementById('filtroDataFim').value) n++;
-            if (document.getElementById('filtroOrdenacao').value !== 'padrao') n++;
+            const fCli  = document.getElementById('filtroCliente');
+            const fResp = document.getElementById('filtroResp');
+            const fOrd  = document.getElementById('filtroOrdenacao');
+            const fIni  = document.getElementById('filtroDataInicio').value;
+            const fFim  = document.getElementById('filtroDataFim').value;
+            const fScr  = document.getElementById('filtroScrum').checked;
+
+            const ativo = document.querySelector('.pf-atalho.on');
+            const rotAtalho = ativo ? (ativo.getAttribute('data-dias') === 'ano' ? 'este ano' : 'últimos ' + ativo.getAttribute('data-dias') + ' dias') : null;
+
+            const chips = [];
+            if (fCli.value)  chips.push({ rot:'Cliente', val:fCli.options[fCli.selectedIndex].text, ac:"limparUm('filtroCliente')" });
+            if (fResp.value) chips.push({ rot:'Responsável', val:fResp.options[fResp.selectedIndex].text, ac:"limparUm('filtroResp')" });
+            if (fIni || fFim) chips.push({ rot:'Criado', val: rotAtalho || ((fIni?fmtDataBr(fIni):'…') + ' a ' + (fFim?fmtDataBr(fFim):'…')), ac:"limparPeriodo()" });
+            if (fScr) chips.push({ rot:'', val:'Apenas Scrum', ac:"limparUm('filtroScrum')" });
+            if (fOrd.value !== 'padrao') chips.push({ rot:'Ordem', val:fOrd.options[fOrd.selectedIndex].text, ac:"limparUm('filtroOrdenacao')" });
+
             const chip = document.getElementById('chipFiltros');
-            chip.innerText = n;
-            chip.style.display = n ? 'inline-flex' : 'none';
+            chip.innerText = chips.length;
+            chip.style.display = chips.length ? 'inline-flex' : 'none';
+
+            const barra = document.getElementById('chipsFiltros');
+            barra.classList.toggle('on', chips.length > 0);
+            barra.innerHTML = !chips.length ? '' :
+                '<span class="chips-rot">Filtrando por</span>' +
+                chips.map(function(c){
+                    return '<span class="chip-f">' + (c.rot ? escH(c.rot) + ': ' : '') + '<b>' + escH(c.val) + '</b>' +
+                        '<span class="x" onclick="' + c.ac + '" title="Remover"><span class="material-symbols-rounded">close</span></span></span>';
+                }).join('') +
+                '<button class="chips-limpar" onclick="limparFiltros()">Limpar tudo</button>';
         }
 
         /* ===== COLUNAS RECOLHÍVEIS (13 fases no RH Estratégico) ===== */
@@ -2788,6 +2998,17 @@
         </div>
         <div class="pick-lista" id="pickLista"></div>
         <div class="pick-pe"><span><b>&uarr;&darr;</b> navegar</span><span><b>Enter</b> iniciar</span></div>
+    </div>
+
+    <div class="folha-veu" id="folhaMover" onclick="fecharMover(event)">
+        <div class="folha" onclick="event.stopPropagation()">
+            <div class="folha-alca"></div>
+            <div class="folha-cab">
+                <div class="folha-rot">Mover para</div>
+                <div class="folha-tit" id="folhaTitulo"></div>
+            </div>
+            <div class="folha-lista" id="folhaLista"></div>
+        </div>
     </div>
 
 </body>
