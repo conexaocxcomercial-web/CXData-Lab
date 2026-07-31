@@ -706,6 +706,14 @@
 
         @media (max-width: 900px) {
             .btn-mover { display: flex; }
+            /* No celular o quadro já empilha os cards; a Lista viraria uma
+               tabela rolando na horizontal, sem ganho. */
+            #tab-lista { display: none; }
+            .segm { padding: 3px; }
+            .list-view-container { display: none !important; }
+            /* o quadro no celular já é uma lista vertical: a aba Lista duplicaria */
+            #tab-lista { display: none; }
+            .segm { padding: 3px; }
             /* player vira barra de largura total, acima da barra do navegador */
             .floating-player {
                 left: 12px; right: 12px; bottom: 12px; max-width: none;
@@ -1507,7 +1515,15 @@
             if(event.target.id === 'modalEditarProjeto') { fecharModalEdicao(); }
         }
 
+        // Abaixo de 900px só existe o Quadro
+        function forcarQuadroNoMobile() {
+            if (window.innerWidth <= 900 && visaoAtual === 'lista') mudarVisao('kanban');
+        }
+        window.addEventListener('resize', forcarQuadroNoMobile);
+
         function mudarVisao(novaVisao) {
+            if (novaVisao === 'lista' && window.innerWidth <= 900) return;
+            if (novaVisao === 'lista' && window.innerWidth <= 900) novaVisao = 'kanban';
             visaoAtual = novaVisao;
             document.querySelectorAll('.segm-btn').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
             const aba = document.getElementById(`tab-${novaVisao}`);
