@@ -19,29 +19,21 @@ import os
 
 app = Flask(__name__)
 # CHAVE DE SESSÃO: lê de variável de ambiente, com fallback para não quebrar local
-# Sem valor padrão: uma chave de sessão conhecida permite forjar login de admin.
-_SECRET = os.environ.get("FLASK_SECRET_KEY")
-if not _SECRET:
-    raise RuntimeError("Defina FLASK_SECRET_KEY nas variáveis de ambiente.")
-app.secret_key = _SECRET
+# PENDÊNCIA DE SEGURANÇA: o valor padrão permite forjar sessão de admin.
+# Definir FLASK_SECRET_KEY no Vercel e remover o padrão.
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cxdata_chave_mestra_oficial_2026_!@")
 
-# CREDENCIAIS SUPABASE: priorizam variáveis de ambiente (Vercel).
-# O fallback mantém o sistema funcionando caso as env vars ainda não estejam configuradas.
-# CREDENCIAIS SUPABASE — apenas variáveis de ambiente.
-# Valor embutido no código vaza junto com o repositório; se a variável
-# não existir, é melhor a aplicação não subir do que subir com uma
-# chave conhecida.
+# CREDENCIAIS SUPABASE
+# Preferência: SUPABASE_SERVICE_KEY (service_role, passa por cima do RLS)
+# > SUPABASE_KEY (anon) > padrão embutido.
 #
-# SUPABASE_SERVICE_KEY (papel service_role) é a que o backend deve usar:
-# ela passa por cima do RLS, e quem faz a autorização aqui é a sessão do
-# Flask. A chave anon fica reservada a acesso direto de fora, que o RLS
-# então bloqueia.
-URL = os.environ.get("SUPABASE_URL")
-KEY = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
-if not URL or not KEY:
-    raise RuntimeError(
-        "Defina SUPABASE_URL e SUPABASE_SERVICE_KEY nas variáveis de ambiente."
-    )
+# PENDÊNCIA DE SEGURANÇA: o padrão embutido vaza junto com o repositório.
+# Ao fechar: repositório privado, chaves rotacionadas, variáveis no Vercel
+# e estes padrões removidos.
+URL = os.environ.get("SUPABASE_URL", "https://udqeheyyhvqlwejdwkbj.supabase.co")
+KEY = (os.environ.get("SUPABASE_SERVICE_KEY")
+       or os.environ.get("SUPABASE_KEY")
+       or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
 supabase: Client = create_client(URL, KEY)
 
 @app.context_processor
