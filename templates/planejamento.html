@@ -4,306 +4,302 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
-        :root {
-            --bg-board: #f4f4f5;
-            --glass-bg: rgba(255, 255, 255, 0.6);
-            --text-main: #1e1e1e;
-            --text-muted: #71717a;
-            --primary-purple: #7371ff;
-            --accent-lime: #bef533;
-            --light-purple: #dbbfff;
-            --accent-pink: #ff43c0;
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --np:#0891B2; --np-fraco:#E0F5F9; --np-borda:#B6E2EB;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --e3:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
+            --text-main:#17171A; --text-muted:#7C7C88; --accent-lime:#BEF533; --accent-pink:#FF43C0;
         }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select,textarea{ font-family:inherit; border:none; }
+        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+              height:100vh; overflow:hidden; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        .top-bar{ background:var(--papel); height:56px; min-height:56px; flex-shrink:0; padding:0 22px;
+            display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha); z-index:10; }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
 
-        /* TOP BAR */
-        .top-bar {
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
-            height: 70px; min-height: 70px; flex-shrink: 0;
-            padding: 0 40px; display: flex; justify-content: space-between;
-            align-items: center; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); z-index: 10;
+        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; height:56px; flex-shrink:0;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap; }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+        .segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); background:none; cursor:pointer;
+            padding:6px 12px; border-radius:6px; display:flex; align-items:center; gap:6px; white-space:nowrap; transition:.15s; }
+        .segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.07); }
+        .segm-btn .material-symbols-rounded{ font-size:16px; }
+        .nav{ display:flex; align-items:center; gap:4px; }
+        .nav-btn{ width:30px; height:30px; border-radius:8px; background:var(--papel-2); color:var(--tinta-2);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s; }
+        .nav-btn:hover{ background:var(--linha); }
+        .nav-btn .material-symbols-rounded{ font-size:18px; }
+        .nav-tit{ font-size:13.5px; font-weight:650; letter-spacing:-.2px; min-width:150px; text-align:center; text-transform:capitalize; }
+        .btn-hoje{ font-size:12.5px; font-weight:600; color:var(--tinta-2); background:var(--papel-2);
+            padding:6px 12px; border-radius:var(--r-pill); cursor:pointer; }
+        .btn-hoje:hover{ background:var(--linha); }
+        .cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+        .sel{ font-size:12.5px; font-weight:500; color:var(--tinta); padding:7px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; cursor:pointer; }
+        .sel:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .btn{ font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+            padding:8px 14px; border-radius:var(--r-ctrl); transition:.15s; white-space:nowrap; }
+        .btn .material-symbols-rounded{ font-size:18px; }
+        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+
+        .scroll-area{ flex:1; overflow-y:auto; padding:16px 22px 26px; }
+        .loading{ text-align:center; padding:56px; color:var(--tinta-3); font-size:13px; font-weight:500; }
+        .vazio{ border:1.5px dashed var(--linha-2); border-radius:10px; padding:26px 14px; text-align:center;
+            font-size:12.5px; color:var(--tinta-3); font-weight:500; line-height:1.55; }
+
+        /* ===== RESUMO ===== */
+        .resumo{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:15px 18px;
+            margin-bottom:14px; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+        .rz{ min-width:0; }
+        .rz-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:5px; }
+        .rz-val{ font-size:21px; font-weight:700; letter-spacing:-.6px; line-height:1; }
+        .rz-pe{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+        .rz-barra-wrap{ flex:1; min-width:230px; }
+        .rz-topo{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+        .rz-lbl{ font-size:11.5px; font-weight:550; color:var(--tinta-2); }
+        .rz-num{ font-size:11.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; }
+        .barra{ height:8px; background:var(--papel-2); border-radius:99px; overflow:hidden; display:flex; }
+        .barra i{ height:100%; display:block; transition:width .4s; }
+        .b-ok{ background:var(--ok); } .b-and{ background:var(--acao); } .b-nao{ background:var(--critico); } .b-np{ background:var(--np); }
+        .rz-leg{ display:flex; gap:14px; margin-top:9px; font-size:11px; color:var(--tinta-3); font-weight:500; flex-wrap:wrap; }
+        .rz-leg span{ display:flex; align-items:center; gap:5px; }
+        .lg{ width:8px; height:8px; border-radius:2px; }
+
+        /* ===== ITEM ===== */
+        .at{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:12px 14px;
+            margin-bottom:8px; display:flex; align-items:center; gap:12px; position:relative; overflow:hidden; transition:box-shadow .16s; }
+        .at:hover{ box-shadow:var(--e2); }
+        .at::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:transparent; }
+        .at.feito::before{ background:var(--ok); }
+        .at.andamento::before{ background:var(--acao); }
+        .at.nao::before{ background:var(--critico); }
+        .at.naoplan::before{ background:var(--np); }
+        .at.feito{ background:var(--papel-2); }
+        .at.nao{ background:var(--cr-fundo); box-shadow:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--cr-borda); }
+        .at.naoplan{ background:var(--np-fraco); box-shadow:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--np-borda); }
+        .at-check{ width:19px; height:19px; min-width:19px; border-radius:6px; border:1.5px solid var(--linha-2);
+            cursor:pointer; display:flex; align-items:center; justify-content:center; background:var(--papel); transition:.15s; padding:0; }
+        .at-check:hover{ border-color:var(--ok); }
+        .at-check.on{ background:var(--ok); border-color:var(--ok); color:#fff; }
+        .at-check .material-symbols-rounded{ font-size:13px; opacity:0; }
+        .at-check.on .material-symbols-rounded{ opacity:1; }
+        .at-ico{ width:19px; height:19px; min-width:19px; display:flex; align-items:center; justify-content:center; color:var(--np); }
+        .at-ico .material-symbols-rounded{ font-size:17px; }
+        .at-corpo{ flex:1; min-width:0; }
+        .at-nome{ font-size:13.5px; font-weight:600; letter-spacing:-.1px; color:var(--tinta); line-height:1.35; }
+        .at.feito .at-nome{ color:var(--tinta-2); }
+        .at-meta{ display:flex; align-items:center; gap:9px; margin-top:4px; flex-wrap:wrap; }
+        .at-proj{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500; color:var(--tinta-2); min-width:0; }
+        .at-proj .pt{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+        .at-quem{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
+        .selo{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; white-space:nowrap;
+            display:inline-flex; align-items:center; gap:4px; }
+        .selo .material-symbols-rounded{ font-size:12px; }
+        .s-np{ background:rgba(8,145,178,.13); color:var(--np); }
+        .s-quadro{ background:rgba(0,0,0,.05); color:var(--tinta-3); }
+        .s-nao{ background:rgba(212,47,47,.12); color:var(--critico); }
+        .at-dir{ display:flex; align-items:center; gap:9px; flex-shrink:0; }
+        .tempo{ display:flex; align-items:baseline; gap:5px; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .t-real{ font-size:13px; font-weight:650; }
+        .t-plan{ font-size:11px; color:var(--tinta-3); }
+        .at-btn{ font-size:11.5px; font-weight:600; color:var(--tinta-3); background:none; cursor:pointer;
+            padding:5px 9px; border-radius:var(--r-ctrl); display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+        .at-btn:hover{ background:rgba(0,0,0,.05); color:var(--tinta); }
+        .at-btn .material-symbols-rounded{ font-size:14px; }
+        .at-play{ width:30px; height:30px; min-width:30px; border-radius:50%; background:var(--tinta); color:#fff;
+            display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s; }
+        .at-play:hover{ background:var(--acao); }
+        .at-play .material-symbols-rounded{ font-size:16px; }
+        .at-rodando{ margin:0 -14px -12px; padding:8px 14px; background:var(--tinta); display:flex; align-items:center; gap:9px; }
+        .at-rodando .num{ font-size:12.5px; font-weight:600; color:var(--lime); }
+        .at-rodando .lbl{ font-size:10.5px; color:rgba(255,255,255,.6); font-weight:500; }
+        .at-rodando .btn-parar{ margin-left:auto; width:24px; height:24px; border-radius:50%; background:var(--lime);
+            color:var(--tinta); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .at-rodando .btn-parar .material-symbols-rounded{ font-size:14px; }
+
+        /* ===== SEMANA ===== */
+        .semana{ display:grid; grid-template-columns:repeat(7,1fr); gap:9px; }
+        .sd{ background:rgba(255,255,255,.5); border-radius:var(--r-card); padding:8px; min-height:170px; }
+        .sd.hoje{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .sd-cab{ display:flex; align-items:baseline; gap:6px; padding:4px 6px 10px; }
+        .sd-dia{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+        .sd-num{ font-size:15px; font-weight:700; letter-spacing:-.4px; }
+        .sd.hoje .sd-num,.sd.hoje .sd-dia{ color:var(--acao); }
+        .sd-carga{ margin-left:auto; font-size:10.5px; font-weight:600; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; }
+        .sc{ background:var(--papel); border-radius:9px; box-shadow:0 1px 2px rgba(0,0,0,.04),0 0 0 1px var(--linha);
+            padding:9px 10px; margin-bottom:6px; cursor:pointer; border-left:3px solid var(--acao); transition:box-shadow .15s; }
+        .sc:hover{ box-shadow:var(--e2); }
+        .sc.feito{ opacity:.68; border-left-color:var(--ok); }
+        .sc.nao{ border-left-color:var(--critico); background:var(--cr-fundo); }
+        .sc.np{ border-left-color:var(--np); background:var(--np-fraco); }
+        .sc-nome{ font-size:11.5px; font-weight:600; line-height:1.35; color:var(--tinta); margin-bottom:4px; }
+        .sc-pe{ display:flex; align-items:center; gap:6px; font-size:10px; color:var(--tinta-3); font-weight:500; }
+
+        /* ===== HISTÓRICO ===== */
+        .hg{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; margin-bottom:10px; }
+        .hg-cab{ padding:12px 15px; display:flex; align-items:center; gap:11px; border-bottom:1px solid var(--linha); cursor:pointer; }
+        .hg-cab:hover{ background:var(--papel-2); }
+        .hg-pt{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .hg-nome{ font-size:13px; font-weight:650; letter-spacing:-.1px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .hg-qtd{ font-size:11px; color:var(--tinta-3); font-weight:500; white-space:nowrap; }
+        .hg-tempo{ font-size:13.5px; font-weight:650; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .hg-lista{ max-height:0; overflow:hidden; transition:max-height .25s ease; }
+        .hg.aberto .hg-lista{ max-height:1400px; }
+        .hl{ padding:10px 15px 10px 34px; border-bottom:1px solid var(--papel-2); display:flex; align-items:center; gap:11px; }
+        .hl:last-child{ border-bottom:none; }
+        .hl.np{ background:var(--np-fraco); }
+        .hl-nome{ flex:1; min-width:0; font-size:12.5px; font-weight:500; color:var(--tinta-2); }
+        .hl-quem{ font-size:11px; color:var(--tinta-3); font-weight:500; white-space:nowrap; }
+        .hl-data{ font-size:11px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .hl-t{ font-size:12.5px; font-weight:600; font-family:'IBM Plex Mono',monospace; white-space:nowrap; min-width:54px; text-align:right; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            justify-content:center; align-items:center; padding:20px; }
+        .modal-overlay.show{ display:flex; }
+        .modal-box{ background:var(--papel); border-radius:16px; width:100%; max-width:470px; overflow:hidden;
+            box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .modal-header{ padding:17px 20px 15px; border-bottom:1px solid var(--linha); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .modal-title{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .btn-icon-round{ width:28px; height:28px; border-radius:8px; background:var(--papel-2); color:var(--tinta-3);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+        .btn-icon-round:hover{ background:var(--linha); color:var(--tinta); }
+        .modal-body{ padding:18px 20px; display:flex; flex-direction:column; gap:15px; }
+        .input-group label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .input-item{ width:100%; font-size:13px; color:var(--tinta); padding:9px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; transition:.15s; }
+        .input-item:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .modal-footer{ padding:13px 20px; border-top:1px solid var(--linha); display:flex; gap:9px; justify-content:flex-end; background:var(--papel-2); }
+
+        /* ===== PLAYER ===== */
+        .floating-player{ position:fixed; bottom:20px; right:20px; z-index:900; background:var(--tinta); color:#fff;
+            padding:11px 13px 11px 16px; border-radius:14px; display:flex; align-items:center; gap:14px;
+            box-shadow:0 14px 40px rgba(23,23,26,.28); max-width:calc(100vw - 40px); }
+        .fp-info{ display:flex; flex-direction:column; min-width:0; max-width:210px; }
+        .fp-area{ font-size:10px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; color:rgba(255,255,255,.55);
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .fp-nome{ font-size:13px; font-weight:600; line-height:1.3; letter-spacing:-.15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:1px 0; }
+        .fp-tarefa{ font-size:10.5px; color:rgba(255,255,255,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .fp-timer{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
+            font-size:16px; font-weight:600; color:var(--lime); flex-shrink:0; }
+        .fp-btn{ width:32px; height:32px; min-width:32px; border-radius:50%; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; transition:.15s; }
+        .fp-btn .material-symbols-rounded{ font-size:17px; }
+        .fp-pausar{ background:rgba(255,255,255,.14); color:#fff; }
+        .fp-parar{ background:var(--lime); color:var(--tinta); }
+
+        /* ===== TOAST ===== */
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001; display:flex; flex-direction:column; gap:9px; }
+        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2); display:flex; align-items:center; gap:9px;
+            animation:sobe .3s ease forwards; }
+        @keyframes sobe{ from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+
+        /* ===== TIRA DE DIAS (celular) ===== */
+        .m-tiras{ display:none; gap:5px; padding:10px 16px; overflow-x:auto; background:var(--papel);
+            border-bottom:1px solid var(--linha); flex-shrink:0; }
+        .m-tiras::-webkit-scrollbar{ display:none; }
+        .mt{ min-width:46px; padding:7px 4px; border-radius:10px; background:var(--papel-2); text-align:center;
+            flex-shrink:0; cursor:pointer; border:none; }
+        .mt.on{ background:var(--tinta); }
+        .mt-d{ font-size:9.5px; font-weight:600; text-transform:uppercase; color:var(--tinta-3); }
+        .mt.on .mt-d{ color:rgba(255,255,255,.6); }
+        .mt-n{ font-size:14px; font-weight:700; letter-spacing:-.3px; margin-top:2px; }
+        .mt.on .mt-n{ color:#fff; }
+        .mt-p{ display:flex; gap:2px; justify-content:center; margin-top:4px; height:5px; }
+        .mt-p i{ width:4px; height:4px; border-radius:50%; display:block; }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width:1100px){ .semana{ grid-template-columns:repeat(4,1fr); } }
+        @media (max-width:900px){
+            body{ height:auto; min-height:100vh; overflow:visible; }
+            .top-bar{ padding:0 16px 0 60px; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            .cmd-dir{ width:100%; margin-left:0; }
+            .cmd-dir .sel{ flex:1; }
+            .nav-tit{ min-width:0; flex:1; }
+            .scroll-area{ padding:14px 16px 24px; }
+            .semana{ grid-template-columns:1fr; }
+            .m-tiras{ display:flex; }
+            .nav{ display:none; }
+            .btn-hoje{ display:none; }
+            .floating-player{ left:12px; right:12px; bottom:12px; max-width:none; padding:10px 11px 10px 14px; gap:11px; }
+            .fp-info{ flex:1; max-width:none; }
+            .modal-overlay{ padding:0; align-items:flex-end; }
+            .modal-box{ max-width:none; border-radius:18px 18px 0 0; max-height:92vh; overflow-y:auto; }
+            .at-btn span:not(.material-symbols-rounded){ display:none; }
+            .hl-quem{ display:none; }
         }
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
-        .top-bar-logo span { color: var(--primary-purple); }
-        .top-bar-logo:hover { opacity: 0.8; }
-        .btn-icon-round {
-            display: flex; align-items: center; justify-content: center;
-            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.7);
-            border-radius: 50% !important; color: var(--text-muted); cursor: pointer; transition: all 0.2s;
-        }
-        .btn-icon-round:hover { background: #fff; color: var(--text-main); }
-        .btn-icon-round.danger:hover { background: #fee2e2; color: #ef4444; }
-
-        /* COMMAND BAR */
-        .command-bar { padding: 22px 40px 10px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
-        .btn-acao:hover { background-color: var(--text-main); }
-        .btn-acao:disabled { background-color: var(--text-muted); cursor: not-allowed; }
-        .btn-sec { background-color: #f4f4f5; color: var(--text-main); padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; border-radius: 50px !important; }
-        .btn-sec:hover { background: #e4e4e7; }
-
-        /* VIEW SWITCHER */
-        .view-switcher { display: flex; gap: 20px; padding: 0 40px 0 40px; border-bottom: 1px solid #e4e4e7; flex-shrink: 0; }
-        .view-tab { font-size: 12px; font-weight: 800; color: var(--text-muted); cursor: pointer; padding-bottom: 12px; border-bottom: 3px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
-        .view-tab:hover { color: var(--primary-purple); }
-        .view-tab.active { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
-
-        /* FILTER + NAV BAR */
-        .filter-nav-bar { padding: 12px 40px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex-shrink: 0; border-bottom: 1px solid #f0f0f1; }
-        .filter-input { padding: 9px 18px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255, 255, 255, 0.8); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
-        .filter-input:focus { background: #fff; box-shadow: 0 2px 12px rgba(115,113,255,0.1); }
-        .nav-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); border-radius: 50% !important; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
-        .nav-btn:hover { background: #fff; color: var(--text-main); }
-        .nav-title { font-size: 14px; font-weight: 900; letter-spacing: -0.3px; }
-        .btn-hoje-nav { background: var(--primary-purple); color: white; padding: 7px 18px; font-size: 10px; font-weight: 800; border-radius: 50px !important; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-hoje-nav:hover { background: var(--text-main); }
-        .separador-nav { width: 1px; height: 20px; background: #e4e4e7; margin: 0 4px; }
-
-        /* CONTENT */
-        .content-area { flex-grow: 1; overflow: hidden; }
-        .scroll-area { height: 100%; overflow-y: auto; padding: 20px 40px 40px 40px; }
-
-        /* === VIEW: HOJE === */
-        .hoje-section { margin-bottom: 28px; }
-        .colab-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .avatar { width: 32px; height: 32px; min-width: 32px; background: var(--light-purple); color: var(--primary-purple); font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; }
-        .colab-nome { font-size: 14px; font-weight: 900; }
-        .colab-count { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-
-        /* PLAN CARD */
-        .plan-card {
-            background: var(--glass-bg); backdrop-filter: blur(10px);
-            padding: 16px 18px; margin-bottom: 8px; transition: all 0.2s;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.04);
-            display: flex; align-items: center; gap: 14px;
-            border-left: 3px solid #e4e4e7;
-        }
-        .plan-card:hover { background: rgba(255,255,255,0.9); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
-        .plan-card.s-planejado { border-left-color: #d4d4d8; }
-        .plan-card.s-andamento { border-left-color: var(--primary-purple); }
-        .plan-card.s-concluido { border-left-color: #22c55e; }
-        .plan-card.s-nao-realizado { border-left-color: #ef4444; }
-        /* Origem: planejado (roxo) vs realizado (lime/verde-azulado) */
-        .plan-card.card-planejado { border-left-color: #7371ff; }
-        .plan-card.card-realizado { border-left-color: #14b8a6; background: #f6fefb; }
-        .plan-card.card-naorealizado { border-left-color: #ef4444; background: #fef6f6; }
-        .origem-tag.naorealizado { background: #fee2e2; color: #b91c1c; }
-        .origem-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 50px !important; text-transform: uppercase; letter-spacing: 0.3px; }
-        .origem-tag.planejado { background: #f0efff; color: #4f46e5; }
-        .origem-tag.realizado { background: #ccfbf1; color: #0f766e; }
-        .plan-card-sm.s-realizado { border-left-color: #14b8a6; background: #f6fefb; }
-        .plan-card-sm.s-planejado { border-left-color: #7371ff; }
-        .plan-card-sm.s-naorealizado { border-left-color: #ef4444; background: #fef6f6; }
-        .mes-mini-card.s-realizado { background: #ccfbf1; color: #0f766e; }
-        .mes-mini-card.s-planejado { background: #f0efff; color: #4f46e5; }
-        .mes-mini-card.s-naorealizado { background: #fee2e2; color: #b91c1c; }
-
-        .plan-card-body { flex-grow: 1; min-width: 0; }
-        .pc-empresa { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--primary-purple); letter-spacing: 0.8px; margin-bottom: 2px; }
-        .pc-projeto { font-size: 14px; font-weight: 900; margin-bottom: 3px; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-atividade { font-size: 12px; color: var(--text-muted); font-weight: 500; line-height: 1.4; margin-bottom: 10px; }
-        .pc-footer { display: flex; align-items: center; gap: 8px; }
-        .status-select { padding: 5px 12px; font-size: 9px; font-weight: 800; text-transform: uppercase; background: #f4f4f5; border-radius: 50px !important; outline: none; cursor: pointer; transition: 0.2s; color: var(--text-muted); letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
-
-        .plan-card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-        .btn-play { background-color: var(--accent-lime); color: var(--text-main); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; border-radius: 50% !important; flex-shrink: 0; }
-        .btn-play:hover { transform: scale(1.1); }
-        .btn-play.parar { background-color: var(--accent-pink); color: white; animation: pulse 1.5s infinite; }
-        .btn-play.concluido { background-color: #dcfce7; color: #22c55e; cursor: default; transform: none !important; }
-        .btn-play:disabled { opacity: 0.3; cursor: not-allowed; transform: none; animation: none; }
-        .btn-sm { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; border-radius: 50% !important; }
-        .btn-sm:hover { background: rgba(0,0,0,0.05); color: var(--text-main); }
-        .btn-sm.danger:hover { background: #fee2e2; color: #ef4444; }
-
-        /* === VIEW: SEMANA === */
-        .semana-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; min-height: 100%; }
-        .semana-col { display: flex; flex-direction: column; }
-        .semana-col-header { padding: 10px 12px 14px 12px; text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid transparent; letter-spacing: 0.5px; margin-bottom: 10px; }
-        .semana-col-header.hoje { color: var(--primary-purple); border-bottom-color: var(--primary-purple); }
-        .dia-num { font-size: 26px; font-weight: 900; display: block; color: var(--text-main); line-height: 1.1; margin-bottom: 4px; }
-        .semana-col-header.hoje .dia-num { color: var(--primary-purple); }
-        .semana-cards { display: flex; flex-direction: column; gap: 6px; }
-
-        /* PLAN CARD PEQUENO (semana) */
-        .plan-card-sm {
-            background: var(--glass-bg); padding: 10px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s;
-            border-left: 3px solid #e4e4e7; cursor: default;
-        }
-        .plan-card-sm:hover { background: rgba(255,255,255,0.9); }
-        .plan-card-sm.s-planejado { border-left-color: #d4d4d8; }
-        .plan-card-sm.s-andamento { border-left-color: var(--primary-purple); }
-        .plan-card-sm.s-concluido { border-left-color: #22c55e; }
-        .plan-card-sm.s-nao-realizado { border-left-color: #ef4444; }
-        .pcs-projeto { font-size: 11px; font-weight: 900; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pcs-atividade { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
-        .pcs-footer { display: flex; justify-content: space-between; align-items: center; }
-        .avatar-xs { width: 18px; height: 18px; min-width: 18px; background: var(--light-purple); color: var(--primary-purple); font-size: 7px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 50% !important; }
-        .btn-play-xs { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: var(--accent-lime); color: #1e1e1e; border-radius: 50% !important; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
-        .btn-play-xs:hover { transform: scale(1.1); }
-        .btn-play-xs.parar { background: var(--accent-pink); color: white; }
-        .semana-empty { padding: 20px 8px; text-align: center; color: #d4d4d8; font-size: 20px; }
-
-        /* === VIEW: MÊS === */
-        .mes-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-        .mes-dia-header { padding: 10px 8px; text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; background: transparent; }
-        .mes-dia { background: rgba(255,255,255,0.5); padding: 8px 10px; min-height: 85px; cursor: pointer; transition: 0.15s; }
-        .mes-dia:hover { background: rgba(255,255,255,0.95); }
-        .mes-dia.hoje { background: rgba(115,113,255,0.05); outline: 2px solid var(--primary-purple); outline-offset: -2px; }
-        .mes-dia.outro-mes { opacity: 0.35; pointer-events: none; }
-        .mes-dia-num { font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 5px; }
-        .mes-dia.hoje .mes-dia-num { color: var(--primary-purple); font-size: 15px; }
-        .mes-mini-card { font-size: 9px; font-weight: 700; padding: 3px 7px; background: rgba(115,113,255,0.1); color: var(--primary-purple); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 3px !important; }
-        .mes-mini-card.s-concluido { background: #dcfce7; color: #166534; }
-        .mes-mini-card.s-nao-realizado { background: #fee2e2; color: #991b1b; }
-        .mes-mais { font-size: 9px; font-weight: 800; color: var(--text-muted); margin-top: 2px; }
-
-        /* FLOATING PLAYER */
-        .floating-player {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: #1e1e1e; color: white; padding: 15px 25px;
-            border-radius: 50px !important; box-shadow: 0 15px 50px rgba(0,0,0,0.25);
-            display: flex; align-items: center; gap: 20px; z-index: 9999; min-width: 400px;
-        }
-        .fp-info { display: flex; flex-direction: column; max-width: 240px; }
-        .fp-area { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; }
-        .fp-nome { font-size: 14px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
-        .fp-tarefa { font-size: 10px; color: #71717a; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fp-timer { font-family: monospace; font-size: 20px; font-weight: 900; color: var(--accent-lime); letter-spacing: 1px; }
-        .fp-btn { width: 36px; height: 36px; border-radius: 50% !important; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-        /* MODAL */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-overlay.show { display: flex; }
-        .modal-box { background: #fff; padding: 40px; width: 100%; max-width: 520px; box-shadow: 0 30px 80px rgba(0,0,0,0.1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-        .modal-title { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
-        .input-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
-        .input-group label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
-        .input-group input, .input-group select, .input-group textarea { padding: 13px 16px; background: #f9f9f9; outline: none; font-size: 13px; font-weight: 500; color: var(--text-main); border-left: 3px solid transparent; transition: 0.2s; font-family: 'Inter', sans-serif; }
-        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { background: #fff; border-left-color: var(--primary-purple); }
-        .input-group textarea { resize: none; min-height: 80px; }
-        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
-
-        /* TOAST */
-        .toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { background: rgba(30,30,30,0.95); backdrop-filter: blur(10px); color: white; padding: 12px 22px; border-radius: 50px !important; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; }
-
-        /* EMPTY */
-        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-        .empty-state .empty-icon { font-size: 48px; display: block; margin-bottom: 15px; opacity: 0.25; }
-        .empty-state p { font-size: 13px; font-weight: 600; }
-
-        /* ALERTA DIA NÃO ATUAL */
-        .dia-alerta { background: rgba(115,113,255,0.07); padding: 10px 18px; display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 12px; font-weight: 700; color: var(--primary-purple); }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,67,192,0.4); } 50% { box-shadow: 0 0 0 8px rgba(255,67,192,0); } }
-        /* ===== MODO CLIENTE (somente leitura) ===== */
-        /* ===== MODO CLIENTE VISUALIZADOR (somente leitura) ===== */
-        body.modo-cliente .btn-acao[onclick*="abrirModalNovo"],
-        body.modo-cliente #filtroColaborador,
-        body.modo-cliente #filtroStatus,
-        body.modo-cliente .btn-play,
-        body.modo-cliente .btn-play-xs,
-        body.modo-cliente .plan-card-actions,
-        body.modo-cliente .floating-player { display: none !important; }
+        .btn-sec{ font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+            padding:8px 14px; border-radius:var(--r-ctrl); background:var(--papel-2); color:var(--tinta-2); transition:.15s; }
+        .btn-sec:hover{ background:var(--linha); color:var(--tinta); }
     </style>
 </head>
-<body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
-
-    {% include '_sidebar.html' %}
-
-    <!-- TOP BAR -->
+<body>
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
         {% include '_usermenu.html' %}
     </div>
-
     {% include '_sidebar.html' %}
 
-    <!-- COMMAND BAR -->
-    <div class="command-bar">
-        <div>
-            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Agenda</h2>
-            <p id="subtituloData" style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;"></p>
+    <div class="cmd">
+        <span class="cmd-tit">Agenda</span>
+        <div class="cmd-sep"></div>
+        <div class="segm" role="tablist">
+            <button class="segm-btn on" id="tab-dia" onclick="mudarView('dia')"><span class="material-symbols-rounded">today</span>Dia</button>
+            <button class="segm-btn" id="tab-semana" onclick="mudarView('semana')"><span class="material-symbols-rounded">view_week</span>Semana</button>
+            <button class="segm-btn" id="tab-historico" onclick="mudarView('historico')"><span class="material-symbols-rounded">history</span>Histórico</button>
         </div>
-        <button class="btn-acao" onclick="abrirModalNovo()">
-            <span class="material-symbols-rounded" style="font-size:17px;">add</span>
-            NOVA ATIVIDADE
-        </button>
-    </div>
-
-    <!-- VIEW SWITCHER -->
-    <div class="view-switcher">
-        <div class="view-tab active" id="tab-hoje" onclick="mudarView('hoje')">
-            <span class="material-symbols-rounded" style="font-size:15px;">today</span>Dia
+        <div class="nav" id="navGrupo">
+            <button class="nav-btn" onclick="navegar(-1)" aria-label="Anterior"><span class="material-symbols-rounded">chevron_left</span></button>
+            <span class="nav-tit" id="navTitulo"></span>
+            <button class="nav-btn" onclick="navegar(1)" aria-label="Próximo"><span class="material-symbols-rounded">chevron_right</span></button>
         </div>
-        <div class="view-tab" id="tab-semana" onclick="mudarView('semana')">
-            <span class="material-symbols-rounded" style="font-size:15px;">view_week</span>Semana
-        </div>
-        <div class="view-tab" id="tab-mes" onclick="mudarView('mes')">
-            <span class="material-symbols-rounded" style="font-size:15px;">calendar_month</span>Mês
-        </div>
-    </div>
-
-    <!-- FILTER + NAV BAR -->
-    <div class="filter-nav-bar">
-        <div id="navGroup" style="display:flex; align-items:center; gap:8px;">
-            <button class="nav-btn" onclick="navegar(-1)">
-                <span class="material-symbols-rounded" style="font-size:17px;">chevron_left</span>
-            </button>
-            <span class="nav-title" id="navTitle"></span>
-            <button class="nav-btn" onclick="navegar(1)">
-                <span class="material-symbols-rounded" style="font-size:17px;">chevron_right</span>
-            </button>
-            <button class="btn-hoje-nav" onclick="voltarHoje()">Hoje</button>
-            <div class="separador-nav"></div>
-        </div>
-        <select class="filter-input" id="filtroColaborador" onchange="renderizarView()">
-            <option value="">Todos os colaboradores</option>
-        </select>
-        <select class="filter-input" id="filtroStatus" onchange="renderizarView()">
-            <option value="">Planejado + Realizado</option>
-            <option value="planejado">Apenas planejado</option>
-            <option value="realizado">Apenas realizado</option>
-        </select>
-    </div>
-
-    <!-- CONTENT -->
-    <div class="content-area">
-        <div class="scroll-area" id="scrollArea">
-            <div id="view-hoje"></div>
-            <div id="view-semana" style="display:none;"></div>
-            <div id="view-mes" style="display:none;"></div>
+        <button class="btn-hoje" onclick="voltarHoje()">Hoje</button>
+        <div class="cmd-dir">
+            <select class="sel" id="filtroColab" onchange="renderizar()">
+                <option value="__eu__">Só as minhas</option>
+                <option value="">Toda a equipe</option>
+            </select>
+            <select class="sel" id="filtroPeriodo" style="display:none;" onchange="renderizar()"></select>
+            <select class="sel" id="filtroAgrupar" style="display:none;" onchange="renderizar()">
+                <option value="projeto">Agrupar por projeto</option>
+                <option value="pessoa">Agrupar por pessoa</option>
+            </select>
+            <button class="btn btn-acao" id="btnNova" onclick="abrirModalNovo()"><span class="material-symbols-rounded">add</span>Planejar</button>
         </div>
     </div>
 
-    <!-- FLOATING PLAYER -->
-    <div id="floatingPlayer" class="floating-player" style="display:none;">
-        <div class="fp-info">
-            <span class="fp-area" id="fpArea"></span>
-            <span class="fp-nome" id="fpNome"></span>
-            <span class="fp-tarefa" id="fpTarefa"></span>
-        </div>
-        <div class="fp-timer" id="fpTempo">00:00:00</div>
-        <button id="btnPauseResume" class="fp-btn" style="background:#f59e0b;" onclick="togglePauseTimer()">
-            <span id="iconPauseResume" class="material-symbols-rounded" style="font-size:18px; color:#1e1e1e;">pause</span>
-        </button>
-        <button class="fp-btn" style="background:var(--accent-pink);" onclick="pararTimer()">
-            <span class="material-symbols-rounded" style="font-size:18px; color:white;">stop</span>
-        </button>
-    </div>
+    <div class="m-tiras" id="tiraDias"></div>
 
-    <!-- MODAL NOVA / EDITAR ATIVIDADE -->
+    <div class="scroll-area" id="conteudo"><div class="loading">Carregando...</div></div>
+
     <div class="modal-overlay" id="modalNovo">
         <div class="modal-box">
             <div class="modal-header">
@@ -343,632 +339,533 @@
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
+    <div id="floatingPlayer" class="floating-player" style="display:none;">
+        <div class="fp-info">
+            <span class="fp-area" id="fpArea"></span>
+            <span class="fp-nome" id="fpNome"></span>
+            <span class="fp-tarefa" id="fpTarefa"></span>
+        </div>
+        <div class="fp-timer" id="fpTempo">00:00:00</div>
+        <button class="fp-btn fp-pausar" id="btnPauseResume" onclick="togglePauseTimer()" aria-label="Pausar ou retomar">
+            <span class="material-symbols-rounded" id="iconPauseResume">pause</span>
+        </button>
+        <button class="fp-btn fp-parar" onclick="pararTimer()" aria-label="Finalizar">
+            <span class="material-symbols-rounded">stop</span>
+        </button>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // ==========================================
-        // ESTADO GLOBAL
-        // ==========================================
-        const _HOJE = new Date();
-        _HOJE.setHours(0, 0, 0, 0);
-        const HOJE_ISO = _HOJE.toISOString().split('T')[0];
+        const NOME_USUARIO = "{{ usuario_nome }}";
+        const NIVEL_ACESSO = "{{ nivel_acesso }}";
 
-        let viewAtual = 'hoje';
-        let dataRef = new Date(_HOJE);
-        let planejamentos = [];
-        let planejamentosMap = {};
-        let projetosGlobal = [];
-        let nomeUsuario = '{{ usuario_nome }}';
-        let activeTimerData = null;
-        let timerInterval = null;
+        let projetos = [], projetosMap = {};
+        let planejamentos = [], planejamentosMap = {};
+        let logs = [];                 // time_logs do período
+        let temEndpointLogs = true;    // degrada sem quebrar se a rota não existir
+        let viewAtual = 'dia';
+        let dataRef = new Date();
+        let activeTimerData = null, intervaloRelogio = null;
+        let editandoId = null;
 
-        // ==========================================
-        // INIT
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', async () => {
-            var _nu = document.getElementById('nomeUsuario'); if(_nu) _nu.textContent = nomeUsuario;
-            atualizarNavTitle();
-            atualizarSubtitulo();
-            await Promise.all([carregarProjetos(), carregarPlanejamentos()]);
+        const CORES_AREA = {
+            'Recrutamento e seleção':'#6C5CE7', 'RH Estratégico':'#0E9F6E', 'Projetos':'#6C5CE7',
+            'RH Interno':'#C2660B', 'CX Data':'#0EA5E9', 'Comercial':'#C2660B',
+            'Marketing':'#DB2777', 'Adm/Fin':'#0891B2'
+        };
+        const QUADRO_AREA = {
+            'Recrutamento e seleção':'R&S', 'RH Estratégico':'RH Estratégico', 'Projetos':'Projetos',
+            'RH Interno':'RH Interno', 'CX Data':'CX Data', 'Comercial':'Comercial',
+            'Marketing':'Marketing', 'Adm/Fin':'Financeiro'
+        };
+        function corArea(a){ return CORES_AREA[a] || '#7C7C88'; }
+        function quadroArea(a){ return QUADRO_AREA[a] || (a || '—'); }
+
+        document.addEventListener('DOMContentLoaded', iniciar);
+
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+        function fmtSeg(t){ const h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60;
+            return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+        function fmtTempo(seg){ seg=seg||0; if(seg<60) return '0min';
+            const h=Math.floor(seg/3600), m=Math.floor((seg%3600)/60);
+            return h===0 ? m+'min' : h+'h'+(m?String(m).padStart(2,'0'):''); }
+        function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+        function dataDe(s){ if(!s) return null; const p=String(s).split('T')[0].split('-'); if(p.length!==3) return null;
+            const d=new Date(+p[0],+p[1]-1,+p[2]); d.setHours(0,0,0,0); return d; }
+        function inicioSemana(d){ const x=new Date(d); const dia=x.getDay(); x.setDate(x.getDate()-dia); x.setHours(0,0,0,0); return x; }
+        function ehHoje(d){ const h=new Date(); return d.getDate()===h.getDate()&&d.getMonth()===h.getMonth()&&d.getFullYear()===h.getFullYear(); }
+
+        // ===================== CARGA =====================
+        async function iniciar(){
             restaurarTimer();
-        });
-
-        // ==========================================
-        // CARREGAR DADOS
-        // ==========================================
-        async function carregarProjetos() {
             try {
-                const res = await fetch('/api/projetos');
-                const data = await res.json();
-                projetosGlobal = (data.projetos || []).filter(p => p.status !== 'Cancelado');
-                projetosGlobal.sort((a, b) => a.nome_projeto.localeCompare(b.nome_projeto));
-
-                // Popula select de clientes (empresas únicas)
-                const clientes = [...new Set(projetosGlobal.map(p => p.empresa).filter(Boolean))].sort();
-                const selCliente = document.getElementById('selectCliente');
-                selCliente.innerHTML = '<option value="">Selecione um cliente...</option>';
-                clientes.forEach(c => {
-                    const o = document.createElement('option');
-                    o.value = c; o.textContent = c;
-                    selCliente.appendChild(o);
-                });
-            } catch(e) { showToast('Erro ao carregar projetos.', 'error'); }
+                const rp = await fetch('/api/projetos');
+                const dp = await rp.json();
+                projetos = (dp.projetos || dp || []).filter(p => !p.excluido_em);
+                projetos.forEach(p => projetosMap[p.id] = p);
+            } catch(e){ projetos = []; }
+            await recarregar();
         }
 
-        // Mapa de atividades por área (espelho do projetos.html)
-        const ATIVIDADES_POR_AREA = {
-            'CX Data':      ["Prospecções","Construção de OKR","Geração de leads","Produção de proposta","Reunião de proposta","Reunião de alinhamento","Reunião com cliente","Produção de dashboard","Atualização de base de dados","Construção de automação","Construção de ferramenta","Cobrança","Reunião interna","Reunião com BPO","Construção de dashboard"],
-            'Comercial':    ["Prospecções","Geração de leads","Produção de proposta","Reunião de proposta","Reunião de alinhamento","Reunião com cliente","Cobrança","Reunião interna","Prospecção de parceiros"],
-            'Marketing':    ["Planejamento de conteúdo mensal","Planejamento de atividades (semanal/diário)","Levantamento de orçamentos","Roteiro de vídeos","Blog — criação e publicação de post","Planejamento de campanhas","Planejamento de evento","Edição de material — on","Edição de material — off","Edição de material — Treinamentos","Card de vagas","Postar card de vaga","Edição de vídeo","LinkedIn post","Gravação de stories","Publicar stories","Gravação de vídeo","Qui_Conexão — criação e disparo","E-mail marketing — criação e disparo","Follow up — redes sociais","Follow up — ações de marketing","Relatório de desempenho (métricas + análise)","Reunião interna"],
-            'Adm/Fin':      ["Cobrança","Reunião interna","Levantamento de orçamentos","Reunião com cliente"],
-            'Recrutamento e seleção': ["Abertura de vaga","Entrevista","Hunting","Reunião de onboarding","Reunião com cliente","Produção de relatório","Triagem","Aplicação de testes","Contato com candidato","Contato com cliente"],
-            'RH Estratégico': ["Atividade Estratégica 1","Atividade Estratégica 2"]
-        };
-
-        // RH Estratégico: atividades específicas por FASE (status/coluna do projeto)
-        const ATIVIDADES_POR_FASE_RH = {
-            'Kick-off': ['Enviar e-mail de boas-vindas personalizado com apresentação do projeto','Criar grupo de comunicação dedicado (WhatsApp)','Apresentação da metodologia de RH estratégico','Configurar espaço compartilhado (Trello/Conexão RH)','Montar cronograma macro com ações iniciais','Reunião de kick-off','Definição de objetivos e expectativas','Mapeamento inicial dos stakeholders-chave','Conhecer os colaboradores e apresentar o escopo do trabalho','Reunião com o cliente'],
-            'Experiência do Colaborador': ['Mapear Employee Journey Map do contato ao offboarding','Identificar principais pontos de dor da jornada','Realizar entrevistas qualitativas com colaboradores','Propor rituais de engajamento e cultura','Reunião para co-criação da jornada ideal','Apresentação do diagnóstico para diretoria','Definição conjunta do Programa de EX','Reunião com o cliente'],
-            'Employer Branding': ['Criar EVP (Employee Value Proposition)','Estruturar playbook de marca empregadora','Mapear canais de atração por perfil','Reunião para construção do EVP','Validação do playbook com Diretoria, Marketing/RH','Revisão trimestral de métricas','Reunião com o cliente'],
-            'R&S': ['Redesenhar o processo seletivo end-to-end','Definir funil de R&S com SLA por etapa','Acompanhar processos conforme escopo','Criar provas e estudos de caso por níveis','Construção de provas específicas para cargos estratégicos','Análise mensal de SLA','Análise trimestral de dados relacionados ao funil de R&S','Implantação de processo em ferramenta de ATS ou Software de gestão de RH','Reunião com o cliente'],
-            'Onboarding Estratégico': ['Estruturar Programa Onboarding Técnico específico para cada cargo','Criar checklist de pré-boarding','Criar modelos de informativos pré-entrada','Criar rituais de checkpoint (30/60/90)','Definir mentores/facilitadores e rituais','Acompanhamento dos Líderes como integradores e anfitriões','Análise mensal de pesquisas checkpoints','Reunião com o cliente'],
-            'PCCS': ['Coletar informações sobre atividades por cargo','Criar/Atualizar descrições de cargo detalhadas','Realizar pesquisa salarial de mercado','Desenhar organograma atualizado','Elaborar trilhas de carreira para cada tipo e departamento','Estruturar faixas salariais (min/mid/max)','Comunicar nova estrutura internamente','Revisão anual de mercado','Reunião com o cliente'],
-            'Gestão de Talentos e Sucessão': ['Conduzir mapeamento 9box (Perf x Pot)','Identificar posições críticas e riscos de evasão','Criar planos de sucessão por posição','Propor estratégias de retenção personalizadas','Aplicação de Assessment','Reunião de Talent Review Semestral','Definição de PDIs alinhados a objetivos de médio prazo','Análise de causa raiz (Entrevistas de Desligamento)','Reunião com o cliente'],
-            'Gestão do Conhecimento': ['Realizar LNT (Levantamento de Necessidades de Treinamento)','Mapear conhecimentos críticos/riscos','Desenhar modelos de documentos para captura de conhecimento','Conscientizar a equipe sobre a importância da GC','Recomendar repositório de conhecimento','Propor plano anual de T&D','Aprovação do Plano Anual pela diretoria','Definição de avaliação de efetividade','Criação de política de versionamento e codificação','Reunião com o cliente'],
-            'Gestão de Desempenho': ['Elaborar guia de competências para os ciclos avaliativos','Desenhar ciclo de avaliação semestral','Definir framework de AVD e AVE','Criar formulários de autoavaliação e avaliação 180º','Capacitar líderes para conversas de feedback e PDI','Desenhar framework de PDI','Construir dashboard de desempenho geral','Implementar rituais de liderança e performance','Sensibilização sobre o que é GD e seus impactos','Calibração de avaliações entre áreas','Análise estratégica de resultados RH','Reunião com o cliente'],
-            'Gestão de Clima': ['Criar formulário de PCO completo','Conscientizar colaboradores sobre o que é PCO e seus impactos','Aplicar PCO com toda a organização','Analisar resultados por área e seção','Apresentar resultados para diretores, líderes e equipe','Criar plano de ação conforme resultados e prioridades','Construir dashboard sobre clima organizacional','Elaborar diagnóstico organizacional detalhado','Implantação de persona de comunicação via IA','Definição conjunta de calendário cultural','Revisão trimestral de indicadores','Reunião com o cliente'],
-            'Gestão com Base em Dados': ['Consolidar KPIs em Dashboard de Analytics','Elaborar relatório mensal para diretoria','Apresentar plano estratégico próximo ciclo','Benchmarking semestral com o mercado','Reunião estratégica trimestral (Data Review)','Avaliação NPS do serviço prestado','Planejamento do próximo ciclo de RH','Reunião com o cliente']
-        };
-
-        function filtrarProjetosPorCliente() {
-            const cliente = document.getElementById('selectCliente').value;
-            const selProjeto = document.getElementById('selectProjeto');
-            const selAtiv = document.getElementById('selectAtividade');
-
-            if (!cliente) {
-                selProjeto.innerHTML = '<option value="">Selecione o cliente primeiro...</option>';
-                selProjeto.disabled = true;
-                selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
-                selAtiv.disabled = true;
-                return;
-            }
-
-            // Só projetos ativos: exclui finalizados e cancelados (evita listas gigantes)
-            const STATUS_INATIVOS = ['finalizado', 'cancelado', 'concluído', 'concluido', 'arquivado'];
-            const filtrados = projetosGlobal.filter(p => {
-                if (p.empresa !== cliente) return false;
-                const st = (p.status || '').trim().toLowerCase();
-                return !STATUS_INATIVOS.includes(st);
-            });
-            selProjeto.innerHTML = filtrados.length > 0
-                ? '<option value="">Selecione um projeto...</option>'
-                : '<option value="">Nenhum projeto ativo para este cliente</option>';
-            filtrados.forEach(p => {
-                const o = document.createElement('option');
-                o.value = p.id;
-                o.textContent = p.nome_projeto;
-                o.dataset.area = p.area;
-                o.dataset.status = p.status || '';
-                selProjeto.appendChild(o);
-            });
-            selProjeto.disabled = filtrados.length === 0;
-
-            // Limpa atividades ao trocar cliente
-            selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
-            selAtiv.disabled = true;
-        }
-
-        function carregarAtividadesDoProjetoSelecionado() {
-            const selProjeto = document.getElementById('selectProjeto');
-            const selAtiv = document.getElementById('selectAtividade');
-            const opt = selProjeto.options[selProjeto.selectedIndex];
-            const area = opt ? opt.dataset.area : null;
-            const status = opt ? opt.dataset.status : null;
-
-            if (!area) {
-                selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
-                selAtiv.disabled = true;
-                return;
-            }
-
-            // RH Estratégico: atividades específicas da FASE (status/coluna do projeto)
-            let lista;
-            if (area === 'RH Estratégico' && ATIVIDADES_POR_FASE_RH[status]) {
-                lista = ATIVIDADES_POR_FASE_RH[status];
-            } else {
-                lista = ATIVIDADES_POR_AREA[area] || [];
-            }
-
-            selAtiv.innerHTML = lista.length > 0 ? '<option value="">Selecione a atividade...</option>' : '<option value="">Sem atividades para esta fase</option>';
-            lista.forEach(a => {
-                const o = document.createElement('option');
-                o.value = a; o.textContent = a;
-                selAtiv.appendChild(o);
-            });
-            selAtiv.disabled = lista.length === 0;
-        }
-
-        async function carregarPlanejamentos() {
+        async function recarregar(){
             try {
-                const res = await fetch('/api/planejamento');
-                const data = await res.json();
-                planejamentos = data.planejamentos || [];
+                const r = await fetch('/api/planejamento');
+                const d = await r.json();
+                planejamentos = d.planejamentos || [];
                 planejamentosMap = {};
-                planejamentos.forEach(p => { planejamentosMap[p.id] = p; });
-
-                // Popula filtro de colaboradores (ignora valores nulos/vazios)
-                const collabs = [...new Set(planejamentos.map(p => p.colaborador).filter(Boolean))].sort();
-                const filtro = document.getElementById('filtroColaborador');
-                const valAtual = filtro.value;
-                filtro.innerHTML = '<option value="">Todos os colaboradores</option>';
-                collabs.forEach(c => {
-                    const o = document.createElement('option');
-                    o.value = c; o.textContent = c;
-                    if (c === valAtual) o.selected = true;
-                    filtro.appendChild(o);
-                });
-
-                renderizarView();
-            } catch(e) { showToast('Erro ao carregar planejamentos.', 'error'); }
+                planejamentos.forEach(p => planejamentosMap[p.id] = p);
+            } catch(e){ planejamentos = []; }
+            await carregarLogs();
+            montarFiltros();
+            renderizar();
         }
 
-        function getDadosFiltrados() {
-            const colab = document.getElementById('filtroColaborador').value;
-            const origem = document.getElementById('filtroStatus').value;
-            return planejamentos.filter(p => {
-                if (colab && p.colaborador !== colab) return false;
-                if (origem && p.origem !== origem) return false;
-                return true;
-            });
-        }
-
-        function getProj(id) { return projetosGlobal.find(p => p.id === id) || {}; }
-        function iniciais(nome) {
-            if (!nome) return '?';
-            const p = nome.trim().split(' ');
-            return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : nome.slice(0,2).toUpperCase();
-        }
-        function statusClass(s) {
-            return { 'Planejado': 's-planejado', 'Em Andamento': 's-andamento', 'Concluído': 's-concluido', 'Não Realizado': 's-nao-realizado' }[s] || 's-planejado';
-        }
-        function escH(s) {
-            if (!s) return '';
-            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-        }
-
-        // ==========================================
-        // VIEWS
-        // ==========================================
-        function mudarView(view, resetData = true) {
-            viewAtual = view;
-            if (resetData) dataRef = new Date(_HOJE);
-            document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab-${view}`).classList.add('active');
-            ['hoje','semana','mes'].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                if (v === view) el.style.display = v === 'semana' ? 'block' : 'block';
-                else el.style.display = 'none';
-            });
-            atualizarNavTitle();
-            atualizarSubtitulo();
-            renderizarView();
-        }
-
-        function renderizarView() {
+        // time_logs do período visível. Sem a rota, a tela segue funcionando
+        // só com o plano — apenas o "realizado" fica vazio.
+        async function carregarLogs(){
+            if (!temEndpointLogs) { logs = []; return; }
+            const [de, ate] = intervaloAtual();
             try {
-                const dados = getDadosFiltrados();
-                if (viewAtual === 'hoje') renderHoje(dados);
-                else if (viewAtual === 'semana') renderSemana(dados);
-                else if (viewAtual === 'mes') renderMes(dados);
-            } catch (err) {
-                console.error('[Agenda] Erro ao renderizar a view:', err);
+                const r = await fetch(`/api/timelogs?de=${de}&ate=${ate}`);
+                if (r.status === 404) { temEndpointLogs = false; logs = []; return; }
+                const d = await r.json();
+                logs = d.logs || [];
+            } catch(e){ temEndpointLogs = false; logs = []; }
+        }
+
+        function intervaloAtual(){
+            if (viewAtual === 'dia') { const s = iso(dataRef); return [s, s]; }
+            if (viewAtual === 'semana'){
+                const i = inicioSemana(dataRef), f = new Date(i); f.setDate(f.getDate()+6);
+                return [iso(i), iso(f)];
+            }
+            const sel = document.getElementById('filtroPeriodo');
+            if (sel && sel.value) { const [a,m] = sel.value.split('-').map(Number);
+                return [iso(new Date(a,m-1,1)), iso(new Date(a,m,0))]; }
+            const h = new Date();
+            return [iso(new Date(h.getFullYear(),h.getMonth(),1)), iso(new Date(h.getFullYear(),h.getMonth()+1,0))];
+        }
+
+        function montarFiltros(){
+            const sc = document.getElementById('filtroColab');
+            const nomes = [...new Set(planejamentos.map(p=>p.colaborador).concat(logs.map(l=>l.colaborador)).filter(Boolean))].sort();
+            const atual = sc.value;
+            sc.innerHTML = '<option value="__eu__">Só as minhas</option><option value="">Toda a equipe</option>' +
+                nomes.filter(n=>n!==NOME_USUARIO).map(n=>`<option value="${escA(n)}">${escH(n)}</option>`).join('');
+            sc.value = atual || '__eu__';
+
+            const sp = document.getElementById('filtroPeriodo');
+            if (!sp.options.length){
+                const h = new Date(); let ops = '';
+                for (let i=0;i<12;i++){ const d=new Date(h.getFullYear(),h.getMonth()-i,1);
+                    const v = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+                    ops += `<option value="${v}">${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`; }
+                sp.innerHTML = ops;
             }
         }
 
-        // --- VIEW: DIA ---
-        function renderHoje(dados) {
-            const container = document.getElementById('view-hoje');
-            const diaAlvo = dataRef.toISOString().split('T')[0];
-            const isHojeReal = diaAlvo === HOJE_ISO;
-            const items = dados.filter(p => p.data === diaAlvo);
+        function euFiltro(){ const v = document.getElementById('filtroColab').value;
+            return v === '__eu__' ? NOME_USUARIO : v; }
+        function passaColab(nome){ const f = euFiltro(); return !f || (nome||'') === f; }
 
-            let html = '';
+        // ===================== MODELO =====================
+        // Une plano e execução: um item por planejamento, mais os logs órfãos.
+        function itensDoDia(dataStr){
+            const plans = planejamentos.filter(p => String(p.data_planejada).split('T')[0] === dataStr && passaColab(p.colaborador));
+            const logsDia = logs.filter(l => String(l.criado_em).split('T')[0] === dataStr && passaColab(l.colaborador));
 
-            // Alerta se não é hoje
-            if (!isHojeReal) {
-                const d = new Date(diaAlvo + 'T12:00:00');
-                html += `<div class="dia-alerta">
-                    <span class="material-symbols-rounded" style="font-size:16px;">info</span>
-                    Visualizando ${d.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' })} — play disponível apenas no dia atual.
-                </div>`;
-            }
-
-            if (items.length === 0) {
-                html += `<div class="empty-state">
-                    <span class="material-symbols-rounded empty-icon">event_available</span>
-                    <p>Nenhuma atividade planejada${isHojeReal ? ' para hoje' : ' neste dia'}.</p>
-                </div>`;
-                container.innerHTML = html;
-                return;
-            }
-
-            // Agrupa por colaborador
-            const grupos = {};
-            items.forEach(item => {
-                const colab = item.colaborador || 'Sem responsável';
-                if (!grupos[colab]) grupos[colab] = [];
-                grupos[colab].push(item);
+            const itens = plans.map(p => {
+                const meus = logsDia.filter(l => String(l.planejamento_id) === String(p.id));
+                const seg = meus.reduce((a,l)=>a+(l.tempo_segundos||0),0);
+                return { tipo:'plano', plan:p, projeto:projetosMap[p.projeto_id],
+                         nome:p.atividade, colaborador:p.colaborador, status:p.status, segundos:seg };
             });
-
-            Object.keys(grupos).sort().forEach(colab => {
-                html += `<div class="hoje-section">
-                    <div class="colab-header">
-                        <div class="avatar">${iniciais(colab)}</div>
-                        <span class="colab-nome">${escH(colab)}</span>
-                        <span class="colab-count">${grupos[colab].length} atividade${grupos[colab].length > 1 ? 's' : ''}</span>
-                    </div>`;
-                grupos[colab].forEach(item => { html += buildCardHoje(item, isHojeReal); });
-                html += `</div>`;
+            // logs sem plano = trabalho iniciado no quadro
+            logsDia.filter(l => !l.planejamento_id).forEach(l => {
+                itens.push({ tipo:'naoplan', log:l, projeto:projetosMap[l.projeto_id],
+                             nome:l.descricao_tarefa || 'Atividade', colaborador:l.colaborador,
+                             status:'Concluído', segundos:l.tempo_segundos||0 });
             });
-
-            container.innerHTML = html;
+            return itens;
         }
 
-        function buildCardHoje(item, isHojeReal) {
-            const proj = getProj(item.projeto_id);
-            const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
-            // status vem do backend já cruzado: 'planejado' | 'realizado' | 'nao_realizado'
-            const status = item.status || (item.origem === 'realizado' ? 'realizado' : 'planejado');
-            const eRealizado = status === 'realizado';
-            const eNaoRealizado = status === 'nao_realizado';
-            const veioSoDoTimer = item.origem === 'realizado'; // não tem registro em planejamento_diario
+        function resumoDe(itens){
+            const plan = itens.filter(i=>i.tipo==='plano');
+            const np   = itens.filter(i=>i.tipo==='naoplan');
+            const feitas = plan.filter(i=>i.status==='Concluído').length;
+            const nao    = plan.filter(i=>i.status==='Não Realizado').length;
+            const and    = plan.filter(i=>i.status==='Em Andamento').length;
+            const segPlan = plan.reduce((a,i)=>a+i.segundos,0);
+            const segNp   = np.reduce((a,i)=>a+i.segundos,0);
+            return { total:plan.length, feitas, nao, andamento:and, pend:plan.length-feitas-nao-and,
+                     segPlan, segNp, segTotal:segPlan+segNp, qtdNp:np.length };
+        }
 
-            const nomeProj = item.nome_projeto || proj.nome_projeto || 'Projeto não encontrado';
-            const empresa = item.empresa || proj.empresa || '';
+        // ===================== NAVEGAÇÃO =====================
+        function mudarView(v){
+            viewAtual = v;
+            ['dia','semana','historico'].forEach(x=>{
+                const b=document.getElementById('tab-'+x); if(b) b.classList.toggle('on', x===v);
+            });
+            document.getElementById('navGrupo').style.display = (v==='historico') ? 'none' : '';
+            document.querySelector('.btn-hoje').style.display = (v==='historico') ? 'none' : '';
+            document.getElementById('filtroPeriodo').style.display = (v==='historico') ? '' : 'none';
+            document.getElementById('filtroAgrupar').style.display = (v==='historico') ? '' : 'none';
+            document.getElementById('btnNova').style.display = (v==='historico') ? 'none' : 'inline-flex';
+            document.getElementById('tiraDias').style.display = (v==='historico') ? 'none' : '';
+            carregarLogs().then(renderizar);
+        }
+        function navegar(d){
+            if (viewAtual==='dia') dataRef.setDate(dataRef.getDate()+d);
+            else dataRef.setDate(dataRef.getDate()+7*d);
+            carregarLogs().then(renderizar);
+        }
+        function voltarHoje(){ dataRef = new Date(); carregarLogs().then(renderizar); }
+        function irParaDia(s){ const d=dataDe(s); if(d){ dataRef=d; viewAtual='dia'; mudarView('dia'); } }
 
-            // Etiqueta + cor conforme status
-            let tag, cardClasse;
-            if (eRealizado) {
-                tag = `<span class="origem-tag realizado"><span class="material-symbols-rounded" style="font-size:12px;">task_alt</span> Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}</span>`;
-                cardClasse = 'card-realizado';
-            } else if (eNaoRealizado) {
-                tag = `<span class="origem-tag naorealizado"><span class="material-symbols-rounded" style="font-size:12px;">cancel</span> Não realizado</span>`;
-                cardClasse = 'card-naorealizado';
-            } else {
-                tag = `<span class="origem-tag planejado"><span class="material-symbols-rounded" style="font-size:12px;">event</span> Planejado</span>`;
-                cardClasse = 'card-planejado';
+        function atualizarTitulo(){
+            const t = document.getElementById('navTitulo');
+            if (viewAtual==='dia') t.textContent = dataRef.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'long'});
+            else { const i=inicioSemana(dataRef), f=new Date(i); f.setDate(f.getDate()+6);
+                t.textContent = i.toLocaleDateString('pt-BR',{day:'numeric',month:'short'})+' — '+f.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}); }
+        }
+
+        function montarTira(){
+            const alvo = document.getElementById('tiraDias');
+            const i = inicioSemana(dataRef);
+            let h = '';
+            for (let k=0;k<7;k++){
+                const d = new Date(i); d.setDate(d.getDate()+k);
+                const s = iso(d);
+                const itens = itensDoDia(s);
+                const pts = itens.slice(0,4).map(it=>{
+                    const c = it.tipo==='naoplan' ? 'b-np'
+                        : it.status==='Concluído' ? 'b-ok'
+                        : it.status==='Não Realizado' ? 'b-nao'
+                        : it.status==='Em Andamento' ? 'b-and' : '';
+                    return `<i class="${c}" ${c?'':'style="background:var(--linha-2)"'}></i>`;
+                }).join('');
+                h += `<button class="mt ${iso(dataRef)===s?'on':''}" onclick="irParaDia('${s}')">
+                        <div class="mt-d">${d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</div>
+                        <div class="mt-n num">${d.getDate()}</div>
+                        <div class="mt-p">${pts}</div>
+                      </button>`;
             }
+            alvo.innerHTML = h;
+        }
 
-            // Itens que vieram SÓ do timer (sem planejamento) ou já realizados: sem ações de editar/excluir
-            const corpo = `
-                <div class="plan-card-body">
-                    <div class="pc-empresa">${escH(empresa)}</div>
-                    <div class="pc-projeto">${escH(nomeProj)}</div>
-                    <div class="pc-atividade">${escH(item.atividade)}</div>
-                    <div class="pc-footer">${tag}</div>
-                </div>`;
+        // ===================== RENDER =====================
+        function renderizar(){
+            atualizarTitulo();
+            if (viewAtual !== 'historico') montarTira();
+            if (viewAtual === 'dia') return renderDia();
+            if (viewAtual === 'semana') return renderSemana();
+            return renderHistorico();
+        }
 
-            if (eRealizado || veioSoDoTimer) {
-                return `<div class="plan-card ${cardClasse}">${corpo}</div>`;
-            }
-
-            // PLANEJADO ou NÃO REALIZADO (ambos têm registro em planejamento_diario): play/editar/excluir
-            let playBtn = '';
-            if (ativo) {
-                playBtn = `<button class="btn-play parar" id="playbtn-${item.id}" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:18px;">stop</span></button>`;
-            } else if (isHojeReal) {
-                const base = proj.tempo_total_segundos || 0;
-                playBtn = `<button class="btn-play" id="playbtn-${item.id}" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
-            } else {
-                playBtn = `<button class="btn-play" disabled><span class="material-symbols-rounded" style="font-size:18px;">play_arrow</span></button>`;
-            }
-
-            return `<div class="plan-card ${cardClasse}" id="card-${item.id}">
-                ${corpo}
-                <div class="plan-card-actions">
-                    ${playBtn}
-                    <button class="btn-sm" onclick="abrirModalEditar('${item.id}')" title="Editar">
-                        <span class="material-symbols-rounded" style="font-size:15px;">edit</span>
-                    </button>
-                    <button class="btn-sm danger" onclick="excluirAtividade('${item.id}')" title="Excluir">
-                        <span class="material-symbols-rounded" style="font-size:15px;">delete</span>
-                    </button>
+        function blocoResumo(r, rotulo){
+            const seg = Math.max(1, r.segTotal);
+            const pFeito = (r.feitas/Math.max(1,r.total))*100;
+            const pAnd   = (r.andamento/Math.max(1,r.total))*100;
+            const pNao   = (r.nao/Math.max(1,r.total))*100;
+            const pNp    = r.segTotal ? (r.segNp/seg)*100 : 0;
+            return `<div class="resumo">
+                <div class="rz"><div class="rz-rot">Planejado</div><div class="rz-val num">${r.total}</div><div class="rz-pe">atividade${r.total!==1?'s':''}</div></div>
+                <div class="rz"><div class="rz-rot">Registrado</div><div class="rz-val num" style="color:var(--ok)">${fmtTempo(r.segTotal)}</div><div class="rz-pe">${rotulo}</div></div>
+                <div class="rz"><div class="rz-rot">Fora do plano</div><div class="rz-val num" style="color:${r.segNp?'var(--np)':'var(--tinta-3)'}">${r.segNp?fmtTempo(r.segNp):'—'}</div><div class="rz-pe">${r.segNp?Math.round(pNp)+'% do registrado':'nada fora do plano'}</div></div>
+                <div class="rz-barra-wrap">
+                    <div class="rz-topo"><span class="rz-lbl">Andamento</span><span class="rz-num">${r.feitas} de ${r.total} concluída${r.feitas!==1?'s':''}</span></div>
+                    <div class="barra">
+                        <i class="b-ok" style="width:${pFeito}%"></i>
+                        <i class="b-and" style="width:${pAnd}%"></i>
+                        <i class="b-nao" style="width:${pNao}%"></i>
+                    </div>
+                    <div class="rz-leg">
+                        <span><span class="lg b-ok"></span>Concluída (${r.feitas})</span>
+                        <span><span class="lg b-and"></span>Em andamento (${r.andamento})</span>
+                        <span><span class="lg b-nao"></span>Não realizada (${r.nao})</span>
+                        ${r.qtdNp?`<span><span class="lg b-np"></span>Fora do plano (${r.qtdNp})</span>`:''}
+                    </div>
                 </div>
             </div>`;
         }
 
-        // --- VIEW: SEMANA ---
-        function renderSemana(dados) {
-            const container = document.getElementById('view-semana');
-            const ini = getInicioSemana(dataRef);
+        function linhaItem(it){
+            const proj = it.projeto;
+            const cor = corArea(proj && proj.area);
+            const rodando = activeTimerData && it.tipo==='plano' && String(activeTimerData.planId)===String(it.plan.id);
+            const feito = it.status==='Concluído';
+            const nao   = it.status==='Não Realizado';
+            let classe = it.tipo==='naoplan' ? 'naoplan' : feito ? 'feito' : nao ? 'nao' : rodando ? 'andamento' : '';
 
-            let html = `<div class="semana-grid">`;
-            for (let i = 0; i < 7; i++) {
-                const dia = new Date(ini);
-                dia.setDate(ini.getDate() + i);
-                const diaISO = dia.toISOString().split('T')[0];
-                const eHoje = diaISO === HOJE_ISO;
-                const items = dados.filter(p => p.data === diaISO);
-                const nomeDia = dia.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.','').toUpperCase();
+            const projHtml = proj
+                ? `<span class="at-proj"><span class="pt" style="background:${cor}"></span>${escH(quadroArea(proj.area))} · ${escH(proj.nome_projeto)}</span>`
+                : '<span class="at-proj" style="color:var(--tinta-3)">Sem projeto</span>';
 
-                html += `<div class="semana-col">
-                    <div class="semana-col-header ${eHoje ? 'hoje' : ''}" onclick="irParaDia('${diaISO}')" style="cursor:pointer;" title="Ver detalhe do dia">
-                        <span class="dia-num">${dia.getDate()}</span>
-                        ${nomeDia}
+            const quem = (euFiltro() ? '' : `<span class="at-quem">${escH(it.colaborador)}</span>`);
+
+            if (it.tipo === 'naoplan') {
+                return `<div class="at naoplan">
+                    <span class="at-ico"><span class="material-symbols-rounded">bolt</span></span>
+                    <div class="at-corpo">
+                        <div class="at-nome">${escH(it.nome)}</div>
+                        <div class="at-meta">${projHtml}<span class="selo s-quadro"><span class="material-symbols-rounded">view_kanban</span>iniciado no quadro</span>${quem}</div>
                     </div>
-                    <div class="semana-cards">`;
-
-                if (items.length === 0) {
-                    html += `<div class="semana-empty">·</div>`;
-                } else {
-                    items.forEach(item => {
-                        const status = item.status || (item.origem === 'realizado' ? 'realizado' : 'planejado');
-                        const eRealizado = status === 'realizado';
-                        const eNaoRealizado = status === 'nao_realizado';
-                        const veioSoDoTimer = item.origem === 'realizado';
-                        const proj = getProj(item.projeto_id);
-                        const nomeProj = item.nome_projeto || proj.nome_projeto || '—';
-                        const sc = eRealizado ? 's-realizado' : eNaoRealizado ? 's-naorealizado' : 's-planejado';
-                        const ativo = activeTimerData && String(activeTimerData.planId) === String(item.id);
-                        let playXs = '';
-                        if (eRealizado) {
-                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#14b8a6;" title="Realizado${item.tempo_segundos ? ' · ' + fmtTempo(item.tempo_segundos) : ''}">task_alt</span>`;
-                        } else if (eNaoRealizado) {
-                            playXs = `<span class="material-symbols-rounded" style="font-size:14px; color:#ef4444;" title="Não realizado">cancel</span>`;
-                        } else if (eHoje && !veioSoDoTimer) {
-                            if (ativo) {
-                                playXs = `<button class="btn-play-xs parar" onclick="pararTimer()"><span class="material-symbols-rounded" style="font-size:13px;">stop</span></button>`;
-                            } else {
-                                const base = proj.tempo_total_segundos || 0;
-                                playXs = `<button class="btn-play-xs" onclick="iniciarTimerPlan('${item.id}','${item.projeto_id}','${escH(proj.nome_projeto||'')}','${escH(proj.area||'')}','${escH(item.atividade)}','${escH(item.colaborador)}',${base})"><span class="material-symbols-rounded" style="font-size:13px;">play_arrow</span></button>`;
-                            }
-                        }
-                        html += `<div class="plan-card-sm ${sc}" title="${escH(item.atividade)} — ${escH(item.colaborador)}">
-                            <div class="pcs-projeto">${escH(nomeProj)}</div>
-                            <div class="pcs-atividade">${escH(item.atividade)}</div>
-                            <div class="pcs-footer">
-                                <div class="avatar-xs">${iniciais(item.colaborador)}</div>
-                                ${playXs}
-                            </div>
-                        </div>`;
-                    });
-                }
-                html += `</div></div>`;
+                    <div class="at-dir">
+                        <button class="at-btn" onclick="incorporarAoPlano('${escA(it.log.id)}')" title="Criar o planejamento correspondente">
+                            <span class="material-symbols-rounded">playlist_add</span><span>Incorporar ao plano</span></button>
+                        <span class="tempo"><span class="t-real num" style="color:var(--np)">${fmtTempo(it.segundos)}</span></span>
+                    </div>
+                </div>`;
             }
-            html += `</div>`;
-            container.innerHTML = html;
+
+            const acao = rodando ? '' : (feito || nao ? '' :
+                `<button class="at-play" title="Iniciar timer" onclick="iniciarTimerPlan('${escA(it.plan.id)}')"><span class="material-symbols-rounded">play_arrow</span></button>`);
+            const tempoHtml = it.segundos
+                ? `<span class="tempo"><span class="t-real num" style="color:var(--ok)">${fmtTempo(it.segundos)}</span></span>`
+                : '';
+            const btnAdiar = nao
+                ? `<button class="at-btn" onclick="passarParaAmanha('${escA(it.plan.id)}')"><span class="material-symbols-rounded">event_repeat</span><span>Passar para amanhã</span></button>`
+                : '';
+
+            const rodape = rodando
+                ? `<div class="at-rodando"><span class="num" id="relogioInline">00:00:00</span><span class="lbl">cronometrando pela agenda</span>
+                     <span class="btn-parar" onclick="pararTimer()"><span class="material-symbols-rounded">stop</span></span></div>`
+                : '';
+
+            return `<div class="at ${classe}" ${rodando?'style="flex-direction:column;align-items:stretch;gap:0;padding-bottom:0"':''}>
+                ${rodando?'<div style="display:flex;align-items:center;gap:12px;padding-bottom:11px">':''}
+                <button class="at-check ${feito?'on':''}" onclick="alternarConcluida('${escA(it.plan.id)}')" aria-label="Concluir">
+                    <span class="material-symbols-rounded">check</span></button>
+                <div class="at-corpo">
+                    <div class="at-nome">${escH(it.nome)}</div>
+                    <div class="at-meta">${projHtml}${nao?'<span class="selo s-nao">não realizada</span>':''}${quem}</div>
+                </div>
+                <div class="at-dir">${btnAdiar}${tempoHtml}${acao}
+                    <button class="at-btn" onclick="abrirModalEditar('${escA(it.plan.id)}')" title="Editar"><span class="material-symbols-rounded">edit</span></button>
+                </div>
+                ${rodando?'</div>':''}
+                ${rodape}
+            </div>`;
         }
 
-        // --- VIEW: MÊS ---
-        function renderMes(dados) {
-            const container = document.getElementById('view-mes');
-            const ano = dataRef.getFullYear();
-            const mes = dataRef.getMonth();
-            const primeiroDia = new Date(ano, mes, 1);
-            const iniGrid = new Date(primeiroDia);
-            iniGrid.setDate(primeiroDia.getDate() - ((primeiroDia.getDay() + 6) % 7));
-
-            let html = `<div class="mes-grid">`;
-            ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d => {
-                html += `<div class="mes-dia-header">${d}</div>`;
-            });
-
-            for (let i = 0; i < 42; i++) {
-                const dia = new Date(iniGrid);
-                dia.setDate(iniGrid.getDate() + i);
-                const diaISO = dia.toISOString().split('T')[0];
-                const eHoje = diaISO === HOJE_ISO;
-                const outroMes = dia.getMonth() !== mes;
-                const items = dados.filter(p => p.data === diaISO);
-
-                html += `<div class="mes-dia ${eHoje?'hoje':''} ${outroMes?'outro-mes':''}" onclick="irParaDia('${diaISO}')">
-                    <div class="mes-dia-num">${dia.getDate()}</div>`;
-
-                items.slice(0,2).forEach(item => {
-                    const status = item.status || (item.origem === 'realizado' ? 'realizado' : 'planejado');
-                    const proj = getProj(item.projeto_id);
-                    const nomeProj = item.nome_projeto || proj.nome_projeto || item.atividade;
-                    const sc = status === 'realizado' ? 's-realizado' : status === 'nao_realizado' ? 's-naorealizado' : 's-planejado';
-                    html += `<div class="mes-mini-card ${sc}">${escH(nomeProj)}</div>`;
-                });
-                if (items.length > 2) html += `<div class="mes-mais">+${items.length - 2} mais</div>`;
-                html += `</div>`;
-            }
-            html += `</div>`;
-            container.innerHTML = html;
-        }
-
-        function irParaDia(diaISO) {
-            dataRef = new Date(diaISO + 'T12:00:00');
-            mudarView('hoje', false);
-        }
-
-        // ==========================================
-        // NAVEGAÇÃO
-        // ==========================================
-        function navegar(dir) {
-            if (viewAtual === 'hoje') {
-                dataRef.setDate(dataRef.getDate() + dir);
-            } else if (viewAtual === 'semana') {
-                dataRef.setDate(dataRef.getDate() + (dir * 7));
-            } else if (viewAtual === 'mes') {
-                dataRef.setMonth(dataRef.getMonth() + dir);
-            }
-            atualizarNavTitle();
-            atualizarSubtitulo();
-            renderizarView();
-        }
-
-        function voltarHoje() {
-            dataRef = new Date(_HOJE);
-            atualizarNavTitle();
-            atualizarSubtitulo();
-            renderizarView();
-        }
-
-        function getInicioSemana(data) {
-            const d = new Date(data);
-            const dia = d.getDay();
-            d.setDate(d.getDate() - ((dia === 0) ? 6 : dia - 1));
-            d.setHours(0, 0, 0, 0);
-            return d;
-        }
-
-        function atualizarNavTitle() {
-            const el = document.getElementById('navTitle');
-            if (viewAtual === 'hoje') {
-                const diaAlvo = dataRef.toISOString().split('T')[0];
-                if (diaAlvo === HOJE_ISO) {
-                    el.textContent = 'Hoje';
-                } else {
-                    el.textContent = new Date(diaAlvo + 'T12:00:00').toLocaleDateString('pt-BR', { day:'numeric', month:'short' });
-                }
-            } else if (viewAtual === 'semana') {
-                const ini = getInicioSemana(dataRef);
-                const fim = new Date(ini); fim.setDate(ini.getDate() + 6);
-                el.textContent = `${ini.toLocaleDateString('pt-BR', { day:'numeric', month:'short' })} – ${fim.toLocaleDateString('pt-BR', { day:'numeric', month:'short' })}`;
-            } else if (viewAtual === 'mes') {
-                const n = dataRef.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-                el.textContent = n.charAt(0).toUpperCase() + n.slice(1);
-            }
-        }
-
-        function atualizarSubtitulo() {
-            const el = document.getElementById('subtituloData');
-            const diaAlvo = dataRef.toISOString().split('T')[0];
-            if (viewAtual === 'hoje') {
-                const d = new Date(diaAlvo + 'T12:00:00');
-                el.textContent = d.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-            } else if (viewAtual === 'semana') {
-                const ini = getInicioSemana(dataRef);
-                const fim = new Date(ini); fim.setDate(ini.getDate() + 6);
-                el.textContent = `${ini.toLocaleDateString('pt-BR', { day:'numeric', month:'short' })} — ${fim.toLocaleDateString('pt-BR', { day:'numeric', month:'short', year:'numeric' })}`;
-            } else if (viewAtual === 'mes') {
-                const n = dataRef.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-                el.textContent = n.charAt(0).toUpperCase() + n.slice(1);
-            }
-        }
-
-        // ==========================================
-        // TIMER (compatível com projetos.html)
-        // ==========================================
-        function iniciarTimerPlan(planId, projetoId, nomeProjeto, areaProjeto, atividade, colaborador, baseSegundos) {
-            if (activeTimerData) {
-                showToast('Você já tem um timer ativo! Finalize-o primeiro.', 'error');
+        function renderDia(){
+            const s = iso(dataRef);
+            const itens = itensDoDia(s);
+            const c = document.getElementById('conteudo');
+            if (!itens.length){
+                c.innerHTML = `<div class="vazio">Nada planejado nem registrado neste dia.<br>Use <b>Planejar</b> para adicionar uma atividade.</div>`;
                 return;
             }
+            c.innerHTML = blocoResumo(resumoDe(itens), 'neste dia') + itens.map(linhaItem).join('');
+            if (activeTimerData) iniciarRelogioVisual();
+        }
+
+        function renderSemana(){
+            const i = inicioSemana(dataRef);
+            let cols = '', todos = [];
+            for (let k=0;k<7;k++){
+                const d = new Date(i); d.setDate(d.getDate()+k);
+                const s = iso(d);
+                const itens = itensDoDia(s); todos = todos.concat(itens);
+                const seg = itens.reduce((a,x)=>a+x.segundos,0);
+                const cards = itens.map(it=>{
+                    const cls = it.tipo==='naoplan' ? 'np' : it.status==='Concluído' ? 'feito' : it.status==='Não Realizado' ? 'nao' : '';
+                    const proj = it.projeto;
+                    return `<div class="sc ${cls}" onclick="irParaDia('${s}')">
+                        <div class="sc-nome">${escH(it.nome)}</div>
+                        <div class="sc-pe">${proj?escH(quadroArea(proj.area)):'—'}${it.segundos?`<span class="num" style="margin-left:auto">${fmtTempo(it.segundos)}</span>`:''}</div>
+                    </div>`;
+                }).join('') || '<div class="vazio" style="padding:14px 8px;font-size:11.5px">Nada</div>';
+                cols += `<div class="sd ${ehHoje(d)?'hoje':''}">
+                    <div class="sd-cab">
+                        <span class="sd-dia">${d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</span>
+                        <span class="sd-num num">${d.getDate()}</span>
+                        <span class="sd-carga num">${seg?fmtTempo(seg):'—'}</span>
+                    </div>${cards}</div>`;
+            }
+            document.getElementById('conteudo').innerHTML =
+                blocoResumo(resumoDe(todos), 'nesta semana') + `<div class="semana">${cols}</div>`;
+        }
+
+        function renderHistorico(){
+            const [de, ate] = intervaloAtual();
+            const agrupar = document.getElementById('filtroAgrupar').value || 'projeto';
+            const meus = logs.filter(l => passaColab(l.colaborador));
+
+            if (!temEndpointLogs){
+                document.getElementById('conteudo').innerHTML =
+                    `<div class="vazio">O histórico precisa da rota <code>/api/timelogs</code>, que ainda não existe no servidor.<br>
+                     Enquanto isso, Dia e Semana funcionam mostrando só o planejamento.</div>`;
+                return;
+            }
+            if (!meus.length){
+                document.getElementById('conteudo').innerHTML = `<div class="vazio">Nenhum tempo registrado neste período.</div>`;
+                return;
+            }
+
+            const segTotal = meus.reduce((a,l)=>a+(l.tempo_segundos||0),0);
+            const segNp = meus.filter(l=>!l.planejamento_id).reduce((a,l)=>a+(l.tempo_segundos||0),0);
+            const plansPeriodo = planejamentos.filter(p=>{
+                const s = String(p.data_planejada).split('T')[0];
+                return s>=de && s<=ate && passaColab(p.colaborador);
+            });
+            const aderencia = plansPeriodo.length
+                ? Math.round(plansPeriodo.filter(p=>p.status==='Concluído').length / plansPeriodo.length * 100) : null;
+
+            const grupos = {};
+            meus.forEach(l=>{
+                let chave, nome, cor;
+                if (agrupar==='pessoa'){ chave = l.colaborador||'—'; nome = chave; cor = '#6C5CE7'; }
+                else { const p = projetosMap[l.projeto_id];
+                    chave = l.projeto_id||'—';
+                    nome = p ? quadroArea(p.area)+' · '+p.nome_projeto : 'Projeto removido';
+                    cor = corArea(p && p.area); }
+                if (!grupos[chave]) grupos[chave] = { nome, cor, seg:0, itens:[], sub: agrupar==='pessoa'?'':(projetosMap[l.projeto_id]||{}).empresa||'' };
+                grupos[chave].seg += l.tempo_segundos||0;
+                grupos[chave].itens.push(l);
+            });
+            const lista = Object.values(grupos).sort((a,b)=>b.seg-a.seg);
+
+            const cabecalho = `<div class="resumo">
+                <div class="rz"><div class="rz-rot">Registrado</div><div class="rz-val num">${fmtTempo(segTotal)}</div><div class="rz-pe">em ${lista.length} ${agrupar==='pessoa'?'pessoa(s)':'projeto(s)'}</div></div>
+                <div class="rz"><div class="rz-rot">Aderência ao plano</div><div class="rz-val num" style="color:${aderencia===null?'var(--tinta-3)':aderencia>=70?'var(--ok)':'var(--atencao)'}">${aderencia===null?'—':aderencia+'%'}</div><div class="rz-pe">${plansPeriodo.length} planejada(s)</div></div>
+                <div class="rz"><div class="rz-rot">Fora do plano</div><div class="rz-val num" style="color:var(--np)">${segTotal?Math.round(segNp/segTotal*100):0}%</div><div class="rz-pe">${fmtTempo(segNp)} do total</div></div>
+                <div class="rz"><div class="rz-rot">Registros</div><div class="rz-val num">${meus.length}</div><div class="rz-pe">no período</div></div>
+            </div>`;
+
+            const grupoHtml = lista.map((g,idx)=>`
+                <div class="hg ${idx===0?'aberto':''}" id="hg${idx}">
+                    <div class="hg-cab" onclick="document.getElementById('hg${idx}').classList.toggle('aberto')">
+                        <span class="hg-pt" style="background:${g.cor}"></span>
+                        <span class="hg-nome">${escH(g.nome)}</span>
+                        <span class="hg-qtd">${g.sub?escH(g.sub)+' · ':''}${g.itens.length} registro${g.itens.length!==1?'s':''}</span>
+                        <span class="hg-tempo">${fmtTempo(g.seg)}</span>
+                    </div>
+                    <div class="hg-lista">
+                        ${g.itens.sort((a,b)=>String(b.criado_em).localeCompare(String(a.criado_em))).map(l=>{
+                            const np = !l.planejamento_id;
+                            const d = dataDe(l.criado_em);
+                            return `<div class="hl ${np?'np':''}">
+                                <span class="hl-nome">${escH(l.descricao_tarefa||'Atividade')}${np?'<span class="selo s-np" style="margin-left:6px"><span class="material-symbols-rounded">bolt</span>fora do plano</span>':''}</span>
+                                <span class="hl-quem">${escH(l.colaborador)}</span>
+                                <span class="hl-data">${d?d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'—'}</span>
+                                <span class="hl-t" ${np?'style="color:var(--np)"':''}>${fmtTempo(l.tempo_segundos||0)}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`).join('');
+
+            document.getElementById('conteudo').innerHTML = cabecalho + grupoHtml;
+        }
+
+        // ===================== AÇÕES =====================
+        async function alternarConcluida(planId){
+            const p = planejamentosMap[planId]; if(!p) return;
+            const novo = p.status === 'Concluído' ? 'Planejado' : 'Concluído';
+            await atualizarStatus(planId, novo);
+        }
+        async function passarParaAmanha(planId){
+            const p = planejamentosMap[planId]; if(!p) return;
+            const d = dataDe(p.data_planejada) || new Date();
+            d.setDate(d.getDate()+1);
+            try{
+                const r = await fetch(`/api/planejamento/${planId}`, { method:'PUT', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ projeto_id:p.projeto_id, atividade:p.atividade, data_planejada:iso(d), colaborador:p.colaborador, status:'Planejado' })});
+                if(r.ok){ showToast('Passada para o dia seguinte.','success'); await recarregar(); }
+                else showToast('Erro ao mover.','error');
+            }catch(e){ showToast('Erro de conexão.','error'); }
+        }
+        // Cria o planejamento correspondente a um trabalho feito fora do plano.
+        async function incorporarAoPlano(logId){
+            const l = logs.find(x=>String(x.id)===String(logId)); if(!l) return;
+            try{
+                const r = await fetch('/api/planejamento', { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ projeto_id:l.projeto_id, atividade:l.descricao_tarefa||'Atividade',
+                        data_planejada:String(l.criado_em).split('T')[0], colaborador:l.colaborador, status:'Concluído' })});
+                if(r.ok){ showToast('Incorporado ao plano.','success'); await recarregar(); }
+                else showToast('Erro ao incorporar.','error');
+            }catch(e){ showToast('Erro de conexão.','error'); }
+        }
+
+        // ===================== TIMER =====================
+        function iniciarTimerPlan(planId){
+            if (activeTimerData){ showToast('Você já tem um timer ativo. Finalize-o primeiro.','error'); return; }
+            const p = planejamentosMap[planId]; if(!p) return;
+            const proj = projetosMap[p.projeto_id];
             activeTimerData = {
-                id: projetoId, planId: planId,
-                nome: nomeProjeto, area: areaProjeto,
-                tarefa: atividade, colaborador: colaborador,
-                baseSegundosOriginal: baseSegundos,
-                sessaoAtualSegundos: 0, startTime: Date.now(),
-                isoInicio: new Date().toISOString(), paused: false
+                id: p.projeto_id, planId: p.id,
+                nome: proj ? proj.nome_projeto : 'Projeto', area: proj ? proj.area : '',
+                tarefa: p.atividade, colaborador: p.colaborador || NOME_USUARIO,
+                baseSegundosOriginal: 0, sessaoAtualSegundos: 0,
+                startTime: Date.now(), isoInicio: new Date().toISOString(), paused: false
             };
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
+            renderizar();
             iniciarRelogioVisual();
         }
 
-        function togglePauseTimer() {
-            if (!activeTimerData) return;
-            if (activeTimerData.paused) {
+        function restaurarTimer(){
+            try{ const s = localStorage.getItem('cxdata_timer_ativo');
+                if(s){ activeTimerData = JSON.parse(s); iniciarRelogioVisual(); } }catch(e){}
+        }
+
+        function iniciarRelogioVisual(){
+            if (intervaloRelogio) clearInterval(intervaloRelogio);
+            const player = document.getElementById('floatingPlayer');
+            if (!activeTimerData){ if(player) player.style.display='none'; return; }
+            if (player){
+                player.style.display = 'flex';
+                document.getElementById('fpArea').innerText = quadroArea(activeTimerData.area);
+                document.getElementById('fpNome').innerText = activeTimerData.nome;
+                document.getElementById('fpTarefa').innerText = activeTimerData.tarefa || '';
+            }
+            intervaloRelogio = setInterval(()=>{
+                if(!activeTimerData){ clearInterval(intervaloRelogio); return; }
+                if(!activeTimerData.paused)
+                    activeTimerData.sessaoAtualSegundos = Math.floor((Date.now()-activeTimerData.startTime)/1000);
+                const t = fmtSeg((activeTimerData.baseSegundosOriginal||0)+(activeTimerData.sessaoAtualSegundos||0));
+                const fp = document.getElementById('fpTempo'); if(fp) fp.innerText = t;
+                const inline = document.getElementById('relogioInline'); if(inline) inline.innerText = t;
+            },1000);
+        }
+
+        function togglePauseTimer(){
+            if(!activeTimerData) return;
+            if(activeTimerData.paused){
+                activeTimerData.startTime = Date.now() - (activeTimerData.sessaoAtualSegundos*1000);
                 activeTimerData.paused = false;
-                activeTimerData.startTime = Date.now();
                 document.getElementById('iconPauseResume').innerText = 'pause';
-                document.getElementById('btnPauseResume').style.background = '#f59e0b';
-                iniciarRelogioVisual();
             } else {
-                clearInterval(timerInterval);
                 activeTimerData.paused = true;
-                const dec = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
-                activeTimerData.sessaoAtualSegundos += dec;
-                activeTimerData.startTime = null;
                 document.getElementById('iconPauseResume').innerText = 'play_arrow';
-                document.getElementById('btnPauseResume').style.background = 'var(--accent-lime)';
-                document.getElementById('iconPauseResume').style.color = '#1e1e1e';
             }
             localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
         }
 
-        function iniciarRelogioVisual() {
-            if (!activeTimerData) return;
-            const fp = document.getElementById('floatingPlayer');
-            fp.style.display = 'flex';
-            document.getElementById('fpArea').textContent = activeTimerData.area;
-            document.getElementById('fpNome').textContent = activeTimerData.nome;
-            document.getElementById('fpTarefa').textContent = activeTimerData.tarefa;
-            document.getElementById('iconPauseResume').innerText = 'pause';
-            document.getElementById('btnPauseResume').style.background = '#f59e0b';
-
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                const dec = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
-                const total = activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + dec;
-                document.getElementById('fpTempo').textContent = fmtSeg(total);
-
-                // Atualiza botão play no card se visível
-                const btn = document.getElementById(`playbtn-${activeTimerData.planId}`);
-                if (btn) {
-                    btn.className = 'btn-play parar';
-                    btn.innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;">stop</span>`;
-                    btn.onclick = () => pararTimer();
-                }
-            }, 1000);
-        }
-
-        async function pararTimer() {
-            if (!activeTimerData) return;
-            clearInterval(timerInterval);
-            let tempoFinal = activeTimerData.sessaoAtualSegundos;
-            if (!activeTimerData.paused) tempoFinal += Math.floor((Date.now() - activeTimerData.startTime) / 1000);
-            const salvar = { ...activeTimerData, tempoFinal };
-            const planId = activeTimerData.planId;
-
-            localStorage.removeItem('cxdata_timer_ativo');
+        async function pararTimer(){
+            if(!activeTimerData) return;
+            const d = { ...activeTimerData };
+            const seg = d.sessaoAtualSegundos || 0;
             activeTimerData = null;
-            document.getElementById('floatingPlayer').style.display = 'none';
-
-            try {
-                const req = await fetch(`/api/projetos/${salvar.id}/timer`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tempo_segundos: salvar.tempoFinal,
-                        descricao_tarefa: salvar.tarefa,
-                        colaborador: salvar.colaborador,
-                        data_inicio_atividade: salvar.isoInicio,
-                        data_fim_atividade: new Date().toISOString()
-                    })
-                });
-                if (req.ok) {
-                    showToast(`${fmtSeg(salvar.tempoFinal)} registrado com sucesso!`, 'success');
-                    await carregarPlanejamentos();
-                } else {
-                    showToast('Erro ao salvar registro de tempo.', 'error');
-                    await carregarPlanejamentos();
-                }
-            } catch(e) {
-                showToast('Erro de conexão ao salvar tempo.', 'error');
-                await carregarPlanejamentos();
-            }
+            localStorage.removeItem('cxdata_timer_ativo');
+            if (intervaloRelogio) clearInterval(intervaloRelogio);
+            const player = document.getElementById('floatingPlayer'); if(player) player.style.display='none';
+            if (seg < 3){ showToast('Tempo muito curto, não registrado.','error'); renderizar(); return; }
+            try{
+                // planejamento_id é o que amarra este tempo à atividade prevista
+                await fetch(`/api/projetos/${d.id}/timer`, { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ tempo_segundos: seg, colaborador: d.colaborador,
+                        descricao_tarefa: d.tarefa, data_inicio_atividade: d.isoInicio,
+                        data_fim_atividade: new Date().toISOString(), planejamento_id: d.planId || null })});
+                if (d.planId) await atualizarStatus(d.planId, 'Concluído', true);
+                showToast('Tempo registrado: '+fmtTempo(seg),'success');
+            }catch(e){ showToast('Erro ao salvar o tempo.','error'); }
+            await recarregar();
         }
 
-        function restaurarTimer() {
-            const saved = localStorage.getItem('cxdata_timer_ativo');
-            if (!saved) return;
-            try {
-                activeTimerData = JSON.parse(saved);
-                if (activeTimerData && !activeTimerData.paused && activeTimerData.startTime) {
-                    const dec = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
-                    activeTimerData.sessaoAtualSegundos += dec;
-                    activeTimerData.startTime = Date.now();
-                    localStorage.setItem('cxdata_timer_ativo', JSON.stringify(activeTimerData));
-                }
-                if (activeTimerData) iniciarRelogioVisual();
-            } catch(e) { localStorage.removeItem('cxdata_timer_ativo'); }
-        }
-
-        // ==========================================
-        // CRUD
-        // ==========================================
         function abrirModalNovo() {
             document.getElementById('editandoId').value = '';
             document.getElementById('modalTitulo').textContent = 'Nova Atividade';
@@ -1077,34 +974,89 @@
         // ==========================================
         // UTILS
         // ==========================================
-        function fmtSeg(s) {
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
-            const sg = s % 60;
-            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sg).padStart(2,'0')}`;
+
+        function filtrarProjetosPorCliente() {
+            const cliente = document.getElementById('selectCliente').value;
+            const selProjeto = document.getElementById('selectProjeto');
+            const selAtiv = document.getElementById('selectAtividade');
+
+            if (!cliente) {
+                selProjeto.innerHTML = '<option value="">Selecione o cliente primeiro...</option>';
+                selProjeto.disabled = true;
+                selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+                selAtiv.disabled = true;
+                return;
+            }
+
+            // Só projetos ativos: exclui finalizados e cancelados (evita listas gigantes)
+            const STATUS_INATIVOS = ['finalizado', 'cancelado', 'concluído', 'concluido', 'arquivado'];
+            const filtrados = projetosGlobal.filter(p => {
+                if (p.empresa !== cliente) return false;
+                const st = (p.status || '').trim().toLowerCase();
+                return !STATUS_INATIVOS.includes(st);
+            });
+            selProjeto.innerHTML = filtrados.length > 0
+                ? '<option value="">Selecione um projeto...</option>'
+                : '<option value="">Nenhum projeto ativo para este cliente</option>';
+            filtrados.forEach(p => {
+                const o = document.createElement('option');
+                o.value = p.id;
+                o.textContent = p.nome_projeto;
+                o.dataset.area = p.area;
+                o.dataset.status = p.status || '';
+                selProjeto.appendChild(o);
+            });
+            selProjeto.disabled = filtrados.length === 0;
+
+            // Limpa atividades ao trocar cliente
+            selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+            selAtiv.disabled = true;
         }
 
-        function fmtTempo(s) {
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
-            if (h > 0) return `${h}h ${m}min`;
-            if (m > 0) return `${m}min`;
-            return `${s}s`;
+        function carregarAtividadesDoProjetoSelecionado() {
+            const selProjeto = document.getElementById('selectProjeto');
+            const selAtiv = document.getElementById('selectAtividade');
+            const opt = selProjeto.options[selProjeto.selectedIndex];
+            const area = opt ? opt.dataset.area : null;
+            const status = opt ? opt.dataset.status : null;
+
+            if (!area) {
+                selAtiv.innerHTML = '<option value="">Selecione o projeto primeiro...</option>';
+                selAtiv.disabled = true;
+                return;
+            }
+
+            // RH Estratégico: atividades específicas da FASE (status/coluna do projeto)
+            let lista;
+            if (area === 'RH Estratégico' && ATIVIDADES_POR_FASE_RH[status]) {
+                lista = ATIVIDADES_POR_FASE_RH[status];
+            } else {
+                lista = ATIVIDADES_POR_AREA[area] || [];
+            }
+
+            selAtiv.innerHTML = lista.length > 0 ? '<option value="">Selecione a atividade...</option>' : '<option value="">Sem atividades para esta fase</option>';
+            lista.forEach(a => {
+                const o = document.createElement('option');
+                o.value = a; o.textContent = a;
+                selAtiv.appendChild(o);
+            });
+            selAtiv.disabled = lista.length === 0;
         }
 
-        function showToast(msg, tipo = 'success') {
+        function showToast(msg, tipo){
             const c = document.getElementById('toastContainer');
             const t = document.createElement('div');
-            t.className = `toast`;
-            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px; color:${tipo==='success'?'var(--accent-lime)':'var(--accent-pink)'};">${tipo==='success'?'check_circle':'error'}</span>${msg}`;
-            c.appendChild(t);
-            setTimeout(() => t.remove(), 3500);
+            t.className = 'toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${msg}`;
+            c.appendChild(t); setTimeout(()=>t.remove(), 3200);
         }
-
-        // Fechar modal ao clicar fora
-        document.getElementById('modalNovo').addEventListener('click', function(e) {
-            if (e.target === this) fecharModal();
+        document.querySelectorAll('.modal-overlay').forEach(function(m){
+            m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('show'); });
         });
+        document.addEventListener('keydown', function(e){
+            if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+        });
+        window.addEventListener('resize', function(){ if(viewAtual!=='historico') montarTira(); });
     </script>
 </body>
 </html>
