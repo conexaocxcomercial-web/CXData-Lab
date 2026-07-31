@@ -431,21 +431,34 @@
         .lst-status { display: flex; align-items: center; gap: 7px; }
         .lst-status-ponto { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
+        /* ===== PLAYER FLUTUANTE =====
+           Era o único elemento ainda no estilo antigo: right:30px sem regra
+           responsiva fazia o conteúdo de 250px vazar pela esquerda no celular. */
         .floating-player {
-            position: fixed; bottom: 30px; right: 30px;
-            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px);
-            padding: 15px 25px; border-radius: 50px !important;
-            display: flex; align-items: center; gap: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 9999;
-            color: white; border: 1px solid rgba(255,255,255,0.1);
+            position: fixed; bottom: 20px; right: 20px; z-index: 900;
+            background: var(--tinta); color: #fff;
+            padding: 11px 13px 11px 16px; border-radius: 14px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 14px 40px rgba(23,23,26,.28);
+            max-width: calc(100vw - 40px);
         }
-        .fp-info { display: flex; flex-direction: column; max-width: 250px; }
-        .fp-info span { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fp-info strong { font-size: 14px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
-        .fp-timer { font-family: monospace; font-size: 20px; font-weight: 900; color: var(--accent-lime); letter-spacing: 1px;}
+        .fp-info { display: flex; flex-direction: column; min-width: 0; max-width: 210px; }
+        .fp-info span { font-size: 10px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,.55) !important; }
+        .fp-info strong { font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: -.15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 1px 0; }
+        .fp-timer { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600; color: var(--accent-lime); letter-spacing: -.3px; flex-shrink: 0; }
+        .fp-acoes { display: flex; gap: 7px; flex-shrink: 0; }
+        .fp-btn {
+            width: 32px; height: 32px; min-width: 32px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: .15s;
+        }
+        .fp-btn .material-symbols-rounded { font-size: 17px; }
+        .fp-pausar { background: rgba(255,255,255,.14); color: #fff; }
+        .fp-pausar:hover { background: rgba(255,255,255,.24); }
+        .fp-parar { background: var(--accent-lime); color: var(--tinta); }
+        .fp-parar:hover { filter: brightness(1.08); }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(244,244,245,0.7); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); padding: 40px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(23,23,26,.45); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: var(--papel); border-radius: 16px; padding: 0; width: 100%; max-width: 500px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(23,23,26,.22); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .modal-header h2 { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;}
         .close-btn { background: none; color: var(--text-muted); font-size: 24px; cursor: pointer; font-weight: 300;}
@@ -550,7 +563,7 @@
         .close-btn::before{ content:'close'; font-family:'Material Symbols Rounded'; font-size:19px; }
         .close-btn:hover{ background:var(--linha-1); color:var(--tinta); }
 
-        .md-corpo{ padding:20px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; }
+        .md-corpo{ padding:20px 24px 26px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; }
         .md-pe{
             padding:14px 24px; border-top:1px solid var(--linha-1); background:var(--papel-2);
             display:flex; gap:9px; justify-content:flex-end; flex-shrink:0; flex-wrap:wrap;
@@ -625,6 +638,12 @@
             .det-col{ border-right:none; border-bottom:1px solid var(--linha-1); overflow:visible; }
             .md-linha2{ grid-template-columns:1fr; }
             .md-pe .btn-md{ flex:1; }
+            /* card expandido: os 3 botões em linha quebravam o rótulo em 3 linhas */
+            .modal-footer-acoes{ flex-direction:column; align-items:stretch; gap:8px; }
+            .modal-footer-acoes > div{ display:flex; gap:8px; }
+            .modal-footer-acoes > div .btn-md{ flex:1; }
+            .btn-md{ white-space:nowrap; }
+            .btn-md .rot-longo{ display:none; }
         }
 
 
@@ -687,9 +706,27 @@
 
         @media (max-width: 900px) {
             .btn-mover { display: flex; }
+            /* player vira barra de largura total, acima da barra do navegador */
+            .floating-player {
+                left: 12px; right: 12px; bottom: 12px; max-width: none;
+                border-radius: 14px; padding: 10px 11px 10px 14px; gap: 11px;
+            }
+            .fp-info { flex: 1; max-width: none; }
+            .fp-timer { font-size: 15px; }
+            .modal-overlay { padding: 0; align-items: flex-end; }
+            .modal-content { max-width: none; max-height: 92vh; border-radius: 18px 18px 0 0; }
             .pf { left: 12px !important; right: 12px; width: auto; top: auto !important; bottom: 0; border-radius: 16px 16px 0 0; max-height: 82vh; }
             .chips { padding: 9px 16px; }
         }
+
+        /* opção com caixa de marcar, usada nos modais de projeto */
+        .md-opcao { display: flex; align-items: flex-start; gap: 11px; padding: 12px 13px; background: var(--papel-2); border-radius: var(--r-ctrl); cursor: pointer; border: 1px solid transparent; transition: .15s; }
+        .md-opcao:hover { border-color: var(--linha-1); }
+        .md-opcao input { width: 16px; height: 16px; min-width: 16px; accent-color: var(--acao); cursor: pointer; margin-top: 1px; }
+        .md-opcao-txt { flex: 1; min-width: 0; }
+        .md-opcao-txt b { display: block; font-size: 13px; font-weight: 600; color: var(--tinta); letter-spacing: -.1px; }
+        .md-opcao-txt small { display: block; font-size: 11.5px; color: var(--tinta-3); font-weight: 500; line-height: 1.45; margin-top: 2px; }
+        .md-opcao-ico { font-size: 18px; color: var(--tinta-3); flex-shrink: 0; }
     </style>
 </head>
 <body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
@@ -816,17 +853,16 @@
 
     <div id="floatingPlayer" class="floating-player" style="display: none;">
         <div class="fp-info">
-            <span id="fpArea" style="color: var(--light-purple);">Área</span>
+            <span id="fpArea">Área</span>
             <strong id="fpNome">Projeto</strong>
-            <span id="fpTarefa" style="color: var(--text-muted);">Tarefa</span>
+            <span id="fpTarefa">Tarefa</span>
         </div>
         <div class="fp-timer" id="fpTempo">00:00:00</div>
-        
-        <div style="display: flex; gap: 8px;">
-            <button class="btn-play" id="btnPauseResume" style="background-color: #f59e0b; color: white;" onclick="togglePauseTimer()" title="Pausar/Retomar">
+        <div class="fp-acoes">
+            <button class="fp-btn fp-pausar" id="btnPauseResume" onclick="togglePauseTimer()" title="Pausar ou retomar" aria-label="Pausar ou retomar">
                 <span class="material-symbols-rounded" id="iconPauseResume">pause</span>
             </button>
-            <button class="btn-play parar" style="background-color: var(--accent-pink); color: white;" onclick="pararTimer()" title="Finalizar Sessão e Salvar">
+            <button class="fp-btn fp-parar" onclick="pararTimer()" title="Finalizar e salvar" aria-label="Finalizar e salvar">
                 <span class="material-symbols-rounded">stop</span>
             </button>
         </div>
@@ -945,54 +981,77 @@
 
     <div class="modal-overlay" id="modalEditarProjeto" onclick="fecharModalFundoEdicao(event)">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Editar Projeto</h2>
-                <button class="close-btn" onclick="fecharModalEdicao()">X</button>
-            </div>
-            
-            <input type="hidden" id="editProjId">
-            
-            <div class="input-group">
-                <label>Empresa / Cliente / Vaga</label>
-                <input type="text" id="editProjEmpresa" class="input-item" required>
-            </div>
-            <div class="input-group">
-                <label>Nome do Projeto</label>
-                <input type="text" id="editProjNome" class="input-item" required>
-            </div>
-            <div class="input-group">
-                <label>Responsável</label>
-                <select id="editProjResp" class="input-item">
-                    <option value="Jhonattan Luiz">Jhonattan Luiz</option>
-                    <option value="Gabriela Farias">Gabriela Farias</option>
-                    <option value="Mirian Meireles">Mirian Meireles</option>
-                    <option value="Itiana Andrade">Itiana Andrade</option>
-                    <option value="Matheus Alves">Matheus Alves</option>
-                    <option value="Clara Viana">Clara Viana</option>
-                    <option value="Alisson Maciel">Alisson Maciel</option>
-                    <option value="Juliete Cadete">Juliete Cadete</option>
-                    <option value="Ana Medeiros">Ana Medeiros</option>
-                    <option value="Thallya Rodrigues">Thallya Rodrigues</option>
-                    <option value="Patrick Guilherme">Patrick Guilherme</option>
-                    <option value="Bárbara Cazé">Bárbara Cazé</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>Prazo Limite (Data)</label>
-                <input type="date" id="editProjPrazo" class="input-item">
-            </div>
-            
-            <div class="input-group checkbox-group" onclick="document.getElementById('editProjScrum').click()">
-                <input type="checkbox" id="editProjScrum" onclick="event.stopPropagation()">
-                <label><span class="badge-scrum" style="font-size: 10px;">SCRUM</span> Marcar como projeto ágil (Sprint)</label>
+            <div class="md-head">
+                <div class="md-head-txt">
+                    <span class="md-eyebrow">Editar</span>
+                    <div class="md-titulo">Ajustar projeto</div>
+                    <div class="md-sub">Alterações valem na hora, sem sair do quadro.</div>
+                </div>
+                <button class="close-btn" onclick="fecharModalEdicao()" aria-label="Fechar"></button>
             </div>
 
-            <div class="input-group checkbox-group" onclick="document.getElementById('editProjVisivelCliente').click()" style="background:#f0fdfa; border-left:3px solid #14b8a6; padding:12px 14px;">
-                <input type="checkbox" id="editProjVisivelCliente" onclick="event.stopPropagation()">
-                <label><span class="material-symbols-rounded" style="font-size:15px; vertical-align:-3px; color:#0f766e;">visibility</span> <b>Visível para o cliente</b> — libera este projeto no portal do cliente da empresa</label>
+            <div class="md-corpo">
+                <input type="hidden" id="editProjId">
+
+                <div class="input-group">
+                    <label for="editProjNome">Nome do projeto</label>
+                    <input type="text" id="editProjNome" class="input-item" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="editProjEmpresa">Cliente</label>
+                    <input type="text" id="editProjEmpresa" class="input-item" required>
+                </div>
+
+                <div class="md-linha2">
+                    <div class="input-group">
+                        <label for="editProjResp">Responsável</label>
+                        <select id="editProjResp" class="input-item">
+                            <option value="Jhonattan Luiz">Jhonattan Luiz</option>
+                            <option value="Gabriela Farias">Gabriela Farias</option>
+                            <option value="Mirian Meireles">Mirian Meireles</option>
+                            <option value="Itiana Andrade">Itiana Andrade</option>
+                            <option value="Matheus Alves">Matheus Alves</option>
+                            <option value="Clara Viana">Clara Viana</option>
+                            <option value="Alisson Maciel">Alisson Maciel</option>
+                            <option value="Juliete Cadete">Juliete Cadete</option>
+                            <option value="Ana Medeiros">Ana Medeiros</option>
+                            <option value="Thallya Rodrigues">Thallya Rodrigues</option>
+                            <option value="Patrick Guilherme">Patrick Guilherme</option>
+                            <option value="Bárbara Cazé">Bárbara Cazé</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="editProjPrazo">Prazo de entrega</label>
+                        <input type="date" id="editProjPrazo" class="input-item">
+                    </div>
+                </div>
+
+                <label class="md-opcao" for="editProjScrum">
+                    <input type="checkbox" id="editProjScrum">
+                    <span class="md-opcao-txt">
+                        <b>Projeto ágil</b>
+                        <small>Marca o projeto como Sprint no quadro.</small>
+                    </span>
+                    <span class="badge-scrum">Scrum</span>
+                </label>
+
+                <label class="md-opcao" for="editProjVisivelCliente">
+                    <input type="checkbox" id="editProjVisivelCliente">
+                    <span class="md-opcao-txt">
+                        <b>Visível para o cliente</b>
+                        <small>Libera este projeto no portal do cliente da empresa.</small>
+                    </span>
+                    <span class="material-symbols-rounded md-opcao-ico">visibility</span>
+                </label>
             </div>
 
-            <button class="btn-acao" id="btnSalvarEdicao" style="width: 100%; justify-content: center; margin-top: 10px; padding: 18px;" onclick="salvarEdicaoProjeto()">SALVAR ALTERAÇÕES</button>
+            <div class="md-pe">
+                <button class="btn-md btn-md-fantasma" onclick="fecharModalEdicao()">Cancelar</button>
+                <button class="btn-md btn-md-primario" id="btnSalvarEdicao" onclick="salvarEdicaoProjeto()">
+                    <span class="material-symbols-rounded">check</span>Salvar alterações
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1045,7 +1104,7 @@
                 </button>
                 <div style="display:flex; gap:9px;">
                     <button class="btn-md btn-md-fantasma" onclick="abrirSolicitacao()">
-                        <span class="material-symbols-rounded">bolt</span>Solicitar em outro quadro
+                        <span class="material-symbols-rounded">bolt</span>Solicitar<span class="rot-longo">&nbsp;em outro quadro</span>
                     </button>
                     <button class="btn-md btn-md-primario" onclick="abrirModalEdicao(projIdEmFoco, event)">
                         <span class="material-symbols-rounded">edit</span>Editar projeto
