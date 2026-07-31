@@ -19,12 +19,29 @@ import os
 
 app = Flask(__name__)
 # CHAVE DE SESSÃO: lê de variável de ambiente, com fallback para não quebrar local
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cxdata_chave_mestra_oficial_2026_!@")
+# Sem valor padrão: uma chave de sessão conhecida permite forjar login de admin.
+_SECRET = os.environ.get("FLASK_SECRET_KEY")
+if not _SECRET:
+    raise RuntimeError("Defina FLASK_SECRET_KEY nas variáveis de ambiente.")
+app.secret_key = _SECRET
 
 # CREDENCIAIS SUPABASE: priorizam variáveis de ambiente (Vercel).
 # O fallback mantém o sistema funcionando caso as env vars ainda não estejam configuradas.
-URL = os.environ.get("SUPABASE_URL", "https://udqeheyyhvqlwejdwkbj.supabase.co")
-KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
+# CREDENCIAIS SUPABASE — apenas variáveis de ambiente.
+# Valor embutido no código vaza junto com o repositório; se a variável
+# não existir, é melhor a aplicação não subir do que subir com uma
+# chave conhecida.
+#
+# SUPABASE_SERVICE_KEY (papel service_role) é a que o backend deve usar:
+# ela passa por cima do RLS, e quem faz a autorização aqui é a sessão do
+# Flask. A chave anon fica reservada a acesso direto de fora, que o RLS
+# então bloqueia.
+URL = os.environ.get("SUPABASE_URL")
+KEY = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
+if not URL or not KEY:
+    raise RuntimeError(
+        "Defina SUPABASE_URL e SUPABASE_SERVICE_KEY nas variáveis de ambiente."
+    )
 supabase: Client = create_client(URL, KEY)
 
 @app.context_processor
@@ -1637,6 +1654,26 @@ def excluir_lead(lead_id):
     except Exception as e:
         print("Erro em excluir_lead:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir lead."}), 500
+
+
+@app.route('/api/leads/<lead_id>/movimentos', methods=['GET'])
+def movimentos_lead(lead_id):
+    """Trilha do lead entre funis e colunas, do mais recente ao mais antigo.
+    A duração de cada etapa é calculada no cliente, pela diferença entre
+    movimentos consecutivos — não precisa de coluna nova."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = (supabase.table("lead_movimentos").select("*")
+               .eq("lead_id", lead_id)
+               .order("criado_em", desc=True).execute())
+        return jsonify({"status": "sucesso", "movimentos": res.data or []}), 200
+    except Exception as e:
+        print("Erro em movimentos_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar histórico.",
+                        "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/leads/<lead_id>/mover', methods=['POST'])
