@@ -436,7 +436,10 @@ def salvar_tempo(projeto_id):
             "descricao_tarefa": dados.get("descricao_tarefa", "Atividade"),
             "tempo_segundos": int(dados.get("tempo_segundos", 0)),
             "data_inicio_atividade": dados.get("data_inicio_atividade"),
-            "data_fim_atividade": dados.get("data_fim_atividade")
+            "data_fim_atividade": dados.get("data_fim_atividade"),
+            # Preenchido quando o timer parte da Agenda; nulo quando parte do quadro.
+            # É o que separa "planejado e realizado" de "feito fora do plano".
+            "planejamento_id": dados.get("planejamento_id")
         }
         supabase.table("time_logs").insert(novo_log).execute()
         return jsonify({"status": "sucesso"}), 200
@@ -1523,6 +1526,40 @@ def planejamento():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+
+@app.route('/api/timelogs', methods=['GET'])
+def listar_timelogs():
+    """Registros de tempo num intervalo de datas, com as permissões do usuário aplicadas.
+    Usado pela Agenda para mostrar o que foi realizado, inclusive o tempo
+    iniciado pelo quadro (que vem com planejamento_id nulo)."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        de = request.args.get('de')
+        ate = request.args.get('ate')
+        if not de or not ate:
+            return jsonify({"status": "erro", "mensagem": "Informe de e ate."}), 400
+
+        res = (supabase.table("time_logs").select("*")
+               .gte("criado_em", de + "T00:00:00")
+               .lte("criado_em", ate + "T23:59:59")
+               .order("criado_em", desc=True).execute())
+        logs = res.data or []
+        if not logs:
+            return jsonify({"status": "sucesso", "logs": []}), 200
+
+        # Mesma regra de visibilidade dos projetos: ninguém vê tempo de
+        # projeto que já não poderia ver na listagem.
+        res_proj = supabase.table("projetos").select("*").execute()
+        projetos = [p for p in (res_proj.data or []) if not p.get("excluido_em")]
+        permitidos = {str(p.get("id")) for p in filtrar_projetos_permitidos(projetos)}
+        logs = [l for l in logs if str(l.get("projeto_id")) in permitidos]
+
+        return jsonify({"status": "sucesso", "logs": logs}), 200
+    except Exception as e:
+        print("Erro em /api/timelogs:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar registros."}), 500
+
 
 @app.route('/api/planejamento', methods=['GET'])
 def listar_planejamento():
