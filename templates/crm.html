@@ -189,7 +189,132 @@
         .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
             font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2); display:flex; align-items:center; gap:9px; }
 
+
+        /* ===== DETALHE DO LEAD ===== */
+        .modal.largo{ max-width:960px; }
+        .det-cab{ padding:20px 24px 18px; border-bottom:1px solid var(--linha); display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; flex-shrink:0; }
+        .det-av{ width:48px; height:48px; min-width:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:650; }
+        .det-id{ flex:1; min-width:180px; }
+        .det-emp{ font-size:10.5px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--tinta-3); margin-bottom:3px; }
+        .det-nome{ font-size:20px; font-weight:700; letter-spacing:-.5px; line-height:1.2; }
+        .det-chips{ display:flex; gap:7px; margin-top:9px; flex-wrap:wrap; }
+        .chip{ font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+        .chip .material-symbols-rounded{ font-size:13px; }
+        .c-funil-q{ background:#E4F4FD; color:#0EA5E9; }
+        .c-funil-f{ background:var(--acao-fraco); color:var(--acao); }
+        .c-funil-n{ background:var(--at-fundo); color:var(--atencao); }
+        .c-col{ background:var(--papel-2); color:var(--tinta-2); }
+        .c-prod{ background:var(--acao-fraco); color:var(--acao); }
+        .c-orig{ background:var(--papel-2); color:var(--tinta-3); }
+        .det-acoes{ display:flex; gap:7px; flex-shrink:0; }
+        .det-acoes .ac{ width:36px; height:36px; min-width:36px; border-radius:10px; }
+        .det-acoes .ac .material-symbols-rounded{ font-size:18px; }
+
+        .det-num{ display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:1px; background:var(--linha); border-bottom:1px solid var(--linha); flex-shrink:0; }
+        .dn{ background:var(--papel); padding:13px 17px; }
+        .dn-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:6px; }
+        .dn-val{ font-size:19px; font-weight:700; letter-spacing:-.6px; line-height:1; }
+        .dn-pe{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+
+        .det-corpo{ display:grid; grid-template-columns:1fr 320px; overflow-y:auto; flex:1; min-height:0; }
+        .det-esq{ padding:20px 24px; border-right:1px solid var(--linha); min-width:0; }
+        .det-dir{ padding:20px 22px; background:var(--papel-2); min-width:0; }
+        .det-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:14px; }
+
+        .tl{ position:relative; padding-left:26px; }
+        .tl::before{ content:''; position:absolute; left:7px; top:6px; bottom:14px; width:2px; background:var(--linha); }
+        .tp{ position:relative; padding-bottom:20px; }
+        .tp:last-child{ padding-bottom:0; }
+        .tp-pt{ position:absolute; left:-26px; top:3px; width:16px; height:16px; border-radius:50%; background:var(--papel);
+            box-shadow:0 0 0 2px var(--linha); display:flex; align-items:center; justify-content:center; }
+        .tp-pt i{ width:7px; height:7px; border-radius:50%; display:block; }
+        .tp.destaque .tp-pt{ box-shadow:0 0 0 2px var(--acao); }
+        .tp-topo{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:3px; }
+        .tp-mov{ font-size:13px; font-weight:600; letter-spacing:-.1px; }
+        .tp-mov b{ font-weight:650; }
+        .tp-seta{ color:var(--tinta-3); font-size:11px; }
+        .tp-quando{ font-size:11px; color:var(--tinta-3); font-weight:500; font-family:'IBM Plex Mono',monospace; margin-left:auto; white-space:nowrap; }
+        .tp-meta{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
+        .tp-dur{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:2px 8px;
+            border-radius:99px; background:var(--papel-2); color:var(--tinta-2); margin-top:7px; }
+        .tp-dur.longo{ background:var(--at-fundo); color:var(--atencao); }
+        .tp-dur .material-symbols-rounded{ font-size:12px; }
+        .tp-obj{ margin-top:8px; background:var(--cr-fundo); border-radius:9px; padding:9px 11px; box-shadow:0 0 0 1px var(--cr-borda); }
+        .tp-obj-t{ font-size:11px; font-weight:650; color:#8A1F1F; display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+        .tp-obj-t .material-symbols-rounded{ font-size:13px; }
+        .tp-obj-d{ font-size:12px; color:#8A1F1F; line-height:1.5; opacity:.85; }
+        .tp-funil{ display:inline-flex; align-items:center; font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; margin-left:6px; }
+        .tf-q{ background:#E4F4FD; color:#0EA5E9; }
+        .tf-f{ background:var(--acao-fraco); color:var(--acao); }
+        .tf-n{ background:var(--at-fundo); color:var(--atencao); }
+
+        .campo{ margin-bottom:14px; }
+        .campo-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:5px; }
+        .campo-v{ font-size:13px; color:var(--tinta); font-weight:500; line-height:1.5; word-break:break-word; }
+        .campo-v.vazio{ color:var(--tinta-3); font-style:italic; font-weight:400; }
+        .anot{ background:var(--papel); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.55; color:var(--tinta-2); box-shadow:var(--e1); }
+        .btn-ok{ background:var(--ok); color:#fff; }
+        .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
+
+        /* ===== PAINEL DE FILTROS ===== */
+        .pf-veu{ position:fixed; inset:0; z-index:55; display:none; }
+        .pf-veu.on{ display:block; }
+        .pf{ position:fixed; z-index:60; width:330px; background:var(--papel); border-radius:14px;
+            box-shadow:var(--e-pop); overflow:hidden; display:none; flex-direction:column; }
+        .pf.on{ display:flex; }
+        .pf-cab{ padding:13px 16px; border-bottom:1px solid var(--linha); display:flex; align-items:center; gap:9px; }
+        .pf-tit{ font-size:13.5px; font-weight:650; flex:1; }
+        .pf-corpo{ padding:14px 16px; max-height:400px; overflow-y:auto; }
+        .pf-g{ margin-bottom:16px; }
+        .pf-g:last-child{ margin-bottom:0; }
+        .pf-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:8px; }
+        .pf-atalhos{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:9px; }
+        .pf-a{ font-size:11.5px; font-weight:550; padding:5px 10px; border-radius:99px; background:var(--papel-2);
+            color:var(--tinta-2); cursor:pointer; border:none; transition:.15s; }
+        .pf-a:hover{ background:var(--linha); }
+        .pf-a.on{ background:var(--acao); color:#fff; }
+        .pf-sel{ width:100%; font-size:13px; color:var(--tinta); padding:9px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; cursor:pointer; }
+        .pf-datas{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
+        .pf-datas span{ font-size:12px; color:var(--tinta-3); }
+        .pf-d{ width:100%; font-size:12.5px; padding:8px 9px; background:var(--papel-2); border:1px solid transparent;
+            border-radius:var(--r-ctrl); outline:none; color:var(--tinta); }
+        .pf-radio{ display:flex; flex-direction:column; gap:6px; }
+        .pf-op{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:var(--r-ctrl);
+            background:var(--papel-2); cursor:pointer; font-size:12.5px; font-weight:500; color:var(--tinta-2); border:none; text-align:left; width:100%; }
+        .pf-op.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600; }
+        .pf-op i{ width:14px; height:14px; border-radius:50%; box-shadow:inset 0 0 0 1.5px var(--linha-2); flex-shrink:0; display:block; }
+        .pf-op.on i{ box-shadow:inset 0 0 0 4px var(--acao); }
+        .pf-pe{ padding:12px 16px; border-top:1px solid var(--linha); display:flex; gap:9px; background:var(--papel-2); }
+        .pf-pe .btn{ flex:1; justify-content:center; }
+
+        .chips-barra{ display:none; align-items:center; gap:7px; padding:9px 22px; background:var(--papel);
+            border-bottom:1px solid var(--linha); flex-wrap:wrap; flex-shrink:0; }
+        .chips-barra.on{ display:flex; }
+        .chips-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+        .chip-f{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:550;
+            background:var(--acao-fraco); color:var(--acao); padding:5px 7px 5px 10px; border-radius:99px; }
+        .chip-f b{ font-weight:600; }
+        .chip-f .x{ display:flex; cursor:pointer; opacity:.7; border-radius:50%; padding:1px; }
+        .chip-f .x:hover{ opacity:1; background:rgba(108,92,231,.16); }
+        .chip-f .material-symbols-rounded{ font-size:14px; }
+        .chips-limpar{ font-size:12px; font-weight:600; color:var(--tinta-3); cursor:pointer; padding:5px 9px;
+            border-radius:var(--r-ctrl); margin-left:auto; background:none; border:none; }
+        .chips-limpar:hover{ background:#FDEDED; color:var(--critico); }
+
+        .folha-g{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3);
+            padding:11px 10px 5px; display:flex; align-items:center; gap:7px; }
+        .folha-g .pt{ width:6px; height:6px; border-radius:50%; }
+        .folha-item .material-symbols-rounded{ margin-left:auto; font-size:16px; color:var(--tinta-3); }
+
         @media (max-width:900px){
+            .modal.largo{ max-width:none; }
+            .det-corpo{ grid-template-columns:1fr; }
+            .det-esq{ border-right:none; border-bottom:1px solid var(--linha); }
+            .det-num{ grid-template-columns:1fr 1fr; }
+            .pf{ left:12px !important; right:12px; width:auto; top:auto !important; bottom:0;
+                 border-radius:16px 16px 0 0; max-height:82vh; }
+            .chips-barra{ padding:9px 16px; }
             body{ height:auto; min-height:100vh; overflow:visible; }
             .top-bar{ padding:0 16px 0 60px; }
             .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
@@ -230,6 +355,9 @@
                 <span class="material-symbols-rounded">search</span>
                 <input type="text" id="busca" placeholder="Buscar empresa ou contato" oninput="render()">
             </div>
+            <button class="btn btn-fant" id="btnFiltros" onclick="toggleFiltros()">
+                <span class="material-symbols-rounded">tune</span>Filtros<span class="chip-n" id="chipFiltros" style="display:none">0</span>
+            </button>
             <button class="btn btn-fant" id="btnHoje" onclick="alternarHoje()">
                 <span class="material-symbols-rounded">today</span>Contatos de hoje<span class="chip-n" id="chipHoje" style="display:none">0</span>
             </button>
@@ -237,8 +365,98 @@
         </div>
     </div>
 
+    <div class="chips-barra" id="chipsFiltros"></div>
+
+    <div class="pf-veu" id="pfVeu" onclick="toggleFiltros(false)"></div>
+    <div class="pf" id="painelFiltros" role="dialog" aria-label="Filtros">
+        <div class="pf-cab">
+            <span class="pf-tit">Filtros</span>
+            <button class="md-x" onclick="toggleFiltros(false)" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div class="pf-corpo">
+            <div class="pf-g">
+                <div class="pf-r">Qual data?</div>
+                <div class="pf-radio" id="pfQualData">
+                    <button class="pf-op on" data-campo="criado_em" onclick="escolherData('criado_em')"><i></i>Entrada do lead</button>
+                    <button class="pf-op" data-campo="movido_em" onclick="escolherData('movido_em')"><i></i>Última movimentação</button>
+                    <button class="pf-op" data-campo="proximo_contato" onclick="escolherData('proximo_contato')"><i></i>Próximo contato</button>
+                </div>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Período</div>
+                <div class="pf-atalhos" id="pfPeriodo">
+                    <button class="pf-a" data-dias="7" onclick="atalhoPeriodo(7)">7 dias</button>
+                    <button class="pf-a" data-dias="30" onclick="atalhoPeriodo(30)">30 dias</button>
+                    <button class="pf-a" data-dias="90" onclick="atalhoPeriodo(90)">90 dias</button>
+                    <button class="pf-a" data-dias="mes" onclick="atalhoPeriodo('mes')">Este mês</button>
+                    <button class="pf-a" data-dias="ano" onclick="atalhoPeriodo('ano')">Este ano</button>
+                </div>
+                <div class="pf-datas">
+                    <input type="date" id="fDe" class="pf-d" onchange="limparAtalhoPeriodo()">
+                    <span>até</span>
+                    <input type="date" id="fAte" class="pf-d" onchange="limparAtalhoPeriodo()">
+                </div>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Tempo parado</div>
+                <div class="pf-atalhos" id="pfParado">
+                    <button class="pf-a on" data-parado="0" onclick="escolherParado(0)">Qualquer</button>
+                    <button class="pf-a" data-parado="7" onclick="escolherParado(7)">+7 dias</button>
+                    <button class="pf-a" data-parado="14" onclick="escolherParado(14)">+14 dias</button>
+                    <button class="pf-a" data-parado="30" onclick="escolherParado(30)">+30 dias</button>
+                </div>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Responsável</div>
+                <select class="pf-sel" id="fResp"><option value="">Todos</option></select>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Produto</div>
+                <select class="pf-sel" id="fProd"><option value="">Todos</option></select>
+            </div>
+        </div>
+        <div class="pf-pe">
+            <button class="btn btn-fant" onclick="limparFiltros()">Limpar</button>
+            <button class="btn btn-acao" onclick="aplicarFiltros()">Aplicar</button>
+        </div>
+    </div>
+
     <div class="m-fases" id="mFases"></div>
     <div class="board" id="board"><div class="loading">Carregando...</div></div>
+
+    <!-- DETALHE DO LEAD -->
+    <div class="modal-overlay" id="modalDetalhe" onclick="fundoModal(event,'modalDetalhe')">
+        <div class="modal largo">
+            <div class="det-cab">
+                <span class="det-av" id="dAv"></span>
+                <div class="det-id">
+                    <div class="det-emp" id="dEmpresa"></div>
+                    <div class="det-nome" id="dContato"></div>
+                    <div class="det-chips" id="dChips"></div>
+                </div>
+                <div class="det-acoes" id="dAcoes"></div>
+                <button class="md-x" onclick="fecharModal('modalDetalhe')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="det-num" id="dNumeros"></div>
+            <div class="det-corpo">
+                <div class="det-esq">
+                    <div class="det-rot">Por onde passou</div>
+                    <div id="dTimeline"><div class="loading">Carregando histórico...</div></div>
+                </div>
+                <div class="det-dir">
+                    <div class="det-rot">Dados</div>
+                    <div id="dDados"></div>
+                    <button class="btn btn-fant" style="width:100%;justify-content:center" onclick="editarDoDetalhe()">
+                        <span class="material-symbols-rounded">edit</span>Editar dados</button>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="moverDoDetalhe()"><span class="material-symbols-rounded">swap_horiz</span>Mover</button>
+                <button class="btn btn-perigo" style="margin-left:auto" onclick="excluirDoDetalhe()">
+                    <span class="material-symbols-rounded">delete</span>Excluir</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE LEAD -->
     <div class="modal-overlay" id="modalLead" onclick="fundoModal(event,'modalLead')">
@@ -443,6 +661,10 @@
             document.getElementById('objGrade').innerHTML = OBJECOES.map(o=>
                 `<button class="obj" data-obj="${o.id}" onclick="escolherObjecao('${o.id}')">
                     <span class="material-symbols-rounded">${o.ico}</span><span class="obj-txt">${escH(o.nome)}</span></button>`).join('');
+            document.getElementById('fResp').innerHTML = '<option value="">Todos</option>' +
+                RESPONSAVEIS.map(r=>`<option>${escH(r)}</option>`).join('');
+            document.getElementById('fProd').innerHTML = '<option value="">Todos</option>' +
+                PRODUTOS.map(p=>`<option>${escH(p)}</option>`).join('');
             await carregar();
         }
 
@@ -482,6 +704,7 @@
                 if(l.funil !== funilAtual) return false;
                 if(q && !((l.empresa||'').toLowerCase().includes(q) || (l.contato||'').toLowerCase().includes(q))) return false;
                 if(soHoje){ const d=dataDe(l.proximo_contato); if(!d || d>hoje0()) return false; }
+                if(!passaFiltros(l)) return false;
                 return true;
             });
         }
@@ -494,7 +717,12 @@
             const paraHoje = leads.filter(l=>{ const d=dataDe(l.proximo_contato); return d && d<=hoje0(); }).length;
             const chip = document.getElementById('chipHoje');
             chip.innerText = paraHoje; chip.style.display = paraHoje ? 'inline-flex' : 'none';
-            document.getElementById('contador').innerText = visiveis.length + ' lead' + (visiveis.length!==1?'s':'');
+            // "14 de 42": a diferença entre os números denuncia o filtro ativo
+            const totalFunil = leads.filter(l=>l.funil===funilAtual).length;
+            document.getElementById('contador').innerText = (visiveis.length===totalFunil)
+                ? visiveis.length + ' lead' + (visiveis.length!==1?'s':'')
+                : visiveis.length + ' de ' + totalFunil + ' leads';
+            montarChips();
 
             board.innerHTML = cfg.colunas.map(c=>{
                 const doCol = visiveis.filter(l=>l.coluna===c.id);
@@ -525,7 +753,7 @@
 
             return `<div class="lc ${parado?'parado':''}" draggable="true" data-id="${escA(l.id)}"
                          ondragstart="arrastar(event)" ondragend="fimArraste(event)"
-                         onclick="abrirLead('${escA(l.id)}')">
+                         onclick="abrirDetalhe('${escA(l.id)}')">
                 <button class="lc-mover" title="Mover" onclick="abrirMover(event,'${escA(l.id)}')">
                     <span class="material-symbols-rounded">swap_horiz</span></button>
                 <div class="lc-emp">${escH(l.empresa)||'Sem empresa'}</div>
@@ -652,23 +880,294 @@
             moverLeadId = id;
             document.getElementById('folhaTitulo').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
             const cfg = FUNIS[funilAtual];
-            document.getElementById('folhaLista').innerHTML =
-                `<div class="folha-grupo">${escH(cfg.titulo)}</div>` +
+            const CORFUNIL = { qualificacao:'#0EA5E9', fechamento:'#6C5CE7', nutricao:'#C2660B' };
+            let html = `<div class="folha-g"><span class="pt" style="background:${CORFUNIL[funilAtual]}"></span>${escH(cfg.titulo)} · funil atual</div>` +
                 cfg.colunas.map(c=>{
                     const atual = c.id===l.coluna;
+                    const troca = !!c.saida;
                     return `<div class="folha-item ${atual?'atual':''}" ${atual?'':`onclick="confirmarMover('${escA(c.id)}')"`}>
                         <span class="pt" style="background:${c.cor}"></span>${escH(c.id)}
-                        ${atual?'<span class="marca">atual</span>':''}</div>`;
+                        ${atual?'<span class="marca">atual</span>':(troca?'<span class="material-symbols-rounded">arrow_forward</span>':'')}</div>`;
                 }).join('');
+            // Outros funis, só na coluna de entrada: não faz sentido jogar
+            // um lead direto em "Follow up 3" de outro funil.
+            const outros = Object.keys(FUNIS).filter(f=>f!==funilAtual);
+            if(outros.length){
+                html += `<div class="folha-g"><span class="pt" style="background:var(--linha-2)"></span>Outros funis</div>` +
+                    outros.map(f=>`<div class="folha-item" onclick="confirmarMoverFunil('${escA(f)}')">
+                        <span class="pt" style="background:${CORFUNIL[f]}"></span>${escH(FUNIS[f].titulo)} · ${escH(ENTRADA[f])}
+                        <span class="material-symbols-rounded">arrow_forward</span></div>`).join('');
+            }
+            document.getElementById('folhaLista').innerHTML = html;
             document.getElementById('folhaMover').classList.add('on');
         }
         function fecharFolha(ev){ if(ev && ev.target.id!=='folhaMover') return;
             document.getElementById('folhaMover').classList.remove('on'); moverLeadId=null; }
+        function confirmarMoverFunil(destino){
+            const id = moverLeadId;
+            document.getElementById('folhaMover').classList.remove('on');
+            moverLeadId = null;
+            if(id) enviarMovimento(id, ENTRADA[destino], destino, null, null, null);
+        }
         function confirmarMover(coluna){
             const id = moverLeadId;
             document.getElementById('folhaMover').classList.remove('on');
             moverLeadId = null;
             if(id) mover(id, coluna);
+        }
+
+
+        /* ==========================================================
+           FILTROS
+           "Quando" tem três significados num funil: entrada, última
+           movimentação e próximo contato. Filtrar os três com um campo
+           só daria a resposta errada em dois deles.
+           ========================================================== */
+        let fCampoData = 'criado_em', fParado = 0;
+
+        function toggleFiltros(abrir){
+            const p = document.getElementById('painelFiltros');
+            const v = document.getElementById('pfVeu');
+            const b = document.getElementById('btnFiltros');
+            const vai = (abrir === undefined) ? !p.classList.contains('on') : abrir;
+            p.classList.toggle('on', vai);
+            v.classList.toggle('on', vai);
+            b.classList.toggle('on', vai);
+            if(!vai || window.innerWidth <= 900) return;
+            const r = b.getBoundingClientRect();
+            let top = r.bottom + 6;
+            if(top + p.offsetHeight > window.innerHeight - 10) top = Math.max(10, r.top - p.offsetHeight - 6);
+            p.style.top = top + 'px';
+            p.style.left = Math.max(12, r.right - p.offsetWidth) + 'px';
+        }
+        function aplicarFiltros(){ render(); toggleFiltros(false); }
+
+        function escolherData(campo){
+            fCampoData = campo;
+            document.querySelectorAll('#pfQualData .pf-op').forEach(o =>
+                o.classList.toggle('on', o.getAttribute('data-campo') === campo));
+            render();
+        }
+        function escolherParado(dias){
+            fParado = dias;
+            document.querySelectorAll('#pfParado .pf-a').forEach(a =>
+                a.classList.toggle('on', a.getAttribute('data-parado') === String(dias)));
+            render();
+        }
+        function atalhoPeriodo(v){
+            const hj = new Date(); let ini;
+            if(v === 'mes') ini = new Date(hj.getFullYear(), hj.getMonth(), 1);
+            else if(v === 'ano') ini = new Date(hj.getFullYear(), 0, 1);
+            else { ini = new Date(hj); ini.setDate(ini.getDate() - v); }
+            const f = x => x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+            document.getElementById('fDe').value = f(ini);
+            document.getElementById('fAte').value = f(hj);
+            document.querySelectorAll('#pfPeriodo .pf-a').forEach(a =>
+                a.classList.toggle('on', a.getAttribute('data-dias') === String(v)));
+            render();
+        }
+        function limparAtalhoPeriodo(){
+            document.querySelectorAll('#pfPeriodo .pf-a').forEach(a => a.classList.remove('on'));
+            render();
+        }
+        function limparFiltros(){
+            document.getElementById('fDe').value = '';
+            document.getElementById('fAte').value = '';
+            document.getElementById('fResp').value = '';
+            document.getElementById('fProd').value = '';
+            escolherParado(0);
+            escolherData('criado_em');
+            limparAtalhoPeriodo();
+        }
+
+        function rotuloPeriodo(){
+            const a = document.querySelector('#pfPeriodo .pf-a.on');
+            if(a){ const v = a.getAttribute('data-dias');
+                return v==='mes' ? 'este mês' : v==='ano' ? 'este ano' : 'últimos '+v+' dias'; }
+            const de = document.getElementById('fDe').value, ate = document.getElementById('fAte').value;
+            if(!de && !ate) return null;
+            const br = s => { const p=String(s).split('-'); return p.length===3 ? p[2]+'/'+p[1] : s; };
+            return (de?br(de):'…') + ' a ' + (ate?br(ate):'…');
+        }
+        const ROTULO_DATA = { criado_em:'Criado', movido_em:'Movimentado', proximo_contato:'Contato' };
+
+        function montarChips(){
+            const chips = [];
+            const per = rotuloPeriodo();
+            if(per) chips.push({ rot: ROTULO_DATA[fCampoData], val: per, ac:'limparPeriodo()' });
+            if(fParado) chips.push({ rot:'Parados há', val:'mais de '+fParado+' dias', ac:'escolherParado(0)' });
+            const resp = document.getElementById('fResp');
+            if(resp.value) chips.push({ rot:'Responsável', val:resp.value, ac:"limparUm('fResp')" });
+            const prod = document.getElementById('fProd');
+            if(prod.value) chips.push({ rot:'Produto', val:prod.value, ac:"limparUm('fProd')" });
+
+            const chip = document.getElementById('chipFiltros');
+            chip.innerText = chips.length;
+            chip.style.display = chips.length ? 'inline-flex' : 'none';
+
+            const barra = document.getElementById('chipsFiltros');
+            barra.classList.toggle('on', chips.length > 0);
+            barra.innerHTML = !chips.length ? '' :
+                '<span class="chips-rot">Filtrando por</span>' +
+                chips.map(c => '<span class="chip-f">' + escH(c.rot) + ': <b>' + escH(c.val) + '</b>' +
+                    '<span class="x" onclick="' + c.ac + '" title="Remover"><span class="material-symbols-rounded">close</span></span></span>').join('') +
+                '<button class="chips-limpar" onclick="limparFiltros()">Limpar tudo</button>';
+        }
+        function limparPeriodo(){ document.getElementById('fDe').value=''; document.getElementById('fAte').value=''; limparAtalhoPeriodo(); }
+        function limparUm(id){ document.getElementById(id).value=''; render(); }
+
+        function passaFiltros(l){
+            const de = document.getElementById('fDe').value, ate = document.getElementById('fAte').value;
+            if(de || ate){
+                const v = l[fCampoData];
+                if(!v) return false;
+                const s = String(v).split('T')[0];
+                if(de && s < de) return false;
+                if(ate && s > ate) return false;
+            }
+            if(fParado && diasDesde(l.movido_em || l.criado_em) < fParado) return false;
+            const resp = document.getElementById('fResp').value;
+            if(resp && (l.responsavel||'') !== resp) return false;
+            const prod = document.getElementById('fProd').value;
+            if(prod && (l.produto||'') !== prod) return false;
+            return true;
+        }
+
+        /* ==========================================================
+           DETALHE DO LEAD
+           A linha do tempo sai de lead_movimentos; a duração de cada
+           etapa é a diferença entre movimentos consecutivos.
+           ========================================================== */
+        let detalheId = null;
+
+        const FUNIL_CLASSE = { qualificacao:'q', fechamento:'f', nutricao:'n' };
+        function chipFunil(f){ return 'tf-' + (FUNIL_CLASSE[f] || 'q'); }
+        function nomeFunil(f){ return (FUNIS[f] && FUNIS[f].titulo) || f || '—'; }
+        function fmtDias(n){ return n === 1 ? '1 dia' : n + ' dias'; }
+        function fmtDataHora(s){
+            const d = new Date(s);
+            if(isNaN(d)) return '—';
+            return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' · ' +
+                   d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        }
+
+        async function abrirDetalhe(id){
+            const l = leads.find(x => String(x.id) === String(id));
+            if(!l) return;
+            detalheId = id;
+            const [bg,fg] = cor(l.responsavel);
+            document.getElementById('dAv').style.background = bg;
+            document.getElementById('dAv').style.color = fg;
+            document.getElementById('dAv').innerText = iniciais(l.contato || l.empresa);
+            document.getElementById('dEmpresa').innerText = l.empresa || 'Sem empresa';
+            document.getElementById('dContato').innerText = l.contato || 'Sem contato';
+
+            document.getElementById('dChips').innerHTML =
+                `<span class="chip c-funil-${FUNIL_CLASSE[l.funil]||'q'}">${escH(nomeFunil(l.funil))}</span>
+                 <span class="chip c-col">${escH(l.coluna)}</span>
+                 ${l.produto ? `<span class="chip c-prod">${escH(l.produto)}</span>` : ''}
+                 ${l.origem ? `<span class="chip c-orig">${escH(l.origem)}</span>` : ''}`;
+
+            const temTel = !!soDigitos(l.telefone), temMail = !!(l.email||'').trim();
+            document.getElementById('dAcoes').innerHTML =
+                `<button class="ac ac-wpp" ${temTel?'':'style="opacity:.35"'} title="WhatsApp" onclick="abrirWpp('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">chat</span></button>
+                 <button class="ac ac-mail" ${temMail?'':'style="opacity:.35"'} title="E-mail" onclick="abrirEmail('${escA(l.email||'')}')"><span class="material-symbols-rounded">mail</span></button>
+                 <button class="ac ac-fone" ${temTel?'':'style="opacity:.35"'} title="Ligar" onclick="ligar('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">call</span></button>`;
+
+            document.getElementById('dDados').innerHTML = `
+                <div class="campo"><div class="campo-r">Telefone</div><div class="campo-v num ${temTel?'':'vazio'}">${temTel?escH(l.telefone):'não informado'}</div></div>
+                <div class="campo"><div class="campo-r">E-mail</div><div class="campo-v ${temMail?'':'vazio'}">${temMail?escH(l.email):'não informado'}</div></div>
+                <div class="campo"><div class="campo-r">Responsável</div><div class="campo-v">${escH(l.responsavel)||'—'}</div></div>
+                <div class="campo"><div class="campo-r">Origem</div><div class="campo-v ${l.origem?'':'vazio'}">${escH(l.origem)||'não informada'}</div></div>
+                <div class="campo" style="margin-bottom:18px"><div class="campo-r">Anotações</div>
+                    ${l.anotacoes ? `<div class="anot">${escH(l.anotacoes)}</div>` : '<div class="campo-v vazio">sem anotações</div>'}</div>`;
+
+            document.getElementById('dNumeros').innerHTML = '';
+            document.getElementById('dTimeline').innerHTML = '<div class="loading">Carregando histórico...</div>';
+            document.getElementById('modalDetalhe').classList.add('show');
+
+            let movs = [];
+            try{
+                const r = await fetch('/api/leads/'+id+'/movimentos');
+                if(r.ok){ const dd = await r.json(); movs = dd.movimentos || []; }
+            }catch(e){}
+            renderNumeros(l, movs);
+            renderTimeline(l, movs);
+        }
+
+        function renderNumeros(l, movs){
+            const noFunil = diasDesde(l.criado_em);
+            const naEtapa = diasDesde(l.movido_em || l.criado_em);
+            const funisTocados = new Set(movs.map(m => m.para_funil).filter(Boolean));
+            funisTocados.add(l.funil);
+            const prox = dataDe(l.proximo_contato);
+            const proxTxt = !prox ? '—' : (prox <= hoje0() ? 'hoje' : fmtDias(Math.round((prox - hoje0())/86400000)));
+            document.getElementById('dNumeros').innerHTML = `
+                <div class="dn"><div class="dn-rot">No funil há</div><div class="dn-val num">${fmtDias(noFunil)}</div>
+                    <div class="dn-pe">desde ${prox===null?'':''}${(dataDe(l.criado_em)||new Date()).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</div></div>
+                <div class="dn"><div class="dn-rot">Nesta etapa</div>
+                    <div class="dn-val num" ${naEtapa>=10?'style="color:var(--atencao)"':''}>${fmtDias(naEtapa)}</div>
+                    <div class="dn-pe">${escH(l.coluna)}</div></div>
+                <div class="dn"><div class="dn-rot">Movimentos</div><div class="dn-val num">${movs.length}</div>
+                    <div class="dn-pe">em ${funisTocados.size} funil${funisTocados.size!==1?'s':''}</div></div>
+                <div class="dn"><div class="dn-rot">Próximo contato</div>
+                    <div class="dn-val num" ${prox && prox<=hoje0()?'style="color:var(--critico)"':''}>${proxTxt}</div>
+                    <div class="dn-pe">${prox?prox.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'não agendado'}</div></div>
+                ${l.valor_estimado ? `<div class="dn"><div class="dn-rot">Valor estimado</div>
+                    <div class="dn-val num">R$ ${Number(l.valor_estimado).toLocaleString('pt-BR',{maximumFractionDigits:0})}</div>
+                    <div class="dn-pe">não confirmado</div></div>` : ''}`;
+        }
+
+        function renderTimeline(l, movs){
+            const alvo = document.getElementById('dTimeline');
+            if(!movs.length){
+                alvo.innerHTML = `<div class="col-vazia">Nenhum movimento registrado ainda.<br>
+                    O histórico começa a partir da primeira mudança de coluna.</div>`;
+                return;
+            }
+            // movs vem do mais recente para o mais antigo
+            const html = movs.map((m, i) => {
+                const trocouFunil = m.de_funil && m.para_funil && m.de_funil !== m.para_funil;
+                // duração: até o movimento seguinte (ou até agora, se for o mais recente)
+                const fim = i === 0 ? new Date() : new Date(movs[i-1].criado_em);
+                const ini = new Date(m.criado_em);
+                const dias = Math.max(0, Math.round((fim - ini)/86400000));
+                const aberto = i === 0;
+                const obj = m.objecao ? (OBJECOES.find(o => o.id === m.objecao) || {nome:m.objecao}) : null;
+                return `<div class="tp ${aberto?'destaque':''}">
+                    <span class="tp-pt"><i style="background:${aberto?'var(--acao)':'var(--linha-2)'}"></i></span>
+                    <div class="tp-topo">
+                        <span class="tp-mov">
+                            ${trocouFunil ? `<span class="tp-funil ${chipFunil(m.de_funil)}">${escH(nomeFunil(m.de_funil))}</span> ` : ''}
+                            ${escH(m.de_coluna||'—')} <span class="tp-seta">→</span> <b>${escH(m.para_coluna||'—')}</b>
+                            ${trocouFunil ? `<span class="tp-funil ${chipFunil(m.para_funil)}">${escH(nomeFunil(m.para_funil))}</span>` : ''}
+                        </span>
+                        <span class="tp-quando">${fmtDataHora(m.criado_em)}</span>
+                    </div>
+                    ${m.autor ? `<div class="tp-meta">por ${escH(m.autor)}</div>` : ''}
+                    ${obj ? `<div class="tp-obj">
+                        <div class="tp-obj-t"><span class="material-symbols-rounded">block</span>Objeção: ${escH(obj.nome)}</div>
+                        ${m.objecao_detalhe ? `<div class="tp-obj-d">${escH(m.objecao_detalhe)}</div>` : ''}
+                    </div>` : ''}
+                    <div class="tp-dur ${dias>=14?'longo':''}"><span class="material-symbols-rounded">schedule</span>
+                        ${fmtDias(dias)}${aberto?' aqui, ainda em aberto':''}</div>
+                </div>`;
+            }).join('');
+            alvo.innerHTML = `<div class="tl">${html}</div>`;
+        }
+
+        function editarDoDetalhe(){ const id = detalheId; fecharModal('modalDetalhe'); abrirLead(id); }
+        function moverDoDetalhe(){ const id = detalheId; fecharModal('modalDetalhe'); abrirMover({stopPropagation(){}}, id); }
+        async function excluirDoDetalhe(){
+            const id = detalheId;
+            if(!id || !confirm('Excluir este lead? A ação não pode ser desfeita.')) return;
+            try{
+                const r = await fetch('/api/leads/'+id, { method:'DELETE' });
+                if(!r.ok){ showToast(await motivoErro(r,'Erro ao excluir.'),'error'); return; }
+                showToast('Lead excluído.','success');
+                fecharModal('modalDetalhe');
+                await carregar();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
         }
 
         /* ==================== CADASTRO ==================== */
