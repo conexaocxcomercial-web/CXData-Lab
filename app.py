@@ -1726,6 +1726,296 @@ def mover_lead(lead_id):
         return jsonify({"status": "erro", "mensagem": "Erro ao mover lead.", "detalhe": str(e)[:300]}), 500
 
 
+@app.route('/feed')
+def pagina_feed():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('feed.html',
+                           usuario_nome=session.get('usuario_nome', ''),
+                           nivel_acesso=session.get('nivel_acesso', ''),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+
+# Comunicado é voz institucional: só admin e gestor publicam.
+# Os demais tipos ficam abertos ao time.
+TIPOS_POST = ('comunicado', 'evento', 'celebracao', 'post')
+BUCKET_FEED = 'feed'
+
+
+def _pode_publicar(tipo):
+    if session.get('tipo_usuario') == 'externo':
+        return False
+    if tipo == 'comunicado':
+        return session.get('nivel_acesso') in ('admin', 'gestor')
+    return True
+
+
+def _pode_mexer_no_post(post):
+    """Autor mexe no que é seu; admin e gestor mexem em tudo."""
+    if session.get('nivel_acesso') in ('admin', 'gestor'):
+        return True
+    return (post.get('autor') or '') == session.get('usuario_nome', '')
+
+
+@app.route('/api/posts', methods=['GET'])
+def listar_posts():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        res = (supabase.table("posts").select("*")
+               .is_("excluido_em", "null")
+               .order("criado_em", desc=True).limit(120).execute())
+        posts = res.data or []
+        if not posts:
+            return jsonify({"status": "sucesso", "posts": [], "reacoes": [],
+                            "comentarios": [], "presencas": []}), 200
+
+        ids = [p["id"] for p in posts]
+        # Uma consulta por tabela em vez de uma por post: com 120 posts
+        # seriam 360 idas ao banco.
+        reacoes = (supabase.table("post_reacoes").select("*")
+                   .in_("post_id", ids).execute()).data or []
+        coments = (supabase.table("post_comentarios").select("*")
+                   .in_("post_id", ids).is_("excluido_em", "null")
+                   .order("criado_em").execute()).data or []
+        presencas = (supabase.table("post_presencas").select("*")
+                     .in_("post_id", ids).execute()).data or []
+
+        return jsonify({"status": "sucesso", "posts": posts, "reacoes": reacoes,
+                        "comentarios": coments, "presencas": presencas}), 200
+    except Exception as e:
+        print("Erro em listar_posts:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar o feed.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts', methods=['POST'])
+def criar_post():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        d = request.get_json() or {}
+        tipo = d.get("tipo", "post")
+        if tipo not in TIPOS_POST:
+            return jsonify({"status": "erro", "mensagem": "Tipo inválido."}), 400
+        if not _pode_publicar(tipo):
+            return jsonify({"status": "erro",
+                            "mensagem": "Só admin e gestor publicam comunicados."}), 403
+        corpo = (d.get("corpo") or "").strip()
+        if not corpo:
+            return jsonify({"status": "erro", "mensagem": "Escreva algo antes de publicar."}), 400
+        if tipo == "evento" and not d.get("evento_data"):
+            return jsonify({"status": "erro", "mensagem": "Evento precisa de data."}), 400
+
+        fixar = bool(d.get("fixado")) and session.get('nivel_acesso') in ('admin', 'gestor')
+        if fixar:
+            # Um fixado por vez: dois destaques não destacam nada.
+            supabase.table("posts").update({"fixado": False}).eq("fixado", True).execute()
+
+        novo = {
+            "tipo": tipo,
+            "titulo": (d.get("titulo") or "").strip() or None,
+            "corpo": corpo,
+            "autor": session.get('usuario_nome', ''),
+            "autor_id": str(session.get('usuario_id', '')),
+            "fixado": fixar,
+            "evento_data": d.get("evento_data") or None,
+            "evento_local": (d.get("evento_local") or "").strip() or None,
+            "anexos": d.get("anexos") or [],
+        }
+        res = supabase.table("posts").insert(novo).execute()
+        return jsonify({"status": "sucesso", "post": (res.data or [None])[0]}), 201
+    except Exception as e:
+        print("Erro em criar_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao publicar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>', methods=['PUT'])
+def atualizar_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        atual = supabase.table("posts").select("*").eq("id", post_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Post não encontrado."}), 404
+        if not _pode_mexer_no_post(atual.data[0]):
+            return jsonify({"status": "erro", "mensagem": "Você só edita os seus posts."}), 403
+
+        d = request.get_json() or {}
+        campos = ["titulo", "corpo", "evento_data", "evento_local", "anexos"]
+        upd = {k: d[k] for k in campos if k in d}
+
+        if "fixado" in d and session.get('nivel_acesso') in ('admin', 'gestor'):
+            if d["fixado"]:
+                supabase.table("posts").update({"fixado": False}).eq("fixado", True).execute()
+            upd["fixado"] = bool(d["fixado"])
+
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+        upd["editado_em"] = datetime.now(timezone.utc).isoformat()
+        supabase.table("posts").update(upd).eq("id", post_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>', methods=['DELETE'])
+def excluir_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        atual = supabase.table("posts").select("*").eq("id", post_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Post não encontrado."}), 404
+        if not _pode_mexer_no_post(atual.data[0]):
+            return jsonify({"status": "erro", "mensagem": "Você só exclui os seus posts."}), 403
+        supabase.table("posts").update(
+            {"excluido_em": datetime.now(timezone.utc).isoformat()}
+        ).eq("id", post_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>/reacao', methods=['POST'])
+def reagir_post(post_id):
+    """Alterna a reação: se já existe, remove; se não, cria."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        emoji = (request.get_json() or {}).get("emoji") or "👍"
+        usuario = session.get('usuario_nome', '')
+        ja = (supabase.table("post_reacoes").select("id")
+              .eq("post_id", post_id).eq("usuario", usuario)
+              .eq("emoji", emoji).limit(1).execute())
+        if ja.data:
+            supabase.table("post_reacoes").delete().eq("id", ja.data[0]["id"]).execute()
+            return jsonify({"status": "sucesso", "reagiu": False}), 200
+        supabase.table("post_reacoes").insert(
+            {"post_id": post_id, "usuario": usuario, "emoji": emoji}).execute()
+        return jsonify({"status": "sucesso", "reagiu": True}), 200
+    except Exception as e:
+        print("Erro em reagir_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao reagir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>/presenca', methods=['POST'])
+def presenca_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        usuario = session.get('usuario_nome', '')
+        ja = (supabase.table("post_presencas").select("id")
+              .eq("post_id", post_id).eq("usuario", usuario).limit(1).execute())
+        if ja.data:
+            supabase.table("post_presencas").delete().eq("id", ja.data[0]["id"]).execute()
+            return jsonify({"status": "sucesso", "confirmado": False}), 200
+        supabase.table("post_presencas").insert(
+            {"post_id": post_id, "usuario": usuario}).execute()
+        return jsonify({"status": "sucesso", "confirmado": True}), 200
+    except Exception as e:
+        print("Erro em presenca_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao confirmar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>/comentarios', methods=['POST'])
+def comentar_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        corpo = ((request.get_json() or {}).get("corpo") or "").strip()
+        if not corpo:
+            return jsonify({"status": "erro", "mensagem": "Escreva algo."}), 400
+        novo = {
+            "post_id": post_id,
+            "autor": session.get('usuario_nome', ''),
+            "corpo": corpo,
+            "mencionados": (request.get_json() or {}).get("mencionados") or [],
+        }
+        res = supabase.table("post_comentarios").insert(novo).execute()
+        return jsonify({"status": "sucesso", "comentario": (res.data or [None])[0]}), 201
+    except Exception as e:
+        print("Erro em comentar_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao comentar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/comentarios/<int:comentario_id>', methods=['DELETE'])
+def excluir_comentario_post(comentario_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        atual = (supabase.table("post_comentarios").select("*")
+                 .eq("id", comentario_id).limit(1).execute())
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Comentário não encontrado."}), 404
+        c = atual.data[0]
+        if (session.get('nivel_acesso') not in ('admin', 'gestor')
+                and (c.get("autor") or '') != session.get('usuario_nome', '')):
+            return jsonify({"status": "erro", "mensagem": "Você só exclui os seus."}), 403
+        supabase.table("post_comentarios").update(
+            {"excluido_em": datetime.now(timezone.utc).isoformat()}
+        ).eq("id", comentario_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_comentario_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/feed/upload', methods=['POST'])
+def upload_anexo():
+    """Sobe um arquivo para o Storage e devolve a URL pública.
+
+    O arquivo passa pela função serverless, que no Vercel tem limite de
+    ~4,5 MB por requisição. Acima disso o upload falha antes de chegar
+    aqui — por isso a tela recusa arquivos grandes com aviso claro.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        arq = request.files.get('arquivo')
+        if not arq or not arq.filename:
+            return jsonify({"status": "erro", "mensagem": "Nenhum arquivo recebido."}), 400
+
+        dados = arq.read()
+        if len(dados) > 4 * 1024 * 1024:
+            return jsonify({"status": "erro",
+                            "mensagem": "Arquivo acima de 4 MB. Envie por link."}), 413
+
+        # Nome único, preservando a extensão para o navegador saber abrir.
+        base, ponto, ext = arq.filename.rpartition('.')
+        ext = ('.' + ext.lower()) if ponto else ''
+        caminho = "%s/%s%s" % (
+            datetime.now(timezone.utc).strftime('%Y-%m'),
+            secrets.token_urlsafe(16), ext)
+
+        supabase.storage.from_(BUCKET_FEED).upload(
+            caminho, dados,
+            {"content-type": arq.mimetype or "application/octet-stream",
+             "cache-control": "3600"})
+        url = supabase.storage.from_(BUCKET_FEED).get_public_url(caminho)
+
+        return jsonify({"status": "sucesso", "anexo": {
+            "nome": arq.filename, "url": url,
+            "tipo": arq.mimetype or "", "tamanho": len(dados)}}), 201
+    except Exception as e:
+        print("Erro em upload_anexo:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao enviar o arquivo.",
+                        "detalhe": str(e)[:300]}), 500
+
+
 @app.route('/api/timelogs', methods=['GET'])
 def listar_timelogs():
     """Registros de tempo num intervalo de datas, com as permissões do usuário aplicadas.
