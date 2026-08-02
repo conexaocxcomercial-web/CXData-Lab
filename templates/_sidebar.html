@@ -232,6 +232,11 @@ html body{
       <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
     <div class="cxsb-lista" id="gr-quadros">
+      {% if not eh_person or 'feed' in perm_modulos %}
+      <div class="cxsb-item" data-path="/feed" data-tip="Mural" onclick="location.href='/feed'">
+        <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-txt">Mural</span>
+      </div>
+      {% endif %}
       {% if not eh_person or 'crm' in perm_modulos %}
       <div class="cxsb-item" data-path="/crm" data-tip="CRM" onclick="location.href='/crm'">
         <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">CRM</span>
