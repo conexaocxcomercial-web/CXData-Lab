@@ -155,6 +155,7 @@ def carregar_permissoes(usuario):
     sem deslogar ninguém."""
     papel_id = usuario.get('papel_id')
     session['equipe'] = usuario.get('equipe')
+    session['papel_id'] = papel_id
     if not papel_id:
         session['caps'] = {}
         session['quadros'] = []
@@ -166,6 +167,8 @@ def carregar_permissoes(usuario):
         rq = (supabase.table("papel_quadros")
               .select("quadro").eq("papel_id", papel_id).execute())
         session['quadros'] = [r['quadro'] for r in (rq.data or [])]
+        rp = supabase.table("papeis").select("nome").eq("id", papel_id).limit(1).execute()
+        session['papel_nome'] = (rp.data or [{}])[0].get('nome')
     except Exception as e:
         print("Erro ao carregar permissoes:", e)
         session['caps'] = {}
@@ -185,6 +188,62 @@ def registrar(acao, recurso=None, alvo_id=None, detalhe=None):
         }).execute()
     except Exception as e:
         print("Aviso: auditoria nao registrada:", e)
+
+
+# ============================================================
+# MODO PARALELO — a ponte entre o modelo antigo e o novo
+#
+# Durante a migração, cada checagem antiga também consulta o modelo
+# novo e registra quando os dois discordam. Quem manda é sempre o
+# ANTIGO: o novo só observa. Alguns dias de uso real provam a
+# equivalência antes de trocar de verdade.
+#
+# Quando MODO_PARALELO virar False, o novo passa a mandar.
+# ============================================================
+
+MODO_PARALELO = True
+
+# Traduz o que o modelo antigo perguntava para a capacidade equivalente.
+MAPA_MODULO_CAP = {
+    'clientes':      'cliente.ver',
+    'agenda':        'tempo.registrar',
+    'planejamento':  'tempo.registrar',
+    'dashboard':     'dashboard.ver',
+    'okr':           'okr.ver',
+    'crm':           'crm.lead.ver',
+    'feed':          'feed.publicar',
+    'lixeira':       'lixeira.ver',
+    'externos':      'cliente.portal.gerir',
+    'configuracoes': 'papel.gerir',
+}
+
+
+def _comparar(rotulo, antigo, novo, extra=None):
+    """Registra divergência entre os dois modelos. Devolve sempre o antigo.
+
+    Só registra quando o usuário já tem papel — sem papel, o modelo novo
+    responde vazio por definição e a divergência não significa nada.
+    """
+    if not MODO_PARALELO or not session.get('caps'):
+        return antigo
+    if bool(antigo) != bool(novo):
+        try:
+            supabase.table("auditoria").insert({
+                "usuario": session.get('usuario_nome'),
+                "usuario_id": str(session.get('usuario_id', '')),
+                "acao": "divergencia_permissao",
+                "recurso": rotulo,
+                "detalhe": {
+                    "antigo": bool(antigo),
+                    "novo": bool(novo),
+                    "nivel": session.get('nivel_acesso'),
+                    "papel": session.get('papel_nome'),
+                    "extra": extra,
+                },
+            }).execute()
+        except Exception as e:
+            print("Aviso: divergencia nao registrada:", e)
+    return antigo
 
 
 @app.context_processor
@@ -248,13 +307,15 @@ def pode_acessar_modulo(modulo):
     colaborador (legado): quadros + agenda. personalizado/externo: conforme perm_modulos."""
     nivel = session.get('nivel_acesso')
     if nivel in ('admin', 'gestor'):
-        return True
+        return _comparar('modulo:' + modulo, True,
+                         pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
     if nivel == 'colaborador':
         # Legado: colaborador acessa quadros e agenda
         return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda')
     # comum, personalizado e externo: usam a lista explícita de módulos
     modulos = session.get('perm_modulos') or []
-    return modulo in modulos
+    return _comparar('modulo:' + modulo, modulo in modulos,
+                     pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
 
 def filtrar_projetos_permitidos(projetos):
     """Recebe lista de projetos (dicts) e devolve só os que o usuário logado pode ver,
@@ -263,6 +324,11 @@ def filtrar_projetos_permitidos(projetos):
 
     # Admin e Gestor veem tudo (comportamento atual preservado)
     if nivel in ('admin', 'gestor'):
+        if session.get('caps'):
+            novo = filtrar(projetos, 'projeto.ver')
+            _comparar('projeto.ver:qtd', len(projetos) == len(projetos),
+                      len(novo) == len(projetos),
+                      {"antigo": len(projetos), "novo": len(novo)})
         return projetos
 
     # Comum: vê TODOS os dados (o controle é só de módulos, não de dados)
@@ -272,7 +338,12 @@ def filtrar_projetos_permitidos(projetos):
     # Colaborador (legado): só onde é responsável
     if nivel == 'colaborador':
         meu_nome = (session.get('usuario_nome') or '').strip().lower()
-        return [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
+        antigo = [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
+        if session.get('caps'):
+            novo = filtrar(projetos, 'projeto.ver')
+            _comparar('projeto.ver:qtd', True, len(novo) == len(antigo),
+                      {"antigo": len(antigo), "novo": len(novo)})
+        return antigo
 
     # === PERSONALIZADO (interno) e EXTERNO (cliente): lógica granular ===
     perm_cli_modo = session.get('perm_clientes_modo') or 'todos'
@@ -358,6 +429,10 @@ def login():
             session['perm_clientes_ids'] = usuario.get('perm_clientes_ids') or []
             session['perm_projetos_modo'] = usuario.get('perm_projetos_modo') or 'todos'
             session['perm_projetos_ids'] = usuario.get('perm_projetos_ids') or []
+            # Modelo novo: carrega capacidades, quadros e equipe.
+            # Sem papel definido devolve vazio, e o sistema segue no modelo
+            # antigo — é o que permite migrar sem deslogar ninguém.
+            carregar_permissoes(usuario)
             return jsonify({"status": "sucesso"}), 200
         else:
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
@@ -1908,6 +1983,63 @@ def _pode_mexer_no_post(post):
     if session.get('nivel_acesso') in ('admin', 'gestor'):
         return True
     return (post.get('autor') or '') == session.get('usuario_nome', '')
+
+
+@app.route('/api/permissoes/divergencias', methods=['GET'])
+def listar_divergencias():
+    """Divergências entre o modelo antigo e o novo, durante a migração.
+
+    Enquanto esta lista estiver vazia por alguns dias de uso real,
+    o modelo novo pode assumir com segurança.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('nivel_acesso') != 'admin':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = (supabase.table("auditoria").select("*")
+               .eq("acao", "divergencia_permissao")
+               .order("criado_em", desc=True).limit(300).execute())
+        linhas = res.data or []
+
+        # Agrupa por recurso + par de respostas: 200 divergências iguais
+        # são um problema só, e é assim que precisa aparecer.
+        resumo = {}
+        for l in linhas:
+            det = l.get("detalhe") or {}
+            chave = (l.get("recurso"), det.get("antigo"), det.get("novo"), det.get("nivel"))
+            if chave not in resumo:
+                resumo[chave] = {
+                    "recurso": l.get("recurso"),
+                    "antigo": det.get("antigo"),
+                    "novo": det.get("novo"),
+                    "nivel": det.get("nivel"),
+                    "papel": det.get("papel"),
+                    "ocorrencias": 0,
+                    "ultima": l.get("criado_em"),
+                    "usuarios": set(),
+                }
+            resumo[chave]["ocorrencias"] += 1
+            if l.get("usuario"):
+                resumo[chave]["usuarios"].add(l["usuario"])
+
+        saida = []
+        for v in resumo.values():
+            v["usuarios"] = sorted(v["usuarios"])
+            saida.append(v)
+        saida.sort(key=lambda x: -x["ocorrencias"])
+
+        return jsonify({
+            "status": "sucesso",
+            "total": len(linhas),
+            "distintas": len(saida),
+            "divergencias": saida,
+            "modo_paralelo": MODO_PARALELO,
+        }), 200
+    except Exception as e:
+        print("Erro em listar_divergencias:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/posts', methods=['GET'])
