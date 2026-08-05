@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acessos | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --sens:#7C3AED; --sens-fraco:#F3EEFF; --sens-borda:#D6C6FA;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --e-pop:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
+            --accent-lime:#BEF533; --accent-pink:#FF43C0;
+        }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select,textarea{ font-family:inherit; border:none; }
+        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+              min-height:100vh; -webkit-font-smoothing:antialiased; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
+
+        .top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+            justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+            position:sticky; top:0; z-index:20; }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
+
+        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; height:56px;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap;
+            position:sticky; top:56px; z-index:15; }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .abas{ display:flex; gap:6px; }
+        .aba{ font-size:12.5px; font-weight:550; padding:6px 13px; border-radius:var(--r-pill);
+            background:var(--papel-2); color:var(--tinta-2); cursor:pointer; border:none; transition:.15s; }
+        .aba:hover{ background:var(--linha); }
+        .aba.on{ background:var(--tinta); color:#fff; }
+        .cmd-dir{ margin-left:auto; display:flex; gap:9px; align-items:center; }
+        .btn{ font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+            gap:7px; padding:8px 14px; border-radius:var(--r-ctrl); transition:.15s; white-space:nowrap; }
+        .btn .material-symbols-rounded{ font-size:18px; }
+        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+        .btn-acao:disabled{ opacity:.55; cursor:default; }
+        .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
+        .btn-perigo:hover{ background:#FDEDED; }
+        .btn-min{ padding:6px 11px; font-size:12px; }
+
+        .wrap{ padding:18px 22px 70px; max-width:1240px; margin:0 auto; }
+        .painel-aba{ display:none; }
+        .painel-aba.on{ display:block; }
+        .loading{ text-align:center; padding:56px; color:var(--tinta-3); font-size:13px; font-weight:500; }
+        .empty{ text-align:center; padding:56px 24px; color:var(--tinta-3); }
+        .empty .material-symbols-rounded{ font-size:42px; opacity:.25; display:block; margin-bottom:12px; }
+        .empty h3{ font-size:14.5px; font-weight:650; color:var(--tinta-2); margin-bottom:5px; }
+        .empty p{ font-size:12.5px; font-weight:500; line-height:1.6; max-width:360px; margin:0 auto; }
+
+        /* ===== PAPÉIS ===== */
+        .editor{ display:grid; grid-template-columns:224px 1fr; gap:14px; align-items:start; }
+        .lp-box{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:8px;
+            position:sticky; top:130px; }
+        .lp-cad{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
+            color:var(--tinta-3); padding:8px 10px 5px; }
+        .lp{ display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:8px; font-size:12.5px;
+            font-weight:500; color:var(--tinta-2); cursor:pointer; margin-bottom:2px; width:100%;
+            background:none; text-align:left; transition:.14s; }
+        .lp:hover{ background:var(--papel-2); }
+        .lp.on{ background:var(--acao); color:#fff; font-weight:600; }
+        .lp .material-symbols-rounded{ font-size:16px; color:var(--tinta-3); }
+        .lp.on .material-symbols-rounded{ color:#fff; }
+        .lp-txt{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lp-n{ font-size:10.5px; font-weight:600; color:var(--tinta-3); }
+        .lp.on .lp-n{ color:rgba(255,255,255,.72); }
+        .lp-sep{ height:1px; background:var(--linha); margin:7px 6px; }
+
+        .pn{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
+        .pn-cab{ padding:15px 17px; border-bottom:1px solid var(--linha); display:flex;
+            align-items:flex-start; gap:12px; flex-wrap:wrap; }
+        .pn-nome{ font-size:15px; font-weight:650; letter-spacing:-.3px; }
+        .pn-desc{ font-size:12.5px; color:var(--tinta-3); margin-top:3px; line-height:1.5; }
+        .pn-selo{ font-size:10px; font-weight:600; padding:3px 9px; border-radius:99px;
+            background:var(--papel-2); color:var(--tinta-3); white-space:nowrap; }
+        .pn-selo.sistema{ background:var(--cr-fundo); color:var(--critico); }
+        .pn-acoes{ margin-left:auto; display:flex; gap:7px; }
+        .gr{ border-bottom:1px solid var(--linha); }
+        .gr:last-child{ border-bottom:none; }
+        .gr-cab{ padding:10px 17px; background:var(--papel-2); display:flex; align-items:center; gap:9px;
+            cursor:pointer; width:100%; border:none; text-align:left; }
+        .gr-cab:hover{ background:var(--linha); }
+        .gr-cab .material-symbols-rounded{ font-size:16px; color:var(--tinta-3); transition:.15s; }
+        .gr-t{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3); flex:1; }
+        .gr-n{ font-size:10.5px; font-weight:600; color:var(--tinta-3); }
+        .gr-corpo{ display:none; }
+        .gr.aberto .gr-corpo{ display:block; }
+        .cp{ padding:11px 17px; display:flex; align-items:flex-start; gap:11px; border-bottom:1px solid var(--papel-2); }
+        .cp:last-child{ border-bottom:none; }
+        .cp.sensivel{ background:var(--sens-fraco); }
+        .sw{ width:34px; height:20px; min-width:34px; border-radius:99px; background:var(--linha-2);
+            position:relative; cursor:pointer; transition:.15s; margin-top:1px; border:none; padding:0; }
+        .sw::after{ content:''; position:absolute; top:2px; left:2px; width:16px; height:16px;
+            border-radius:50%; background:#fff; transition:.15s; }
+        .sw.on{ background:var(--acao); }
+        .sw.on::after{ left:16px; }
+        .sw.on.sens{ background:var(--sens); }
+        .sw:disabled{ opacity:.5; cursor:not-allowed; }
+        .cp-txt{ flex:1; min-width:0; }
+        .cp-n{ font-size:12.5px; font-weight:600; color:var(--tinta); display:flex; align-items:center;
+            gap:7px; flex-wrap:wrap; }
+        .cp-cod{ font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--tinta-3);
+            background:var(--papel-2); padding:1px 6px; border-radius:4px; font-weight:400; }
+        .cp-tag{ font-size:9.5px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--sens-fraco); color:var(--sens); box-shadow:inset 0 0 0 1px var(--sens-borda); }
+        .cp-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.5; margin-top:2px; }
+        .esc{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+        .eo{ font-size:11px; font-weight:550; padding:4px 10px; border-radius:99px; background:var(--papel-2);
+            color:var(--tinta-2); cursor:pointer; border:none; transition:.14s; }
+        .eo:hover{ background:var(--linha); }
+        .eo.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600; }
+        .qd{ display:flex; gap:6px; flex-wrap:wrap; margin-top:9px; }
+        .qi{ font-size:11px; font-weight:550; padding:4px 10px; border-radius:99px; background:var(--papel-2);
+            color:var(--tinta-3); cursor:pointer; display:inline-flex; align-items:center; gap:5px; border:none; }
+        .qi:hover{ background:var(--linha); }
+        .qi.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600; }
+        .qi .material-symbols-rounded{ font-size:13px; }
+
+        .barra-salvar{ position:sticky; bottom:0; background:var(--papel); border-top:1px solid var(--linha);
+            padding:12px 17px; display:none; align-items:center; gap:11px; flex-wrap:wrap; }
+        .barra-salvar.on{ display:flex; }
+        .bs-txt{ font-size:12.5px; color:var(--tinta-2); font-weight:500; flex:1; min-width:150px; }
+        .bs-txt b{ font-weight:650; color:var(--tinta); }
+
+        /* ===== PESSOAS ===== */
+        .pes{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
+        .pr{ display:grid; grid-template-columns:1.4fr 1fr 1fr 74px; gap:14px; padding:12px 18px;
+            border-bottom:1px solid var(--linha); align-items:center; }
+        .pr:last-child{ border:none; }
+        .pr.th{ background:var(--papel-2); }
+        .pr.th div{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3); }
+        .pr.inativo{ opacity:.5; }
+        .pr-p{ display:flex; align-items:center; gap:10px; min-width:0; }
+        .av{ width:32px; height:32px; min-width:32px; border-radius:50%; display:flex;
+            align-items:center; justify-content:center; font-size:10.5px; font-weight:600; }
+        .pr-nome{ font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pr-mail{ font-size:11px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pr-sel{ font-size:12px; padding:6px 10px; background:var(--papel-2); border:1px solid transparent;
+            border-radius:var(--r-ctrl); color:var(--tinta); width:100%; cursor:pointer; outline:none; }
+        .pr-sel:focus{ background:var(--papel); border-color:var(--acao); }
+        .pr-sel.vazio{ color:var(--tinta-3); font-style:italic; }
+        .pr-eq{ display:flex; gap:5px; align-items:center; }
+        .pr-eq input{ font-size:12px; padding:6px 10px; background:var(--papel-2); border:1px solid transparent;
+            border-radius:var(--r-ctrl); color:var(--tinta); width:100%; outline:none; }
+        .pr-eq input:focus{ background:var(--papel); border-color:var(--acao); }
+        .pes-cab{ padding:12px 18px; border-bottom:1px solid var(--linha); display:flex;
+            align-items:center; gap:11px; flex-wrap:wrap; }
+        .busca{ position:relative; flex:1; max-width:280px; }
+        .busca .material-symbols-rounded{ position:absolute; left:10px; top:50%; transform:translateY(-50%);
+            font-size:17px; color:var(--tinta-3); }
+        .busca input{ width:100%; font-size:12.5px; padding:8px 11px 8px 33px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; color:var(--tinta); }
+        .busca input:focus{ background:var(--papel); border-color:var(--acao); }
+        .cont{ font-size:12px; font-weight:600; color:var(--tinta-2); background:var(--papel-2);
+            padding:5px 11px; border-radius:var(--r-pill); }
+        .sem-papel{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--at-fundo); color:var(--atencao); white-space:nowrap; }
+
+        /* ===== AUDITORIA ===== */
+        .aud{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
+        .ar{ display:grid; grid-template-columns:150px 1fr 160px; gap:14px; padding:11px 18px;
+            border-bottom:1px solid var(--linha); align-items:baseline; }
+        .ar:last-child{ border:none; }
+        .ar.th{ background:var(--papel-2); }
+        .ar.th div{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3); }
+        .ar-quando{ font-size:11px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; }
+        .ar-o{ font-size:12.5px; color:var(--tinta-2); line-height:1.5; }
+        .ar-o b{ font-weight:650; color:var(--tinta); }
+        .ar-quem{ font-size:12px; color:var(--tinta-2); font-weight:550; }
+        .ar-det{ font-size:11px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
+            margin-top:3px; word-break:break-all; }
+        .divg{ background:var(--at-fundo); }
+        .divg .ar-o{ color:#7A4A0C; }
+
+        .cx-div{ background:var(--at-fundo); border-radius:var(--r-card); box-shadow:0 0 0 1px var(--at-borda);
+            padding:15px 17px; display:flex; gap:12px; align-items:flex-start; margin-bottom:14px; }
+        .cx-div .material-symbols-rounded{ font-size:19px; color:var(--atencao); flex-shrink:0; margin-top:1px; }
+        .cx-div-t{ font-size:13px; font-weight:650; color:#7A4A0C; margin-bottom:3px; }
+        .cx-div-s{ font-size:12.5px; line-height:1.6; color:#7A4A0C; }
+        .cx-div.limpo{ background:var(--ok-fraco); box-shadow:0 0 0 1px #A5DEC8; }
+        .cx-div.limpo .material-symbols-rounded{ color:var(--ok); }
+        .cx-div.limpo .cx-div-t, .cx-div.limpo .cx-div-s{ color:#0A5C42; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            justify-content:center; align-items:center; padding:20px; }
+        .modal-overlay.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:440px; max-height:92vh;
+            overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha); display:flex;
+            align-items:flex-start; gap:12px; flex-shrink:0; }
+        .md-eyebrow{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:4px; }
+        .md-tit{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .md-x{ margin-left:auto; width:28px; height:28px; border-radius:8px; background:var(--papel-2);
+            color:var(--tinta-3); display:flex; align-items:center; justify-content:center; cursor:pointer;
+            flex-shrink:0; border:none; }
+        .md-x .material-symbols-rounded{ font-size:17px; }
+        .md-corpo{ padding:18px 20px 22px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
+        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); display:flex; gap:9px;
+            justify-content:flex-end; background:var(--papel-2); flex-shrink:0; }
+        .ig label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .ig input, .ig textarea{ width:100%; font-size:13px; color:var(--tinta); padding:10px 12px;
+            background:var(--papel-2); border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; }
+        .ig textarea{ resize:vertical; min-height:70px; line-height:1.55; }
+        .ig input:focus, .ig textarea:focus{ background:var(--papel); border-color:var(--acao);
+            box-shadow:0 0 0 3px var(--acao-fraco); }
+        .icones{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
+        .ic{ aspect-ratio:1; border-radius:9px; background:var(--papel-2); display:flex; align-items:center;
+            justify-content:center; cursor:pointer; border:1px solid transparent; color:var(--tinta-3); }
+        .ic:hover{ background:var(--linha); }
+        .ic.on{ background:var(--acao-fraco); border-color:var(--acao); color:var(--acao); }
+        .ic .material-symbols-rounded{ font-size:19px; }
+
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
+            display:flex; flex-direction:column; gap:9px; }
+        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
+            display:flex; align-items:center; gap:9px; max-width:88vw; }
+
+        @media (max-width:900px){
+            .top-bar{ padding:0 16px 0 60px; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            .cmd-sep{ display:none; }
+            .abas{ order:1; width:100%; }
+            .aba{ flex:1; text-align:center; }
+            .wrap{ padding:14px 16px 60px; }
+            .editor{ grid-template-columns:1fr; }
+            .lp-box{ position:static; display:flex; gap:6px; overflow-x:auto; padding:8px; }
+            .lp{ flex-shrink:0; width:auto; margin-bottom:0; }
+            .lp-cad, .lp-sep{ display:none; }
+            .pr{ grid-template-columns:1fr; gap:8px; }
+            .pr.th{ display:none; }
+            .pr > div:nth-child(4){ justify-self:start; }
+            .ar{ grid-template-columns:1fr; gap:4px; }
+            .ar.th{ display:none; }
+            .modal-overlay{ padding:0; align-items:flex-end; }
+            .modal{ max-width:none; border-radius:18px 18px 0 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="cmd">
+        <span class="cmd-tit">Acessos</span>
+        <div class="cmd-sep"></div>
+        <div class="abas">
+            <button class="aba on" data-aba="papeis" onclick="trocarAba('papeis')">Papéis</button>
+            <button class="aba" data-aba="pessoas" onclick="trocarAba('pessoas')">Pessoas</button>
+            <button class="aba" data-aba="auditoria" onclick="trocarAba('auditoria')">Auditoria</button>
+        </div>
+        <div class="cmd-dir" id="cmdDir"></div>
+    </div>
+
+    <div class="wrap">
+        <div class="painel-aba on" id="abaPapeis"><div class="loading">Carregando...</div></div>
+        <div class="painel-aba" id="abaPessoas"><div class="loading">Carregando...</div></div>
+        <div class="painel-aba" id="abaAuditoria"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <!-- MODAL DE PAPEL -->
+    <div class="modal-overlay" id="modalPapel" onclick="fundo(event,'modalPapel')">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow">Acessos</div>
+                    <div class="md-tit" id="mpTitulo">Novo papel</div>
+                </div>
+                <button class="md-x" onclick="fechar('modalPapel')" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <input type="hidden" id="mpId">
+                <div class="ig">
+                    <label for="mpNome">Nome</label>
+                    <input type="text" id="mpNome" placeholder="Ex.: Marketing" maxlength="40">
+                </div>
+                <div class="ig">
+                    <label for="mpDesc">Descrição</label>
+                    <textarea id="mpDesc" placeholder="Quem tem este papel e o que faz"></textarea>
+                </div>
+                <div class="ig">
+                    <label>Ícone</label>
+                    <div class="icones" id="mpIcones"></div>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="fechar('modalPapel')">Cancelar</button>
+                <button class="btn btn-acao" id="mpSalvar" onclick="salvarPapel()">
+                    <span class="material-symbols-rounded">check</span>Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        const USUARIO = "{{ usuario_nome }}";
+        const ICONES = ['shield_person','diamond','supervisor_account','handshake','badge','business',
+                        'groups_3','campaign','payments','engineering','school','support_agent'];
+        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
+            ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
+
+        let catalogo = [], grupos = [], quadros = [];
+        let papeis = [], pessoas = [], equipes = [];
+        let papelAtual = null, rascunho = null, abertos = {};
+        let abaAtiva = 'papeis';
+
+        document.addEventListener('DOMContentLoaded', iniciar);
+
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+        function cor(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=n.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
+        function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
+
+        async function motivo(resp, padrao){
+            try{ const d = await resp.json();
+                if(d && d.detalhe) return (d.mensagem||padrao)+' '+d.detalhe;
+                if(d && d.mensagem) return d.mensagem;
+                if(d && d.erro) return d.erro;
+            }catch(e){}
+            return padrao+' (HTTP '+resp.status+')';
+        }
+
+        async function iniciar(){
+            document.getElementById('mpIcones').innerHTML = ICONES.map(i =>
+                `<button class="ic" data-ic="${i}" onclick="escolherIcone('${i}')" type="button">
+                    <span class="material-symbols-rounded">${i}</span></button>`).join('');
+            try{
+                const r = await fetch('/api/acessos/catalogo');
+                if(!r.ok){ erroGeral('abaPapeis', await motivo(r,'Erro ao carregar o catálogo.')); return; }
+                const d = await r.json();
+                catalogo = d.capacidades || []; grupos = d.grupos || []; quadros = d.quadros || [];
+                grupos.forEach((g,i) => abertos[g] = i < 2);   // dois primeiros abertos
+            }catch(e){ erroGeral('abaPapeis','Sem conexão com o servidor.'); return; }
+            await carregarPapeis();
+            atualizarCmd();
+        }
+
+        function erroGeral(alvo, msg){
+            document.getElementById(alvo).innerHTML =
+                `<div class="empty"><span class="material-symbols-rounded">error</span>
+                 <h3>Não foi possível carregar</h3><p>${escH(msg)}</p></div>`;
+        }
+
+        function trocarAba(a){
+            abaAtiva = a;
+            document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.getAttribute('data-aba')===a));
+            document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
+            document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.add('on');
+            atualizarCmd();
+            if(a === 'pessoas' && !pessoas.length) carregarPessoas();
+            if(a === 'auditoria') carregarAuditoria();
+        }
+
+        function atualizarCmd(){
+            document.getElementById('cmdDir').innerHTML = abaAtiva === 'papeis'
+                ? `<button class="btn btn-acao" onclick="abrirPapel()"><span class="material-symbols-rounded">add</span>Novo papel</button>`
+                : abaAtiva === 'auditoria'
+                ? `<button class="btn btn-fant" onclick="carregarAuditoria()"><span class="material-symbols-rounded">refresh</span>Atualizar</button>`
+                : '';
+        }
+
+        /* ==================== PAPÉIS ==================== */
+        async function carregarPapeis(){
+            try{
+                const r = await fetch('/api/acessos/papeis');
+                if(!r.ok){ erroGeral('abaPapeis', await motivo(r,'Erro ao carregar papéis.')); return; }
+                const d = await r.json();
+                papeis = d.papeis || [];
+            }catch(e){ erroGeral('abaPapeis','Sem conexão com o servidor.'); return; }
+            if(!papelAtual && papeis.length) selecionar(papeis[0].id, true);
+            else renderPapeis();
+        }
+
+        function selecionar(id, semRender){
+            const p = papeis.find(x => String(x.id) === String(id));
+            if(!p) return;
+            papelAtual = String(id);
+            // Rascunho: a tela edita uma cópia. Nada vai ao banco antes do Salvar.
+            rascunho = { capacidades: Object.assign({}, p.capacidades || {}), quadros: (p.quadros||[]).slice() };
+            if(!semRender) renderPapeis();
+            else renderPapeis();
+        }
+
+        function papelObj(){ return papeis.find(x => String(x.id) === papelAtual); }
+
+        function mudou(){
+            const p = papelObj(); if(!p || !rascunho) return false;
+            const a = JSON.stringify(Object.keys(p.capacidades||{}).sort().map(k=>[k,(p.capacidades||{})[k]]));
+            const b = JSON.stringify(Object.keys(rascunho.capacidades).sort().map(k=>[k,rascunho.capacidades[k]]));
+            const qa = JSON.stringify((p.quadros||[]).slice().sort());
+            const qb = JSON.stringify(rascunho.quadros.slice().sort());
+            return a !== b || qa !== qb;
+        }
+
+        function renderPapeis(){
+            const internos = papeis.filter(p => !p.externo);
+            const externos = papeis.filter(p => p.externo);
+            const item = p => `<button class="lp ${String(p.id)===papelAtual?'on':''}" onclick="trocarPapel('${escA(p.id)}')">
+                <span class="material-symbols-rounded">${escH(p.icone||'badge')}</span>
+                <span class="lp-txt">${escH(p.nome)}</span><span class="lp-n">${p.pessoas||0}</span></button>`;
+
+            const lista = `<div class="lp-box">
+                <div class="lp-cad">Internos</div>${internos.map(item).join('')}
+                ${externos.length ? `<div class="lp-sep"></div><div class="lp-cad">Externos</div>${externos.map(item).join('')}` : ''}
+            </div>`;
+
+            const p = papelObj();
+            if(!p){
+                document.getElementById('abaPapeis').innerHTML = `<div class="editor">${lista}
+                    <div class="empty"><span class="material-symbols-rounded">shield_person</span>
+                    <h3>Nenhum papel ainda</h3><p>Crie o primeiro para começar a definir permissões.</p></div></div>`;
+                return;
+            }
+
+            const trava = !!p.sistema;
+            const corpo = `<div class="pn">
+                <div class="pn-cab">
+                    <div style="flex:1;min-width:0">
+                        <div class="pn-nome">${escH(p.nome)}</div>
+                        <div class="pn-desc">${escH(p.descricao)||'Sem descrição.'}</div>
+                    </div>
+                    <span class="pn-selo ${trava?'sistema':''}">${trava?'Não editável':(p.pessoas||0)+' pessoa'+((p.pessoas||0)===1?'':'s')}</span>
+                    ${trava ? '' : `<div class="pn-acoes">
+                        <button class="btn btn-fant btn-min" onclick="abrirPapel('${escA(p.id)}')">
+                            <span class="material-symbols-rounded">edit</span>Editar</button>
+                        <button class="btn btn-perigo btn-min" onclick="excluirPapel('${escA(p.id)}')">
+                            <span class="material-symbols-rounded">delete</span></button>
+                    </div>`}
+                </div>
+                ${grupos.map(g => grupoHtml(g, trava)).join('')}
+                <div class="barra-salvar ${mudou()?'on':''}">
+                    <span class="bs-txt">Há alterações não salvas em <b>${escH(p.nome)}</b>.</span>
+                    <button class="btn btn-fant" onclick="selecionar('${escA(p.id)}')">Descartar</button>
+                    <button class="btn btn-acao" onclick="salvarCapacidades()">
+                        <span class="material-symbols-rounded">check</span>Salvar permissões</button>
+                </div>
+            </div>`;
+            document.getElementById('abaPapeis').innerHTML = `<div class="editor">${lista}${corpo}</div>`;
+        }
+
+        function grupoHtml(g, trava){
+            const caps = catalogo.filter(c => c.grupo === g);
+            if(!caps.length) return '';
+            const ligadas = caps.filter(c => rascunho.capacidades[c.chave] !== undefined).length;
+            const aberto = !!abertos[g];
+            return `<div class="gr ${aberto?'aberto':''}">
+                <button class="gr-cab" onclick="alternarGrupo('${escA(g)}')">
+                    <span class="material-symbols-rounded">${aberto?'expand_more':'chevron_right'}</span>
+                    <span class="gr-t">${escH(g)}</span>
+                    <span class="gr-n">${ligadas} de ${caps.length}</span>
+                </button>
+                <div class="gr-corpo">${caps.map(c => capHtml(c, trava)).join('')}</div>
+            </div>`;
+        }
+
+        function capHtml(c, trava){
+            const esc = rascunho.capacidades[c.chave];
+            const on = esc !== undefined;
+            const ROT = { tudo:'Todos', time:'Do meu time', proprio:'Só os meus' };
+            return `<div class="cp ${c.sensivel?'sensivel':''}">
+                <button class="sw ${on?'on':''} ${c.sensivel?'sens':''}" ${trava?'disabled':''}
+                        onclick="alternarCap('${escA(c.chave)}')" aria-label="${escA(c.rotulo)}"></button>
+                <div class="cp-txt">
+                    <div class="cp-n">${escH(c.rotulo)}
+                        <span class="cp-cod">${escH(c.chave)}</span>
+                        ${c.sensivel?'<span class="cp-tag">sensível</span>':''}</div>
+                    <div class="cp-d">${escH(c.descricao)}</div>
+                    ${on && c.escopos.length ? `<div class="esc">${c.escopos.map(e =>
+                        `<button class="eo ${esc===e?'on':''}" ${trava?'disabled':''}
+                                 onclick="trocarEscopo('${escA(c.chave)}','${escA(e)}')">${ROT[e]||e}</button>`).join('')}</div>` : ''}
+                    ${on && c.chave === 'projeto.ver' ? `<div class="qd">${quadros.map(q =>
+                        `<button class="qi ${rascunho.quadros.includes(q.chave)?'on':''}" ${trava?'disabled':''}
+                                 onclick="alternarQuadro('${escA(q.chave)}')">
+                            ${rascunho.quadros.includes(q.chave)?'<span class="material-symbols-rounded">check</span>':''}${escH(q.nome)}</button>`).join('')}</div>` : ''}
+                </div>
+            </div>`;
+        }
+
+        function trocarPapel(id){
+            if(mudou() && !confirm('Há alterações não salvas. Descartar?')) return;
+            selecionar(id);
+        }
+        function alternarGrupo(g){ abertos[g] = !abertos[g]; renderPapeis(); }
+        function alternarCap(chave){
+            const c = catalogo.find(x => x.chave === chave); if(!c) return;
+            if(rascunho.capacidades[chave] !== undefined) delete rascunho.capacidades[chave];
+            else rascunho.capacidades[chave] = c.escopos.length ? c.escopos[c.escopos.length-1] : 'tudo';
+            renderPapeis();
+        }
+        function trocarEscopo(chave, esc){ rascunho.capacidades[chave] = esc; renderPapeis(); }
+        function alternarQuadro(q){
+            const i = rascunho.quadros.indexOf(q);
+            if(i >= 0) rascunho.quadros.splice(i,1); else rascunho.quadros.push(q);
+            renderPapeis();
+        }
+
+        async function salvarCapacidades(){
+            const p = papelObj(); if(!p) return;
+            try{
+                const r = await fetch('/api/acessos/papeis/'+p.id, {
+                    method:'PUT', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ capacidades: rascunho.capacidades, quadros: rascunho.quadros })
+                });
+                if(!r.ok){ showToast(await motivo(r,'Erro ao salvar.'),'error'); return; }
+                showToast('Permissões salvas. Quem tem este papel precisa sair e entrar de novo.','success');
+                await carregarPapeis();
+                selecionar(p.id);
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+        }
+
+        /* ---- modal de papel ---- */
+        function escolherIcone(i){
+            document.querySelectorAll('.ic').forEach(b => b.classList.toggle('on', b.getAttribute('data-ic')===i));
+        }
+        function abrirPapel(id){
+            const p = id ? papeis.find(x => String(x.id)===String(id)) : null;
+            document.getElementById('mpId').value = p ? p.id : '';
+            document.getElementById('mpTitulo').innerText = p ? 'Editar papel' : 'Novo papel';
+            document.getElementById('mpNome').value = p ? p.nome : '';
+            document.getElementById('mpDesc').value = p ? (p.descricao||'') : '';
+            escolherIcone(p ? (p.icone||'badge') : 'badge');
+            document.getElementById('modalPapel').classList.add('show');
+            setTimeout(()=>document.getElementById('mpNome').focus(), 60);
+        }
+        async function salvarPapel(){
+            const id = document.getElementById('mpId').value;
+            const nome = document.getElementById('mpNome').value.trim();
+            if(!nome){ showToast('Informe o nome do papel.','error'); return; }
+            const ic = document.querySelector('.ic.on');
+            const payload = { nome, descricao: document.getElementById('mpDesc').value.trim(),
+                              icone: ic ? ic.getAttribute('data-ic') : 'badge' };
+            const b = document.getElementById('mpSalvar'); b.disabled = true;
+            try{
+                const r = await fetch(id ? '/api/acessos/papeis/'+id : '/api/acessos/papeis', {
+                    method: id?'PUT':'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify(payload) });
+                if(!r.ok){ showToast(await motivo(r, id?'Erro ao salvar.':'Erro ao criar papel.'),'error'); return; }
+                const d = await r.json();
+                showToast(id?'Papel atualizado.':'Papel criado.','success');
+                fechar('modalPapel');
+                await carregarPapeis();
+                if(!id && d.papel) selecionar(d.papel.id);
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+            finally{ b.disabled = false; }
+        }
+        async function excluirPapel(id){
+            const p = papeis.find(x => String(x.id)===String(id)); if(!p) return;
+            if(!confirm('Excluir o papel "'+p.nome+'"?')) return;
+            try{
+                const r = await fetch('/api/acessos/papeis/'+id, { method:'DELETE' });
+                if(!r.ok){ showToast(await motivo(r,'Erro ao excluir.'),'error'); return; }
+                showToast('Papel excluído.','success');
+                papelAtual = null;
+                await carregarPapeis();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+        }
+
+        /* ==================== PESSOAS ==================== */
+        async function carregarPessoas(){
+            try{
+                const r = await fetch('/api/acessos/pessoas');
+                if(!r.ok){ erroGeral('abaPessoas', await motivo(r,'Erro ao carregar pessoas.')); return; }
+                const d = await r.json();
+                pessoas = d.pessoas || []; equipes = d.equipes || [];
+            }catch(e){ erroGeral('abaPessoas','Sem conexão com o servidor.'); return; }
+            renderPessoas();
+        }
+
+        function renderPessoas(){
+            const busca = (document.getElementById('buscaPessoa')||{}).value || '';
+            const t = busca.trim().toLowerCase();
+            const lista = pessoas.filter(p => !t ||
+                (p.nome||'').toLowerCase().includes(t) || (p.email||'').toLowerCase().includes(t));
+            const semPapel = pessoas.filter(p => !p.papel_id).length;
+
+            const opts = sel => papeis.map(p =>
+                `<option value="${escA(p.id)}" ${String(sel)===String(p.id)?'selected':''}>${escH(p.nome)}</option>`).join('');
+
+            document.getElementById('abaPessoas').innerHTML = `
+                ${semPapel ? `<div class="cx-div"><span class="material-symbols-rounded">info</span>
+                    <div><div class="cx-div-t">${semPapel} pessoa${semPapel===1?'':'s'} sem papel</div>
+                    <div class="cx-div-s">Enquanto não tiverem papel, seguem no modelo antigo de permissões.
+                    Atribua um papel e peça para saírem e entrarem de novo.</div></div></div>` : ''}
+                <div class="pes">
+                    <div class="pes-cab">
+                        <div class="busca"><span class="material-symbols-rounded">search</span>
+                            <input id="buscaPessoa" placeholder="Buscar nome ou e-mail" value="${escA(busca)}" oninput="renderPessoas()"></div>
+                        <span class="cont">${lista.length === pessoas.length ? pessoas.length+' pessoas' : lista.length+' de '+pessoas.length}</span>
+                    </div>
+                    <div class="pr th"><div>Pessoa</div><div>Papel</div><div>Equipe</div><div style="text-align:center">Ativo</div></div>
+                    ${lista.map(p => {
+                        const [bg,fg] = cor(p.nome);
+                        const inativo = p.ativo === false;
+                        return `<div class="pr ${inativo?'inativo':''}">
+                            <div class="pr-p"><span class="av" style="background:${bg};color:${fg}">${iniciais(p.nome)}</span>
+                                <div style="min-width:0"><div class="pr-nome">${escH(p.nome)}
+                                    ${!p.papel_id?'<span class="sem-papel">sem papel</span>':''}</div>
+                                    <div class="pr-mail">${escH(p.email)}</div></div></div>
+                            <div><select class="pr-sel ${p.papel_id?'':'vazio'}" onchange="salvarPessoa('${escA(p.id)}','papel_id',this.value)">
+                                <option value="">— sem papel —</option>${opts(p.papel_id)}</select></div>
+                            <div class="pr-eq"><input list="listaEquipes" value="${escA(p.equipe||'')}" placeholder="—"
+                                onchange="salvarPessoa('${escA(p.id)}','equipe',this.value)"></div>
+                            <div style="text-align:center"><button class="sw ${inativo?'':'on'}" style="margin:0 auto"
+                                onclick="salvarPessoa('${escA(p.id)}','ativo',${inativo})" aria-label="Ativo"></button></div>
+                        </div>`;
+                    }).join('')}
+                    ${lista.length ? '' : '<div class="empty"><span class="material-symbols-rounded">person_search</span><h3>Ninguém encontrado</h3><p>Tente outro termo de busca.</p></div>'}
+                </div>
+                <datalist id="listaEquipes">${equipes.map(e=>`<option value="${escA(e)}">`).join('')}</datalist>`;
+        }
+
+        async function salvarPessoa(id, campo, valor){
+            const corpo = {}; corpo[campo] = valor;
+            try{
+                const r = await fetch('/api/acessos/pessoas/'+id, {
+                    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(corpo) });
+                if(!r.ok){ showToast(await motivo(r,'Erro ao salvar.'),'error'); await carregarPessoas(); return; }
+                const p = pessoas.find(x => String(x.id)===String(id));
+                if(p) p[campo] = campo==='ativo' ? valor : (valor || null);
+                if(campo === 'equipe' && valor && !equipes.includes(valor)) equipes.push(valor);
+                showToast('Alteração salva.','success');
+                renderPessoas();
+                if(campo === 'papel_id') carregarPapeis();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+        }
+
+        /* ==================== AUDITORIA ==================== */
+        const ROTULO_ACAO = {
+            papel_criado:'criou o papel', papel_alterado:'alterou o papel',
+            papel_excluido:'excluiu o papel', acesso_alterado:'alterou o acesso de',
+            divergencia_permissao:'divergência de permissão',
+        };
+
+        async function carregarAuditoria(){
+            document.getElementById('abaAuditoria').innerHTML = '<div class="loading">Carregando...</div>';
+            let regs = [];
+            try{
+                const r = await fetch('/api/acessos/auditoria');
+                if(!r.ok){ erroGeral('abaAuditoria', await motivo(r,'Erro ao carregar auditoria.')); return; }
+                const d = await r.json();
+                regs = d.registros || [];
+            }catch(e){ erroGeral('abaAuditoria','Sem conexão com o servidor.'); return; }
+
+            const divs = regs.filter(r => r.acao === 'divergencia_permissao');
+            const chaves = new Set(divs.map(r => {
+                const d = r.detalhe || {};
+                return [r.recurso, d.antigo, d.novo, d.nivel].join('|');
+            }));
+
+            const aviso = divs.length
+                ? `<div class="cx-div"><span class="material-symbols-rounded">warning</span>
+                    <div><div class="cx-div-t">${chaves.size} divergência${chaves.size===1?'':'s'} distinta${chaves.size===1?'':'s'} entre os dois modelos</div>
+                    <div class="cx-div-s">Enquanto houver divergência, o modelo antigo continua mandando —
+                    nada quebrou. Ajuste as permissões do papel até a lista zerar.</div></div></div>`
+                : `<div class="cx-div limpo"><span class="material-symbols-rounded">check_circle</span>
+                    <div><div class="cx-div-t">Nenhuma divergência registrada</div>
+                    <div class="cx-div-s">Os dois modelos estão concordando. Depois de alguns dias assim,
+                    o modelo novo pode assumir com segurança.</div></div></div>`;
+
+            document.getElementById('abaAuditoria').innerHTML = aviso + `
+                <div class="aud">
+                    <div class="ar th"><div>Quando</div><div>O quê</div><div>Quem</div></div>
+                    ${regs.length ? regs.map(r => {
+                        const d = r.detalhe || {};
+                        const div = r.acao === 'divergencia_permissao';
+                        let texto;
+                        if(div){
+                            texto = `<b>${escH(r.recurso)}</b> — antigo diz <b>${d.antigo?'sim':'não'}</b>,
+                                     novo diz <b>${d.novo?'sim':'não'}</b>`;
+                        } else {
+                            texto = `${escH(ROTULO_ACAO[r.acao] || r.acao)} <b>${escH((d && (d.nome||d.campos&&d.campos.join(', '))) || r.alvo_id || '')}</b>`;
+                        }
+                        return `<div class="ar ${div?'divg':''}">
+                            <div class="ar-quando">${fmtData(r.criado_em)}</div>
+                            <div><div class="ar-o">${texto}</div>
+                                ${div && d.papel ? `<div class="ar-det">papel: ${escH(d.papel)} · nível antigo: ${escH(d.nivel||'—')}</div>` : ''}</div>
+                            <div class="ar-quem">${escH(r.usuario)||'—'}</div>
+                        </div>`;
+                    }).join('') : '<div class="empty"><span class="material-symbols-rounded">history</span><h3>Nada registrado ainda</h3><p>As alterações de acesso aparecerão aqui.</p></div>'}
+                </div>`;
+        }
+
+        function fmtData(s){
+            const d = new Date(s); if(isNaN(d)) return '—';
+            return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' · ' +
+                   d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        }
+
+        /* ==================== UTIL ==================== */
+        function fechar(id){ document.getElementById(id).classList.remove('show'); }
+        function fundo(e,id){ if(e.target.id===id) fechar(id); }
+        function showToast(msg,tipo){
+            const c=document.getElementById('toastContainer');
+            const t=document.createElement('div'); t.className='toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${escH(msg)}`;
+            c.appendChild(t); setTimeout(()=>t.remove(),4200);
+        }
+        document.addEventListener('keydown', function(e){
+            if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+        });
+        window.addEventListener('beforeunload', function(e){
+            if(mudou()){ e.preventDefault(); e.returnValue = ''; }
+        });
+    </script>
+</body>
+</html>
