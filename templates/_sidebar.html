@@ -285,7 +285,7 @@ html body{
     </div>
 
     {# ===== FERRAMENTAS ===== #}
-    {% if nivel_acesso in ['admin','gestor'] or (eh_person and ('okr' in perm_modulos or 'clima' in perm_modulos or 'desempenho' in perm_modulos)) %}
+    {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'okr' in perm_modulos) %}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="ferramentas" onclick="cxsbGrupo(this)">
       Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
@@ -301,34 +301,6 @@ html body{
           <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-txt">Gestão</span>
         </div>
         <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="location.href='/okr/dashboard'">
-          <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-txt">Dashboard</span>
-        </div>
-      </div>
-      {% endif %}
-      {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'clima' in perm_modulos) %}
-      <div class="cxsb-item cxsb-pai" data-path="/clima" data-tip="Clima" onclick="cxsbModulo(event,'/clima/gestao')">
-        <span class="material-symbols-rounded">mood</span><span class="cxsb-item-txt">Clima</span>
-        <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-      </div>
-      <div class="cxsb-sub">
-        <div class="cxsb-subitem" data-path="/clima/gestao" onclick="location.href='/clima/gestao'">
-          <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-txt">Gestão</span>
-        </div>
-        <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="location.href='/clima/dashboard'">
-          <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-txt">Dashboard</span>
-        </div>
-      </div>
-      {% endif %}
-      {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'desempenho' in perm_modulos) %}
-      <div class="cxsb-item cxsb-pai" data-path="/desempenho" data-tip="Desempenho" onclick="cxsbModulo(event,'/desempenho/gestao')">
-        <span class="material-symbols-rounded">leaderboard</span><span class="cxsb-item-txt">Desempenho</span>
-        <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-      </div>
-      <div class="cxsb-sub">
-        <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="location.href='/desempenho/gestao'">
-          <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-txt">Gestão</span>
-        </div>
-        <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="location.href='/desempenho/dashboard'">
           <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-txt">Dashboard</span>
         </div>
       </div>
@@ -418,8 +390,6 @@ html body{
   var caminho = window.location.pathname;
   if (caminho === '/planejamento') caminho = '/agenda';
   if (caminho === '/okr')          caminho = '/okr/gestao';
-  if (caminho === '/clima')        caminho = '/clima/gestao';
-  if (caminho === '/desempenho')   caminho = '/desempenho/gestao';
   if (caminho === '/board/geral')  caminho = '/board/cxdata';
 
   var listaAtiva = null;
