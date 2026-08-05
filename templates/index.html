@@ -312,8 +312,6 @@
             cards.push(pz('Meus projetos', meus, "window.location.href='/dashboard'", temAnalise('dashboard')));
             cards.push(pz('Projetos ativos', r.projetos, "window.location.href='/dashboard'", temAnalise('dashboard')));
             if (temModulo('clientes'))    cards.push(pz('Clientes', r.clientes, "window.location.href='/clientes'", true));
-            if (temAnalise('clima'))      cards.push(pz('Pesquisas de clima', r.clima_ativas, "window.location.href='/clima/gestao'", true));
-            if (temAnalise('desempenho')) cards.push(pz('Ciclos de desempenho', r.desempenho_ativos, "window.location.href='/desempenho/gestao'", true));
             document.getElementById('pulsoArea').innerHTML = `
                 <div class="secao">
                     <div class="secao-cab"><span class="secao-tit">Panorama</span><span class="secao-linha"></span></div>
