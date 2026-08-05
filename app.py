@@ -2042,6 +2042,294 @@ def listar_divergencias():
                         "detalhe": str(e)[:300]}), 500
 
 
+# ============================================================
+# ACESSOS — papéis, pessoas e auditoria
+# ============================================================
+
+def pode_gerir_acessos():
+    """Durante a migração, aceita os dois modelos: quem já tem a
+    capacidade nova, ou quem é admin pelo modelo antigo. Sem isso a
+    tela ficaria inacessível para quem ainda não relogou."""
+    return pode('papel.gerir') or session.get('nivel_acesso') == 'admin'
+
+
+@app.route('/acessos')
+def pagina_acessos():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    if not pode_gerir_acessos():
+        return redirect(url_for('index'))
+    return render_template('acessos.html',
+                           usuario_nome=session.get('usuario_nome', ''),
+                           nivel_acesso=session.get('nivel_acesso', ''),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+
+@app.route('/api/acessos/catalogo', methods=['GET'])
+def catalogo_capacidades():
+    """O catálogo vive no código. A tela o consulta para saber o que
+    existe, em vez de manter uma cópia própria que sairia de sincronia."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    itens = []
+    for chave, (grupo, rotulo, desc, escopos, sensivel) in CATALOGO.items():
+        itens.append({
+            "chave": chave, "grupo": grupo, "rotulo": rotulo,
+            "descricao": desc, "escopos": list(escopos), "sensivel": sensivel,
+        })
+    return jsonify({
+        "status": "sucesso",
+        "capacidades": itens,
+        "grupos": GRUPOS_ORDEM,
+        "quadros": [
+            {"chave": "recrutamento",  "nome": "Recrutamento e Seleção"},
+            {"chave": "rhestrategico", "nome": "RH Estratégico"},
+            {"chave": "projetos",      "nome": "Projetos"},
+            {"chave": "rhinterno",     "nome": "RH Interno"},
+            {"chave": "cxdata",        "nome": "CX Data"},
+            {"chave": "comercial",     "nome": "Comercial"},
+            {"chave": "marketing",     "nome": "Marketing"},
+            {"chave": "financeiro",    "nome": "Financeiro"},
+        ],
+    }), 200
+
+
+@app.route('/api/acessos/papeis', methods=['GET'])
+def listar_papeis():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        papeis = (supabase.table("papeis").select("*").order("ordem").execute()).data or []
+        caps = (supabase.table("papel_capacidades").select("*").execute()).data or []
+        quadros = (supabase.table("papel_quadros").select("*").execute()).data or []
+        usuarios = (supabase.table("usuarios").select("id, papel_id").execute()).data or []
+
+        por_papel = {}
+        for c in caps:
+            por_papel.setdefault(str(c["papel_id"]), {})[c["capacidade"]] = c["escopo"]
+        quad_papel = {}
+        for q in quadros:
+            quad_papel.setdefault(str(q["papel_id"]), []).append(q["quadro"])
+        contagem = {}
+        for u in usuarios:
+            if u.get("papel_id"):
+                contagem[str(u["papel_id"])] = contagem.get(str(u["papel_id"]), 0) + 1
+
+        for p in papeis:
+            pid = str(p["id"])
+            p["capacidades"] = por_papel.get(pid, {})
+            p["quadros"] = quad_papel.get(pid, [])
+            p["pessoas"] = contagem.get(pid, 0)
+
+        return jsonify({"status": "sucesso", "papeis": papeis}), 200
+    except Exception as e:
+        print("Erro em listar_papeis:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar papéis.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/papeis', methods=['POST'])
+def criar_papel():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        nome = (d.get("nome") or "").strip()
+        if not nome:
+            return jsonify({"status": "erro", "mensagem": "Informe o nome do papel."}), 400
+        res = supabase.table("papeis").insert({
+            "nome": nome,
+            "descricao": (d.get("descricao") or "").strip() or None,
+            "icone": d.get("icone") or "badge",
+            "externo": bool(d.get("externo")),
+            "ordem": int(d.get("ordem") or 99),
+        }).execute()
+        novo = (res.data or [None])[0]
+        registrar("papel_criado", "papeis", novo and novo.get("id"), {"nome": nome})
+        return jsonify({"status": "sucesso", "papel": novo}), 201
+    except Exception as e:
+        print("Erro em criar_papel:", e)
+        msg = "Já existe um papel com esse nome." if "duplicate" in str(e).lower() else "Erro ao criar papel."
+        return jsonify({"status": "erro", "mensagem": msg, "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/papeis/<papel_id>', methods=['PUT'])
+def atualizar_papel(papel_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        atual = supabase.table("papeis").select("*").eq("id", papel_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Papel não encontrado."}), 404
+        if atual.data[0].get("sistema"):
+            return jsonify({"status": "erro",
+                            "mensagem": "O papel de Administração não pode ser editado."}), 403
+
+        d = request.get_json() or {}
+        upd = {k: d[k] for k in ("nome", "descricao", "icone", "ordem") if k in d}
+        if upd:
+            supabase.table("papeis").update(upd).eq("id", papel_id).execute()
+
+        # Capacidades: substitui o conjunto inteiro em vez de comparar
+        # item a item. Com poucas dezenas, é mais simples e não deixa sobra.
+        if "capacidades" in d:
+            supabase.table("papel_capacidades").delete().eq("papel_id", papel_id).execute()
+            linhas = []
+            for cap, esc in (d["capacidades"] or {}).items():
+                if cap not in CATALOGO:
+                    continue          # ignora capacidade que não existe no código
+                escopos = CATALOGO[cap][3]
+                if escopos and esc not in escopos:
+                    esc = escopos[-1]
+                linhas.append({"papel_id": papel_id, "capacidade": cap,
+                               "escopo": esc if escopos else "tudo"})
+            if linhas:
+                supabase.table("papel_capacidades").insert(linhas).execute()
+
+        if "quadros" in d:
+            supabase.table("papel_quadros").delete().eq("papel_id", papel_id).execute()
+            qs = [{"papel_id": papel_id, "quadro": q} for q in (d["quadros"] or [])]
+            if qs:
+                supabase.table("papel_quadros").insert(qs).execute()
+
+        registrar("papel_alterado", "papeis", papel_id,
+                  {"campos": list(upd.keys()),
+                   "capacidades": len(d.get("capacidades") or {}) if "capacidades" in d else None})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_papel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/papeis/<papel_id>', methods=['DELETE'])
+def excluir_papel(papel_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        atual = supabase.table("papeis").select("*").eq("id", papel_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Papel não encontrado."}), 404
+        if atual.data[0].get("sistema"):
+            return jsonify({"status": "erro",
+                            "mensagem": "O papel de Administração não pode ser removido."}), 403
+
+        # Papel com gente dentro não some: as pessoas ficariam sem acesso
+        # nenhum e ninguém entenderia por quê.
+        uso = supabase.table("usuarios").select("id").eq("papel_id", papel_id).execute()
+        if uso.data:
+            return jsonify({"status": "erro",
+                            "mensagem": "Há %d pessoa(s) com este papel. Mova-as antes de excluir."
+                                        % len(uso.data)}), 400
+
+        supabase.table("papeis").delete().eq("id", papel_id).execute()
+        registrar("papel_excluido", "papeis", papel_id, {"nome": atual.data[0].get("nome")})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_papel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas', methods=['GET'])
+def listar_pessoas_acessos():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        # Nunca selecionar '*' aqui: a tabela ainda tem a coluna `senha`
+        # em texto puro, e ela não pode sair do servidor.
+        res = (supabase.table("usuarios")
+               .select("id, nome, email, papel_id, equipe, ativo, nivel_acesso, tipo_usuario")
+               .order("nome").execute())
+        pessoas = res.data or []
+        equipes = sorted({p["equipe"] for p in pessoas if p.get("equipe")})
+        return jsonify({"status": "sucesso", "pessoas": pessoas, "equipes": equipes}), 200
+    except Exception as e:
+        print("Erro em listar_pessoas_acessos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar pessoas.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas/<usuario_id>', methods=['PUT'])
+def atualizar_acesso_pessoa(usuario_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        upd = {}
+        if "papel_id" in d:
+            upd["papel_id"] = d["papel_id"] or None
+        if "equipe" in d:
+            upd["equipe"] = (d["equipe"] or "").strip() or None
+        if "ativo" in d:
+            upd["ativo"] = bool(d["ativo"])
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+
+        # Trava: sempre precisa sobrar alguém com Administração ativo,
+        # senão ninguém mais consegue entrar para consertar.
+        if ("papel_id" in upd or upd.get("ativo") is False) and str(usuario_id):
+            adm = supabase.table("papeis").select("id").eq("sistema", True).limit(1).execute()
+            if adm.data:
+                adm_id = str(adm.data[0]["id"])
+                atual = (supabase.table("usuarios").select("papel_id, ativo")
+                         .eq("id", usuario_id).limit(1).execute())
+                era_adm = atual.data and str(atual.data[0].get("papel_id")) == adm_id
+                sai = ("papel_id" in upd and str(upd["papel_id"]) != adm_id) or (upd.get("ativo") is False)
+                if era_adm and sai:
+                    todos = (supabase.table("usuarios").select("id, ativo")
+                             .eq("papel_id", adm_id).execute()).data or []
+                    restantes = [u for u in todos
+                                 if str(u["id"]) != str(usuario_id) and u.get("ativo") is not False]
+                    if not restantes:
+                        return jsonify({"status": "erro",
+                                        "mensagem": "Precisa sobrar ao menos uma pessoa ativa "
+                                                    "com o papel de Administração."}), 400
+
+        supabase.table("usuarios").update(upd).eq("id", usuario_id).execute()
+        registrar("acesso_alterado", "usuarios", usuario_id, upd)
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_acesso_pessoa:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/auditoria', methods=['GET'])
+def listar_auditoria():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('auditoria.ver') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        q = supabase.table("auditoria").select("*")
+        acao = request.args.get('acao')
+        if acao:
+            q = q.eq("acao", acao)
+        res = q.order("criado_em", desc=True).limit(200).execute()
+        return jsonify({"status": "sucesso", "registros": res.data or []}), 200
+    except Exception as e:
+        print("Erro em listar_auditoria:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar auditoria.",
+                        "detalhe": str(e)[:300]}), 500
+
+
 @app.route('/api/posts', methods=['GET'])
 def listar_posts():
     if 'usuario_id' not in session:
