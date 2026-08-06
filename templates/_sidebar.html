@@ -1,259 +1,478 @@
 <style>
-.cxsidebar {
-    position: fixed; left: 0; top: 0; bottom: 0;
-    width: 68px;
-    background: #ffffff;
-    z-index: 100;
-    display: flex; flex-direction: column;
-    transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset -1px 0 0 #eeeef0;
-}
-.cxsidebar:hover {
-    width: 240px;
-    box-shadow: 14px 0 44px rgba(24,24,27,0.10), inset -1px 0 0 #eeeef0;
+/* ============================================================
+   SIDEBAR CXProjetos — reescrita a partir da proposta v3
+
+   DUAS REGRAS SUSTENTAM TUDO:
+
+   1. O que não aparece no estreito usa display:none, NUNCA
+      opacity:0. Elemento com opacity:0 segue ocupando largura, e
+      foi isso que antes empurrou o botão para fora do cabeçalho.
+
+   2. A aparência BASE é a expandida. O estreito é a exceção,
+      escrita como :not(:hover):not(.fixa) dentro de min-width:901px.
+      Assim o celular simplesmente não herda o modo estreito, e o
+      hover não precisa duplicar nenhuma regra.
+
+   Comportamento: passar o mouse expande SOBREPONDO (empurrar a
+   cada passada faria a tela pular). O botão fixa, e aí sim empurra.
+   ============================================================ */
+:root{
+  --cx-rail:60px;
+  --cx-aberta:248px;
+  --cx-sb-w:248px;   /* largura corrente — o JS troca este valor */
 }
 
-.cxsb-header {
-    height: 70px; min-height: 70px;
-    display: flex; align-items: center;
-    padding: 0 18px; gap: 12px;
-    overflow: hidden;
-    border-bottom: 1px solid #f3f3f5;
+/* Empurra o conteúdo em vez de cobrir. Vence o body{padding-left:68px}
+   das telas por especificidade, sem !important. */
+html body{
+  padding-left:var(--cx-sb-w);
+  transition:padding-left .22s cubic-bezier(.4,0,.2,1);
 }
-.cxsb-logo-icon {
-    width: 30px; height: 30px; min-width: 30px;
-    object-fit: contain; flex-shrink: 0;
-}
-.cxsb-brand-text {
-    font-size: 15px; font-weight: 800;
-    color: #18181b; white-space: nowrap;
-    opacity: 0; transition: opacity 0.2s 0.06s;
-    font-family: 'Inter', sans-serif; letter-spacing: -0.4px;
-}
-.cxsidebar:hover .cxsb-brand-text { opacity: 1; }
+/* Só a sidebar FIXA empurra o conteúdo. No hover ela sobrepõe,
+   senão a página inteira saltaria a cada passada de mouse. */
 
-.cxsb-body { padding: 12px 12px; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
-.cxsb-body::-webkit-scrollbar { width: 0; }
-
-.cxsb-section {
-    font-size: 9px; font-weight: 800;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: #b8b8bf; padding: 16px 12px 6px 12px;
-    white-space: nowrap; overflow: hidden;
-    opacity: 0; transition: opacity 0.2s; height: 0;
-    font-family: 'Inter', sans-serif;
+.cxsidebar{
+  position:fixed; left:0; top:0; bottom:0;
+  width:var(--cx-aberta);
+  background:#fff; z-index:200;
+  display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:inset -1px 0 0 #E4E4EA;
+  transition:width .22s cubic-bezier(.4,0,.2,1);
+  font-family:'Inter',sans-serif;
 }
-.cxsidebar:hover .cxsb-section { opacity: 1; height: auto; }
-.cxsb-gap { height: 10px; flex-shrink: 0; transition: height 0.2s; }
-.cxsidebar:hover .cxsb-gap { height: 0; }
 
-.cxsb-item {
-    display: flex; align-items: center; gap: 15px;
-    padding: 0 12px; height: 44px; min-height: 44px;
-    border-radius: 11px !important;
-    cursor: pointer; transition: background 0.15s, color 0.15s;
-    color: #6b6b76; white-space: nowrap;
-    position: relative;
-    font-family: 'Inter', sans-serif;
+/* ===== CABEÇALHO ===== */
+.cxsb-head{
+  height:56px; min-height:56px;
+  display:flex; align-items:center; padding:0 16px; gap:11px;
+  border-bottom:1px solid #E4E4EA;
 }
-.cxsb-item:hover { background: #f5f5f7; color: #18181b; }
-.cxsb-item.active { background: #6c5ce7; color: #ffffff; box-shadow: 0 6px 16px rgba(108,92,231,0.32); }
-.cxsb-item.active .material-symbols-rounded { color: #ffffff; }
-.cxsb-item .material-symbols-rounded { font-size: 22px; min-width: 22px; flex-shrink: 0; transition: color 0.15s; }
-.cxsb-item-label { font-size: 13.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
-.cxsidebar:hover .cxsb-item-label { opacity: 1; }
+.cxsb-logo{ width:26px; height:26px; min-width:26px; object-fit:contain; flex-shrink:0; }
+.cxsb-marca{ font-size:14px; font-weight:700; letter-spacing:-.3px; white-space:nowrap; color:#17171A; }
+.cxsb-toggle{
+  margin-left:auto; width:28px; height:28px; min-width:28px;
+  border:none; background:transparent; border-radius:7px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; color:#7C7C88; transition:.15s;
+}
+.cxsb-toggle:hover{ background:#F7F7F9; color:#17171A; }
+.cxsb-toggle .material-symbols-rounded{ font-size:19px; }
 
-.cxsb-caret { font-size: 20px !important; min-width: 20px !important; margin-left: auto; opacity: 0; transition: opacity 0.2s, transform 0.25s; color: #b8b8bf; }
-.cxsidebar:hover .cxsb-parent .cxsb-caret { opacity: 1; }
-.cxsb-parent.active .cxsb-caret { color: #ffffff; }
-.cxsb-parent.aberto .cxsb-caret { transform: rotate(180deg); }
+/* ===== CORPO ===== */
+.cxsb-body{
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  padding:8px; display:flex; flex-direction:column; gap:1px;
+}
+.cxsb-body::-webkit-scrollbar{ width:6px; }
+.cxsb-body::-webkit-scrollbar-track{ background:transparent; }
+.cxsb-body::-webkit-scrollbar-thumb{ background:#D3D3DC; border-radius:99px; }
 
-/* ===== SUBMENU ACORDEÃO ===== */
-.cxsb-sub {
-    max-height: 0; overflow: hidden;
-    transition: max-height 0.28s cubic-bezier(0.4,0,0.2,1);
-    position: relative;
+/* ===== GRUPO ===== */
+.cxsb-grupo{
+  display:flex; align-items:center; gap:8px; padding:9px 10px 7px;
+  cursor:pointer; border:none; background:none; width:100%; text-align:left;
+  font-family:inherit; font-size:10px; font-weight:600; letter-spacing:.7px;
+  text-transform:uppercase; color:#7C7C88; border-radius:7px; transition:.15s;
+  white-space:nowrap;
 }
-.cxsb-sub::before {
-    content: ''; position: absolute; left: 22px; top: 4px; bottom: 6px; width: 1.5px;
-    background: #ececf0; border-radius: 2px !important;
-    opacity: 0; transition: opacity 0.2s;
-}
-.cxsidebar:hover .cxsb-sub::before { opacity: 1; }
-.cxsidebar:hover .cxsb-parent.aberto + .cxsb-sub { max-height: 120px; }
+.cxsb-grupo:hover{ background:#F7F7F9; color:#56565F; }
+.cxsb-grupo-qtd{ font-size:10px; font-weight:600; color:#7C7C88; background:#F7F7F9; padding:1px 6px; border-radius:99px; }
+.cxsb-grupo-caret{ font-size:15px !important; min-width:15px; margin-left:auto; transition:transform .2s; }
+.cxsb-grupo.fechado .cxsb-grupo-caret{ transform:rotate(-90deg); }
 
-.cxsb-subitem {
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 12px 0 40px; height: 40px; margin: 1px 0;
-    cursor: pointer; color: #8a8a93;
-    transition: 0.14s; border-radius: 10px !important;
-    white-space: nowrap;
+.cxsb-lista{ display:flex; flex-direction:column; gap:1px; overflow:hidden; transition:max-height .24s ease; max-height:900px; }
+.cxsb-lista.fechada{ max-height:0; }
+
+/* ===== ITEM ===== */
+.cxsb-item{
+  display:flex; align-items:center; gap:11px; padding:0 10px;
+  height:38px; min-height:38px; border-radius:8px; cursor:pointer;
+  color:#56565F; white-space:nowrap; transition:.14s; position:relative;
+  border:none; background:none; width:100%; text-align:left; font-family:inherit;
 }
-.cxsb-subitem:hover { background: #f5f5f7; color: #18181b; }
-.cxsb-subitem.active { background: #6c5ce7; color: #ffffff; font-weight: 700; box-shadow: 0 4px 12px rgba(108,92,231,0.28); }
-.cxsb-subitem.active .material-symbols-rounded { color: #ffffff; }
-.cxsb-subitem .material-symbols-rounded { font-size: 18px; min-width: 18px; flex-shrink: 0; }
-.cxsb-subitem-label { font-size: 12.5px; font-weight: 600; opacity: 0; transition: opacity 0.2s 0.06s; }
-.cxsidebar:hover .cxsb-subitem-label { opacity: 1; }
+.cxsb-item:hover{ background:#F7F7F9; color:#17171A; }
+.cxsb-item.ativo{ background:#6C5CE7; color:#fff; }
+.cxsb-item.ativo .material-symbols-rounded{ color:#fff; }
+.cxsb-item .material-symbols-rounded{ font-size:19px; min-width:19px; flex-shrink:0; color:#7C7C88; transition:color .14s; }
+.cxsb-item:hover .material-symbols-rounded{ color:#17171A; }
+.cxsb-item-txt{ font-size:13px; font-weight:500; }
+.cxsb-item.ativo .cxsb-item-txt{ font-weight:600; }
+
+/* ===== SUBITEM (OKR / Clima / Desempenho) ===== */
+.cxsb-caret{ font-size:17px !important; min-width:17px; margin-left:auto; color:#7C7C88; transition:transform .22s; }
+.cxsb-item.ativo .cxsb-caret{ color:#fff; }
+.cxsb-pai.aberto .cxsb-caret{ transform:rotate(180deg); }
+.cxsb-sub{ max-height:0; overflow:hidden; transition:max-height .22s ease; }
+.cxsb-pai.aberto + .cxsb-sub{ max-height:90px; }
+.cxsb-subitem{
+  display:flex; align-items:center; gap:10px; padding:0 10px 0 34px;
+  height:34px; border-radius:8px; cursor:pointer; color:#7C7C88;
+  white-space:nowrap; transition:.14s;
+}
+.cxsb-subitem:hover{ background:#F7F7F9; color:#17171A; }
+.cxsb-subitem.ativo{ background:#F1EFFE; color:#6C5CE7; }
+.cxsb-subitem.ativo .material-symbols-rounded{ color:#6C5CE7; }
+.cxsb-subitem .material-symbols-rounded{ font-size:17px; min-width:17px; flex-shrink:0; color:#7C7C88; }
+.cxsb-subitem-txt{ font-size:12.5px; font-weight:500; }
+
+.cxsb-sep{ height:1px; background:#E4E4EA; margin:7px 4px; flex-shrink:0; display:none; }
+
+/* ============================================================
+   MODO ESTREITO
+   Escrito como exceção dentro de min-width:901px, para que o
+   celular não herde nada disso. Passar o mouse anula todas as
+   regras abaixo de uma vez — é o que faz o painel abrir sozinho.
+   ============================================================ */
+@media (min-width:901px){
+  .cxsidebar:not(:hover):not(.fixa){ width:var(--cx-rail); }
+
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item-txt,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem-txt,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-grupo,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-marca,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-toggle,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-caret{ display:none; }
+
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-sep{ display:block; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item{ justify-content:center; padding:0; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem{ justify-content:center; padding:0; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-head{ padding:0; justify-content:center; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-pai.aberto + .cxsb-sub{ max-height:0; }
+
+  /* Sombra só quando sobrepõe. Fixa não sobrepõe, então não projeta. */
+  .cxsidebar:hover:not(.fixa){
+    box-shadow:14px 0 44px rgba(23,23,26,.13), inset -1px 0 0 #E4E4EA;
+  }
+
+  /* balão de ajuda, só no estreito */
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item[data-tip]:hover::after{
+    content:attr(data-tip); position:absolute; left:calc(100% + 8px); top:50%;
+    transform:translateY(-50%); background:#17171A; color:#fff;
+    font-size:11.5px; font-weight:500; padding:5px 9px; border-radius:6px;
+    white-space:nowrap; z-index:300; pointer-events:none;
+  }
+}
+
+/* CONSISTÊNCIA: grupo recolhido fica recolhido nos dois estados.
+   Isso é seguro porque o hover expande e devolve os títulos —
+   sempre há como reabrir. */
+.cxsb-lista.fechada{ max-height:0; }
+
+/* ============================================================
+   MOBILE — vira gaveta
+   ============================================================ */
+.cxsb-ham{
+  display:none; position:fixed; top:11px; left:12px; z-index:190;
+  width:38px; height:38px; border-radius:10px; border:none;
+  background:#fff; color:#17171A; cursor:pointer;
+  align-items:center; justify-content:center;
+  box-shadow:0 2px 10px rgba(23,23,26,.12), 0 0 0 1px #E4E4EA;
+}
+.cxsb-ham .material-symbols-rounded{ font-size:21px; }
+.cxsb-veu{ display:none; position:fixed; inset:0; z-index:199; background:rgba(23,23,26,.45); }
+
+@media (max-width:900px){
+  html body{ padding-left:0 !important; }
+  .cxsb-ham{ display:flex; }
+  .cxsb-veu.on{ display:block; }
+
+  /* Não existe modo estreito no toque: as regras do rail vivem em
+     min-width:901px, então aqui a sidebar já nasce inteira. */
+  .cxsidebar{
+    width:var(--cx-aberta);
+    transform:translateX(-100%);
+    transition:transform .24s cubic-bezier(.4,0,.2,1);
+    box-shadow:none;
+  }
+  .cxsidebar.gaveta{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.2); }
+  .cxsb-toggle{ display:none; }
+
+  .cxsb-item{ height:44px; min-height:44px; }
+  .cxsb-subitem{ height:40px; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .cxsidebar, html body, .cxsb-lista, .cxsb-sub{ transition:none !important; }
+}
 </style>
 
-<nav class="cxsidebar" id="cxSidebar">
-    <div class="cxsb-header">
-        <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="Logo" class="cxsb-logo-icon">
-        <span class="cxsb-brand-text">CXProjetos</span>
+<button class="cxsb-ham" onclick="cxsbGaveta(true)" aria-label="Abrir menu">
+  <span class="material-symbols-rounded">menu</span>
+</button>
+<div class="cxsb-veu" id="cxsbVeu" onclick="cxsbGaveta(false)"></div>
+
+<nav class="cxsidebar" id="cxSidebar" aria-label="Navegação principal">
+  <div class="cxsb-head">
+    <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="CXProjetos" class="cxsb-logo">
+    <span class="cxsb-marca">CXProjetos</span>
+    <button class="cxsb-toggle" id="cxsbToggle" onclick="cxsbAlternar(event)" aria-label="Fixar menu aberto" title="Fixar menu aberto">
+      <span class="material-symbols-rounded">keep</span>
+    </button>
+  </div>
+
+  <div class="cxsb-body">
+    {% set eh_externo = (tipo_usuario == 'externo') %}
+    {% set eh_person  = (nivel_acesso == 'personalizado') %}
+
+    {% if eh_externo %}
+    <div class="cxsb-item" data-path="/agenda" data-tip="Agenda do Projeto" onclick="location.href='/agenda'">
+      <span class="material-symbols-rounded">calendar_today</span>
+      <span class="cxsb-item-txt">Agenda do Projeto</span>
     </div>
-    <div class="cxsb-body">
-        {% set eh_externo = (tipo_usuario == 'externo') %}
-        {% set eh_person = (nivel_acesso == 'personalizado') %}
-        {% if eh_externo %}
-        <div class="cxsb-section">Acompanhamento</div>
-        <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
-            <span class="material-symbols-rounded">calendar_today</span>
-            <span class="cxsb-item-label">Agenda do Projeto</span>
-        </div>
-        {% else %}
-        <div class="cxsb-item" data-path="/" onclick="window.location.href='/'">
-            <span class="material-symbols-rounded">home</span>
-            <span class="cxsb-item-label">Hub</span>
-        </div>
 
-        <div class="cxsb-section">Módulos</div>
-        <div class="cxsb-gap"></div>
-        {% if not eh_person or 'rhestrategico' in perm_modulos %}
-        <div class="cxsb-item" data-path="/board/rhestrategico" onclick="window.location.href='/board/rhestrategico'">
-            <span class="material-symbols-rounded">psychology</span>
-            <span class="cxsb-item-label">RH Estratégico</span>
-        </div>
-        {% endif %}
-        {% if not eh_person or 'recrutamento' in perm_modulos %}
-        <div class="cxsb-item" data-path="/board/recrutamento" onclick="window.location.href='/board/recrutamento'">
-            <span class="material-symbols-rounded">group_add</span>
-            <span class="cxsb-item-label">R&S</span>
-        </div>
-        {% endif %}
-        {% if not eh_person or 'geral' in perm_modulos %}
-        <div class="cxsb-item" data-path="/board/geral" onclick="window.location.href='/board/geral'">
-            <span class="material-symbols-rounded">dashboard</span>
-            <span class="cxsb-item-label">Geral</span>
-        </div>
-        {% endif %}
-
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and ('okr' in perm_modulos or 'clima' in perm_modulos or 'desempenho' in perm_modulos)) %}
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'okr' in perm_modulos) %}
-        <div class="cxsb-item cxsb-parent" id="okrParent" data-path="/okr" onclick="cliqueModulo(event,'okr','/okr/gestao')">
-            <span class="material-symbols-rounded">target</span>
-            <span class="cxsb-item-label">OKR</span>
-            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-        </div>
-        <div class="cxsb-sub" id="okrSub">
-            <div class="cxsb-subitem" data-path="/okr/gestao" onclick="window.location.href='/okr/gestao'">
-                <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-label">Gestão</span>
-            </div>
-            <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="window.location.href='/okr/dashboard'">
-                <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clima' in perm_modulos) %}
-        <div class="cxsb-item cxsb-parent" id="climaParent" data-path="/clima" onclick="cliqueModulo(event,'clima','/clima/gestao')">
-            <span class="material-symbols-rounded">mood</span>
-            <span class="cxsb-item-label">Clima</span>
-            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-        </div>
-        <div class="cxsb-sub" id="climaSub">
-            <div class="cxsb-subitem" data-path="/clima/gestao" onclick="window.location.href='/clima/gestao'">
-                <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span>
-            </div>
-            <div class="cxsb-subitem" data-path="/clima/dashboard" onclick="window.location.href='/clima/dashboard'">
-                <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'desempenho' in perm_modulos) %}
-        <div class="cxsb-item cxsb-parent" id="despParent" data-path="/desempenho" onclick="cliqueModulo(event,'desp','/desempenho/gestao')">
-            <span class="material-symbols-rounded">leaderboard</span>
-            <span class="cxsb-item-label">Desempenho</span>
-            <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-        </div>
-        <div class="cxsb-sub" id="despSub">
-            <div class="cxsb-subitem" data-path="/desempenho/gestao" onclick="window.location.href='/desempenho/gestao'">
-                <span class="material-symbols-rounded">clarify</span><span class="cxsb-subitem-label">Gestão</span>
-            </div>
-            <div class="cxsb-subitem" data-path="/desempenho/dashboard" onclick="window.location.href='/desempenho/dashboard'">
-                <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-label">Dashboard</span>
-            </div>
-        </div>
-        {% endif %}
-        {% endif %}
-
-        <div class="cxsb-section">Gestão</div>
-        <div class="cxsb-gap"></div>
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
-        <div class="cxsb-item" data-path="/dashboard" onclick="window.location.href='/dashboard'">
-            <span class="material-symbols-rounded">monitoring</span>
-            <span class="cxsb-item-label">Dashboard</span>
-        </div>
-        {% endif %}
-        {% if nivel_acesso in ['admin', 'gestor'] or (eh_person and 'clientes' in perm_modulos) %}
-        <div class="cxsb-item" data-path="/clientes" onclick="window.location.href='/clientes'">
-            <span class="material-symbols-rounded">apartment</span>
-            <span class="cxsb-item-label">Clientes</span>
-        </div>
-        {% endif %}
-        {% if not eh_person or 'agenda' in perm_modulos %}
-        <div class="cxsb-item" data-path="/agenda" onclick="window.location.href='/agenda'">
-            <span class="material-symbols-rounded">calendar_today</span>
-            <span class="cxsb-item-label">Agenda</span>
-        </div>
-        {% endif %}
-        {% if nivel_acesso == 'admin' %}
-        <div class="cxsb-item" data-path="/configuracoes" onclick="window.location.href='/configuracoes'">
-            <span class="material-symbols-rounded">settings</span>
-            <span class="cxsb-item-label">Configurações</span>
-        </div>
-        <div class="cxsb-item" data-path="/externos" onclick="window.location.href='/externos'">
-            <span class="material-symbols-rounded">badge</span>
-            <span class="cxsb-item-label">Usuários Externos</span>
-        </div>
-        <div class="cxsb-item" data-path="/lixeira" onclick="window.location.href='/lixeira'">
-            <span class="material-symbols-rounded">delete</span>
-            <span class="cxsb-item-label">Lixeira</span>
-        </div>
-        {% endif %}
-        {% endif %}
+    {% else %}
+    <div class="cxsb-item" data-path="/" data-tip="Hub" onclick="location.href='/'">
+      <span class="material-symbols-rounded">home</span>
+      <span class="cxsb-item-txt">Hub</span>
     </div>
+    {% if not eh_person or 'agenda' in perm_modulos %}
+    <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="location.href='/agenda'">
+      <span class="material-symbols-rounded">calendar_month</span>
+      <span class="cxsb-item-txt">Agenda</span>
+    </div>
+    {% endif %}
+
+    {# ===== COMERCIAL ===== #}
+    {% if not eh_person or 'crm' in perm_modulos or 'clientes' in perm_modulos %}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="comercial" onclick="cxsbGrupo(this)">
+      Comercial<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-comercial">
+      {% if not eh_person or 'crm' in perm_modulos %}
+      <div class="cxsb-item" data-path="/crm" data-tip="CRM" onclick="location.href='/crm'">
+        <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">CRM</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'clientes' in perm_modulos %}
+      <div class="cxsb-item" data-path="/clientes" data-tip="Clientes" onclick="location.href='/clientes'">
+        <span class="material-symbols-rounded">business</span><span class="cxsb-item-txt">Clientes</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ===== QUADROS DE TRABALHO ===== #}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="quadros" onclick="cxsbGrupo(this)">
+      Quadros de trabalho<span class="cxsb-grupo-qtd" id="qtdQuadros">8</span>
+      <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-quadros">
+      {% if not eh_person or 'recrutamento' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/recrutamento" data-tip="R&amp;S" onclick="location.href='/board/recrutamento'">
+        <span class="material-symbols-rounded">group_add</span><span class="cxsb-item-txt">R&amp;S</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'rhestrategico' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/rhestrategico" data-tip="RH Estratégico" onclick="location.href='/board/rhestrategico'">
+        <span class="material-symbols-rounded">psychology</span><span class="cxsb-item-txt">RH Estratégico</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'projetos' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/projetos" data-tip="Projetos" onclick="location.href='/board/projetos'">
+        <span class="material-symbols-rounded">folder_managed</span><span class="cxsb-item-txt">Projetos</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'cxdata' in perm_modulos or 'geral' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/cxdata" data-tip="CX Data" onclick="location.href='/board/cxdata'">
+        <span class="material-symbols-rounded">database</span><span class="cxsb-item-txt">CX Data</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'comercial' in perm_modulos or 'geral' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/comercial" data-tip="Comercial" onclick="location.href='/board/comercial'">
+        <span class="material-symbols-rounded">handshake</span><span class="cxsb-item-txt">Comercial</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'marketing' in perm_modulos or 'geral' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/marketing" data-tip="Marketing" onclick="location.href='/board/marketing'">
+        <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-txt">Marketing</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'financeiro' in perm_modulos or 'geral' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/financeiro" data-tip="Financeiro" onclick="location.href='/board/financeiro'">
+        <span class="material-symbols-rounded">payments</span><span class="cxsb-item-txt">Financeiro</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'rhinterno' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/rhinterno" data-tip="RH Interno" onclick="location.href='/board/rhinterno'">
+        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-txt">RH Interno</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ===== EMPRESA ===== #}
+    {% if not eh_person or 'feed' in perm_modulos or 'okr' in perm_modulos %}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="empresa" onclick="cxsbGrupo(this)">
+      Empresa<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-empresa">
+      {% if not eh_person or 'feed' in perm_modulos %}
+      <div class="cxsb-item" data-path="/feed" data-tip="Mural" onclick="location.href='/feed'">
+        <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-txt">Mural</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'okr' in perm_modulos %}
+      <div class="cxsb-item" data-path="/okr" data-tip="OKR" onclick="location.href='/okr'">
+        <span class="material-symbols-rounded">target</span><span class="cxsb-item-txt">OKR</span>
+      </div>
+      <div class="cxsb-item cxsb-subitem" data-path="/okr/dashboard" data-tip="Painel de OKR" onclick="location.href='/okr/dashboard'">
+        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-subitem-txt">Painel</span>
+      </div>
+      {% if nivel_acesso in ['admin','gestor'] %}
+      <div class="cxsb-item cxsb-subitem" data-path="/okr/gestao" data-tip="Gestão de OKR" onclick="location.href='/okr/gestao'">
+        <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-txt">Gestão</span>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ===== GESTÃO ===== #}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="gestao" onclick="cxsbGrupo(this)">
+      Gestão<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-gestao">
+      {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
+      <div class="cxsb-item" data-path="/dashboard" data-tip="Dashboard" onclick="location.href='/dashboard'">
+        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-txt">Dashboard</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'agenda' in perm_modulos %}
+      {% endif %}
+      {% if nivel_acesso == 'admin' %}
+      <div class="cxsb-item" data-path="/acessos" data-tip="Acessos" onclick="location.href='/acessos'">
+        <span class="material-symbols-rounded">key</span><span class="cxsb-item-txt">Acessos</span>
+      </div>
+      <div class="cxsb-item" data-path="/externos" data-tip="Usuários Externos" onclick="location.href='/externos'">
+        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-txt">Usuários Externos</span>
+      </div>
+      <div class="cxsb-item" data-path="/lixeira" data-tip="Lixeira" onclick="location.href='/lixeira'">
+        <span class="material-symbols-rounded">delete</span><span class="cxsb-item-txt">Lixeira</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
 </nav>
 
 <script>
-(function() {
-    var curr = window.location.pathname;
-    if (curr === '/planejamento') curr = '/agenda';
-    if (curr === '/okr') curr = '/okr/gestao';
-    if (curr === '/clima') curr = '/clima/gestao';
-    if (curr === '/desempenho') curr = '/desempenho/gestao';
+(function(){
+  var sb   = document.getElementById('cxSidebar');
+  var raiz = document.documentElement;
 
-    document.querySelectorAll('.cxsb-item[data-path]').forEach(function(item) {
-        var path = item.getAttribute('data-path');
-        var match = path === '/' ? curr === '/' : (curr === path || curr.startsWith(path + '/'));
-        if (match) item.classList.add('active');
-    });
-    document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(sub) {
-        var path = sub.getAttribute('data-path');
-        if (curr === path || curr.startsWith(path + '/')) {
-            sub.classList.add('active');
-            var parent = sub.closest('.cxsb-sub').previousElementSibling;
-            if (parent && parent.classList.contains('cxsb-parent')) parent.classList.add('aberto');
-        }
-    });
-})();
+  /* Só a sidebar FIXA reserva espaço. No hover ela sobrepõe, então
+     o padding do body continua o do rail e a página não salta. */
+  function aplicarLargura(){
+    raiz.style.setProperty('--cx-sb-w', sb.classList.contains('fixa') ? '248px' : '60px');
+  }
 
-function cliqueModulo(e, chave, rotaGestao) {
-    var sb = document.getElementById('cxSidebar');
-    var expandida = sb.offsetWidth > 100;
-    if (!expandida) { window.location.href = rotaGestao; return; }
+  var fixa = null;
+  try { fixa = localStorage.getItem('cx_sb_fixa'); } catch(e){}
+  if (fixa === null) fixa = (window.innerWidth >= 1600) ? '1' : '0';
+  sb.classList.toggle('fixa', fixa === '1');
+  aplicarLargura();
+  atualizarBotao();
+
+  function atualizarBotao(){
+    var b = document.getElementById('cxsbToggle');
+    if (!b) return;
+    var f = sb.classList.contains('fixa');
+    b.title = f ? 'Soltar menu' : 'Fixar menu aberto';
+    b.setAttribute('aria-label', b.title);
+    b.setAttribute('aria-pressed', f ? 'true' : 'false');
+    b.querySelector('.material-symbols-rounded').innerText = f ? 'left_panel_close' : 'keep';
+  }
+
+  window.cxsbAlternar = function(e){
+    if (e) e.stopPropagation();
+    var f = sb.classList.toggle('fixa');
+    aplicarLargura();
+    atualizarBotao();
+    try { localStorage.setItem('cx_sb_fixa', f ? '1' : '0'); } catch(err){}
+  };
+
+  window.cxsbGaveta = function(abrir){
+    sb.classList.toggle('gaveta', abrir);
+    document.getElementById('cxsbVeu').classList.toggle('on', abrir);
+  };
+
+  /* ---- item ativo ---- */
+  var caminho = window.location.pathname;
+  if (caminho === '/planejamento') caminho = '/agenda';
+  if (caminho === '/okr')          caminho = '/okr/gestao';
+  if (caminho === '/board/geral')  caminho = '/board/cxdata';
+
+  var listaAtiva = null;
+  document.querySelectorAll('.cxsb-item[data-path]').forEach(function(it){
+    var p = it.getAttribute('data-path');
+    var bate = (p === '/') ? (caminho === '/') : (caminho === p || caminho.indexOf(p + '/') === 0);
+    if (bate) {
+      it.classList.add('ativo');
+      var l = it.closest('.cxsb-lista');
+      if (l) listaAtiva = l.id;
+    }
+  });
+  document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(s){
+    if (caminho === s.getAttribute('data-path')) {
+      s.classList.add('ativo');
+      var pai = s.closest('.cxsb-sub').previousElementSibling;
+      if (pai && pai.classList.contains('cxsb-pai')) pai.classList.add('aberto');
+      var l = s.closest('.cxsb-lista');
+      if (l) listaAtiva = l.id;
+    }
+  });
+
+  /* ---- grupos: abertos por padrão, e o estado vale nos dois modos ---- */
+  var pref = {};
+  try { pref = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {}; } catch(e){}
+  // Grupo sem nenhum item visível não deve aparecer: um cabeçalho
+  // solto sugere que algo quebrou, quando na verdade é só permissão.
+  document.querySelectorAll('.cxsb-lista[id^="gr-"]').forEach(function(lista){
+    if(!lista.querySelector('.cxsb-item')){
+      lista.style.display = 'none';
+      var g = document.querySelector('.cxsb-grupo[data-g="' + lista.id.slice(3) + '"]');
+      if(g){
+        g.style.display = 'none';
+        var sep = g.previousElementSibling;
+        if(sep && sep.classList.contains('cxsb-sep')) sep.style.display = 'none';
+      }
+    }
+  });
+
+  document.querySelectorAll('.cxsb-grupo[data-g]').forEach(function(g){
+    var k = g.getAttribute('data-g');
+    var lista = document.getElementById('gr-' + k);
+    if (!lista) return;
+    var aberto = pref.hasOwnProperty(k) ? (pref[k] === true) : true;
+    if (lista.id === listaAtiva) aberto = true;
+    g.classList.toggle('fechado', !aberto);
+    lista.classList.toggle('fechada', !aberto);
+  });
+
+  window.cxsbGrupo = function(el){
+    var k = el.getAttribute('data-g');
+    var lista = document.getElementById('gr-' + k);
+    if (!lista) return;
+    var fechou = el.classList.toggle('fechado');
+    lista.classList.toggle('fechada', fechou);
+    try {
+      var p = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {};
+      p[k] = !fechou;
+      localStorage.setItem('cx_sb_grupos_v3', JSON.stringify(p));
+    } catch(e){}
+  };
+
+  /* No estreito o item pai navega; expandido, abre o submenu. */
+  window.cxsbModulo = function(e, rota){
+    if (sb.offsetWidth < 100) { location.href = rota; return; }
     e.stopPropagation();
     e.currentTarget.classList.toggle('aberto');
-}
+  };
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') window.cxsbGaveta(false);
+  });
+})();
 </script>
