@@ -3,440 +3,745 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>Painel | CXProjetos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
     <style>
-        :root {
-            --bg-board:#eef0f4; --surface:#ffffff; --text-main:#1a1d29; --text-soft:#5a5f6e; --text-muted:#9AA0AE; --line:#e7e9ef;
-            --purple:#7371ff; --purple-soft:#f0efff; --lime:#bef533; --pink:#ff43c0; --green:#14b8a6; --amber:#f59e0b;
-            --pos:#2FA875; --neu:#F5D06B; --neg:#E5484D;
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --sdr:#0EA5E9; --sdr-fraco:#E4F4FD; --closer:#6C5CE7; --nutri:#C2660B;
+            --azul:#1A5FA0; --azul-fraco:#E9F2FB;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --accent-lime:#BEF533; --accent-pink:#FF43C0;
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #cfd3dd; border-radius: 6px !important; } ::-webkit-scrollbar-track { background: transparent; }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
+        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+              min-height:100vh; -webkit-font-smoothing:antialiased; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .top-bar { background: var(--surface); height: 60px; min-height: 60px; flex-shrink: 0; padding: 0 28px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 var(--line); z-index: 30; }
-        .top-bar-logo { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; cursor: pointer; }
-        .top-bar-logo span { color: var(--purple); }
-        .top-bar-right { display: flex; align-items: center; gap: 14px; }
+        .top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+            justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+            position:sticky; top:0; z-index:20; }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
 
-        /* Filtros */
-        .filtros { background: var(--surface); padding: 11px 26px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); flex-shrink: 0; }
-        .filtro { display: flex; align-items: center; gap: 7px; background: var(--bg-board); padding: 0 6px 0 12px; height: 36px; border-radius: 9px !important; }
-        .filtro .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
-        .filtro label { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
-        .filtro select, .filtro input { border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); outline: none; cursor: pointer; padding: 7px 4px; font-family: 'Inter'; max-width: 150px; }
-        .filtro input[type=date] { cursor: text; width: 125px; }
-        .filtro-limpar { font-size: 12px; font-weight: 700; color: var(--purple); cursor: pointer; padding: 0 10px; height: 36px; display: flex; align-items: center; gap: 4px; border-radius: 9px !important; }
-        .filtro-limpar:hover { background: var(--purple-soft); }
+        .cabecalho{ background:var(--papel); border-bottom:1px solid var(--linha);
+            position:sticky; top:56px; z-index:15; }
+        .cb-topo{ max-width:1200px; margin:0 auto; padding:19px 22px 0; }
+        .cb-tit{ font-size:22px; font-weight:700; letter-spacing:-.7px; line-height:1.1; }
+        .cb-sub{ font-size:12.5px; color:var(--tinta-3); margin-top:4px; }
+        .cb-abas{ max-width:1200px; margin:0 auto; padding:0 22px; display:flex; gap:2px; margin-top:15px; }
+        .aba{ font-size:13px; font-weight:550; padding:10px 14px; color:var(--tinta-3); cursor:pointer;
+            border-bottom:2px solid transparent; transition:.14s; }
+        .aba:hover{ color:var(--tinta-2); }
+        .aba.on{ color:var(--tinta); font-weight:650; border-bottom-color:var(--acao); }
 
-        .dash-body { flex-grow: 1; display: flex; min-height: 0; padding-left: 22px; }
-        .nav-lateral { width: 210px; min-width: 210px; background: transparent; overflow-y: auto; padding: 20px 10px 20px 0; flex-shrink: 0; }
-        .nav-grupo { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin: 16px 0 8px; }
-        .nav-grupo:first-child { margin-top: 0; }
-        .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 9px !important; cursor: pointer; transition: 0.13s; margin-bottom: 2px; }
-        .nav-item:hover { background: var(--surface); }
-        .nav-item.ativo { background: var(--purple); box-shadow: 0 4px 12px rgba(115,113,255,0.3); }
-        .nav-item.ativo .nav-nome, .nav-item.ativo .material-symbols-rounded { color: #fff !important; }
-        .nav-item .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
-        .nav-nome { flex-grow: 1; font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; }
+        .wrap{ max-width:1200px; margin:0 auto; padding:18px 22px 80px; }
+        .painel-aba{ display:none; }
+        .painel-aba.on{ display:block; }
+        .loading{ text-align:center; padding:64px; color:var(--tinta-3); font-size:13px; font-weight:500; }
+        .empty{ text-align:center; padding:48px 24px; color:var(--tinta-3); background:var(--papel);
+            border-radius:var(--r-card); box-shadow:var(--e1); }
+        .empty .material-symbols-rounded{ font-size:36px; opacity:.3; display:block; margin-bottom:11px; }
+        .empty h3{ font-size:14px; font-weight:650; color:var(--tinta-2); margin-bottom:5px; }
+        .empty p{ font-size:12.5px; font-weight:500; line-height:1.6; max-width:340px; margin:0 auto; }
 
-        .conteudo { flex-grow: 1; overflow-y: auto; padding: 22px 26px 60px; }
-        .tela-cab { margin-bottom: 20px; }
-        .tela-titulo { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 11px; }
-        .tela-titulo .material-symbols-rounded { color: var(--purple); font-size: 24px; }
-        .tela-sub { font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
-        .fade { animation: f 0.3s ease; } @keyframes f { from{opacity:0; transform:translateY(6px);} to{opacity:1;} }
+        /* ferramentas */
+        .ferr{ display:flex; align-items:center; gap:9px; margin-bottom:16px; flex-wrap:wrap; }
+        .seg{ display:flex; background:var(--papel); border-radius:var(--r-ctrl); padding:3px; gap:2px; box-shadow:var(--e1); }
+        .seg button{ font-size:12px; font-weight:550; color:var(--tinta-2); padding:6px 12px;
+            border-radius:6px; cursor:pointer; transition:.14s; }
+        .seg button:hover{ color:var(--tinta); }
+        .seg button.on{ background:var(--tinta); color:#fff; font-weight:600; }
+        .filtro{ font-size:12px; font-weight:550; padding:8px 11px; background:var(--papel);
+            border-radius:var(--r-ctrl); color:var(--tinta-2); box-shadow:var(--e1); cursor:pointer; outline:none; }
+        .ferr-dir{ margin-left:auto; font-size:11.5px; color:var(--tinta-3); font-weight:500; }
 
-        .empty, .loading { text-align: center; padding: 90px 20px; color: var(--text-muted); }
-        .empty .material-symbols-rounded { font-size: 54px; opacity: 0.2; display: block; margin-bottom: 14px; }
-        .empty h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 5px; }
-        .empty p { font-size: 13px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
-        .spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: sp 0.7s linear infinite; margin: 0 auto 16px; } @keyframes sp { to{transform:rotate(360deg);} }
+        /* atenção */
+        .at-bloco{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            overflow:hidden; margin-bottom:16px; }
+        .at-cab{ padding:12px 16px; border-bottom:1px solid var(--linha); display:flex; align-items:center; gap:9px; }
+        .at-cab .material-symbols-rounded{ font-size:17px; color:var(--critico); }
+        .at-t{ font-size:12.5px; font-weight:650; flex:1; }
+        .at-n{ font-size:11px; font-weight:600; background:var(--cr-fundo); color:var(--critico);
+            padding:3px 9px; border-radius:99px; }
+        .al{ display:grid; grid-template-columns:1fr auto; gap:13px; padding:11px 16px;
+            border-bottom:1px solid var(--papel-2); align-items:center; }
+        .al:last-child{ border:none; }
+        .al-t{ font-size:12.5px; font-weight:600; line-height:1.35; }
+        .al-s{ font-size:11px; color:var(--tinta-3); margin-top:2px; }
+        .al-v{ font-size:11.5px; font-weight:650; padding:4px 10px; border-radius:99px; white-space:nowrap; }
+        .v-cr{ background:var(--cr-fundo); color:var(--critico); }
+        .v-at{ background:var(--at-fundo); color:var(--atencao); }
+        .v-ok{ background:var(--ok-fraco); color:var(--ok); }
 
-        .painel { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 18px; display: flex; flex-direction: column; }
-        .painel-tit { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; line-height: 1.35; }
-        .painel-sub { font-size: 10.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
-        .grid { display: grid; gap: 14px; }
+        /* kpis */
+        .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(152px,1fr)); gap:11px; margin-bottom:16px; }
+        .kpi{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:14px 16px; }
+        .kpi-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:8px; }
+        .kpi-v{ font-size:23px; font-weight:700; letter-spacing:-.8px; line-height:1; }
+        .kpi-p{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:5px; }
 
-        .kpis { display: grid; gap: 14px; margin-bottom: 14px; }
-        .kpi { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 16px 18px; }
-        .kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .kpi-ico { width: 30px; height: 30px; border-radius: 8px !important; display: flex; align-items: center; justify-content: center; }
-        .kpi-ico .material-symbols-rounded { font-size: 17px; }
-        .kpi-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
-        .kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -1.3px; line-height: 1; }
-        .kpi-desc { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 5px; }
+        /* gráfico */
+        .gr{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            overflow:hidden; margin-bottom:14px; }
+        .gr-cab{ padding:14px 17px 12px; border-bottom:1px solid var(--linha); display:flex;
+            align-items:flex-start; gap:12px; flex-wrap:wrap; }
+        .gr-t{ font-size:13.5px; font-weight:650; letter-spacing:-.2px; }
+        .gr-s{ font-size:11.5px; color:var(--tinta-3); margin-top:3px; line-height:1.45; }
+        .gr-corpo{ padding:16px 17px 17px; }
+        .dupla{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .tripla{ display:grid; grid-template-columns:1.35fr 1fr; gap:14px; }
+        @media(max-width:900px){ .dupla,.tripla{ grid-template-columns:1fr; } }
 
-        .echart { width: 100%; }
-        .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 22px 0 12px; }
+        /* barra horizontal */
+        .bh{ display:flex; align-items:center; gap:12px; padding:7px 0; }
+        .bh-rot{ width:130px; flex-shrink:0; font-size:12px; font-weight:550; color:var(--tinta);
+            display:flex; align-items:center; gap:8px; min-width:0; }
+        .bh-rot span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .bh-av{ width:22px; height:22px; min-width:22px; border-radius:50%; display:flex;
+            align-items:center; justify-content:center; font-size:8.5px; font-weight:650; }
+        .bh-t{ flex:1; height:21px; background:var(--papel-2); border-radius:5px; overflow:hidden;
+            display:flex; min-width:56px; }
+        .bh-t i{ display:block; height:100%; }
+        .bh-v{ width:64px; text-align:right; font-size:12px; font-weight:650; font-family:'IBM Plex Mono',monospace; }
+        @media(max-width:600px){ .bh-rot{ width:98px; } }
+        .legenda{ display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; padding-top:13px; border-top:1px solid var(--linha); }
+        .lg{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--tinta-2); font-weight:500; }
+        .lg i{ width:9px; height:9px; border-radius:2.5px; display:block; }
+        .conclusao{ font-size:12.5px; color:var(--tinta-2); line-height:1.6; margin-top:13px;
+            padding:11px 13px; background:var(--papel-2); border-radius:9px; }
+        .conclusao b{ font-weight:650; color:var(--tinta); }
 
-        /* Tabelas/listas */
-        .lista { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; }
-        .lista-item { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); }
-        .lista-item:last-child { border-bottom: none; }
-        .lista-nome { flex-grow: 1; font-size: 12.5px; font-weight: 600; min-width: 0; }
-        .lista-nome small { display: block; font-size: 10.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
-        .lista-tag { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 50px !important; white-space: nowrap; }
-        .lista-data { font-size: 11.5px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
-        .badge-area { background: var(--purple-soft); color: var(--purple); }
+        /* cascata */
+        .casc{ display:flex; flex-direction:column; }
+        .et{ display:grid; grid-template-columns:124px 1fr 86px; gap:14px; align-items:center; padding:2px 0; }
+        @media(max-width:760px){ .et{ grid-template-columns:100px 1fr 68px; gap:10px; } }
+        .et-rot{ display:flex; align-items:center; gap:8px; min-width:0; }
+        .et-pt{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .et-nome{ font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .et-tri{ height:36px; display:flex; align-items:center; }
+        .et-b{ height:36px; border-radius:6px; display:flex; align-items:center; padding:0 12px;
+            color:#fff; font-size:13px; font-weight:700; font-family:'IBM Plex Mono',monospace;
+            letter-spacing:-.3px; min-width:42px; }
+        .et-marca{ margin-left:11px; font-size:11px; color:var(--tinta-3); font-weight:500;
+            white-space:nowrap; display:flex; align-items:center; gap:5px; }
+        .et-marca .material-symbols-rounded{ font-size:13px; color:var(--linha-2); }
+        .et-val{ text-align:right; font-size:12px; font-weight:600; color:var(--tinta-2);
+            font-family:'IBM Plex Mono',monospace; }
+        .conv{ display:grid; grid-template-columns:124px 1fr 86px; gap:14px; align-items:center; padding:1px 0; }
+        @media(max-width:760px){ .conv{ grid-template-columns:100px 1fr 68px; gap:10px; } }
+        .conv-tx{ display:flex; align-items:center; gap:8px; }
+        .conv-l{ width:2px; height:15px; background:var(--linha-2); margin-left:16px; border-radius:2px; }
+        .conv-p{ font-size:11.5px; font-weight:650; padding:2px 9px; border-radius:99px; font-family:'IBM Plex Mono',monospace; }
+        .cv-bom{ background:var(--ok-fraco); color:var(--ok); }
+        .cv-medio{ background:var(--at-fundo); color:var(--atencao); }
+        .cv-ruim{ background:var(--cr-fundo); color:var(--critico); }
+        .conv-rot{ font-size:11px; color:var(--tinta-3); font-weight:500; }
+        .funil-div{ display:flex; align-items:center; gap:11px; margin:13px 0 9px; padding-top:13px;
+            border-top:1px dashed var(--linha-2); }
+        .funil-div.primeiro{ margin-top:0; padding-top:0; border-top:none; }
+        .fd-selo{ font-size:10px; font-weight:600; letter-spacing:.6px; text-transform:uppercase;
+            padding:4px 11px; border-radius:99px; }
+        .fd-txt{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
+        .resumo-linha{ display:flex; gap:1px; background:var(--linha); border-radius:10px;
+            overflow:hidden; margin-top:16px; }
+        .rl{ flex:1; background:var(--papel-2); padding:12px 14px; min-width:0; }
+        .rl-r{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:6px; }
+        .rl-v{ font-size:19px; font-weight:700; letter-spacing:-.5px; line-height:1; }
+        .rl-p{ font-size:10.5px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+        @media(max-width:700px){ .resumo-linha{ flex-wrap:wrap; } .rl{ min-width:calc(50% - 1px); } }
 
-        .dot { width: 8px; height: 8px; border-radius: 50% !important; display: inline-block; }
+        /* matriz */
+        .mz-l{ display:grid; gap:2px; align-items:center; margin-bottom:2px; }
+        .mz-rot{ font-size:11.5px; font-weight:550; color:var(--tinta-2); padding-right:8px;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .mz-c{ height:30px; border-radius:4px; display:flex; align-items:center; justify-content:center;
+            font-size:11px; font-weight:600; font-family:'IBM Plex Mono',monospace; }
+        .mz-cab{ font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
+            color:var(--tinta-3); text-align:center; padding-bottom:5px; line-height:1.2;
+            overflow:hidden; text-overflow:ellipsis; }
+
+        /* lista */
+        .li{ display:grid; grid-template-columns:1fr auto auto; gap:12px; padding:10px 0;
+            border-bottom:1px solid var(--papel-2); align-items:center; }
+        .li:last-child{ border:none; }
+        .li-t{ font-size:12.5px; font-weight:600; line-height:1.35; min-width:0; }
+        .li-s{ font-size:11px; color:var(--tinta-3); margin-top:2px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+        .li-v{ font-size:12px; font-weight:650; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .pilula{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+        .p-neutro{ background:var(--papel-2); color:var(--tinta-3); }
+        .p-ok{ background:var(--ok-fraco); color:var(--ok); }
+        .p-at{ background:var(--at-fundo); color:var(--atencao); }
+        .p-cr{ background:var(--cr-fundo); color:var(--critico); }
+        .p-az{ background:var(--azul-fraco); color:var(--azul); }
+
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
+            display:flex; flex-direction:column; gap:9px; }
+        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
+            display:flex; align-items:center; gap:9px; max-width:88vw; }
+
+        @media (max-width:900px){
+            .top-bar{ padding:0 16px 0 60px; }
+            .cb-topo{ padding:16px 16px 0; }
+            .cb-abas{ padding:0 16px; }
+            .wrap{ padding:14px 16px 70px; }
+            .ferr-dir{ width:100%; margin-left:0; }
+        }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
-        <div class="top-bar-right">{% include '_usermenu.html' %}</div>
+        {% include '_usermenu.html' %}
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="filtros" id="filtros">
-        <div class="filtro"><span class="material-symbols-rounded">domain</span><label>Área</label><select id="fArea"><option value="">Todas</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">person</span><label>Resp.</label><select id="fResp"><option value="">Todos</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">apartment</span><label>Cliente</label><select id="fCliente"><option value="">Todos</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">event_available</span><label>Aberto em</label><input type="date" id="fAbIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fAbFim"></div>
-        <div class="filtro"><span class="material-symbols-rounded">event_busy</span><label>Fechado em</label><input type="date" id="fFeIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fFeFim"></div>
-        <div class="filtro"><span class="material-symbols-rounded">timer</span><label>Horas em</label><input type="date" id="fHoIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fHoFim"></div>
-        <div class="filtro-limpar" id="fLimpar" onclick="limparFiltros()"><span class="material-symbols-rounded" style="font-size:15px;">close</span> Limpar</div>
+    <div class="cabecalho">
+        <div class="cb-topo">
+            <h1 class="cb-tit">Painel</h1>
+            <p class="cb-sub" id="cbSub">Carregando...</p>
+        </div>
+        <div class="cb-abas">
+            <button class="aba on" data-aba="operacao" onclick="trocarAba('operacao')">Operação</button>
+            <button class="aba" data-aba="comercial" onclick="trocarAba('comercial')">Comercial</button>
+        </div>
     </div>
 
-    <div class="dash-body">
-        <div class="nav-lateral" id="nav"></div>
-        <div class="conteudo" id="conteudo"><div class="loading"><div class="spinner"></div>Carregando dashboard...</div></div>
+    <div class="wrap">
+        <div class="painel-aba on" id="abaOperacao"><div class="loading">Carregando...</div></div>
+        <div class="painel-aba" id="abaComercial"><div class="loading">Carregando...</div></div>
     </div>
+
+    <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        const NIVEL_ACESSO = "{{ nivel_acesso }}";
-        let dados = null, telaAtiva = 'geral';
-        let filtros = { area:'', resp:'', cliente:'', abIni:'', abFim:'', feIni:'', feFim:'', hoIni:'', hoFim:'' };
+        const NIVEL = "{{ nivel_acesso }}";
+        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
+            ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
+        const QUADROS = [['recrutamento','Recrutamento e Seleção'],['rhestrategico','RH Estratégico'],
+            ['projetos','Projetos'],['rhinterno','RH Interno'],['cxdata','CX Data'],
+            ['comercial','Comercial'],['marketing','Marketing'],['financeiro','Adm/Financeiro']];
+        const ROT_OBJECAO = { preco:'Preço', momento:'Momento', sem_verba:'Sem verba',
+            concorrente:'Concorrente', nao_decisor:'Não decisor', sem_interesse:'Sem interesse',
+            sem_resposta:'Sem resposta', outra:'Outra' };
+        const CORES_FUNIL = { qualificacao:'#0EA5E9', fechamento:'#6C5CE7', nutricao:'#C2660B' };
 
-        const FONT = 'Inter, sans-serif';
-        const CHART_ANIM = { animationDuration: 700, animationEasing: 'cubicOut' };
-        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-        function fmtHoras(seg){ if(!seg) return '0h'; const h=Math.floor(seg/3600), m=Math.floor((seg%3600)/60); return h>0?`${h}h${m>0?' '+m+'min':''}`:`${m}min`; }
-        function fmtDias(d){ if(d===null||d===undefined) return '—'; return d+ (d===1?' dia':' dias'); }
+        let abaAtiva = 'operacao';
+        let diasOp = 30, diasCom = 90;       // comercial usa 90: o ciclo de venda é de ~38 dias
+        let quadroOp = '', op = null, com = null;
 
-        // ===== SISTEMA ECHARTS =====
-        let chartQueue=[], chartInstances=[];
-        function limparCharts(){ chartInstances.forEach(c=>{try{c.dispose();}catch(e){}}); chartInstances=[]; chartQueue=[]; }
-        function agendarChart(id, option){ chartQueue.push({id, option}); }
-        function montarCharts(){ chartQueue.forEach(({id,option})=>{ const el=document.getElementById(id); if(!el)return; const inst=echarts.init(el,null,{renderer:'svg'}); inst.setOption(option); chartInstances.push(inst); }); chartQueue=[]; }
-        window.addEventListener('resize', ()=>{ chartInstances.forEach(c=>{try{c.resize();}catch(e){}}); });
+        document.addEventListener('DOMContentLoaded', () => { carregarOperacao(); });
 
-        document.addEventListener('DOMContentLoaded', ()=>{ montarNav(); carregar(); });
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+        function cor(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=n.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
+        function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
+        function moeda(v){
+            if(v === null || v === undefined) return '—';
+            if(v >= 1000) return 'R$ ' + (v/1000).toFixed(v >= 10000 ? 0 : 1).replace('.',',') + 'k';
+            return 'R$ ' + Math.round(v);
+        }
+        function pct(n){ return (n===null||n===undefined) ? '—' : n + '%'; }
 
-        // ===== CARGA =====
-        async function carregar() {
-            document.getElementById('conteudo').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dashboard...</div>';
-            const qs = new URLSearchParams();
-            if(filtros.area) qs.set('area', filtros.area);
-            if(filtros.resp) qs.set('responsavel', filtros.resp);
-            if(filtros.cliente) qs.set('cliente_id', filtros.cliente);
-            if(filtros.abIni) qs.set('abertura_ini', filtros.abIni);
-            if(filtros.abFim) qs.set('abertura_fim', filtros.abFim);
-            if(filtros.feIni) qs.set('fechamento_ini', filtros.feIni);
-            if(filtros.feFim) qs.set('fechamento_fim', filtros.feFim);
-            if(filtros.hoIni) qs.set('horas_ini', filtros.hoIni);
-            if(filtros.hoFim) qs.set('horas_fim', filtros.hoFim);
-            try {
-                const res = await fetch('/api/dashboard?'+qs.toString());
-                if(res.status===403){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
-                dados = await res.json();
-                if(dados.status!=='sucesso'){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3><p>'+escH(dados.mensagem||'')+'</p></div>'; return; }
-                popularFiltros(); render();
-            } catch(e){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
+        async function motivo(resp, padrao){
+            try{ const d = await resp.json();
+                if(d && d.detalhe) return (d.mensagem||padrao)+' '+d.detalhe;
+                if(d && d.mensagem) return d.mensagem;
+                if(d && d.erro) return d.erro;
+            }catch(e){}
+            return padrao+' (HTTP '+resp.status+')';
+        }
+        function erroEm(alvo, msg){
+            document.getElementById(alvo).innerHTML =
+                `<div class="empty"><span class="material-symbols-rounded">error</span>
+                 <h3>Não foi possível carregar</h3><p>${escH(msg)}</p></div>`;
         }
 
-        function popularFiltros(){
-            const f = dados.filtros||{};
-            const setSel=(id, arr, val, lblAll)=>{ const el=document.getElementById(id); if(!el)return; const cur=filtros[val]; el.innerHTML=`<option value="">${lblAll}</option>`+arr.map(x=>typeof x==='object'?`<option value="${x.id}" ${String(cur)===String(x.id)?'selected':''}>${escH(x.nome)}</option>`:`<option value="${escH(x)}" ${cur===x?'selected':''}>${escH(x)}</option>`).join(''); };
-            setSel('fArea', f.areas||[], 'area', 'Todas');
-            setSel('fResp', f.responsaveis||[], 'resp', 'Todos');
-            setSel('fCliente', f.clientes||[], 'cliente', 'Todos');
-            // listeners (uma vez)
-            if(!window._filtrosLig){
-                document.getElementById('fArea').onchange=e=>{filtros.area=e.target.value; carregar();};
-                document.getElementById('fResp').onchange=e=>{filtros.resp=e.target.value; carregar();};
-                document.getElementById('fCliente').onchange=e=>{filtros.cliente=e.target.value; carregar();};
-                document.getElementById('fAbIni').onchange=e=>{filtros.abIni=e.target.value; carregar();};
-                document.getElementById('fAbFim').onchange=e=>{filtros.abFim=e.target.value; carregar();};
-                document.getElementById('fFeIni').onchange=e=>{filtros.feIni=e.target.value; carregar();};
-                document.getElementById('fFeFim').onchange=e=>{filtros.feFim=e.target.value; carregar();};
-                document.getElementById('fHoIni').onchange=e=>{filtros.hoIni=e.target.value; carregar();};
-                document.getElementById('fHoFim').onchange=e=>{filtros.hoFim=e.target.value; carregar();};
-                window._filtrosLig=true;
+        function trocarAba(a){
+            abaAtiva = a;
+            document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.getAttribute('data-aba')===a));
+            document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
+            document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.add('on');
+            atualizarSub();
+            if(a === 'comercial' && !com) carregarComercial();
+        }
+        function atualizarSub(){
+            const d = abaAtiva === 'operacao' ? diasOp : diasCom;
+            const escopo = abaAtiva === 'operacao'
+                ? (quadroOp ? (QUADROS.find(q=>q[0]===quadroOp)||[])[1] : 'todos os quadros')
+                : 'três funis';
+            document.getElementById('cbSub').innerText = `Últimos ${d} dias · ${escopo}`;
+        }
+
+        function barrasHtml(itens, chaveRot, chaveVal, corFn, sufixo){
+            const max = Math.max(1, ...itens.map(i => i[chaveVal]));
+            return itens.map(i => `<div class="bh">
+                <span class="bh-rot"><span>${escH(i[chaveRot])}</span></span>
+                <span class="bh-t"><i style="width:${Math.max(2, i[chaveVal]/max*100)}%;background:${corFn(i)}"></i></span>
+                <span class="bh-v">${i[chaveVal]}${sufixo||''}</span></div>`).join('');
+        }
+
+        /* ==================== OPERAÇÃO ==================== */
+        async function carregarOperacao(){
+            document.getElementById('abaOperacao').innerHTML = '<div class="loading">Carregando...</div>';
+            try{
+                const u = '/api/painel/operacao?dias=' + diasOp + (quadroOp ? '&quadro='+quadroOp : '');
+                const r = await fetch(u);
+                if(!r.ok){ erroEm('abaOperacao', await motivo(r,'Erro ao carregar o painel.')); return; }
+                op = await r.json();
+            }catch(e){ erroEm('abaOperacao','Sem conexão com o servidor.'); return; }
+            renderOperacao();
+            atualizarSub();
+        }
+
+        function renderOperacao(){
+            const k = op.kpis, a = op.atencao;
+            const totalAtencao = (a.atrasados||[]).length + (a.vencendo||[]).length + (a.parados?1:0);
+
+            let atencao = '';
+            if(totalAtencao){
+                const itens = [];
+                (a.atrasados||[]).forEach(p => itens.push(`<div class="al">
+                    <div><div class="al-t">${escH(p.nome)}${p.empresa?' · '+escH(p.empresa):''}</div>
+                        <div class="al-s">${escH(p.area||'')} · ${escH(p.status||'')} · ${escH(p.responsavel||'sem responsável')}</div></div>
+                    <span class="al-v v-cr">${p.dias} ${p.dias===1?'dia':'dias'} atrasado</span></div>`));
+                (a.vencendo||[]).forEach(p => itens.push(`<div class="al">
+                    <div><div class="al-t">${escH(p.nome)}${p.empresa?' · '+escH(p.empresa):''}</div>
+                        <div class="al-s">${escH(p.area||'')} · ${escH(p.status||'')} · ${escH(p.responsavel||'sem responsável')}</div></div>
+                    <span class="al-v v-at">${p.dias===0?'vence hoje':'vence em '+p.dias+'d'}</span></div>`));
+                if(a.parados) itens.push(`<div class="al">
+                    <div><div class="al-t">${a.parados} ${a.parados===1?'projeto parado':'projetos parados'} há mais de 14 dias</div>
+                        <div class="al-s">sem mudança de fase no período</div></div>
+                    <span class="al-v v-at">verificar</span></div>`);
+                atencao = `<div class="at-bloco">
+                    <div class="at-cab"><span class="material-symbols-rounded">priority_high</span>
+                        <span class="at-t">Precisa de atenção</span>
+                        <span class="at-n">${itens.length} ${itens.length===1?'item':'itens'}</span></div>
+                    ${itens.join('')}</div>`;
+            } else {
+                atencao = `<div class="at-bloco"><div class="at-cab">
+                    <span class="material-symbols-rounded" style="color:var(--ok)">check_circle</span>
+                    <span class="at-t">Nada atrasado nem parado</span></div></div>`;
             }
-            const algum = Object.values(filtros).some(v=>v);
-            document.getElementById('fLimpar').style.display = algum?'flex':'none';
-        }
-        function limparFiltros(){ filtros={area:'',resp:'',cliente:'',abIni:'',abFim:'',feIni:'',feFim:'',hoIni:'',hoFim:''}; ['fAbIni','fAbFim','fFeIni','fFeFim','fHoIni','fHoFim'].forEach(id=>document.getElementById(id).value=''); carregar(); }
 
-        // ===== NAV =====
-        function montarNav(){
-            const nav=document.getElementById('nav');
-            const items=[
-                {g:'Panorama'},
-                {id:'geral', ic:'dashboard', nome:'Visão Geral'},
-                {id:'fluxo', ic:'timeline', nome:'Fluxo & Tempos'},
-                {id:'entrega', ic:'compare_arrows', nome:'Iniciados × Finalizados'},
-                {g:'Equipe'},
-                {id:'produtividade', ic:'schedule', nome:'Produtividade'},
-                {id:'projetos', ic:'folder_open', nome:'Projetos'},
-                {g:'Confiança'},
-                {id:'saude', ic:'verified', nome:'Saúde dos Dados'},
-            ];
-            nav.innerHTML=items.map(it=>it.g?`<div class="nav-grupo">${it.g}</div>`:`<div class="nav-item ${telaAtiva===it.id?'ativo':''}" onclick="irPara('${it.id}')"><span class="material-symbols-rounded">${it.ic}</span><span class="nav-nome">${it.nome}</span></div>`).join('');
-        }
-        function irPara(id){ telaAtiva=id; montarNav(); render(); document.getElementById('conteudo').scrollTop=0; }
-
-        function render(){
-            limparCharts();
-            if(!dados){ return; }
-            if(telaAtiva==='geral') renderGeral();
-            else if(telaAtiva==='fluxo') renderFluxo();
-            else if(telaAtiva==='entrega') renderEntrega();
-            else if(telaAtiva==='produtividade') renderProdutividade();
-            else if(telaAtiva==='projetos') renderProjetos();
-            else if(telaAtiva==='saude') renderSaude();
-            requestAnimationFrame(montarCharts);
-        }
-
-        // ===== COMPONENTES ECHARTS =====
-        let cc=0;
-        function chartBarH(itens, cor, sufixo, fmt){
-            // itens: [{nome, valor}]
-            const id='ch_'+(cc++);
-            const nomes=itens.map(x=>x.nome).reverse();
-            const vals=itens.map(x=>({value:x.valor, itemStyle:{color:typeof cor==='function'?cor(x):cor, borderRadius:[0,5,5,0]}})).reverse();
-            const alt=Math.max(120, itens.length*40);
-            agendarChart(id,{ ...CHART_ANIM, grid:{left:4,right:50,top:6,bottom:4,containLabel:true},
-                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].name}<br/><b>${fmt?fmt(p[0].value):p[0].value}${sufixo||''}</b>`},
-                xAxis:{type:'value',splitLine:{show:false},axisLabel:{show:false},axisLine:{show:false},axisTick:{show:false}},
-                yAxis:{type:'category',data:nomes,axisLine:{show:false},axisTick:{show:false},axisLabel:{fontSize:12,fontWeight:600,color:'#1a1d29',fontFamily:FONT}},
-                series:[{type:'bar',data:vals,barWidth:14,label:{show:true,position:'right',fontSize:11.5,fontWeight:800,fontFamily:FONT,color:'#1a1d29',formatter:p=>(fmt?fmt(p.value):p.value)+(sufixo||'')},showBackground:true,backgroundStyle:{color:'#eef0f4',borderRadius:5}}]
-            });
-            return `<div id="${id}" class="echart" style="height:${alt}px;"></div>`;
-        }
-        function chartDonut(itens){
-            const id='ch_'+(cc++);
-            const total=itens.reduce((a,b)=>a+b.valor,0);
-            agendarChart(id,{ ...CHART_ANIM,
-                tooltip:{trigger:'item',textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p.name}<br/><b>${p.value}</b> (${p.percent}%)`},
-                legend:{type:'scroll',orient:'vertical',right:6,top:'center',textStyle:{fontFamily:FONT,fontSize:11,color:'#5a5f6e'},itemWidth:9,itemHeight:9,itemGap:9},
-                series:[{type:'pie',radius:['52%','78%'],center:['32%','50%'],avoidLabelOverlap:true,itemStyle:{borderColor:'#fff',borderWidth:2,borderRadius:3},label:{show:false},labelLine:{show:false},
-                    data:itens.map(x=>({value:x.valor,name:x.nome,itemStyle:{color:x.cor}}))}],
-                graphic:[{type:'text',left:'30%',top:'44%',style:{text:String(total),fontSize:24,fontWeight:800,fill:'#1a1d29',fontFamily:FONT,textAlign:'center'}},{type:'text',left:'30%',top:'56%',style:{text:'total',fontSize:9,fontWeight:700,fill:'#9AA0AE',fontFamily:FONT,textAlign:'center'}}]
-            });
-            return `<div id="${id}" class="echart" style="height:200px;"></div>`;
-        }
-        function chartLinhaDupla(serie){
-            // serie: [{periodo, iniciados, finalizados}]
-            const id='ch_'+(cc++);
-            const cats=serie.map(x=>x.periodo);
-            agendarChart(id,{ ...CHART_ANIM,
-                tooltip:{trigger:'axis',textStyle:{fontFamily:FONT,fontSize:12}},
-                legend:{data:['Iniciados','Finalizados'],right:0,top:0,textStyle:{fontFamily:FONT,fontSize:11,fontWeight:600},icon:'roundRect',itemWidth:11,itemHeight:11},
-                grid:{left:4,right:8,top:36,bottom:4,containLabel:true},
-                xAxis:{type:'category',data:cats,boundaryGap:false,axisLine:{lineStyle:{color:'#e7e9ef'}},axisTick:{show:false},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
-                yAxis:{type:'value',splitLine:{lineStyle:{color:'#f2f3f6'}},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
-                series:[
-                    {name:'Iniciados',type:'line',smooth:true,data:serie.map(x=>x.iniciados),lineStyle:{width:3,color:'#7371ff'},itemStyle:{color:'#7371ff'},areaStyle:{color:'rgba(115,113,255,0.10)'},symbol:'circle',symbolSize:7},
-                    {name:'Finalizados',type:'line',smooth:true,data:serie.map(x=>x.finalizados),lineStyle:{width:3,color:'#2FA875'},itemStyle:{color:'#2FA875'},areaStyle:{color:'rgba(47,168,117,0.10)'},symbol:'circle',symbolSize:7}
-                ]
-            });
-            return `<div id="${id}" class="echart" style="height:300px;"></div>`;
-        }
-        function chartFaixas(faixasObj, cor){
-            const id='ch_'+(cc++);
-            const cats=Object.keys(faixasObj); const vals=Object.values(faixasObj);
-            agendarChart(id,{ ...CHART_ANIM, grid:{left:6,right:6,top:20,bottom:4,containLabel:true},
-                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].axisValue}<br/><b>${p[0].value}</b> projeto${p[0].value!==1?'s':''}`},
-                xAxis:{type:'category',data:cats,axisLine:{lineStyle:{color:'#e7e9ef'}},axisTick:{show:false},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
-                yAxis:{type:'value',splitLine:{lineStyle:{color:'#f2f3f6'}},axisLabel:{show:false}},
-                series:[{type:'bar',data:vals,barWidth:'55%',itemStyle:{color:cor,borderRadius:[5,5,0,0]},label:{show:true,position:'top',fontSize:11,fontWeight:700,color:'#5a5f6e',fontFamily:FONT,formatter:p=>p.value||''}}]
-            });
-            return `<div id="${id}" class="echart" style="height:180px;"></div>`;
-        }
-        function kpi(lbl,val,desc,ic,cor,bg){ return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${ic}</span></div><span class="kpi-lbl">${lbl}</span></div><div class="kpi-val" style="color:${cor};">${val}</div><div class="kpi-desc">${desc}</div></div>`; }
-
-        const CORES_STATUS = {'Backlog':'#9AA0AE','Não Iniciado':'#9AA0AE','Onboarding':'#3b82f6','Kick-off':'#3b82f6','Pausado':'#f59e0b','Finalizado':'#2FA875','Cancelado':'#E5484D'};
-        function corStatus(s){ return CORES_STATUS[s] || '#7371ff'; }
-        const PALETA = ['#7371ff','#14b8a6','#ff43c0','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#10b981','#6366f1'];
-
-        // ===== TELA: VISÃO GERAL =====
-        function renderGeral(){
-            const k=dados.kpis||{}; const mf=dados.metricas_fluxo||{};
-            const porStatus=Object.entries(dados.por_status||{}).map(([nome,valor])=>({nome,valor,cor:corStatus(nome)})).sort((a,b)=>b.valor-a.valor);
-            const porArea=Object.entries(dados.por_area||{}).map(([nome,valor],i)=>({nome,valor,cor:PALETA[i%PALETA.length]})).sort((a,b)=>b.valor-a.valor);
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">dashboard</span> Visão Geral</div><div class="tela-sub">Panorama de projetos e produtividade</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(6,1fr);">
-                    ${kpi('Projetos', k.total_projetos||0, 'No total', 'folder_open', '#1a1d29', '#eef0f4')}
-                    ${kpi('Ativos', k.ativos||0, 'Em andamento', 'bolt', '#7371ff', '#f0efff')}
-                    ${kpi('Finalizados', k.finalizados||0, 'Concluídos', 'check_circle', '#2FA875', '#2FA87522')}
-                    ${kpi('Atrasados', k.atrasados||0, 'Fora do prazo', 'warning', k.atrasados>0?'#E5484D':'#9AA0AE', (k.atrasados>0?'#E5484D':'#9AA0AE')+'22')}
-                    ${kpi('Lead time', fmtDias(mf.lead_medio), 'Médio (abertura→fim)', 'timeline', '#f59e0b', '#fef3e2')}
-                    ${kpi('Cycle time', fmtDias(mf.cycle_medio), 'Médio (trabalho)', 'speed', '#14b8a6', '#e7fbf5')}
+            const html = `
+                <div class="ferr">
+                    <div class="seg">
+                        ${[7,30,90,365].map(d=>`<button class="${diasOp===d?'on':''}" onclick="periodoOp(${d})">${d===365?'Ano':d+' dias'}</button>`).join('')}
+                    </div>
+                    <select class="filtro" onchange="filtrarQuadro(this.value)">
+                        <option value="">Todos os quadros</option>
+                        ${QUADROS.map(([c,n])=>`<option value="${escA(c)}" ${quadroOp===c?'selected':''}>${escH(n)}</option>`).join('')}
+                    </select>
+                    <span class="ferr-dir">atualizado agora</span>
                 </div>
-                <div class="grid" style="grid-template-columns:1fr 1fr;">
-                    <div class="painel"><div class="painel-tit">Projetos por status</div><div class="painel-sub">Distribuição atual no fluxo</div>${porStatus.length?chartDonut(porStatus):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Projetos por área</div><div class="painel-sub">Volume por quadro</div>${porArea.length?chartBarH(porArea, x=>PALETA[porArea.indexOf(x)%PALETA.length], ''):'<div class="painel-sub">Sem dados</div>'}</div>
-                </div>
-                <div class="sec-lbl">Iniciados × Finalizados</div>
-                <div class="painel"><div class="painel-tit">Evolução mensal</div><div class="painel-sub">Projetos abertos e concluídos ao longo do tempo</div>${(mf.serie_iniciados_finalizados||[]).length?chartLinhaDupla(mf.serie_iniciados_finalizados):'<div class="painel-sub">Sem dados no período</div>'}</div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
 
-        // ===== TELA: FLUXO & TEMPOS =====
-        function renderFluxo(){
-            const mf=dados.metricas_fluxo||{};
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">timeline</span> Fluxo & Tempos</div><div class="tela-sub">Lead time, cycle time e tempo de tarefa</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(4,1fr);">
-                    ${kpi('Lead time médio', fmtDias(mf.lead_medio), 'Abertura → finalização', 'timeline', '#f59e0b', '#fef3e2')}
-                    ${kpi('Cycle time médio', fmtDias(mf.cycle_medio), 'Trabalho efetivo', 'speed', '#14b8a6', '#e7fbf5')}
-                    ${kpi('Tempo médio/tarefa', fmtHoras(mf.tempo_medio_tarefa_seg), 'Por apontamento de timer', 'timer', '#7371ff', '#f0efff')}
-                    ${kpi('Finalizados', mf.total_finalizados_periodo||0, 'Com tempo medido', 'check_circle', '#2FA875', '#2FA87522')}
-                </div>
-                <div class="grid" style="grid-template-columns:1fr 1fr;">
-                    <div class="painel"><div class="painel-tit">Distribuição do Lead time</div><div class="painel-sub">Quantos projetos em cada faixa (abertura → fim)</div>${mf.lead_faixas?chartFaixas(mf.lead_faixas,'#f59e0b'):''}</div>
-                    <div class="painel"><div class="painel-tit">Distribuição do Cycle time</div><div class="painel-sub">Tempo de trabalho efetivo</div>${mf.cycle_faixas?chartFaixas(mf.cycle_faixas,'#14b8a6'):''}</div>
-                </div>
-                <div class="sec-lbl">Detalhamento por projeto</div>
-                <div class="painel"><div class="painel-tit">Tempos por projeto finalizado</div><div class="painel-sub">Ordenado pelo maior lead time · R&S usa corte na entrevista com cliente</div>
-                    ${(mf.detalhe_tempos||[]).length?listaTempos(mf.detalhe_tempos):'<div class="painel-sub">Sem projetos finalizados no período.</div>'}
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
-        function listaTempos(arr){
-            return `<div class="lista">${arr.map(d=>`<div class="lista-item">
-                <span class="dot" style="background:${d.eh_rs?'#ff43c0':'#7371ff'};"></span>
-                <div class="lista-nome">${escH(d.nome)}<small>${escH(d.area)} · aberto ${escH(d.abertura||'—')} · fechado ${escH(d.conclusao||'—')}</small></div>
-                <div style="text-align:right;"><div class="lista-data" style="color:#f59e0b;">Lead ${fmtDias(d.lead)}</div><div class="lista-data" style="color:#14b8a6;font-size:10.5px;">Cycle ${fmtDias(d.cycle)}</div></div>
-            </div>`).join('')}</div>`;
-        }
+                ${atencao}
 
-        // ===== TELA: INICIADOS × FINALIZADOS =====
-        function renderEntrega(){
-            const mf=dados.metricas_fluxo||{};
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">compare_arrows</span> Iniciados × Finalizados</div><div class="tela-sub">Fluxo de entrada e saída de projetos</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
-                    ${kpi('Iniciados', mf.qtd_iniciados||0, 'No período filtrado', 'play_circle', '#7371ff', '#f0efff')}
-                    ${kpi('Finalizados', mf.qtd_finalizados||0, 'No período filtrado', 'check_circle', '#2FA875', '#2FA87522')}
-                    ${kpi('Saldo', ((mf.qtd_iniciados||0)-(mf.qtd_finalizados||0)>=0?'+':'')+((mf.qtd_iniciados||0)-(mf.qtd_finalizados||0)), 'Iniciados − finalizados', 'balance', '#f59e0b', '#fef3e2')}
+                <div class="kpis">
+                    <div class="kpi"><div class="kpi-r">Em andamento</div><div class="kpi-v num">${k.ativos}</div>
+                        <div class="kpi-p">projetos ativos</div></div>
+                    <div class="kpi"><div class="kpi-r">Concluídos</div>
+                        <div class="kpi-v num" style="color:var(--ok)">${k.concluidos}</div>
+                        <div class="kpi-p">no período</div></div>
+                    <div class="kpi"><div class="kpi-r">Atrasados</div>
+                        <div class="kpi-v num" style="color:${k.atrasados?'var(--critico)':'var(--ok)'}">${k.atrasados}</div>
+                        <div class="kpi-p">${k.ativos ? Math.round(k.atrasados/k.ativos*100) : 0}% do total ativo</div></div>
+                    <div class="kpi"><div class="kpi-r">Tempo até concluir</div>
+                        <div class="kpi-v num">${k.mediana_conclusao}<span style="font-size:14px"> dias</span></div>
+                        <div class="kpi-p">mediana</div></div>
+                    <div class="kpi"><div class="kpi-r">Horas lançadas</div>
+                        <div class="kpi-v num">${k.horas}<span style="font-size:14px">h</span></div>
+                        <div class="kpi-p">${k.fora_plano_pct}% fora do plano</div></div>
                 </div>
-                <div class="painel" style="margin-bottom:14px;"><div class="painel-tit">Evolução mensal</div><div class="painel-sub">Comparativo ao longo do tempo</div>${(mf.serie_iniciados_finalizados||[]).length?chartLinhaDupla(mf.serie_iniciados_finalizados):'<div class="painel-sub">Sem dados</div>'}</div>
-                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                    <div class="painel"><div class="painel-tit">Projetos iniciados</div><div class="painel-sub">${(mf.lista_iniciados||[]).length} no período · mais recentes primeiro</div>${listaProjetos(mf.lista_iniciados, 'iniciado')}</div>
-                    <div class="painel"><div class="painel-tit">Projetos finalizados</div><div class="painel-sub">${(mf.lista_finalizados||[]).length} no período · mais recentes primeiro</div>${listaProjetos(mf.lista_finalizados, 'finalizado')}</div>
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
-        function listaProjetos(arr, tipo){
-            if(!arr||!arr.length) return '<div class="painel-sub">Nenhum projeto.</div>';
-            return `<div class="lista">${arr.map(p=>`<div class="lista-item">
-                <span class="dot" style="background:${tipo==='finalizado'?'#2FA875':'#7371ff'};"></span>
-                <div class="lista-nome">${escH(p.nome)}<small>${escH(p.cliente||'—')} · ${escH(p.responsavel||'—')}</small></div>
-                <span class="lista-tag badge-area">${escH(p.area)}</span>
-                <div class="lista-data">${escH(p.data)}</div>
-            </div>`).join('')}</div>`;
-        }
 
-        // ===== TELA: SAÚDE DOS DADOS =====
-        function renderSaude(){
-            const sd=dados.saude_dados||{};
-            const inds=sd.indicadores||[];
-            const score=sd.score!==undefined?sd.score:null;
-            const corScore=score>=85?'#2FA875':score>=60?'#f59e0b':'#E5484D';
-            const lblScore=score>=85?'Dados confiáveis':score>=60?'Atenção a alguns registros':'Registros incompletos';
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">verified</span> Saúde dos Dados</div><div class="tela-sub">Confiabilidade dos registros que alimentam as métricas</div></div>`;
-            h+=`<div class="painel" style="margin-bottom:16px; display:flex; align-items:center; gap:28px; flex-wrap:wrap;">
-                <div style="display:flex; align-items:center; gap:20px;">
-                    <div style="width:96px; height:96px; border-radius:50% !important; background:conic-gradient(${corScore} ${score*3.6}deg, #eef0f4 0deg); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <div style="width:76px; height:76px; border-radius:50% !important; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                            <span style="font-size:26px; font-weight:800; letter-spacing:-1.5px; color:${corScore};">${score!==null?score+'%':'—'}</span>
+                <div class="tripla">
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Onde o trabalho está</div>
+                            <div class="gr-s">Projetos ativos por área, divididos pelo tempo parado na fase atual.</div></div></div>
+                        <div class="gr-corpo">
+                            ${op.areas.length ? op.areas.map(a => {
+                                const t = Math.max(1, a.total);
+                                return `<div class="bh">
+                                    <span class="bh-rot"><span>${escH(a.area)}</span></span>
+                                    <span class="bh-t">
+                                        ${a.ok ? `<i style="width:${a.ok/t*100}%;background:var(--ok)"></i>`:''}
+                                        ${a.atencao ? `<i style="width:${a.atencao/t*100}%;background:var(--at-borda)"></i>`:''}
+                                        ${a.critico ? `<i style="width:${a.critico/t*100}%;background:var(--critico)"></i>`:''}
+                                    </span>
+                                    <span class="bh-v">${a.total}</span></div>`;
+                            }).join('') : '<div class="conclusao">Nenhum projeto ativo no recorte.</div>'}
+                            <div class="legenda">
+                                <span class="lg"><i style="background:var(--ok)"></i>até 7 dias na fase</span>
+                                <span class="lg"><i style="background:var(--at-borda)"></i>8 a 14 dias</span>
+                                <span class="lg"><i style="background:var(--critico)"></i>mais de 14 dias</span>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <div style="font-size:17px; font-weight:800; color:${corScore}; margin-bottom:4px;">${lblScore}</div>
-                        <div style="font-size:12.5px; color:var(--text-soft); font-weight:500; line-height:1.5; max-width:420px;">Índice de confiabilidade baseado nos registros preenchidos. Quanto maior, mais as métricas refletem a realidade.</div>
+
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Carga por pessoa</div>
+                            <div class="gr-s">Projetos ativos sob responsabilidade de cada um.</div></div></div>
+                        <div class="gr-corpo">
+                            ${op.carga.length ? op.carga.map(c => {
+                                const max = Math.max(1, ...op.carga.map(x=>x.total));
+                                const [bg,fg] = cor(c.pessoa);
+                                const cr = c.total > 8 ? 'var(--critico)' : c.total > 6 ? 'var(--atencao)' : 'var(--acao)';
+                                return `<div class="bh">
+                                    <span class="bh-rot"><span class="bh-av" style="background:${bg};color:${fg}">${iniciais(c.pessoa)}</span>
+                                        <span>${escH(c.pessoa.split(' ')[0])}</span></span>
+                                    <span class="bh-t"><i style="width:${c.total/max*100}%;background:${cr}"></i></span>
+                                    <span class="bh-v">${c.total}</span></div>`;
+                            }).join('') : '<div class="conclusao">Ninguém com projeto ativo.</div>'}
+                            <div class="legenda">
+                                <span class="lg"><i style="background:var(--critico)"></i>acima de 8</span>
+                                <span class="lg"><i style="background:var(--atencao)"></i>7 a 8</span>
+                                <span class="lg"><i style="background:var(--acao)"></i>até 6</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div style="margin-left:auto; display:flex; gap:26px;">
-                    <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--text-main);">${sd.total_projetos||0}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">Projetos</div></div>
-                    <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--text-main);">${sd.total_finalizados||0}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">Finalizados</div></div>
-                    <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--text-main);">${sd.com_timer||0}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">Com timer</div></div>
-                </div>
-            </div>`;
-            h+=`<div class="sec-lbl">Verificações</div><div class="grid" style="grid-template-columns:1fr;">`;
-            inds.forEach(ind=>{
-                const ok=ind.qtd===0;
-                const sevCor=ind.severidade==='alta'?'#E5484D':ind.severidade==='media'?'#f59e0b':'#9AA0AE';
-                const cor=ok?'#2FA875':sevCor;
-                h+=`<div class="painel" style="border-left:3px solid ${cor} !important;">
-                    <div style="display:flex; align-items:flex-start; gap:14px;">
-                        <div style="width:38px; height:38px; border-radius:10px !important; background:${cor}18; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span class="material-symbols-rounded" style="color:${cor}; font-size:21px;">${ok?'check_circle':'error'}</span></div>
-                        <div style="flex-grow:1; min-width:0;">
-                            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                                <div style="font-size:13.5px; font-weight:800;">${escH(ind.titulo)}</div>
-                                <div style="font-size:12px; font-weight:800; color:${cor};">${ok?'Tudo certo':ind.qtd+(ind.qtd===1?' projeto':' projetos')}</div>
-                            </div>
-                            <div style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;">${escH(ind.descricao)}</div>
-                            ${!ok?`<div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:7px;">${(ind.projetos||[]).map(p=>`<span style="font-size:11px; font-weight:600; background:var(--bg-board); padding:5px 11px; border-radius:50px !important; color:var(--text-soft);">${escH(p.nome)} <span style="color:var(--text-muted);">· ${escH(p.area)}</span></span>`).join('')}${ind.qtd>(ind.projetos||[]).length?`<span style="font-size:11px; font-weight:700; color:var(--text-muted); padding:5px 4px;">+${ind.qtd-(ind.projetos||[]).length} outros</span>`:''}</div>`:''}
+
+                ${op.gargalo && op.gargalo.length ? `<div class="gr">
+                    <div class="gr-cab"><div>
+                        <div class="gr-t">Tempo médio em cada fase</div>
+                        <div class="gr-s">Mediana de dias que os projetos passam em cada fase. Quanto mais escuro, mais tempo.</div></div></div>
+                    <div class="gr-corpo">
+                        <div class="mz-l" style="grid-template-columns:repeat(${op.gargalo.length},1fr)">
+                            ${op.gargalo.map(g=>`<div class="mz-cab">${escH(g.fase)}</div>`).join('')}
+                        </div>
+                        <div class="mz-l" style="grid-template-columns:repeat(${op.gargalo.length},1fr)">
+                            ${op.gargalo.map(g => {
+                                const max = Math.max(1, ...op.gargalo.map(x=>x.dias));
+                                const int = g.dias/max;
+                                const bg = int > .66 ? '#FBE3E3' : int > .33 ? '#FFF0D6' : '#E6F7F0';
+                                const fg = int > .66 ? '#8A1F1F' : int > .33 ? '#7A4A0C' : '#0A5C42';
+                                return `<div class="mz-c" style="background:${bg};color:${fg}" title="${g.amostra} projetos">${g.dias}d</div>`;
+                            }).join('')}
+                        </div>
+                        <div class="conclusao">
+                            <b>${escH(op.gargalo[0].fase)}</b> concentra ${op.gargalo[0].dias} dias —
+                            é onde o ganho de prazo está.
+                        </div>
+                    </div>
+                </div>` : `<div class="gr">
+                    <div class="gr-cab"><div><div class="gr-t">Tempo médio em cada fase</div>
+                        <div class="gr-s">Ainda sem histórico suficiente.</div></div></div>
+                    <div class="gr-corpo"><div class="conclusao">
+                        O histórico de fases começa a ser gravado a partir de agora. Este gráfico
+                        aparece quando houver projetos que mudaram de fase pelo menos uma vez.</div></div>
+                </div>`}
+
+                <div class="dupla">
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Em que gastamos o tempo</div>
+                            <div class="gr-s">Horas lançadas por área no período.</div></div></div>
+                        <div class="gr-corpo">
+                            ${op.horas_area.length ? barrasHtml(op.horas_area,'area','horas',()=>'var(--acao)','h')
+                                : '<div class="conclusao">Nenhuma hora lançada no período.</div>'}
+                            ${op.fora_plano_horas ? `<div class="conclusao">
+                                <b>${op.fora_plano_horas}h</b> foram em trabalho não planejado —
+                                ${k.fora_plano_pct}% do total.</div>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Clientes com mais trabalho aberto</div>
+                            <div class="gr-s">Volume por cliente e prazo mais próximo.</div></div></div>
+                        <div class="gr-corpo">
+                            ${op.clientes.length ? op.clientes.map(c => {
+                                const prazo = c.prazo ? diasAte(c.prazo) : null;
+                                const cls = prazo === null ? 'p-neutro' : prazo < 0 ? 'p-cr' : prazo <= 7 ? 'p-at' : 'p-ok';
+                                const txt = prazo === null ? 'sem prazo' : prazo < 0 ? `${-prazo}d atrasado`
+                                    : prazo === 0 ? 'vence hoje' : `vence em ${prazo}d`;
+                                return `<div class="li">
+                                    <div><div class="li-t">${escH(c.cliente)}</div>
+                                        <div class="li-s">${c.areas.slice(0,2).map(a=>`<span class="pilula p-az">${escH(a)}</span>`).join('')}
+                                            ${c.projetos} ${c.projetos===1?'projeto':'projetos'}</div></div>
+                                    <span class="li-v"></span><span class="pilula ${cls}">${txt}</span></div>`;
+                            }).join('') : '<div class="conclusao">Nenhum cliente com trabalho aberto.</div>'}
                         </div>
                     </div>
                 </div>`;
-            });
-            h+=`</div></div>`;
-            document.getElementById('conteudo').innerHTML=h;
+            document.getElementById('abaOperacao').innerHTML = html;
         }
 
-        // ===== TELA: PRODUTIVIDADE =====
-        function renderProdutividade(){
-            const k=dados.kpis||{};
-            const rankColab=(dados.ranking_colaboradores||[]).slice(0,10).map(c=>({nome:c.nome,valor:Math.round(c.segundos/3600)}));
-            const ocup=(dados.ocupacao||[]).slice(0,10).map(o=>({nome:o.nome,valor:o.percentual}));
-            const topAtiv=(dados.top_atividades||[]).slice(0,10).map(a=>({nome:a.atividade,valor:Math.round(a.segundos/3600)}));
-            const topCli=(dados.top_clientes||[]).slice(0,8).map(c=>({nome:c.cliente,valor:Math.round(c.segundos/3600)}));
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">schedule</span> Produtividade</div><div class="tela-sub">Tempo registrado e ocupação da equipe</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
-                    ${kpi('Tempo total', fmtHoras(k.tempo_total_segundos), 'Registrado no timer', 'timer', '#7371ff', '#f0efff')}
-                    ${kpi('Apontamentos', k.total_sessoes||0, 'Sessões de timer', 'touch_app', '#14b8a6', '#e7fbf5')}
-                    ${kpi('Dias úteis', dados.dias_uteis||0, 'No período', 'today', '#f59e0b', '#fef3e2')}
-                </div>
-                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                    <div class="painel"><div class="painel-tit">Horas por colaborador</div><div class="painel-sub">Tempo registrado</div>${rankColab.length?chartBarH(rankColab,'#7371ff','h'):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Ocupação (%)</div><div class="painel-sub">Base: dias úteis × 8h</div>${ocup.length?chartBarH(ocup, x=>x.valor>=80?'#2FA875':x.valor>=50?'#F5D06B':'#E5484D','%'):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Principais atividades</div><div class="painel-sub">Por horas registradas</div>${topAtiv.length?chartBarH(topAtiv,'#14b8a6','h'):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Horas por cliente</div><div class="painel-sub">Onde o tempo foi investido</div>${topCli.length?chartBarH(topCli,'#ff43c0','h'):'<div class="painel-sub">Sem dados</div>'}</div>
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
+        function diasAte(dataStr){
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            const d = new Date(dataStr + 'T00:00:00');
+            return Math.round((d - hoje) / 86400000);
+        }
+        function periodoOp(d){ diasOp = d; carregarOperacao(); }
+        function filtrarQuadro(q){ quadroOp = q; carregarOperacao(); }
+
+        /* ==================== COMERCIAL ==================== */
+        async function carregarComercial(){
+            document.getElementById('abaComercial').innerHTML = '<div class="loading">Carregando...</div>';
+            try{
+                const r = await fetch('/api/painel/comercial?dias=' + diasCom);
+                if(!r.ok){ erroEm('abaComercial', await motivo(r,'Erro ao carregar o painel.')); return; }
+                com = await r.json();
+            }catch(e){ erroEm('abaComercial','Sem conexão com o servidor.'); return; }
+            renderComercial();
+            atualizarSub();
         }
 
-        // ===== TELA: PROJETOS =====
-        function renderProjetos(){
-            const atras=dados.lista_atrasados||[];
-            const porColab=(dados.proj_por_colab||[]).map(c=>({nome:c.nome,valor:c.qtd}));
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">folder_open</span> Projetos</div><div class="tela-sub">Carga da equipe e projetos atrasados</div></div>
-                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                    <div class="painel"><div class="painel-tit">Projetos ativos por responsável</div><div class="painel-sub">Carga atual de trabalho</div>${porColab.length?chartBarH(porColab,'#7371ff',''):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Projetos atrasados</div><div class="painel-sub">${atras.length} fora do prazo</div>
-                        ${atras.length?`<div class="lista">${atras.map(a=>`<div class="lista-item"><span class="dot" style="background:#E5484D;"></span><div class="lista-nome">${escH(a.nome)}<small>${escH(a.responsavel)} · ${escH(a.area)}</small></div><span class="lista-tag" style="background:#E5484D22;color:#E5484D;">${a.dias_atraso}d atraso</span></div>`).join('')}</div>`:'<div class="empty" style="padding:40px;"><span class="material-symbols-rounded" style="color:#2FA875;opacity:0.4;">check_circle</span><h3>Nada atrasado</h3><p>Todos os projetos estão dentro do prazo.</p></div>'}
+        function classeConv(v){ return v >= 65 ? 'cv-bom' : v >= 55 ? 'cv-medio' : 'cv-ruim'; }
+
+        function renderComercial(){
+            const k = com.kpis, a = com.atencao, vv = com.ver_valor;
+            const casc = com.cascata || [];
+            const topo = casc.length ? casc[0].qtd : 0;
+            const fecha = casc.length ? casc[casc.length-1].qtd : 0;
+
+            const itensAt = [];
+            if(a.contato_hoje) itensAt.push(`<div class="al">
+                <div><div class="al-t">${a.contato_hoje} ${a.contato_hoje===1?'lead com contato marcado':'leads com contato marcado'} para hoje ou antes</div>
+                    <div class="al-s">aguardando retorno agendado</div></div>
+                <span class="al-v v-cr">hoje</span></div>`);
+            if(a.parados) itensAt.push(`<div class="al">
+                <div><div class="al-t">${a.parados} ${a.parados===1?'lead parado':'leads parados'} há mais de 14 dias</div>
+                    <div class="al-s">sem movimentação no funil</div></div>
+                <span class="al-v v-cr">${vv && com.valor_parado ? moeda(com.valor_parado)+' parados' : 'verificar'}</span></div>`);
+            if(a.sem_contato) itensAt.push(`<div class="al">
+                <div><div class="al-t">${a.sem_contato} em Fechamento sem próximo contato agendado</div>
+                    <div class="al-s">risco de esfriar sem ninguém perceber</div></div>
+                <span class="al-v v-at">agendar</span></div>`);
+
+            const html = `
+                <div class="ferr">
+                    <div class="seg">
+                        ${[30,90,180,365].map(d=>`<button class="${diasCom===d?'on':''}" onclick="periodoCom(${d})">${d===365?'Ano':d+' dias'}</button>`).join('')}
+                    </div>
+                    <span class="ferr-dir">${diasCom < 90 ? 'recorte curto pode distorcer a conversão para cima' : 'atualizado agora'}</span>
+                </div>
+
+                ${itensAt.length ? `<div class="at-bloco">
+                    <div class="at-cab"><span class="material-symbols-rounded">priority_high</span>
+                        <span class="at-t">Precisa de atenção</span>
+                        <span class="at-n">${itensAt.length} ${itensAt.length===1?'item':'itens'}</span></div>
+                    ${itensAt.join('')}</div>`
+                : `<div class="at-bloco"><div class="at-cab">
+                    <span class="material-symbols-rounded" style="color:var(--ok)">check_circle</span>
+                    <span class="at-t">Nenhum lead esperando ou parado</span></div></div>`}
+
+                <div class="kpis">
+                    ${vv ? `<div class="kpi"><div class="kpi-r">No funil</div>
+                        <div class="kpi-v num">${moeda(k.valor_funil)}</div>
+                        <div class="kpi-p">${k.ativos} leads ativos</div></div>` :
+                    `<div class="kpi"><div class="kpi-r">No funil</div><div class="kpi-v num">${k.ativos}</div>
+                        <div class="kpi-p">leads ativos</div></div>`}
+                    <div class="kpi"><div class="kpi-r">Ganhos</div>
+                        <div class="kpi-v num" style="color:var(--ok)">${vv ? moeda(k.valor_ganho) : k.ganhos}</div>
+                        <div class="kpi-p">${k.ganhos} ${k.ganhos===1?'contrato':'contratos'} no período</div></div>
+                    <div class="kpi"><div class="kpi-r">Conversão total</div>
+                        <div class="kpi-v num">${topo ? (fecha/topo*100).toFixed(1) : 0}%</div>
+                        <div class="kpi-p">da prospecção ao fechamento</div></div>
+                    <div class="kpi"><div class="kpi-r">Ciclo de venda</div>
+                        <div class="kpi-v num">${k.ciclo}<span style="font-size:14px"> dias</span></div>
+                        <div class="kpi-p">mediana até fechar</div></div>
+                    ${vv ? `<div class="kpi"><div class="kpi-r">Ticket médio</div>
+                        <div class="kpi-v num">${moeda(k.ticket)}</div>
+                        <div class="kpi-p">dos ganhos no período</div></div>` : ''}
+                    <div class="kpi"><div class="kpi-r">Perdidos</div>
+                        <div class="kpi-v num" style="color:${k.perdidos?'var(--critico)':'var(--tinta-3)'}">${k.perdidos}</div>
+                        <div class="kpi-p">${vv && k.valor_perdido ? moeda(k.valor_perdido)+' não fechados' : 'no período'}</div></div>
+                </div>
+
+                <div class="gr">
+                    <div class="gr-cab"><div>
+                        <div class="gr-t">Leads que passaram por cada etapa</div>
+                        <div class="gr-s">Últimos ${diasCom} dias · inclui quem já saiu da etapa. É daqui que sai a taxa de conversão.</div></div></div>
+                    <div class="gr-corpo">
+                        ${casc.length ? `<div class="casc">${cascataHtml(casc, topo)}</div>
+                        <div class="resumo-linha">
+                            <div class="rl"><div class="rl-r">Entraram</div><div class="rl-v num">${topo}</div>
+                                <div class="rl-p">no topo do funil</div></div>
+                            <div class="rl"><div class="rl-r">Viraram oportunidade</div>
+                                <div class="rl-v num" style="color:var(--sdr)">${casc[2] ? casc[2].qtd : 0}</div>
+                                <div class="rl-p">${topo ? Math.round((casc[2]?casc[2].qtd:0)/topo*100) : 0}% da prospecção</div></div>
+                            <div class="rl"><div class="rl-r">Fecharam</div>
+                                <div class="rl-v num" style="color:var(--ok)">${fecha}</div>
+                                <div class="rl-p">${casc[3] && casc[3].qtd ? Math.round(fecha/casc[3].qtd*100) : 0}% das oportunidades</div></div>
+                            <div class="rl"><div class="rl-r">Conversão total</div>
+                                <div class="rl-v num">${topo ? (fecha/topo*100).toFixed(1) : 0}%</div>
+                                <div class="rl-p">de ponta a ponta</div></div>
+                        </div>
+                        ${conclusaoCascata(casc)}
+                        <div class="legenda">
+                            <span class="lg"><i style="background:var(--ok)"></i>acima de 65% — saudável</span>
+                            <span class="lg"><i style="background:var(--at-borda)"></i>55% a 65% — atenção</span>
+                            <span class="lg"><i style="background:var(--critico)"></i>abaixo de 55% — investigar</span>
+                        </div>` : '<div class="conclusao">Sem movimentação de leads no período.</div>'}
                     </div>
                 </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
+
+                <div class="dupla">
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Para onde foram os que saíram</div>
+                            <div class="gr-s">Destino dos leads que não fecharam.</div></div></div>
+                        <div class="gr-corpo">
+                            <div class="bh"><span class="bh-rot"><span>Nutrição</span></span>
+                                <span class="bh-t"><i style="width:${barra(com.destino.nutricao, com.destino)}%;background:var(--nutri)"></i></span>
+                                <span class="bh-v">${com.destino.nutricao}</span></div>
+                            <div class="bh"><span class="bh-rot"><span>Perdido</span></span>
+                                <span class="bh-t"><i style="width:${barra(com.destino.perdido, com.destino)}%;background:var(--critico)"></i></span>
+                                <span class="bh-v">${com.destino.perdido}</span></div>
+                            <div class="bh"><span class="bh-rot"><span>Ainda ativos</span></span>
+                                <span class="bh-t"><i style="width:${barra(com.destino.ativos, com.destino)}%;background:var(--acao)"></i></span>
+                                <span class="bh-v">${com.destino.ativos}</span></div>
+                            ${com.destino.nutricao ? `<div class="conclusao">
+                                <b>${com.destino.nutricao} foram para nutrição</b>, não se perderam —
+                                ${vv && com.valor_nutricao ? moeda(com.valor_nutricao)+' adormecidos' : 'são retorno adiado'}.</div>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Por que perdemos</div>
+                            <div class="gr-s">Objeções registradas ao mover para Nutrição ou Perdido.</div></div></div>
+                        <div class="gr-corpo">
+                            ${com.objecoes.length ? com.objecoes.map(o => {
+                                const max = Math.max(1, ...com.objecoes.map(x=>x.qtd));
+                                const cr = o.qtd/max > .66 ? 'var(--critico)' : o.qtd/max > .33 ? 'var(--atencao)' : 'var(--tinta-3)';
+                                return `<div class="bh">
+                                    <span class="bh-rot"><span>${escH(ROT_OBJECAO[o.objecao]||o.objecao)}</span></span>
+                                    <span class="bh-t"><i style="width:${o.qtd/max*100}%;background:${cr}"></i></span>
+                                    <span class="bh-v">${o.qtd}</span></div>`;
+                            }).join('') : '<div class="conclusao">Nenhuma objeção registrada no período.</div>'}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dupla">
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">De onde vêm os que fecham</div>
+                            <div class="gr-s">Origem dos leads, com quantos viraram contrato.</div></div></div>
+                        <div class="gr-corpo">
+                            ${com.origens.length ? com.origens.map(o => {
+                                const cls = o.taxa >= 15 ? 'p-ok' : o.taxa > 0 ? 'p-neutro' : 'p-cr';
+                                return `<div class="li">
+                                    <div><div class="li-t">${escH(o.origem)}</div>
+                                        <div class="li-s">${o.total} leads · ${o.ganhos} ${o.ganhos===1?'ganho':'ganhos'}</div></div>
+                                    <span class="li-v" style="color:${o.taxa?'':'var(--critico)'}">${o.taxa}%</span>
+                                    <span class="pilula ${cls}">${o.taxa >= 15 ? 'melhor conversão' : o.taxa > 0 ? '—' : 'rever'}</span></div>`;
+                            }).join('') : '<div class="conclusao">Nenhum lead com origem informada.</div>'}
+                        </div>
+                    </div>
+
+                    <div class="gr">
+                        <div class="gr-cab"><div>
+                            <div class="gr-t">Por pessoa</div>
+                            <div class="gr-s">Leads ativos${vv?', valor sob responsabilidade':''} e ganhos no período.</div></div></div>
+                        <div class="gr-corpo">
+                            ${com.equipe.length ? com.equipe.map(p => {
+                                const [bg,fg] = cor(p.pessoa);
+                                return `<div class="li">
+                                    <div><div class="li-t" style="display:flex;align-items:center;gap:8px">
+                                        <span class="bh-av" style="background:${bg};color:${fg}">${iniciais(p.pessoa)}</span>${escH(p.pessoa)}</div>
+                                        <div class="li-s">${p.leads} ativos · ${p.ganhos} ${p.ganhos===1?'ganho':'ganhos'}</div></div>
+                                    <span class="li-v">${vv ? moeda(p.valor) : ''}</span>
+                                    <span class="pilula p-neutro">${p.leads?Math.round(p.ganhos/(p.leads+p.ganhos)*100):0}% conv.</span></div>`;
+                            }).join('') : '<div class="conclusao">Nenhum lead atribuído.</div>'}
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('abaComercial').innerHTML = html;
+        }
+
+        function barra(v, destino){
+            const max = Math.max(1, destino.nutricao, destino.perdido, destino.ativos);
+            return Math.max(2, v/max*100);
+        }
+
+        function cascataHtml(casc, topo){
+            let html = '', funilAnterior = null;
+            casc.forEach((e, i) => {
+                if(e.funil !== funilAnterior){
+                    const nome = e.funil === 'qualificacao' ? 'Qualificação' : 'Fechamento';
+                    const desc = e.funil === 'qualificacao'
+                        ? 'SDR · da prospecção até virar oportunidade'
+                        : 'Closer · da reunião até o contrato';
+                    const c = CORES_FUNIL[e.funil] || 'var(--acao)';
+                    html += `<div class="funil-div ${i===0?'primeiro':''}">
+                        <span class="fd-selo" style="background:${c}1A;color:${c}">${nome}</span>
+                        <span class="fd-txt">${desc}</span></div>`;
+                    funilAnterior = e.funil;
+                }
+                const ehFim = (e.etapa === 'Ganho' || e.etapa === 'Fechamento');
+                const c = ehFim ? '#0E9F6E' : degrade(i, casc.length);
+                const larg = topo ? Math.max(4, e.qtd/topo*100) : 4;
+                html += `<div class="et">
+                    <span class="et-rot"><span class="et-pt" style="background:${c}"></span>
+                        <span class="et-nome">${escH(e.etapa)}</span></span>
+                    <span class="et-tri"><span class="et-b" style="width:${larg}%;background:${c}">${e.qtd}</span>
+                        ${e.etapa==='Ganho' ? '<span class="et-marca"><span class="material-symbols-rounded">arrow_forward</span>viram oportunidade</span>' : ''}
+                        ${e.etapa==='Fechamento' ? '<span class="et-marca"><span class="material-symbols-rounded">check</span>contratos assinados</span>' : ''}
+                    </span>
+                    <span class="et-val" ${ehFim && e.etapa==='Fechamento'?'style="color:var(--ok);font-weight:700"':''}>${e.pct_topo}%</span>
+                </div>`;
+                if(e.conversao !== null && e.conversao !== undefined && i < casc.length-1){
+                    const proxFunil = casc[i+1].funil !== e.funil;
+                    if(!proxFunil){
+                        html += `<div class="conv"><span></span>
+                            <span class="conv-tx"><span class="conv-l"></span>
+                                <span class="conv-p ${classeConv(e.conversao)}">${e.conversao}%</span>
+                                <span class="conv-rot">avançaram${e.sairam ? ' · '+e.sairam+' saíram aqui' : ''}</span></span>
+                            <span></span></div>`;
+                    }
+                }
+            });
+            return html;
+        }
+
+        function degrade(i, total){
+            const paleta = ['#0EA5E9','#2299DB','#3B8DE0','#5478E4','#6C5CE7','#8B5CF6'];
+            return paleta[Math.min(i, paleta.length-1)];
+        }
+
+        function conclusaoCascata(casc){
+            const comConv = casc.filter(e => e.conversao !== null && e.conversao !== undefined && e.sairam);
+            if(!comConv.length) return '';
+            const maiorPerda = comConv.reduce((a,b) => b.sairam > a.sairam ? b : a);
+            const piorTaxa = comConv.reduce((a,b) => b.conversao < a.conversao ? b : a);
+            if(maiorPerda.etapa === piorTaxa.etapa)
+                return `<div class="conclusao"><b>${escH(maiorPerda.etapa)}</b> é o maior gargalo:
+                    ${maiorPerda.sairam} leads saem ali, e só ${maiorPerda.conversao}% avançam.</div>`;
+            return `<div class="conclusao">A maior perda em volume é em <b>${escH(maiorPerda.etapa)}</b>,
+                com ${maiorPerda.sairam} leads. Mas a pior taxa é em <b>${escH(piorTaxa.etapa)}</b>,
+                onde só ${piorTaxa.conversao}% avançam — e cada lead que cai ali já custou mais esforço.</div>`;
+        }
+
+        function periodoCom(d){ diasCom = d; carregarComercial(); }
+
+        function showToast(msg,tipo){
+            const c=document.getElementById('toastContainer');
+            const t=document.createElement('div'); t.className='toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${escH(msg)}`;
+            c.appendChild(t); setTimeout(()=>t.remove(),4000);
         }
     </script>
 </body>
