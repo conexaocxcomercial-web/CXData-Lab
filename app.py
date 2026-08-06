@@ -85,6 +85,30 @@ CATALOGO = {
 
 GRUPOS_ORDEM = ['Operação', 'Comercial', 'Clientes', 'OKR', 'Comunicação', 'Análise', 'Administração']
 
+# Quadros de trabalho e áreas da plataforma. Ficam no código porque
+# são a lista real de telas que existem — não configuração.
+QUADROS = [
+    ('recrutamento',  'Recrutamento e Seleção'),
+    ('rhestrategico', 'RH Estratégico'),
+    ('projetos',      'Projetos'),
+    ('rhinterno',     'RH Interno'),
+    ('cxdata',        'CX Data'),
+    ('comercial',     'Comercial'),
+    ('marketing',     'Marketing'),
+    ('financeiro',    'Adm/Financeiro'),
+]
+AREAS = [
+    ('agenda',    'Agenda',    'calendar_month', 'Planejamento do dia e cronômetro'),
+    ('crm',       'CRM',       'filter_alt',     'Funis de qualificação, fechamento e nutrição'),
+    ('clientes',  'Clientes',  'business',       'Carteira de clientes'),
+    ('okr',       'OKR',       'target',         'Objetivos e resultados-chave'),
+    ('feed',      'Mural',     'campaign',       'Comunicados, eventos e celebrações'),
+    ('dashboard', 'Painel',    'insights',       'Indicadores de projetos e produtividade'),
+    ('lixeira',   'Lixeira',   'delete',         'Itens excluídos e restauração'),
+]
+QUADROS_VALIDOS = {q for q, _ in QUADROS}
+AREAS_VALIDAS = {a for a, _, _, _ in AREAS}
+
 
 def caps_da_sessao():
     """Capacidades do usuário logado: {capacidade: escopo}.
@@ -129,8 +153,13 @@ def filtrar(registros, capacidade):
 
 
 def quadros_permitidos():
-    """Quadros de trabalho liberados para o papel do usuário."""
+    """Quadros de trabalho liberados para esta pessoa."""
     return session.get('quadros') or []
+
+
+def areas_permitidas():
+    """Áreas da plataforma liberadas para esta pessoa."""
+    return session.get('areas') or []
 
 
 def exige(capacidade):
@@ -156,23 +185,30 @@ def carregar_permissoes(usuario):
     papel_id = usuario.get('papel_id')
     session['equipe'] = usuario.get('equipe')
     session['papel_id'] = papel_id
+    # Quadros e áreas são da PESSOA, não do nível: duas pessoas do
+    # mesmo nível atuam em quadros diferentes.
+    session['quadros'] = usuario.get('quadros') or []
+    session['areas'] = usuario.get('areas') or []
     if not papel_id:
         session['caps'] = {}
-        session['quadros'] = []
         return
     try:
         res = (supabase.table("papel_capacidades")
                .select("capacidade, escopo").eq("papel_id", papel_id).execute())
-        session['caps'] = {r['capacidade']: r['escopo'] for r in (res.data or [])}
-        rq = (supabase.table("papel_quadros")
-              .select("quadro").eq("papel_id", papel_id).execute())
-        session['quadros'] = [r['quadro'] for r in (rq.data or [])]
+        caps = {r['capacidade']: r['escopo'] for r in (res.data or [])}
+        # Ajustes individuais sobrepõem o padrão do nível.
+        # Valor None significa "retirar esta capacidade desta pessoa".
+        for cap, esc in (usuario.get('ajustes') or {}).items():
+            if esc is None:
+                caps.pop(cap, None)
+            else:
+                caps[cap] = esc
+        session['caps'] = caps
         rp = supabase.table("papeis").select("nome").eq("id", papel_id).limit(1).execute()
         session['papel_nome'] = (rp.data or [{}])[0].get('nome')
     except Exception as e:
         print("Erro ao carregar permissoes:", e)
         session['caps'] = {}
-        session['quadros'] = []
 
 
 def registrar(acao, recurso=None, alvo_id=None, detalhe=None):
@@ -548,7 +584,9 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
-        res_atual = supabase.table("projetos").select("status", "data_inicio").eq("id", projeto_id).execute()
+        res_atual = (supabase.table("projetos")
+                     .select("status", "data_inicio", "data_conclusao", "area")
+                     .eq("id", projeto_id).execute())
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         
         if "status" in dados:
@@ -569,6 +607,20 @@ def atualizar_projeto(projeto_id):
 
             if res_atual.data and not res_atual.data[0].get("data_inicio"):
                 atualizacao["data_inicio"] = agora_br()
+
+            # Trilha de fases: alimenta o gráfico de gargalo do painel.
+            # Falha aqui não pode impedir o card de mover.
+            if novo_status and novo_status != status_anterior:
+                try:
+                    supabase.table("projeto_movimentos").insert({
+                        "projeto_id": projeto_id,
+                        "de_status": status_anterior,
+                        "para_status": novo_status,
+                        "area": (res_atual.data[0].get("area") if res_atual.data else None),
+                        "autor": session.get('usuario_nome'),
+                    }).execute()
+                except Exception as e_mov:
+                    print("Aviso: movimento de projeto nao registrado:", e_mov)
 
             if novo_status and novo_status != status_anterior:
                 try:
@@ -1199,16 +1251,23 @@ def mapa_cliente(cliente_id):
 def dashboard_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or pode_acessar_modulo('dashboard')
-    if not pode:
+    liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
+                or pode_acessar_modulo('dashboard'))
+    if not liberado:
         return redirect(url_for('index'))
-    return render_template('dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+    return render_template('dashboard.html',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso'),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
 
 @app.route('/api/dashboard', methods=['GET'])
 def dados_dashboard():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or pode_acessar_modulo('dashboard')
-    if not pode:
+    liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
+                or pode_acessar_modulo('dashboard'))
+    if not liberado:
         return jsonify({"erro": "Acesso negado"}), 403
     try:
         # Filtros opcionais
@@ -2067,6 +2126,415 @@ def pagina_acessos():
                            perm_modulos=session.get('perm_modulos', []))
 
 
+# ============================================================
+# PAINEL — operação e comercial
+#
+# Todo cálculo acontece aqui, no servidor: a tela recebe números
+# prontos. Assim a mesma conta não é reescrita no JavaScript, e o
+# escopo de permissão é aplicado antes de qualquer dado sair.
+# ============================================================
+
+STATUS_ENCERRADOS = ('Finalizado', 'Cancelado')
+STATUS_PARADOS = ('Backlog', 'Não Iniciado', 'Pausado')
+
+
+def _dias_desde(valor):
+    """Dias entre a data informada e agora. None vira 0."""
+    if not valor:
+        return 0
+    try:
+        dt = datetime.fromisoformat(str(valor).replace('Z', '+00:00'))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return max(0, (datetime.now(timezone.utc) - dt).days)
+    except Exception:
+        return 0
+
+
+def _recorte(dias_padrao=30):
+    try:
+        dias = int(request.args.get('dias', dias_padrao))
+    except (TypeError, ValueError):
+        dias = dias_padrao
+    dias = max(1, min(dias, 730))
+    return dias, (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+
+
+def _mediana(valores):
+    if not valores:
+        return 0
+    v = sorted(valores)
+    meio = len(v) // 2
+    return v[meio] if len(v) % 2 else (v[meio - 1] + v[meio]) / 2
+
+
+@app.route('/api/painel/operacao', methods=['GET'])
+def painel_operacao():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        dias, desde = _recorte(30)
+        hoje = datetime.now(timezone.utc).date().isoformat()
+
+        todos = (supabase.table("projetos").select("*")
+                 .is_("excluido_em", "null").execute()).data or []
+        projetos = filtrar_projetos_permitidos(todos)
+
+        quadro = request.args.get('quadro')
+        if quadro:
+            areas_do_quadro = [n for c, n in QUADROS if c == quadro]
+            if areas_do_quadro:
+                projetos = [p for p in projetos if p.get('area') == areas_do_quadro[0]]
+        pessoa = request.args.get('pessoa')
+        if pessoa:
+            projetos = [p for p in projetos if (p.get('responsavel') or '') == pessoa]
+
+        ativos = [p for p in projetos if p.get('status') not in STATUS_ENCERRADOS]
+        concluidos = [p for p in projetos
+                      if p.get('status') == 'Finalizado'
+                      and str(p.get('data_conclusao') or '') >= desde]
+
+        # --- o que precisa de atenção ---
+        atrasados, vencendo = [], []
+        for p in ativos:
+            prazo = str(p.get('prazo_data') or '')[:10]
+            if not prazo:
+                continue
+            if prazo < hoje:
+                atrasados.append({
+                    "id": p.get('id'), "nome": p.get('nome_projeto'),
+                    "empresa": p.get('empresa'), "area": p.get('area'),
+                    "status": p.get('status'), "responsavel": p.get('responsavel'),
+                    "dias": (datetime.fromisoformat(hoje) - datetime.fromisoformat(prazo)).days,
+                })
+            elif (datetime.fromisoformat(prazo) - datetime.fromisoformat(hoje)).days <= 3:
+                vencendo.append({
+                    "id": p.get('id'), "nome": p.get('nome_projeto'),
+                    "empresa": p.get('empresa'), "area": p.get('area'),
+                    "status": p.get('status'), "responsavel": p.get('responsavel'),
+                    "dias": (datetime.fromisoformat(prazo) - datetime.fromisoformat(hoje)).days,
+                })
+        atrasados.sort(key=lambda x: -x['dias'])
+
+        parados = [p for p in ativos
+                   if p.get('status') not in STATUS_PARADOS
+                   and _dias_desde(p.get('data_status_atual')) > 14]
+
+        # --- por área, dividido por tempo na fase ---
+        por_area = {}
+        for p in ativos:
+            a = p.get('area') or 'Sem área'
+            faixa = por_area.setdefault(a, {"area": a, "total": 0, "ok": 0, "atencao": 0, "critico": 0})
+            faixa["total"] += 1
+            d = _dias_desde(p.get('data_status_atual'))
+            if d <= 7:
+                faixa["ok"] += 1
+            elif d <= 14:
+                faixa["atencao"] += 1
+            else:
+                faixa["critico"] += 1
+        areas = sorted(por_area.values(), key=lambda x: -x["total"])
+
+        # --- carga por pessoa ---
+        por_pessoa = {}
+        for p in ativos:
+            r = p.get('responsavel') or 'Sem responsável'
+            por_pessoa[r] = por_pessoa.get(r, 0) + 1
+        carga = sorted(({"pessoa": k, "total": v} for k, v in por_pessoa.items()),
+                       key=lambda x: -x["total"])
+
+        # --- tempo até concluir ---
+        duracoes = []
+        for p in concluidos:
+            ini, fim = p.get('data_inicio') or p.get('criado_em'), p.get('data_conclusao')
+            if ini and fim:
+                try:
+                    d0 = datetime.fromisoformat(str(ini).replace('Z', '+00:00'))
+                    d1 = datetime.fromisoformat(str(fim).replace('Z', '+00:00'))
+                    duracoes.append(max(0, (d1 - d0).days))
+                except Exception:
+                    pass
+
+        # --- horas por área e fora do plano ---
+        horas_area, horas_total, fora_plano = {}, 0, 0
+        try:
+            logs = (supabase.table("time_logs").select("*")
+                    .gte("criado_em", desde).execute()).data or []
+            mapa_area = {str(p.get('id')): p.get('area') for p in projetos}
+            permitidos = set(mapa_area.keys())
+            for l in logs:
+                pid = str(l.get('projeto_id') or '')
+                if pid not in permitidos:
+                    continue
+                seg = l.get('duracao_segundos') or 0
+                h = seg / 3600.0
+                horas_total += h
+                a = mapa_area.get(pid) or 'Sem área'
+                horas_area[a] = horas_area.get(a, 0) + h
+                if not l.get('planejamento_id'):
+                    fora_plano += h
+        except Exception as e:
+            print("Aviso: time_logs indisponivel no painel:", e)
+
+        # --- gargalo por fase ---
+        gargalo = []
+        try:
+            movs = (supabase.table("projeto_movimentos").select("*")
+                    .order("projeto_id").order("criado_em").execute()).data or []
+            area_filtro = areas[0]["area"] if areas else None
+            if quadro:
+                nomes = [n for c, n in QUADROS if c == quadro]
+                area_filtro = nomes[0] if nomes else area_filtro
+            duracao_fase = {}
+            anterior = {}
+            for m in movs:
+                if area_filtro and m.get('area') != area_filtro:
+                    continue
+                pid = str(m.get('projeto_id'))
+                ant = anterior.get(pid)
+                if ant:
+                    try:
+                        d0 = datetime.fromisoformat(str(ant['criado_em']).replace('Z', '+00:00'))
+                        d1 = datetime.fromisoformat(str(m['criado_em']).replace('Z', '+00:00'))
+                        fase = ant['para_status']
+                        duracao_fase.setdefault(fase, []).append(max(0, (d1 - d0).days))
+                    except Exception:
+                        pass
+                anterior[pid] = m
+            gargalo = [{"fase": f, "dias": round(_mediana(v), 1), "amostra": len(v)}
+                       for f, v in duracao_fase.items()]
+            gargalo.sort(key=lambda x: -x["dias"])
+        except Exception as e:
+            print("Aviso: projeto_movimentos indisponivel:", e)
+
+        # --- clientes com mais trabalho aberto ---
+        por_cliente = {}
+        for p in ativos:
+            c = p.get('empresa') or 'Sem cliente'
+            item = por_cliente.setdefault(c, {"cliente": c, "projetos": 0, "areas": set(), "prazo": None})
+            item["projetos"] += 1
+            if p.get('area'):
+                item["areas"].add(p['area'])
+            prazo = str(p.get('prazo_data') or '')[:10]
+            if prazo and (item["prazo"] is None or prazo < item["prazo"]):
+                item["prazo"] = prazo
+        clientes = sorted(por_cliente.values(), key=lambda x: -x["projetos"])[:6]
+        for c in clientes:
+            c["areas"] = sorted(c["areas"])
+
+        return jsonify({
+            "status": "sucesso",
+            "periodo_dias": dias,
+            "kpis": {
+                "ativos": len(ativos),
+                "concluidos": len(concluidos),
+                "atrasados": len(atrasados),
+                "mediana_conclusao": round(_mediana(duracoes)),
+                "horas": round(horas_total),
+                "fora_plano_pct": round(fora_plano / horas_total * 100) if horas_total else 0,
+            },
+            "atencao": {
+                "atrasados": atrasados[:6],
+                "vencendo": vencendo[:4],
+                "parados": len(parados),
+            },
+            "areas": areas,
+            "carga": carga,
+            "gargalo": gargalo[:8],
+            "horas_area": sorted(({"area": k, "horas": round(v)} for k, v in horas_area.items()),
+                                 key=lambda x: -x["horas"]),
+            "fora_plano_horas": round(fora_plano),
+            "clientes": clientes,
+        }), 200
+    except Exception as e:
+        print("Erro em painel_operacao:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/painel/comercial', methods=['GET'])
+def painel_comercial():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        dias, desde = _recorte(90)          # 90 dias: o ciclo de venda é de ~38
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
+
+        leads = (supabase.table("leads").select("*")
+                 .is_("excluido_em", "null").execute()).data or []
+        movs = (supabase.table("lead_movimentos").select("*")
+                .gte("criado_em", desde).execute()).data or []
+
+        # Escopo: quem só vê os próprios leads também só vê os próprios números.
+        esc = caps_da_sessao().get('crm.lead.ver')
+        if esc == 'proprio':
+            eu = (session.get('usuario_nome') or '').strip().lower()
+            leads = [l for l in leads if (l.get('responsavel') or '').strip().lower() == eu]
+        pessoa = request.args.get('pessoa')
+        if pessoa:
+            leads = [l for l in leads if (l.get('responsavel') or '') == pessoa]
+        ids_visiveis = {str(l['id']) for l in leads}
+        movs = [m for m in movs if str(m.get('lead_id')) in ids_visiveis]
+
+        def valor(l):
+            try:
+                return float(l.get('valor_estimado') or 0)
+            except (TypeError, ValueError):
+                return 0.0
+
+        ativos = [l for l in leads if l.get('coluna') not in ('Ganho', 'Perdido')]
+        ganhos = [l for l in leads if l.get('coluna') == 'Ganho'
+                  and str(l.get('movido_em') or '')[:10] >= desde[:10]]
+        perdidos = [l for l in leads if l.get('coluna') == 'Perdido'
+                    and str(l.get('movido_em') or '')[:10] >= desde[:10]]
+        nutricao = [l for l in leads if l.get('funil') == 'nutricao']
+
+        # --- precisa de atenção ---
+        contato_hoje = [l for l in ativos if str(l.get('proximo_contato') or '')[:10] <= hoje
+                        and l.get('proximo_contato')]
+        parados = [l for l in ativos if _dias_desde(l.get('movido_em') or l.get('criado_em')) > 14]
+        sem_contato = [l for l in ativos if not l.get('proximo_contato')
+                       and l.get('funil') == 'fechamento']
+
+        # --- estoque: onde o dinheiro está parado ---
+        estoque = {}
+        for l in ativos:
+            chave = (l.get('funil') or '?', l.get('coluna') or '?')
+            it = estoque.setdefault(chave, {"funil": chave[0], "etapa": chave[1],
+                                            "qtd": 0, "valor": 0.0})
+            it["qtd"] += 1
+            it["valor"] += valor(l)
+
+        # --- FLUXO: quantos leads distintos passaram por cada etapa ---
+        # É daqui que sai a taxa de conversão. Conta lead, não movimento:
+        # quem voltou e passou de novo conta uma vez só.
+        CASCATA = [
+            ('qualificacao', 'Prospecção'), ('qualificacao', 'Contato'),
+            ('qualificacao', 'Ganho'),
+            ('fechamento', 'Agendamento'), ('fechamento', 'Proposta'),
+            ('fechamento', 'Negociação'), ('fechamento', 'Fechamento'),
+        ]
+        passaram = {}
+        for m in movs:
+            chave = (m.get('para_funil'), m.get('para_coluna'))
+            passaram.setdefault(chave, set()).add(str(m.get('lead_id')))
+        # Leads que já estavam na etapa antes do recorte e seguem lá contam também.
+        for l in ativos:
+            chave = (l.get('funil'), l.get('coluna'))
+            if chave in [c for c in CASCATA]:
+                passaram.setdefault(chave, set()).add(str(l['id']))
+
+        cascata = []
+        topo = len(passaram.get(CASCATA[0], set())) or 1
+        for i, chave in enumerate(CASCATA):
+            qtd = len(passaram.get(chave, set()))
+            prox = len(passaram.get(CASCATA[i + 1], set())) if i + 1 < len(CASCATA) else None
+            cascata.append({
+                "funil": chave[0], "etapa": chave[1], "qtd": qtd,
+                "pct_topo": round(qtd / topo * 100, 1),
+                "conversao": (round(prox / qtd * 100) if qtd and prox is not None else None),
+                "sairam": (max(0, qtd - prox) if prox is not None else None),
+            })
+
+        # --- para onde foram os que saíram ---
+        destino = {"nutricao": len(nutricao), "perdido": len(perdidos),
+                   "ativos": len(ativos)}
+
+        # --- objeções ---
+        objecoes = {}
+        for m in movs:
+            o = m.get('objecao')
+            if o:
+                objecoes[o] = objecoes.get(o, 0) + 1
+
+        # --- origem que converte ---
+        por_origem = {}
+        for l in leads:
+            o = l.get('origem') or 'Não informada'
+            it = por_origem.setdefault(o, {"origem": o, "total": 0, "ganhos": 0})
+            it["total"] += 1
+            if l.get('coluna') == 'Ganho':
+                it["ganhos"] += 1
+        for it in por_origem.values():
+            it["taxa"] = round(it["ganhos"] / it["total"] * 100) if it["total"] else 0
+        origens = sorted(por_origem.values(), key=lambda x: -x["total"])
+
+        # --- por pessoa ---
+        por_pessoa = {}
+        for l in ativos:
+            r = l.get('responsavel') or 'Sem responsável'
+            it = por_pessoa.setdefault(r, {"pessoa": r, "leads": 0, "valor": 0.0, "ganhos": 0})
+            it["leads"] += 1
+            it["valor"] += valor(l)
+        for l in ganhos:
+            r = l.get('responsavel') or 'Sem responsável'
+            it = por_pessoa.setdefault(r, {"pessoa": r, "leads": 0, "valor": 0.0, "ganhos": 0})
+            it["ganhos"] += 1
+        equipe = sorted(por_pessoa.values(), key=lambda x: -x["leads"])
+
+        # --- ciclo de venda ---
+        ciclos = []
+        for l in ganhos:
+            ini, fim = l.get('criado_em'), l.get('movido_em')
+            if ini and fim:
+                try:
+                    d0 = datetime.fromisoformat(str(ini).replace('Z', '+00:00'))
+                    d1 = datetime.fromisoformat(str(fim).replace('Z', '+00:00'))
+                    ciclos.append(max(0, (d1 - d0).days))
+                except Exception:
+                    pass
+
+        valor_ganho = sum(valor(l) for l in ganhos)
+        saida = {
+            "status": "sucesso",
+            "periodo_dias": dias,
+            "ver_valor": ver_valor,
+            "kpis": {
+                "ativos": len(ativos),
+                "ganhos": len(ganhos),
+                "perdidos": len(perdidos),
+                "conversao": round(len(ganhos) / len(leads) * 100, 1) if leads else 0,
+                "ciclo": round(_mediana(ciclos)),
+            },
+            "atencao": {
+                "contato_hoje": len(contato_hoje),
+                "parados": len(parados),
+                "sem_contato": len(sem_contato),
+            },
+            "estoque": sorted(estoque.values(), key=lambda x: -x["qtd"]),
+            "cascata": cascata,
+            "destino": destino,
+            "objecoes": sorted(({"objecao": k, "qtd": v} for k, v in objecoes.items()),
+                               key=lambda x: -x["qtd"]),
+            "origens": origens,
+            "equipe": equipe,
+            "nutricao": len(nutricao),
+        }
+        # Valores só saem do servidor para quem pode vê-los.
+        if ver_valor:
+            saida["kpis"]["valor_funil"] = round(sum(valor(l) for l in ativos))
+            saida["kpis"]["valor_ganho"] = round(valor_ganho)
+            saida["kpis"]["valor_perdido"] = round(sum(valor(l) for l in perdidos))
+            saida["kpis"]["ticket"] = round(valor_ganho / len(ganhos)) if ganhos else 0
+            saida["valor_parado"] = round(sum(valor(l) for l in parados))
+            saida["valor_nutricao"] = round(sum(valor(l) for l in nutricao))
+        else:
+            for it in saida["estoque"]:
+                it.pop("valor", None)
+            for it in saida["equipe"]:
+                it.pop("valor", None)
+        return jsonify(saida), 200
+    except Exception as e:
+        print("Erro em painel_comercial:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
 @app.route('/api/acessos/catalogo', methods=['GET'])
 def catalogo_capacidades():
     """O catálogo vive no código. A tela o consulta para saber o que
@@ -2085,16 +2553,9 @@ def catalogo_capacidades():
         "status": "sucesso",
         "capacidades": itens,
         "grupos": GRUPOS_ORDEM,
-        "quadros": [
-            {"chave": "recrutamento",  "nome": "Recrutamento e Seleção"},
-            {"chave": "rhestrategico", "nome": "RH Estratégico"},
-            {"chave": "projetos",      "nome": "Projetos"},
-            {"chave": "rhinterno",     "nome": "RH Interno"},
-            {"chave": "cxdata",        "nome": "CX Data"},
-            {"chave": "comercial",     "nome": "Comercial"},
-            {"chave": "marketing",     "nome": "Marketing"},
-            {"chave": "financeiro",    "nome": "Financeiro"},
-        ],
+        "quadros": [{"chave": c, "nome": n} for c, n in QUADROS],
+        "areas": [{"chave": c, "nome": n, "icone": i, "descricao": d}
+                  for c, n, i, d in AREAS],
     }), 200
 
 
@@ -2253,7 +2714,8 @@ def listar_pessoas_acessos():
         # Nunca selecionar '*' aqui: a tabela ainda tem a coluna `senha`
         # em texto puro, e ela não pode sair do servidor.
         res = (supabase.table("usuarios")
-               .select("id, nome, email, papel_id, equipe, ativo, nivel_acesso, tipo_usuario")
+               .select("id, nome, email, papel_id, equipe, ativo, nivel_acesso, "
+                       "tipo_usuario, quadros, areas, ajustes")
                .order("nome").execute())
         pessoas = res.data or []
         equipes = sorted({p["equipe"] for p in pessoas if p.get("equipe")})
@@ -2279,6 +2741,13 @@ def atualizar_acesso_pessoa(usuario_id):
             upd["equipe"] = (d["equipe"] or "").strip() or None
         if "ativo" in d:
             upd["ativo"] = bool(d["ativo"])
+        if "quadros" in d:
+            upd["quadros"] = [q for q in (d["quadros"] or []) if q in QUADROS_VALIDOS]
+        if "areas" in d:
+            upd["areas"] = [a for a in (d["areas"] or []) if a in AREAS_VALIDAS]
+        if "ajustes" in d:
+            # Só aceita capacidade que existe no catálogo do código.
+            upd["ajustes"] = {k: v for k, v in (d["ajustes"] or {}).items() if k in CATALOGO}
         if not upd:
             return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
 
