@@ -220,21 +220,27 @@ html body{
     </div>
 
     {% else %}
-    <div class="cxsb-item" data-path="/" data-tip="Hub" onclick="location.href='/'">
+    <div class="cxsb-item" data-path="/" data-tip="Início" onclick="location.href='/'">
       <span class="material-symbols-rounded">home</span>
-      <span class="cxsb-item-txt">Hub</span>
+      <span class="cxsb-item-txt">Início</span>
     </div>
+    {% if not eh_person or 'feed' in perm_modulos %}
+    <div class="cxsb-item" data-path="/feed" data-tip="Mural" onclick="location.href='/feed'">
+      <span class="material-symbols-rounded">campaign</span>
+      <span class="cxsb-item-txt">Mural</span>
+    </div>
+    {% endif %}
 
-    {# ===== QUADROS DE TRABALHO ===== #}
+    {# ===== FERRAMENTAS ===== #}
+    {% if not eh_person or 'agenda' in perm_modulos or 'crm' in perm_modulos or 'okr' in perm_modulos %}
     <div class="cxsb-sep"></div>
-    <div class="cxsb-grupo" data-g="quadros" onclick="cxsbGrupo(this)">
-      Quadros de trabalho<span class="cxsb-grupo-qtd">8</span>
-      <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    <div class="cxsb-grupo" data-g="ferramentas" onclick="cxsbGrupo(this)">
+      Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
-    <div class="cxsb-lista" id="gr-quadros">
-      {% if not eh_person or 'feed' in perm_modulos %}
-      <div class="cxsb-item" data-path="/feed" data-tip="Mural" onclick="location.href='/feed'">
-        <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-txt">Mural</span>
+    <div class="cxsb-lista" id="gr-ferramentas">
+      {% if not eh_person or 'agenda' in perm_modulos %}
+      <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="location.href='/agenda'">
+        <span class="material-symbols-rounded">calendar_month</span><span class="cxsb-item-txt">Agenda</span>
       </div>
       {% endif %}
       {% if not eh_person or 'crm' in perm_modulos %}
@@ -242,6 +248,29 @@ html body{
         <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">CRM</span>
       </div>
       {% endif %}
+      {% if not eh_person or 'okr' in perm_modulos %}
+      <div class="cxsb-item" data-path="/okr" data-tip="OKR" onclick="location.href='/okr'">
+        <span class="material-symbols-rounded">target</span><span class="cxsb-item-txt">OKR</span>
+      </div>
+      <div class="cxsb-item cxsb-subitem" data-path="/okr/dashboard" data-tip="Painel de OKR" onclick="location.href='/okr/dashboard'">
+        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-subitem-txt">Painel</span>
+      </div>
+      {% if nivel_acesso in ['admin','gestor'] %}
+      <div class="cxsb-item cxsb-subitem" data-path="/okr/gestao" data-tip="Gestão de OKR" onclick="location.href='/okr/gestao'">
+        <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-txt">Gestão</span>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ===== QUADROS DE TRABALHO ===== #}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="quadros" onclick="cxsbGrupo(this)">
+      Quadros de trabalho<span class="cxsb-grupo-qtd" id="qtdQuadros">8</span>
+      <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-quadros">
       {% if not eh_person or 'recrutamento' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/recrutamento" data-tip="R&amp;S" onclick="location.href='/board/recrutamento'">
         <span class="material-symbols-rounded">group_add</span><span class="cxsb-item-txt">R&amp;S</span>
@@ -284,30 +313,6 @@ html body{
       {% endif %}
     </div>
 
-    {# ===== FERRAMENTAS ===== #}
-    {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'okr' in perm_modulos) %}
-    <div class="cxsb-sep"></div>
-    <div class="cxsb-grupo" data-g="ferramentas" onclick="cxsbGrupo(this)">
-      Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
-    </div>
-    <div class="cxsb-lista" id="gr-ferramentas">
-      {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'okr' in perm_modulos) %}
-      <div class="cxsb-item cxsb-pai" data-path="/okr" data-tip="OKR" onclick="cxsbModulo(event,'/okr/gestao')">
-        <span class="material-symbols-rounded">target</span><span class="cxsb-item-txt">OKR</span>
-        <span class="material-symbols-rounded cxsb-caret">expand_more</span>
-      </div>
-      <div class="cxsb-sub">
-        <div class="cxsb-subitem" data-path="/okr/gestao" onclick="location.href='/okr/gestao'">
-          <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-txt">Gestão</span>
-        </div>
-        <div class="cxsb-subitem" data-path="/okr/dashboard" onclick="location.href='/okr/dashboard'">
-          <span class="material-symbols-rounded">insights</span><span class="cxsb-subitem-txt">Dashboard</span>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-    {% endif %}
-
     {# ===== GESTÃO ===== #}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="gestao" onclick="cxsbGrupo(this)">
@@ -321,13 +326,10 @@ html body{
       {% endif %}
       {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'clientes' in perm_modulos) %}
       <div class="cxsb-item" data-path="/clientes" data-tip="Clientes" onclick="location.href='/clientes'">
-        <span class="material-symbols-rounded">apartment</span><span class="cxsb-item-txt">Clientes</span>
+        <span class="material-symbols-rounded">business</span><span class="cxsb-item-txt">Clientes</span>
       </div>
       {% endif %}
       {% if not eh_person or 'agenda' in perm_modulos %}
-      <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="location.href='/agenda'">
-        <span class="material-symbols-rounded">calendar_today</span><span class="cxsb-item-txt">Agenda</span>
-      </div>
       {% endif %}
       {% if nivel_acesso == 'admin' %}
       <div class="cxsb-item" data-path="/acessos" data-tip="Acessos" onclick="location.href='/acessos'">
@@ -415,6 +417,20 @@ html body{
   /* ---- grupos: abertos por padrão, e o estado vale nos dois modos ---- */
   var pref = {};
   try { pref = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {}; } catch(e){}
+  // Grupo sem nenhum item visível não deve aparecer: um cabeçalho
+  // solto sugere que algo quebrou, quando na verdade é só permissão.
+  document.querySelectorAll('.cxsb-lista[id^="gr-"]').forEach(function(lista){
+    if(!lista.querySelector('.cxsb-item')){
+      lista.style.display = 'none';
+      var g = document.querySelector('.cxsb-grupo[data-g="' + lista.id.slice(3) + '"]');
+      if(g){
+        g.style.display = 'none';
+        var sep = g.previousElementSibling;
+        if(sep && sep.classList.contains('cxsb-sep')) sep.style.display = 'none';
+      }
+    }
+  });
+
   document.querySelectorAll('.cxsb-grupo[data-g]').forEach(function(g){
     var k = g.getAttribute('data-g');
     var lista = document.getElementById('gr-' + k);
