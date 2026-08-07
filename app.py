@@ -22,6 +22,7 @@ app = Flask(__name__)
 # PENDÊNCIA DE SEGURANÇA: o valor padrão permite forjar sessão de admin.
 # Definir FLASK_SECRET_KEY no Vercel e remover o padrão.
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cxdata_chave_mestra_oficial_2026_!@")
+app.permanent_session_lifetime = timedelta(days=7)
 
 # CREDENCIAIS SUPABASE
 # Preferência: SUPABASE_SERVICE_KEY (service_role, passa por cima do RLS)
@@ -431,6 +432,10 @@ def login():
         dados = request.json
         email = dados.get('email')
         senha = dados.get('senha')
+        # "Manter conectado" estende a sessão para 7 dias. Sem ele, a sessão
+        # dura o navegador aberto. Sete e não trinta: a plataforma guarda
+        # dado de cliente e valor comercial.
+        session.permanent = bool(dados.get('lembrar'))
 
         # Busca o usuário só pelo e-mail
         res = supabase.table("usuarios").select("*").eq("email", email).execute()
@@ -439,6 +444,10 @@ def login():
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
 
         usuario = res.data[0]
+        if usuario.get("ativo") is False:
+            # Mesma mensagem do erro de senha: dizer "conta desativada"
+            # confirma que o e-mail existe.
+            return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
         autenticado = False
 
         # 1. Se já tem hash, valida pelo hash
@@ -449,7 +458,11 @@ def login():
             autenticado = True
             try:
                 novo_hash = gerar_hash(senha)
-                supabase.table("usuarios").update({"senha_hash": novo_hash}).eq("id", usuario["id"]).execute()
+                # Converte e apaga o texto puro no mesmo movimento: quem
+                # entra uma vez deixa de ter a senha legível no banco.
+                supabase.table("usuarios").update(
+                    {"senha_hash": novo_hash, "senha": None}
+                ).eq("id", usuario["id"]).execute()
             except Exception as e:
                 print(f"[AVISO] Falha ao converter senha para hash: {str(e)}")
 
@@ -469,6 +482,13 @@ def login():
             # Sem papel definido devolve vazio, e o sistema segue no modelo
             # antigo — é o que permite migrar sem deslogar ninguém.
             carregar_permissoes(usuario)
+            # Último acesso: alimenta o "nunca acessou" do portal do cliente.
+            try:
+                supabase.table("usuarios").update(
+                    {"ultimo_acesso": datetime.now(timezone.utc).isoformat()}
+                ).eq("id", usuario["id"]).execute()
+            except Exception as e:
+                print("Aviso: ultimo_acesso nao registrado:", e)
             return jsonify({"status": "sucesso"}), 200
         else:
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
@@ -478,14 +498,14 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('login', proximo=request.path))
 
 # --- ROTAS PROTEGIDAS ---
 
 @app.route('/')
 def index():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     # Cliente vai direto para a Agenda (portal dele)
     if is_cliente():
         return redirect(url_for('planejamento'))
@@ -494,7 +514,7 @@ def index():
 @app.route('/board/<nome_quadro>')
 def tela_projetos(nome_quadro):
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     # Personalizado/externo: só acessa o quadro se tiver o módulo liberado
     if (is_personalizado() or is_externo()) and not pode_acessar_modulo(nome_quadro):
         return redirect(url_for('index'))
@@ -668,7 +688,7 @@ def excluir_projeto(projeto_id):
 @app.route('/lixeira')
 def lixeira_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not is_admin():
         return redirect(url_for('index'))
     return render_template('lixeira.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
@@ -863,7 +883,7 @@ def marcar_comentario_lido(comentario_id):
 @app.route('/configuracoes')
 def configuracoes_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not is_admin():
         return redirect(url_for('index'))
     return render_template('configuracoes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
@@ -922,7 +942,8 @@ def criar_usuario():
             "cargo": dados.get("cargo"),
             "nivel_acesso": dados.get("nivel_acesso", "colaborador"),
             "tipo_usuario": dados.get("tipo_usuario", "interno"),
-            "senha": senha_texto,
+            # Só o hash é gravado. A coluna `senha` em texto puro é legado
+            # e deixa de receber valor a partir daqui.
             "senha_hash": gerar_hash(senha_texto)
         }
         # Permissões granulares (nível personalizado ou usuário externo)
@@ -949,7 +970,8 @@ def atualizar_usuario(usuario_id):
         atualizacao.update(montar_permissoes(dados))
         # Se enviou nova senha, atualiza texto + hash
         if dados.get("senha"):
-            atualizacao["senha"] = dados["senha"]
+            # Ao trocar a senha, o texto puro antigo é apagado de vez.
+            atualizacao["senha"] = None
             atualizacao["senha_hash"] = gerar_hash(dados["senha"])
 
         supabase.table("usuarios").update(atualizacao).eq("id", usuario_id).execute()
@@ -1002,7 +1024,7 @@ def projetos_para_selecao():
 @app.route('/externos')
 def externos_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not is_admin():
         return redirect(url_for('index'))
     return render_template('externos.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
@@ -1039,7 +1061,8 @@ def criar_externo():
             "nivel_acesso": "personalizado",   # externo usa a engine de permissões
             "tipo_usuario": "externo",
             "papel_externo": dados.get("papel_externo", "visualizador"),
-            "senha": senha_texto,
+            # Só o hash é gravado. A coluna `senha` em texto puro é legado
+            # e deixa de receber valor a partir daqui.
             "senha_hash": gerar_hash(senha_texto)
         }
         novo.update(montar_permissoes({**dados, "tipo_usuario": "externo", "nivel_acesso": "personalizado"}))
@@ -1064,7 +1087,8 @@ def atualizar_externo(usuario_id):
         atualizacao["nivel_acesso"] = "personalizado"
         atualizacao.update(montar_permissoes({**dados, "tipo_usuario": "externo", "nivel_acesso": "personalizado"}))
         if dados.get("senha"):
-            atualizacao["senha"] = dados["senha"]
+            # Ao trocar a senha, o texto puro antigo é apagado de vez.
+            atualizacao["senha"] = None
             atualizacao["senha_hash"] = gerar_hash(dados["senha"])
         supabase.table("usuarios").update(atualizacao).eq("id", usuario_id).execute()
         return jsonify({"status": "sucesso"}), 200
@@ -1088,7 +1112,7 @@ def excluir_externo(usuario_id):
 @app.route('/clientes')
 def clientes_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if is_externo():
         return redirect(url_for('planejamento'))
     if is_personalizado() and not pode_acessar_modulo('clientes'):
@@ -1250,7 +1274,7 @@ def mapa_cliente(cliente_id):
 @app.route('/dashboard')
 def dashboard_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
                 or pode_acessar_modulo('dashboard'))
     if not liberado:
@@ -1818,13 +1842,13 @@ def dados_dashboard():
 @app.route('/agenda')
 def planejamento():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/crm')
 def pagina_crm():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     return render_template('crm.html',
                            usuario_nome=session.get('usuario_nome', ''),
                            nivel_acesso=session.get('nivel_acesso', ''),
@@ -2014,7 +2038,7 @@ def mover_lead(lead_id):
 @app.route('/feed')
 def pagina_feed():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     return render_template('feed.html',
                            usuario_nome=session.get('usuario_nome', ''),
                            nivel_acesso=session.get('nivel_acesso', ''),
@@ -2115,7 +2139,7 @@ def pode_gerir_acessos():
 @app.route('/acessos')
 def pagina_acessos():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not pode_gerir_acessos():
         return redirect(url_for('index'))
     return render_template('acessos.html',
@@ -3332,7 +3356,7 @@ def clientes_okr_permitidos():
 @app.route('/okr/gestao')
 def okr_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not pode_ver_okr():
         return redirect(url_for('index'))
     return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
@@ -3340,7 +3364,7 @@ def okr_page():
 @app.route('/okr/dashboard')
 def okr_dashboard_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not pode_ver_okr():
         return redirect(url_for('index'))
     return render_template('okr_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
