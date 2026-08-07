@@ -3353,7 +3353,6 @@ def clientes_okr_permitidos():
     return todos, True, None
 
 @app.route('/okr')
-@app.route('/okr/gestao')
 def okr_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login', proximo=request.path))
@@ -3361,13 +3360,6 @@ def okr_page():
         return redirect(url_for('index'))
     return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
-@app.route('/okr/dashboard')
-def okr_dashboard_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login', proximo=request.path))
-    if not pode_ver_okr():
-        return redirect(url_for('index'))
-    return render_template('okr_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/okr/arvore', methods=['GET'])
 def okr_arvore():
