@@ -122,8 +122,25 @@ html body{
    celular não herde nada disso. Passar o mouse anula todas as
    regras abaixo de uma vez — é o que faz o painel abrir sozinho.
    ============================================================ */
+/* ============================================================
+   ÍCONES
+   Com a sidebar aberta, só o Início mostra ícone — o texto basta
+   e a lista fica mais calma. No modo estreito eles reaparecem,
+   porque ali o ícone é a única coisa que resta para navegar.
+   ============================================================ */
+.cxsidebar .cxsb-item:not([data-path="/"]) > .material-symbols-rounded,
+.cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:none; }
+
+.cxsidebar .cxsb-item:not([data-path="/"]){ padding-left:14px; }
+.cxsidebar .cxsb-subitem{ padding-left:26px; }
+
 @media (min-width:901px){
   .cxsidebar:not(:hover):not(.fixa){ width:var(--cx-rail); }
+
+  /* de volta os ícones: no rail não há texto para ler */
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item > .material-symbols-rounded,
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem > .material-symbols-rounded{ display:block; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item:not([data-path="/"]){ padding-left:0; }
 
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item-txt,
   .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem-txt,
@@ -231,36 +248,33 @@ html body{
     </div>
     {% endif %}
 
+    {# ===== CRM ===== #}
+    {% if not eh_person or 'crm' in perm_modulos %}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="crm" onclick="cxsbGrupo(this)">
+      CRM<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-crm">
+      <div class="cxsb-item" data-path="/crm" data-tip="Pipeline" onclick="location.href='/crm'">
+        <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">Pipeline</span>
+      </div>
+      <div class="cxsb-item" data-path="/dashboard?aba=comercial" data-tip="Dashboard comercial"
+           onclick="location.href='/dashboard?aba=comercial'">
+        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-txt">Dashboard</span>
+      </div>
+    </div>
+    {% endif %}
+
     {# ===== FERRAMENTAS ===== #}
-    {% if not eh_person or 'agenda' in perm_modulos or 'crm' in perm_modulos or 'okr' in perm_modulos %}
+    {% if not eh_person or 'okr' in perm_modulos %}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="ferramentas" onclick="cxsbGrupo(this)">
       Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
     <div class="cxsb-lista" id="gr-ferramentas">
-      {% if not eh_person or 'agenda' in perm_modulos %}
-      <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="location.href='/agenda'">
-        <span class="material-symbols-rounded">calendar_month</span><span class="cxsb-item-txt">Agenda</span>
-      </div>
-      {% endif %}
-      {% if not eh_person or 'crm' in perm_modulos %}
-      <div class="cxsb-item" data-path="/crm" data-tip="CRM" onclick="location.href='/crm'">
-        <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">CRM</span>
-      </div>
-      {% endif %}
-      {% if not eh_person or 'okr' in perm_modulos %}
       <div class="cxsb-item" data-path="/okr" data-tip="OKR" onclick="location.href='/okr'">
         <span class="material-symbols-rounded">target</span><span class="cxsb-item-txt">OKR</span>
       </div>
-      <div class="cxsb-item cxsb-subitem" data-path="/okr/dashboard" data-tip="Painel de OKR" onclick="location.href='/okr/dashboard'">
-        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-subitem-txt">Painel</span>
-      </div>
-      {% if nivel_acesso in ['admin','gestor'] %}
-      <div class="cxsb-item cxsb-subitem" data-path="/okr/gestao" data-tip="Gestão de OKR" onclick="location.href='/okr/gestao'">
-        <span class="material-symbols-rounded">account_tree</span><span class="cxsb-subitem-txt">Gestão</span>
-      </div>
-      {% endif %}
-      {% endif %}
     </div>
     {% endif %}
 
@@ -319,6 +333,11 @@ html body{
       Gestão<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
     <div class="cxsb-lista" id="gr-gestao">
+      {% if not eh_person or 'agenda' in perm_modulos %}
+      <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="location.href='/agenda'">
+        <span class="material-symbols-rounded">calendar_month</span><span class="cxsb-item-txt">Agenda</span>
+      </div>
+      {% endif %}
       {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
       <div class="cxsb-item" data-path="/dashboard" data-tip="Dashboard" onclick="location.href='/dashboard'">
         <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-txt">Dashboard</span>
@@ -390,14 +409,23 @@ html body{
 
   /* ---- item ativo ---- */
   var caminho = window.location.pathname;
+  var busca   = window.location.search;
   if (caminho === '/planejamento') caminho = '/agenda';
-  if (caminho === '/okr')          caminho = '/okr/gestao';
   if (caminho === '/board/geral')  caminho = '/board/cxdata';
+
+  // /dashboard e /dashboard?aba=comercial são a mesma tela em abas
+  // diferentes: sem olhar a query, os dois itens acenderiam juntos.
+  var aba = new URLSearchParams(busca).get('aba');
+  var atual = (caminho === '/dashboard' && aba) ? caminho + '?aba=' + aba : caminho;
 
   var listaAtiva = null;
   document.querySelectorAll('.cxsb-item[data-path]').forEach(function(it){
     var p = it.getAttribute('data-path');
-    var bate = (p === '/') ? (caminho === '/') : (caminho === p || caminho.indexOf(p + '/') === 0);
+    var bate;
+    if (p.indexOf('?') >= 0)      bate = (atual === p);
+    else if (p === '/dashboard')  bate = (caminho === '/dashboard' && !aba);
+    else if (p === '/')           bate = (caminho === '/');
+    else                          bate = (caminho === p || caminho.indexOf(p + '/') === 0);
     if (bate) {
       it.classList.add('ativo');
       var l = it.closest('.cxsb-lista');
