@@ -4,114 +4,243 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clientes | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
-        :root {
-            --bg-board: #f4f4f5; --glass-bg: rgba(255,255,255,0.6);
-            --text-main: #1e1e1e; --text-muted: #71717a;
-            --primary-purple: #7371ff; --accent-lime: #bef533;
-            --light-purple: #dbbfff; --accent-pink: #ff43c0;
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --azul:#1A5FA0; --azul-fraco:#E9F2FB;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --e-pop:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
+            --accent-lime:#BEF533; --accent-pink:#FF43C0;
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select,textarea{ font-family:inherit; border:none; background:none; color:inherit; }
+        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+              min-height:100vh; -webkit-font-smoothing:antialiased; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
-        .top-bar-logo span { color: var(--primary-purple); }
-        .btn-icon-round { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.7); border-radius: 50% !important; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
-        .btn-icon-round:hover { background: #fff; color: var(--text-main); }
-        .btn-icon-round.danger:hover { background: #fee2e2; color: #ef4444; }
+        .top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+            justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+            position:sticky; top:0; z-index:20; }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
 
-        .command-bar { padding: 24px 40px 14px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .btn-acao { background-color: var(--primary-purple); color: white; padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-radius: 50px !important; }
-        .btn-acao:hover { background-color: var(--text-main); }
-        .btn-acao:disabled { background: var(--text-muted); cursor: not-allowed; }
-        .btn-sec { background-color: #f4f4f5; color: var(--text-main); padding: 11px 22px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; border-radius: 50px !important; display:flex; align-items:center; gap:6px; }
-        .btn-sec:hover { background: #e4e4e7; }
+        .cabecalho{ background:var(--papel); border-bottom:1px solid var(--linha);
+            position:sticky; top:56px; z-index:15; }
+        .cb{ max-width:1160px; margin:0 auto; padding:19px 22px 18px; display:flex;
+            align-items:flex-start; gap:14px; flex-wrap:wrap; }
+        .cb-tit{ font-size:22px; font-weight:700; letter-spacing:-.7px; line-height:1.1; }
+        .cb-sub{ font-size:12.5px; color:var(--tinta-3); margin-top:4px; }
+        .cb-dir{ margin-left:auto; display:flex; gap:9px; }
 
-        .filtros-bar { padding: 0 40px 14px 40px; display: flex; gap: 12px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
-        .search-input { flex: 1; min-width: 220px; max-width: 380px; padding: 11px 20px; font-size: 13px; font-weight: 500; background: rgba(255,255,255,0.8); border-radius: 50px !important; outline: none; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s; }
-        .search-input:focus { background: #fff; box-shadow: 0 4px 16px rgba(115,113,255,0.1); }
-        .filtro-select { padding: 11px 18px; font-size: 12px; font-weight: 600; color: var(--text-main); background: rgba(255,255,255,0.8); border-radius: 50px !important; outline: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: 0.2s; }
-        .filtro-select:focus { background: #fff; box-shadow: 0 2px 12px rgba(115,113,255,0.1); }
+        .btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+            gap:6px; padding:8px 13px; border-radius:var(--r-ctrl); white-space:nowrap; transition:.14s; }
+        .btn .material-symbols-rounded{ font-size:17px; }
+        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-borda{ background:var(--papel); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha); }
+        .btn-borda:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta); }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+        .btn-acao:disabled{ opacity:.55; cursor:default; }
+        .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
+        .btn-perigo:hover{ background:#FDEDED; }
 
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 6px 40px 40px 40px; }
+        .wrap{ max-width:1160px; margin:0 auto; padding:18px 22px 80px; }
+        .loading{ text-align:center; padding:64px; color:var(--tinta-3); font-size:13px; font-weight:500; }
+        .empty{ text-align:center; padding:52px 24px; color:var(--tinta-3); background:var(--papel);
+            border-radius:var(--r-card); box-shadow:var(--e1); }
+        .empty .material-symbols-rounded{ font-size:38px; opacity:.3; display:block; margin-bottom:12px; }
+        .empty h3{ font-size:14.5px; font-weight:650; color:var(--tinta-2); margin-bottom:5px; }
+        .empty p{ font-size:12.5px; font-weight:500; line-height:1.6; max-width:340px; margin:0 auto; }
 
-        /* GRID DE CLIENTES */
-        .clientes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-        .cliente-card { background: #fff; border: 1px solid #f0f0f1; padding: 20px; cursor: pointer; transition: all 0.18s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .cliente-card:hover { border-color: #dbd9ff; transform: translateY(-3px); box-shadow: 0 12px 28px rgba(115,113,255,0.10); }
-        .cliente-card-top { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
-        .cliente-avatar { width: 46px; height: 46px; min-width: 46px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; border-radius: 12px !important; }
-        .cliente-nome { font-size: 15px; font-weight: 800; line-height: 1.2; letter-spacing: -0.3px; }
-        .cliente-local { font-size: 11px; color: #a1a1aa; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
-        .cliente-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid #f4f4f5; }
-        .cliente-projs { font-size: 13px; color: var(--text-muted); font-weight: 600; }
-        .cliente-projs b { color: var(--text-main); font-weight: 800; }
-        .pill-ativos { font-size: 11px; font-weight: 800; padding: 4px 11px; border-radius: 20px !important; background: #EEEDFE; color: #3C3489; }
-        .pill-ativos.zero { background: #f1f0e8; color: #5f5e5a; }
+        /* resumo */
+        .resumo{ display:flex; gap:1px; background:var(--linha); border-radius:var(--r-card);
+            overflow:hidden; margin-bottom:18px; box-shadow:var(--e1); }
+        .rs{ flex:1; background:var(--papel); padding:13px 16px; min-width:0; cursor:pointer; transition:.14s; text-align:left; }
+        .rs:hover{ background:var(--papel-2); }
+        .rs.on{ background:var(--papel-2); }
+        .rs-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .rs-v{ font-size:21px; font-weight:700; letter-spacing:-.6px; line-height:1; }
+        .rs-p{ font-size:10.5px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+        @media(max-width:700px){ .resumo{ flex-wrap:wrap; } .rs{ min-width:calc(50% - 1px); } }
 
-        /* MODAL GENÉRICO */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(244,244,245,0.75); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-overlay.show { display: flex; }
-        .modal-box { background: #fff; padding: 40px; width: 100%; max-width: 540px; box-shadow: 0 30px 80px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-        .modal-title { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .input-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
-        .input-group label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
-        .input-group input, .input-group select { padding: 13px 16px; background: #f9f9f9; outline: none; font-size: 13px; font-weight: 500; color: var(--text-main); border-left: 3px solid transparent; transition: 0.2s; font-family: 'Inter', sans-serif; }
-        .input-group input:focus, .input-group select:focus { background: #fff; border-left-color: var(--primary-purple); }
-        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+        /* ferramentas */
+        .ferr{ display:flex; align-items:center; gap:9px; margin-bottom:16px; flex-wrap:wrap; }
+        .busca{ position:relative; flex:1; min-width:190px; max-width:300px; }
+        .busca .material-symbols-rounded{ position:absolute; left:11px; top:50%; transform:translateY(-50%);
+            font-size:17px; color:var(--tinta-3); pointer-events:none; }
+        .busca input{ width:100%; font-size:12.5px; padding:9px 12px 9px 35px; background:var(--papel);
+            border:1px solid var(--linha); border-radius:var(--r-ctrl); outline:none; color:var(--tinta); transition:.14s; }
+        .busca input::placeholder{ color:var(--tinta-3); }
+        .busca input:focus{ border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .cont{ margin-left:auto; font-size:12.5px; font-weight:550; color:var(--tinta-3); }
+        .cont b{ font-weight:650; color:var(--tinta); }
 
-        /* MODAL GRANDE DO MAPA DO CLIENTE */
-        .mapa-overlay { display: none; position: fixed; inset: 0; background: rgba(30,30,30,0.45); backdrop-filter: blur(6px); justify-content: center; align-items: center; z-index: 1000; padding: 30px; }
-        .mapa-overlay.show { display: flex; }
-        .mapa-box { background: var(--bg-board); width: 100%; max-width: 1100px; height: 90vh; box-shadow: 0 40px 100px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
-        .mapa-topbar { background: #fff; padding: 24px 32px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #f0f0f1; flex-shrink: 0; }
-        .mapa-fechar { margin-left: auto; }
-        .mapa-filtros { background: #fff; padding: 14px 32px; display: flex; gap: 10px; border-bottom: 1px solid #f0f0f1; flex-shrink: 0; flex-wrap: wrap; }
-        .mapa-scroll { flex-grow: 1; overflow-y: auto; padding: 28px 32px; }
+        /* grupo */
+        .grupo{ margin-bottom:24px; }
+        .gr-cab{ display:flex; align-items:center; gap:11px; margin-bottom:9px; padding:0 2px; }
+        .gr-ico{ width:27px; height:27px; min-width:27px; border-radius:8px; display:flex;
+            align-items:center; justify-content:center; }
+        .gr-ico .material-symbols-rounded{ font-size:16px; }
+        .gr-t{ font-size:12.5px; font-weight:650; letter-spacing:-.15px; }
+        .gr-d{ font-size:11.5px; color:var(--tinta-3); }
+        .gr-n{ margin-left:auto; font-size:11px; font-weight:600; color:var(--tinta-3);
+            background:var(--papel); padding:4px 10px; border-radius:99px; box-shadow:var(--e1); }
 
-        .det-avatar { width: 56px; height: 56px; min-width: 56px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 900; border-radius: 14px !important; }
-        .det-info h2 { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
-        .det-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 6px; }
-        .det-meta-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); font-weight: 600; }
-        .det-meta-item .material-symbols-rounded { font-size: 16px; }
+        /* cartão */
+        .cl{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            margin-bottom:8px; overflow:hidden; transition:box-shadow .14s; }
+        .cl:hover{ box-shadow:var(--e2); }
+        .cl-cab{ padding:14px 16px; display:flex; align-items:center; gap:13px; width:100%;
+            text-align:left; cursor:pointer; }
+        .mono{ width:38px; height:38px; min-width:38px; border-radius:10px; display:flex;
+            align-items:center; justify-content:center; font-size:13px; font-weight:700; letter-spacing:-.4px; }
+        .cl-id{ flex:1; min-width:0; }
+        .cl-nome{ font-size:13.5px; font-weight:650; letter-spacing:-.15px; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; }
+        .cl-meta{ font-size:11.5px; color:var(--tinta-3); margin-top:2px; display:flex; gap:8px;
+            flex-wrap:wrap; align-items:center; }
+        .cl-meta .pt{ width:3px; height:3px; border-radius:50%; background:var(--linha-2); }
+        .cl-num{ display:flex; gap:20px; align-items:center; flex-shrink:0; }
+        .cn{ text-align:right; }
+        .cn-v{ font-size:15px; font-weight:700; letter-spacing:-.4px; font-family:'IBM Plex Mono',monospace; line-height:1; }
+        .cn-r{ font-size:10px; color:var(--tinta-3); font-weight:550; margin-top:3px;
+            text-transform:uppercase; letter-spacing:.4px; }
+        @media(max-width:820px){
+            .cl-cab{ flex-wrap:wrap; }
+            .cl-num{ width:100%; padding-left:51px; justify-content:flex-start; gap:16px; }
+            .cn{ text-align:left; }
+        }
+        .selo{ font-size:10.5px; font-weight:600; padding:4px 10px; border-radius:99px; white-space:nowrap;
+            display:inline-flex; align-items:center; gap:5px; }
+        .selo .material-symbols-rounded{ font-size:12px; }
+        .s-ok{ background:var(--ok-fraco); color:var(--ok); }
+        .s-at{ background:var(--at-fundo); color:var(--atencao); }
+        .s-cr{ background:var(--cr-fundo); color:var(--critico); }
+        .s-n{ background:var(--papel-2); color:var(--tinta-3); }
+        .s-portal{ background:var(--acao-fraco); color:var(--acao); }
 
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
-        .kpi-card { background: #fff; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-        .kpi-num { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
-        .kpi-num.roxo { color: var(--primary-purple); }
-        .kpi-num.lime { color: #84cc16; }
-        .kpi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 4px; }
+        /* ===== CONTA ===== */
+        .conta{ background:var(--papel); border-radius:14px; box-shadow:var(--e1); overflow:hidden; }
+        .voltar{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600;
+            color:var(--tinta-3); cursor:pointer; margin-bottom:14px; padding:6px 10px 6px 6px;
+            border-radius:var(--r-ctrl); transition:.14s; }
+        .voltar:hover{ background:var(--papel); color:var(--tinta); }
+        .voltar .material-symbols-rounded{ font-size:18px; }
+        .ct-cab{ padding:20px 22px 18px; border-bottom:1px solid var(--linha); display:flex;
+            gap:15px; align-items:flex-start; flex-wrap:wrap; }
+        .ct-mono{ width:52px; height:52px; min-width:52px; border-radius:14px; display:flex;
+            align-items:center; justify-content:center; font-size:17px; font-weight:700; letter-spacing:-.5px; }
+        .ct-id{ flex:1; min-width:180px; }
+        .ct-nome{ font-size:20px; font-weight:700; letter-spacing:-.55px; line-height:1.2; }
+        .ct-sub{ font-size:12px; color:var(--tinta-3); margin-top:4px; font-family:'IBM Plex Mono',monospace; }
+        .ct-chips{ display:flex; gap:7px; margin-top:10px; flex-wrap:wrap; }
+        .ct-acoes{ display:flex; gap:7px; flex-shrink:0; }
+        .ic{ width:34px; height:34px; border-radius:10px; background:var(--papel-2); color:var(--tinta-2);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.14s; }
+        .ic:hover{ background:var(--linha); color:var(--tinta); }
+        .ic.wpp:hover{ background:#25D366; color:#fff; }
+        .ic .material-symbols-rounded{ font-size:17px; }
+        .ct-num{ display:flex; flex-wrap:wrap; gap:1px; background:var(--linha); border-bottom:1px solid var(--linha); }
+        .dn{ background:var(--papel); padding:14px 18px; flex:1 1 132px; min-width:0; }
+        .dn-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:6px; }
+        .dn-v{ font-size:20px; font-weight:700; letter-spacing:-.6px; line-height:1; }
+        .dn-p{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+        .ct-corpo{ display:grid; grid-template-columns:1fr 292px; }
+        @media(max-width:880px){ .ct-corpo{ grid-template-columns:1fr; } }
+        .ct-esq{ padding:18px 22px; border-right:1px solid var(--linha); min-width:0; }
+        .ct-dir{ padding:18px; background:var(--papel-2); }
+        @media(max-width:880px){ .ct-esq{ border-right:none; border-bottom:1px solid var(--linha); } }
+        .dr{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:12px; }
+        .pj{ display:grid; grid-template-columns:1fr auto auto; gap:12px; padding:10px 0;
+            border-bottom:1px solid var(--papel-2); align-items:center; }
+        .pj:last-child{ border:none; }
+        .pj-t{ font-size:12.5px; font-weight:600; line-height:1.35; min-width:0; }
+        .pj-s{ font-size:11px; color:var(--tinta-3); margin-top:2px; display:flex; gap:7px;
+            flex-wrap:wrap; align-items:center; }
+        .pj-v{ font-size:12px; font-weight:650; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .pilula{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+        .p-n{ background:var(--papel-2); color:var(--tinta-3); }
+        .p-ok{ background:var(--ok-fraco); color:var(--ok); }
+        .p-at{ background:var(--at-fundo); color:var(--atencao); }
+        .p-cr{ background:var(--cr-fundo); color:var(--critico); }
+        .p-az{ background:var(--azul-fraco); color:var(--azul); }
+        .barra-t{ height:9px; background:var(--papel-2); border-radius:99px; overflow:hidden;
+            display:flex; margin-top:11px; }
+        .barra-t i{ display:block; height:100%; }
+        .leg{ display:flex; gap:14px; margin-top:11px; flex-wrap:wrap; }
+        .leg span{ font-size:11.5px; color:var(--tinta-2); display:flex; align-items:center; gap:6px; font-weight:500; }
+        .leg i{ width:9px; height:9px; border-radius:2.5px; display:block; }
+        .campo{ margin-bottom:13px; }
+        .campo-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:4px; }
+        .campo-v{ font-size:12.5px; color:var(--tinta); font-weight:500; word-break:break-word; }
+        .campo-v.vazio{ color:var(--tinta-3); font-style:italic; font-weight:400; }
+        .pessoa{ display:flex; align-items:center; gap:9px; padding:7px 0; }
+        .av{ width:28px; height:28px; min-width:28px; border-radius:50%; display:flex;
+            align-items:center; justify-content:center; font-size:9.5px; font-weight:650; }
+        .pessoa-n{ font-size:12px; font-weight:550; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pessoa-c{ font-size:10.5px; color:var(--tinta-3); }
+        .pessoa-c.nunca{ color:var(--atencao); font-weight:550; }
 
-        .secao-titulo { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin: 24px 0 12px 0; display: flex; align-items: center; gap: 8px; }
+        /* modal */
+        .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            justify-content:center; align-items:center; padding:20px; }
+        .modal-overlay.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:470px; max-height:92vh;
+            overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha); display:flex;
+            align-items:flex-start; gap:12px; flex-shrink:0; }
+        .md-eyebrow{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:4px; }
+        .md-tit{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .md-x{ margin-left:auto; width:28px; height:28px; border-radius:8px; background:var(--papel-2);
+            color:var(--tinta-3); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+        .md-x .material-symbols-rounded{ font-size:17px; }
+        .md-corpo{ padding:18px 20px 22px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
+        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); display:flex; gap:9px;
+            background:var(--papel-2); flex-shrink:0; flex-wrap:wrap; }
+        .ig label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .ig input, .ig select, .ig textarea{ width:100%; font-size:13px; color:var(--tinta); padding:10px 12px;
+            background:var(--papel-2); border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; transition:.14s; }
+        .ig textarea{ resize:vertical; min-height:64px; line-height:1.55; }
+        .ig input:focus, .ig select:focus, .ig textarea:focus{ background:var(--papel);
+            border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .ig2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        @media(max-width:520px){ .ig2{ grid-template-columns:1fr; } }
 
-        .proj-item { background: #fff; padding: 16px 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border-left: 3px solid #e4e4e7; cursor: pointer; transition: all 0.15s; }
-        .proj-item:hover { transform: translateX(3px); box-shadow: 0 6px 20px rgba(115,113,255,0.1); }
-        .proj-item.ativo { border-left-color: var(--primary-purple); }
-        .proj-item.finalizado { border-left-color: #22c55e; }
-        .proj-main { flex-grow: 1; min-width: 0; }
-        .proj-nome { font-size: 14px; font-weight: 900; letter-spacing: -0.2px; display:flex; align-items:center; gap:8px; }
-        .proj-area-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--primary-purple); background: #f0efff; padding: 2px 8px; border-radius: 20px !important; letter-spacing: 0.3px; }
-        .proj-datas { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; }
-        .proj-status-badge { padding: 4px 12px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 50px !important; background: #f4f4f5; color: var(--text-muted); white-space: nowrap; }
-        .proj-tempo { font-family: monospace; font-size: 15px; font-weight: 900; color: var(--primary-purple); white-space: nowrap; }
-        .proj-abrir { color: #c4c4c8; transition: 0.15s; }
-        .proj-item:hover .proj-abrir { color: var(--primary-purple); }
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
+            display:flex; flex-direction:column; gap:9px; }
+        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
+            display:flex; align-items:center; gap:9px; max-width:88vw; }
 
-        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-        .empty-state .material-symbols-rounded { font-size: 50px; opacity: 0.25; display: block; margin-bottom: 14px; }
-        .empty-state p { font-size: 13px; font-weight: 600; }
-
-        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { background: rgba(30,30,30,0.95); backdrop-filter: blur(10px); color: white; padding: 12px 22px; border-radius: 50px !important; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width:900px){
+            .top-bar{ padding:0 16px 0 60px; }
+            .cb{ padding:16px 16px 15px; }
+            .wrap{ padding:14px 16px 70px; }
+            .cb-dir{ width:100%; margin-left:0; }
+            .modal-overlay{ padding:0; align-items:flex-end; }
+            .modal{ max-width:none; border-radius:18px 18px 0 0; }
+        }
     </style>
 </head>
 <body>
@@ -119,88 +248,69 @@
         <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
         {% include '_usermenu.html' %}
     </div>
-
     {% include '_sidebar.html' %}
 
-    <div class="command-bar">
-        <div>
-            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Clientes</h2>
-            <p style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;" id="subtitulo">Carregando...</p>
-        </div>
-        <button class="btn-acao" onclick="abrirModalNovo()">
-            <span class="material-symbols-rounded" style="font-size:17px;">add</span> NOVO CLIENTE
-        </button>
-    </div>
-
-    <div class="filtros-bar">
-        <input type="text" class="search-input" id="busca" placeholder="🔍 Buscar cliente..." oninput="renderLista()">
-        <select class="filtro-select" id="filtroAreaLista" onchange="renderLista()">
-            <option value="">Todas as áreas</option>
-        </select>
-        <select class="filtro-select" id="filtroRespLista" onchange="renderLista()">
-            <option value="">Todos os responsáveis</option>
-        </select>
-    </div>
-
-    <div class="scroll-area">
-        <div class="clientes-grid" id="clientesGrid"></div>
-    </div>
-
-    <!-- MODAL GRANDE: MAPA DO CLIENTE -->
-    <div class="mapa-overlay" id="mapaOverlay">
-        <div class="mapa-box">
-            <div class="mapa-topbar">
-                <div class="det-avatar" id="mapaAvatar"></div>
-                <div class="det-info" style="flex-grow:1; min-width:0;">
-                    <h2 id="mapaNome"></h2>
-                    <div class="det-meta" id="mapaMeta"></div>
-                </div>
-                <button class="btn-sec" id="mapaBtnEditar"><span class="material-symbols-rounded" style="font-size:16px;">edit</span> EDITAR</button>
-                <div class="btn-icon-round mapa-fechar" onclick="fecharMapa()"><span class="material-symbols-rounded" style="font-size:20px;">close</span></div>
+    <div class="cabecalho">
+        <div class="cb">
+            <div>
+                <h1 class="cb-tit">Clientes</h1>
+                <p class="cb-sub" id="cbSub">Carregando...</p>
             </div>
-            <div class="mapa-filtros">
-                <select class="filtro-select" id="filtroArea" onchange="renderProjetosFiltrados()"><option value="">Todas as áreas</option></select>
-                <select class="filtro-select" id="filtroResp" onchange="renderProjetosFiltrados()"><option value="">Todos os responsáveis</option></select>
-                <select class="filtro-select" id="filtroStatusProj" onchange="renderProjetosFiltrados()">
-                    <option value="">Todos os status</option>
-                    <option value="ativo">Em andamento</option>
-                    <option value="finalizado">Finalizados</option>
-                </select>
-            </div>
-            <div class="mapa-scroll">
-                <div class="kpi-row" id="mapaKpis"></div>
-                <div id="listaProjetos"></div>
+            <div class="cb-dir">
+                <button class="btn btn-acao" onclick="abrirCadastro()">
+                    <span class="material-symbols-rounded">add</span>Novo cliente</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL NOVO/EDITAR CLIENTE -->
-    <div class="modal-overlay" id="modalCliente">
-        <div class="modal-box">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitulo">Novo Cliente</span>
-                <div class="btn-icon-round" onclick="fecharModal()"><span class="material-symbols-rounded" style="font-size:18px;">close</span></div>
+    <div class="wrap" id="conteudo"><div class="loading">Carregando...</div></div>
+
+    <!-- CADASTRO -->
+    <div class="modal-overlay" id="modalCliente" onclick="fundo(event,'modalCliente')">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow">Clientes</div>
+                    <div class="md-tit" id="mcTitulo">Novo cliente</div>
+                </div>
+                <button class="md-x" onclick="fechar('modalCliente')" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
             </div>
-            <input type="hidden" id="editandoId">
-            <div class="input-group">
-                <label>Nome da Empresa *</label>
-                <input type="text" id="inpNome" placeholder="Ex: Conexão CX">
-            </div>
-            <div class="input-row">
-                <div class="input-group"><label>CNPJ</label><input type="text" id="inpCnpj" placeholder="00.000.000/0000-00"></div>
-                <div class="input-group"><label>Telefone (WhatsApp)</label><input type="text" id="inpTelefone" placeholder="(00) 00000-0000"></div>
-            </div>
-            <div class="input-row">
-                <div class="input-group"><label>Cidade</label><input type="text" id="inpCidade" placeholder="Natal"></div>
-                <div class="input-group"><label>Estado</label>
-                    <select id="inpEstado"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select>
+            <div class="md-corpo">
+                <input type="hidden" id="mcId">
+                <div class="ig">
+                    <label for="mcNome">Empresa</label>
+                    <input type="text" id="mcNome" placeholder="Nome da empresa" maxlength="120">
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="mcCnpj">CNPJ</label>
+                        <input type="text" id="mcCnpj" placeholder="00.000.000/0001-00"></div>
+                    <div class="ig"><label for="mcResp">Responsável na Conexão</label>
+                        <select id="mcResp"><option value="">Sem responsável</option></select></div>
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="mcCidade">Cidade</label>
+                        <input type="text" id="mcCidade" placeholder="Natal"></div>
+                    <div class="ig"><label for="mcEstado">Estado</label>
+                        <input type="text" id="mcEstado" placeholder="RN" maxlength="2"></div>
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="mcEmail">E-mail</label>
+                        <input type="email" id="mcEmail" placeholder="contato@empresa.com"></div>
+                    <div class="ig"><label for="mcTel">Telefone</label>
+                        <input type="text" id="mcTel" placeholder="(84) 90000-0000"></div>
+                </div>
+                <div class="ig">
+                    <label for="mcObs">Observações</label>
+                    <textarea id="mcObs" placeholder="Contexto útil sobre a conta"></textarea>
                 </div>
             </div>
-            <div class="input-group"><label>E-mail</label><input type="email" id="inpEmail" placeholder="contato@empresa.com.br"></div>
-            <div class="modal-footer">
-                <button class="btn-sec" id="btnExcluir" onclick="excluirCliente()" style="display:none; background:#fee2e2; color:#ef4444;">EXCLUIR</button>
-                <button class="btn-sec" onclick="fecharModal()">CANCELAR</button>
-                <button class="btn-acao" id="btnSalvar" onclick="salvarCliente()">SALVAR</button>
+            <div class="md-pe">
+                <button class="btn btn-perigo" id="mcExcluir" onclick="excluirCliente()" style="display:none">
+                    <span class="material-symbols-rounded">delete</span>Excluir</button>
+                <button class="btn btn-fant" style="margin-left:auto" onclick="fechar('modalCliente')">Cancelar</button>
+                <button class="btn btn-acao" id="mcSalvar" onclick="salvarCliente()">
+                    <span class="material-symbols-rounded">check</span>Salvar</button>
             </div>
         </div>
     </div>
@@ -208,278 +318,442 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        let nomeUsuario = '{{ usuario_nome }}';
-        let clientes = [];
-        let _mapaAtual = null;
+        const NIVEL = "{{ nivel_acesso }}";
+        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
+            ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
+        const CORES_AREA = ['#1A5FA0','#6C5CE7','#0E9F6E','#C2660B','#DB2777','#0EA5E9','#7C3AED','#7C7C88'];
 
-        // Mapeia área do projeto -> slug do quadro
-        const AREA_PARA_QUADRO = {
-            'RH Estratégico': 'rhestrategico',
-            'Recrutamento e seleção': 'recrutamento',
-            'CX Data': 'geral', 'Comercial': 'geral', 'Marketing': 'geral', 'Adm/Fin': 'geral'
+        const SITUACOES = {
+            atraso:    { rot:'Com atraso',   desc:'Têm projeto com prazo vencido',
+                         cor:'#D42F2F', fundo:'#FBE3E3', ico:'priority_high', ordem:1 },
+            em_dia:    { rot:'Em dia',       desc:'Com trabalho aberto e sem atraso',
+                         cor:'#0E9F6E', fundo:'#E6F7F0', ico:'trending_up', ordem:2 },
+            parado:    { rot:'Sem movimento',desc:'Sem projeto aberto nem horas no período',
+                         cor:'#C2660B', fundo:'#FFF0D6', ico:'pause', ordem:3 },
+            encerrado: { rot:'Encerrados',   desc:'Contas marcadas como inativas',
+                         cor:'#7C7C88', fundo:'#F7F7F9', ico:'archive', ordem:4 }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            var _nu = document.getElementById('nomeUsuario'); if(_nu) _nu.textContent = nomeUsuario;
-            carregarClientes();
-        });
+        let clientes = [], resumo = {}, diasParado = 60, responsaveis = [];
+        let busca = '', filtro = '', vendo = null;
 
-        async function carregarClientes() {
-            try {
-                const res = await fetch('/api/clientes');
-                const data = await res.json();
-                clientes = data.clientes || [];
-                document.getElementById('subtitulo').textContent = `${clientes.length} cliente${clientes.length !== 1 ? 's' : ''} cadastrado${clientes.length !== 1 ? 's' : ''}`;
-                popularFiltrosLista();
-                renderLista();
-            } catch(e) { showToast('Erro ao carregar clientes.', 'error'); }
+        document.addEventListener('DOMContentLoaded', iniciar);
+
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+        function cor(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=n.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
+        function sigla(n){
+            const p = (n||'?').trim().split(/\s+/).filter(x=>x.length>2);
+            return (p.length >= 2 ? p[0][0]+p[1][0] : (n||'?').slice(0,2)).toUpperCase();
+        }
+        function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
+        function soDigitos(s){ return String(s||'').replace(/\D/g,''); }
+
+        function tempoDeCasa(desde){
+            if(!desde) return null;
+            const d = new Date(desde); if(isNaN(d)) return null;
+            const meses = Math.max(0, Math.round((Date.now() - d) / 2629800000));
+            if(meses < 1) return 'cliente novo';
+            if(meses < 12) return `cliente há ${meses} ${meses===1?'mês':'meses'}`;
+            const anos = Math.floor(meses/12), resto = meses % 12;
+            let t = `cliente há ${anos} ${anos===1?'ano':'anos'}`;
+            if(resto) t += ` e ${resto} ${resto===1?'mês':'meses'}`;
+            return t;
+        }
+        function diasAte(dataStr){
+            if(!dataStr) return null;
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            const d = new Date(dataStr + 'T00:00:00');
+            if(isNaN(d)) return null;
+            return Math.round((d - hoje) / 86400000);
+        }
+        function rotuloPrazo(dataStr){
+            const n = diasAte(dataStr);
+            if(n === null) return { txt:'sem prazo', cls:'p-n' };
+            if(n < 0)  return { txt:`${-n}d atrasado`, cls:'p-cr' };
+            if(n === 0) return { txt:'vence hoje', cls:'p-cr' };
+            if(n <= 7) return { txt:`vence em ${n}d`, cls:'p-at' };
+            return { txt:`vence em ${n}d`, cls:'p-ok' };
         }
 
-        function popularFiltrosLista() {
-            const areas = [...new Set(clientes.flatMap(c => c.areas || []))].sort();
-            const resps = [...new Set(clientes.flatMap(c => c.responsaveis || []))].sort();
-            const fa = document.getElementById('filtroAreaLista');
-            const fr = document.getElementById('filtroRespLista');
-            const va = fa.value, vr = fr.value;
-            fa.innerHTML = '<option value="">Todas as áreas</option>' + areas.map(a => `<option value="${escH(a)}">${escH(a)}</option>`).join('');
-            fr.innerHTML = '<option value="">Todos os responsáveis</option>' + resps.map(r => `<option value="${escH(r)}">${escH(r)}</option>`).join('');
-            fa.value = va; fr.value = vr;
+        async function motivo(resp, padrao){
+            try{ const d = await resp.json();
+                if(d && d.detalhe) return (d.mensagem||padrao)+' '+d.detalhe;
+                if(d && d.mensagem) return d.mensagem;
+                if(d && d.erro) return d.erro;
+            }catch(e){}
+            return padrao+' (HTTP '+resp.status+')';
+        }
+        function erroGeral(msg){
+            document.getElementById('conteudo').innerHTML =
+                `<div class="empty"><span class="material-symbols-rounded">error</span>
+                 <h3>Não foi possível carregar</h3><p>${escH(msg)}</p></div>`;
         }
 
-        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
-        function corCliente(nome) { let h=0; for(let i=0;i<(nome||'').length;i++) h=nome.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
-        function iniciais(nome){ if(!nome) return '?'; const p=nome.trim().split(' '); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():nome.slice(0,2).toUpperCase(); }
-        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-        function fmtTempo(s){ const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); if(h>0) return `${h}h ${m}min`; if(m>0) return `${m}min`; return `${s}s`; }
-        function fmtData(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('pt-BR'); }
+        async function iniciar(){
+            try{
+                const r = await fetch('/api/usuarios');
+                if(r.ok){
+                    const d = await r.json();
+                    const lista = d.usuarios || d || [];
+                    responsaveis = lista.filter(u => (u.tipo_usuario||'interno') === 'interno')
+                                        .map(u => u.nome).filter(Boolean).sort();
+                }
+            }catch(e){}
+            await carregar();
+        }
 
-        function renderLista() {
-            const busca = document.getElementById('busca').value.toLowerCase();
-            const fArea = document.getElementById('filtroAreaLista').value;
-            const fResp = document.getElementById('filtroRespLista').value;
-            const grid = document.getElementById('clientesGrid');
+        async function carregar(){
+            try{
+                const r = await fetch('/api/clientes/carteira');
+                if(!r.ok){ erroGeral(await motivo(r,'Erro ao carregar a carteira.')); return; }
+                const d = await r.json();
+                clientes = d.clientes || []; resumo = d.resumo || {}; diasParado = d.dias_parado || 60;
+            }catch(e){ erroGeral('Sem conexão com o servidor.'); return; }
+            if(vendo) abrirConta(vendo, true); else render();
+        }
 
-            const filtrados = clientes.filter(c => {
-                const matchBusca = (c.nome_empresa||'').toLowerCase().includes(busca) || (c.cidade||'').toLowerCase().includes(busca);
-                const matchArea = !fArea || (c.areas||[]).includes(fArea);
-                const matchResp = !fResp || (c.responsaveis||[]).includes(fResp);
-                return matchBusca && matchArea && matchResp;
+        /* ==================== CARTEIRA ==================== */
+        function render(){
+            vendo = null;
+            document.getElementById('cbSub').innerText =
+                `${resumo.total} ${resumo.total===1?'conta':'contas'} · ${resumo.com_trabalho} com trabalho aberto`;
+
+            const t = busca.trim().toLowerCase();
+            const lista = clientes.filter(c => {
+                if(filtro && c.situacao !== filtro) return false;
+                if(!t) return true;
+                return (c.nome||'').toLowerCase().includes(t) || soDigitos(c.cnpj).includes(soDigitos(t));
             });
 
-            if (filtrados.length === 0) {
-                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><span class="material-symbols-rounded">domain_disabled</span><p>Nenhum cliente encontrado com esses filtros.</p></div>`;
-                return;
-            }
+            const blocos = ['atraso','em_dia','parado','encerrado'];
+            const porSit = {};
+            lista.forEach(c => (porSit[c.situacao] = porSit[c.situacao] || []).push(c));
 
-            grid.innerHTML = filtrados.map(c => {
-                const [bg, fg] = corCliente(c.nome_empresa);
-                const temLocal = c.cidade || c.estado;
-                const ativos = c.qtd_ativos || 0;
-                return `
-                <div class="cliente-card" onclick="abrirMapa('${c.id}')">
-                    <div class="cliente-card-top">
-                        <div class="cliente-avatar" style="background:${bg}; color:${fg};">${iniciais(c.nome_empresa)}</div>
-                        <div style="min-width:0;">
-                            <div class="cliente-nome">${escH(c.nome_empresa)}</div>
-                            <div class="cliente-local">
-                                <span class="material-symbols-rounded" style="font-size:13px;">${temLocal ? 'location_on' : 'location_off'}</span>
-                                ${temLocal ? escH(c.cidade||'') + (c.estado ? ' · ' + escH(c.estado) : '') : 'Sem localização'}
+            let html = `
+                <div class="resumo">
+                    ${bloco('Com trabalho aberto', resumo.com_trabalho, `de ${resumo.total} clientes`, '', '')}
+                    ${bloco('Com atraso', resumo.com_atraso, 'precisam de atenção', 'var(--critico)', 'atraso')}
+                    ${bloco('Sem movimento', resumo.parados, `há mais de ${diasParado} dias`, 'var(--atencao)', 'parado')}
+                    ${bloco('Horas no mês', resumo.horas_mes + 'h', 'em toda a carteira', '', '')}
+                </div>
+                <div class="ferr">
+                    <div class="busca"><span class="material-symbols-rounded">search</span>
+                        <input id="buscaCli" placeholder="Buscar cliente ou CNPJ" value="${escA(busca)}"
+                               oninput="aoBuscar(this.value)"></div>
+                    <span class="cont">${lista.length === clientes.length
+                        ? `<b>${clientes.length}</b> clientes` : `<b>${lista.length}</b> de ${clientes.length}`}</span>
+                </div>`;
+
+            if(!clientes.length){
+                html += `<div class="empty"><span class="material-symbols-rounded">business</span>
+                    <h3>Nenhum cliente cadastrado</h3>
+                    <p>Cadastre o primeiro para acompanhar projetos e horas por conta.</p></div>`;
+            } else if(!lista.length){
+                html += `<div class="empty"><span class="material-symbols-rounded">search_off</span>
+                    <h3>Nada encontrado</h3><p>Ajuste a busca ou o filtro para ver mais clientes.</p></div>`;
+            } else {
+                blocos.forEach(s => {
+                    const gente = porSit[s];
+                    if(!gente || !gente.length) return;
+                    const v = SITUACOES[s];
+                    html += `<section class="grupo">
+                        <header class="gr-cab">
+                            <span class="gr-ico" style="background:${v.fundo}">
+                                <span class="material-symbols-rounded" style="color:${v.cor}">${v.ico}</span></span>
+                            <div><div class="gr-t">${v.rot}</div><div class="gr-d">${escH(v.desc)}</div></div>
+                            <span class="gr-n">${gente.length}</span>
+                        </header>
+                        ${gente.map(cartao).join('')}
+                    </section>`;
+                });
+            }
+            document.getElementById('conteudo').innerHTML = html;
+            const b = document.getElementById('buscaCli');
+            if(b && document.activeElement !== b) b.value = busca;
+        }
+
+        function bloco(rot, valor, pe, corV, alvo){
+            const ativo = alvo && filtro === alvo;
+            return `<button class="rs ${ativo?'on':''}" ${alvo?`onclick="filtrar('${alvo}')"`:''}>
+                <div class="rs-r">${rot}</div>
+                <div class="rs-v num" ${corV && valor ? `style="color:${corV}"` : ''}>${valor}</div>
+                <div class="rs-p">${ativo ? 'filtrando' : pe}</div></button>`;
+        }
+
+        function cartao(c){
+            const [bg,fg] = cor(c.nome);
+            const casa = tempoDeCasa(c.criado_em);
+            let situacao;
+            if(c.situacao === 'atraso'){
+                const d = Math.abs(diasAte(c.prazo_proximo) || 0);
+                situacao = `<span class="selo s-cr"><span class="material-symbols-rounded">schedule</span>${d}d atrasado</span>`;
+            } else if(c.situacao === 'parado'){
+                situacao = `<span class="selo s-at"><span class="material-symbols-rounded">history</span>${c.dias_parado||'—'} dias parado</span>`;
+            } else if(c.situacao === 'encerrado'){
+                situacao = `<span class="selo s-n">Encerrado</span>`;
+            } else {
+                situacao = `<span class="selo s-ok"><span class="material-symbols-rounded">check</span>Em dia</span>`;
+            }
+            return `<article class="cl">
+                <button class="cl-cab" onclick="abrirConta('${escA(c.id)}')">
+                    <span class="mono" style="background:${bg};color:${fg}">${sigla(c.nome)}</span>
+                    <span class="cl-id">
+                        <span class="cl-nome">${escH(c.nome)}</span>
+                        <span class="cl-meta">
+                            ${c.cidade ? escH(c.cidade) + (c.estado ? ' · '+escH(c.estado) : '') : 'sem cidade'}
+                            ${casa ? '<span class="pt"></span>'+casa : ''}
+                            <span class="pt"></span>${c.responsavel ? escH(c.responsavel) : 'sem responsável'}
+                        </span>
+                    </span>
+                    <span class="cl-num">
+                        <span class="cn"><span class="cn-v" ${!c.projetos_ativos?'style="color:var(--tinta-3)"':''}>${c.projetos_ativos}</span>
+                            <span class="cn-r">projetos</span></span>
+                        <span class="cn"><span class="cn-v" ${!c.horas_mes?'style="color:var(--tinta-3)"':''}>${c.horas_mes?c.horas_mes+'h':'—'}</span>
+                            <span class="cn-r">no mês</span></span>
+                        ${situacao}
+                        ${c.portal ? `<span class="selo s-portal"><span class="material-symbols-rounded">key</span>Portal</span>` : ''}
+                    </span>
+                </button>
+            </article>`;
+        }
+
+        function aoBuscar(v){ busca = v; render(); }
+        function filtrar(s){ filtro = (filtro === s) ? '' : s; render(); }
+
+        /* ==================== CONTA ==================== */
+        async function abrirConta(id, silencioso){
+            if(!silencioso) document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando...</div>';
+            let d;
+            try{
+                const r = await fetch('/api/clientes/'+id+'/conta');
+                if(!r.ok){ erroGeral(await motivo(r,'Erro ao carregar o cliente.')); return; }
+                d = await r.json();
+            }catch(e){ erroGeral('Sem conexão com o servidor.'); return; }
+            vendo = id;
+            renderConta(d);
+        }
+
+        function renderConta(d){
+            const c = d.cliente;
+            const [bg,fg] = cor(c.nome_empresa);
+            const casa = tempoDeCasa(c.criado_em);
+            const temTel = !!soDigitos(c.telefone), temMail = !!(c.email||'').trim();
+            const maxArea = Math.max(1, ...d.horas_area.map(a => a.horas));
+            const totalArea = d.horas_area.reduce((s,a) => s + a.horas, 0) || 1;
+
+            document.getElementById('cbSub').innerText = 'Conta do cliente';
+
+            document.getElementById('conteudo').innerHTML = `
+                <button class="voltar" onclick="render()">
+                    <span class="material-symbols-rounded">arrow_back</span>Todos os clientes</button>
+
+                <div class="conta">
+                    <div class="ct-cab">
+                        <span class="ct-mono" style="background:${bg};color:${fg}">${sigla(c.nome_empresa)}</span>
+                        <div class="ct-id">
+                            <div class="ct-nome">${escH(c.nome_empresa)}</div>
+                            <div class="ct-sub">${escH(c.cnpj)||'sem CNPJ'}${c.cidade?' · '+escH(c.cidade):''}${c.estado?', '+escH(c.estado):''}</div>
+                            <div class="ct-chips">
+                                ${d.atrasados ? `<span class="selo s-cr"><span class="material-symbols-rounded">schedule</span>
+                                    ${d.atrasados} ${d.atrasados===1?'projeto atrasado':'projetos atrasados'}</span>`
+                                  : `<span class="selo s-ok"><span class="material-symbols-rounded">check</span>Sem atraso</span>`}
+                                ${d.pessoas.length ? `<span class="selo s-portal"><span class="material-symbols-rounded">key</span>
+                                    Portal · ${d.pessoas.length} ${d.pessoas.length===1?'pessoa':'pessoas'}</span>` : ''}
+                                ${casa ? `<span class="selo s-n">${casa}</span>` : ''}
                             </div>
                         </div>
+                        <div class="ct-acoes">
+                            <button class="ic wpp" ${temTel?'':'style="opacity:.35"'} title="WhatsApp"
+                                onclick="abrirWpp('${escA(c.telefone||'')}')"><span class="material-symbols-rounded">chat</span></button>
+                            <button class="ic" ${temMail?'':'style="opacity:.35"'} title="E-mail"
+                                onclick="abrirEmail('${escA(c.email||'')}')"><span class="material-symbols-rounded">mail</span></button>
+                            <button class="ic" title="Editar" onclick="abrirCadastro('${escA(c.id)}')">
+                                <span class="material-symbols-rounded">edit</span></button>
+                        </div>
                     </div>
-                    <div class="cliente-foot">
-                        <span class="cliente-projs"><b>${c.qtd_projetos||0}</b> projeto${c.qtd_projetos!==1?'s':''}</span>
-                        <span class="pill-ativos ${ativos===0?'zero':''}">${ativos} ativo${ativos!==1?'s':''}</span>
+
+                    <div class="ct-num">
+                        <div class="dn"><div class="dn-r">Projetos ativos</div><div class="dn-v num">${d.ativos.length}</div>
+                            <div class="dn-p">${d.total_concluidos} ${d.total_concluidos===1?'concluído':'concluídos'}</div></div>
+                        <div class="dn"><div class="dn-r">Horas no mês</div><div class="dn-v num">${d.horas_mes}h</div>
+                            <div class="dn-p">últimos 30 dias</div></div>
+                        <div class="dn"><div class="dn-r">Horas totais</div><div class="dn-v num">${d.horas_total}h</div>
+                            <div class="dn-p">desde o início</div></div>
+                        <div class="dn"><div class="dn-r">Prazo mais próximo</div>
+                            <div class="dn-v num" ${prazoCor(d.prazo_proximo)}>${prazoTexto(d.prazo_proximo)}</div>
+                            <div class="dn-p">${d.ativos.find(p=>p.prazo)?escH(d.ativos.find(p=>p.prazo).nome):'nenhum com prazo'}</div></div>
+                        <div class="dn"><div class="dn-r">Áreas atendidas</div><div class="dn-v num">${d.horas_area.length}</div>
+                            <div class="dn-p">${d.horas_area.slice(0,2).map(a=>escH(a.area)).join(', ')||'—'}</div></div>
+                    </div>
+
+                    <div class="ct-corpo">
+                        <div class="ct-esq">
+                            <div class="dr">Projetos em andamento</div>
+                            ${d.ativos.length ? d.ativos.map(p => {
+                                const pz = rotuloPrazo(p.prazo);
+                                return `<div class="pj">
+                                    <div><div class="pj-t">${escH(p.nome)}</div>
+                                        <div class="pj-s">${p.area?`<span class="pilula p-az">${escH(p.area)}</span>`:''}
+                                            ${escH(p.status||'')}${p.responsavel?' · '+escH(p.responsavel):''}</div></div>
+                                    <span class="pj-v">${p.horas?p.horas+'h':'—'}</span>
+                                    <span class="pilula ${pz.cls}">${pz.txt}</span></div>`;
+                            }).join('') : '<div class="campo-v vazio">Nenhum projeto em andamento.</div>'}
+
+                            ${d.horas_area.length ? `
+                            <div class="dr" style="margin-top:24px">Distribuição das horas</div>
+                            <div class="barra-t">
+                                ${d.horas_area.map((a,i) =>
+                                    `<i style="width:${a.horas/totalArea*100}%;background:${CORES_AREA[i%CORES_AREA.length]}"></i>`).join('')}
+                            </div>
+                            <div class="leg">
+                                ${d.horas_area.map((a,i) =>
+                                    `<span><i style="background:${CORES_AREA[i%CORES_AREA.length]}"></i>${escH(a.area)} · ${a.horas}h</span>`).join('')}
+                            </div>` : ''}
+                        </div>
+
+                        <div class="ct-dir">
+                            <div class="dr">Contato</div>
+                            <div class="campo"><div class="campo-r">E-mail</div>
+                                <div class="campo-v ${temMail?'':'vazio'}">${temMail?escH(c.email):'não informado'}</div></div>
+                            <div class="campo"><div class="campo-r">Telefone</div>
+                                <div class="campo-v num ${temTel?'':'vazio'}">${temTel?escH(c.telefone):'não informado'}</div></div>
+                            <div class="campo" style="margin-bottom:20px"><div class="campo-r">Responsável na Conexão</div>
+                                <div class="campo-v ${c.responsavel?'':'vazio'}">${escH(c.responsavel)||'sem responsável'}</div></div>
+
+                            <div class="dr">Acesso ao portal</div>
+                            ${d.pessoas.length ? d.pessoas.map(p => {
+                                const [pb,pf] = cor(p.nome);
+                                const nunca = !p.ultimo_acesso;
+                                return `<div class="pessoa">
+                                    <span class="av" style="background:${pb};color:${pf}">${iniciais(p.nome)}</span>
+                                    <div style="flex:1;min-width:0"><div class="pessoa-n">${escH(p.nome)}</div>
+                                        <div class="pessoa-c ${nunca?'nunca':''}">${escH(p.cargo)||'sem cargo'} ·
+                                            ${nunca?'nunca acessou':'acessou '+quando(p.ultimo_acesso)}</div></div>
+                                </div>`;
+                            }).join('') : '<div class="campo-v vazio">Ninguém tem acesso ao portal.</div>'}
+                            <button class="btn btn-borda" style="width:100%;justify-content:center;margin-top:11px"
+                                onclick="window.location.href='/externos'">
+                                <span class="material-symbols-rounded">person_add</span>Gerir acessos</button>
+
+                            ${d.origem ? `<div class="dr" style="margin-top:22px">Origem</div>
+                            <div class="campo"><div class="campo-r">Veio do CRM</div>
+                                <div class="campo-v">${escH(d.origem.origem)||'origem não informada'}</div></div>
+                            ${d.origem.responsavel ? `<div class="campo"><div class="campo-r">Fechado por</div>
+                                <div class="campo-v">${escH(d.origem.responsavel)}</div></div>` : ''}` : ''}
+
+                            ${c.observacoes ? `<div class="dr" style="margin-top:22px">Observações</div>
+                            <div class="campo-v" style="line-height:1.6">${escH(c.observacoes)}</div>` : ''}
+                        </div>
                     </div>
                 </div>`;
-            }).join('');
         }
 
-        // ===== MAPA (MODAL GRANDE) =====
-        async function abrirMapa(clienteId) {
-            document.getElementById('mapaOverlay').classList.add('show');
-            document.getElementById('listaProjetos').innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">hourglass_top</span><p>Carregando...</p></div>`;
-            document.getElementById('mapaKpis').innerHTML = '';
+        function prazoTexto(p){
+            const n = diasAte(p);
+            if(n === null) return '—';
+            if(n < 0) return `-${-n}d`;
+            if(n === 0) return 'hoje';
+            return `${n}d`;
+        }
+        function prazoCor(p){
+            const n = diasAte(p);
+            if(n === null) return 'style="color:var(--tinta-3)"';
+            if(n < 0) return 'style="color:var(--critico)"';
+            if(n <= 7) return 'style="color:var(--atencao)"';
+            return '';
+        }
+        function quando(s){
+            const d = new Date(s); if(isNaN(d)) return '—';
+            const dias = Math.floor((Date.now() - d) / 86400000);
+            if(dias <= 0) return 'hoje';
+            if(dias === 1) return 'ontem';
+            if(dias < 30) return `há ${dias} dias`;
+            return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+        }
+        function abrirWpp(tel){
+            const n = soDigitos(tel); if(!n) return;
+            window.open('https://wa.me/55' + n, '_blank');
+        }
+        function abrirEmail(e){ if((e||'').trim()) window.location.href = 'mailto:' + e; }
 
-            try {
-                const res = await fetch(`/api/clientes/${clienteId}/mapa`);
-                const data = await res.json();
-                if (data.status !== 'sucesso') { showToast('Erro ao carregar mapa.', 'error'); fecharMapa(); return; }
-                _mapaAtual = data;
-                const c = data.cliente, k = data.kpis;
-                const [bg, fg] = corCliente(c.nome_empresa);
-
-                document.getElementById('mapaAvatar').style.background = bg;
-                document.getElementById('mapaAvatar').style.color = fg;
-                document.getElementById('mapaAvatar').textContent = iniciais(c.nome_empresa);
-                document.getElementById('mapaNome').textContent = c.nome_empresa;
-                document.getElementById('mapaBtnEditar').onclick = () => abrirModalEditar(c.id);
-
-                let metaHtml = '';
-                if (c.cnpj) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">badge</span>${escH(c.cnpj)}</div>`;
-                if (c.cidade||c.estado) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">location_on</span>${escH(c.cidade||'')}${c.estado?' - '+escH(c.estado):''}</div>`;
-                if (c.telefone) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">call</span>${escH(c.telefone)}</div>`;
-                if (c.email) metaHtml += `<div class="det-meta-item"><span class="material-symbols-rounded">mail</span>${escH(c.email)}</div>`;
-                document.getElementById('mapaMeta').innerHTML = metaHtml || '<span style="font-size:12px;color:#bbb;">Sem dados de contato cadastrados</span>';
-
-                document.getElementById('mapaKpis').innerHTML = `
-                    <div class="kpi-card"><div class="kpi-num">${k.total_projetos}</div><div class="kpi-label">Projetos Totais</div></div>
-                    <div class="kpi-card"><div class="kpi-num roxo">${k.ativos}</div><div class="kpi-label">Em Andamento</div></div>
-                    <div class="kpi-card"><div class="kpi-num lime">${k.finalizados}</div><div class="kpi-label">Finalizados</div></div>
-                    <div class="kpi-card"><div class="kpi-num">${fmtTempo(k.tempo_total_segundos)}</div><div class="kpi-label">Tempo Dedicado</div></div>`;
-
-                const areas = [...new Set(data.projetos.map(p=>p.area).filter(Boolean))].sort();
-                const resps = [...new Set(data.projetos.map(p=>p.responsavel).filter(Boolean))].sort();
-                document.getElementById('filtroArea').innerHTML = '<option value="">Todas as áreas</option>' + areas.map(a=>`<option value="${escH(a)}">${escH(a)}</option>`).join('');
-                document.getElementById('filtroResp').innerHTML = '<option value="">Todos os responsáveis</option>' + resps.map(r=>`<option value="${escH(r)}">${escH(r)}</option>`).join('');
-                document.getElementById('filtroStatusProj').value = '';
-
-                renderProjetosFiltrados();
-            } catch(e) { showToast('Erro de conexão.', 'error'); fecharMapa(); }
+        /* ==================== CADASTRO ==================== */
+        function abrirCadastro(id){
+            const c = id ? clientes.find(x => String(x.id) === String(id)) : null;
+            document.getElementById('mcId').value = c ? c.id : '';
+            document.getElementById('mcTitulo').innerText = c ? 'Editar cliente' : 'Novo cliente';
+            document.getElementById('mcNome').value = c ? (c.nome||'') : '';
+            document.getElementById('mcCnpj').value = c ? (c.cnpj||'') : '';
+            document.getElementById('mcCidade').value = c ? (c.cidade||'') : '';
+            document.getElementById('mcEstado').value = c ? (c.estado||'') : '';
+            document.getElementById('mcEmail').value = c ? (c.email||'') : '';
+            document.getElementById('mcTel').value = c ? (c.telefone||'') : '';
+            document.getElementById('mcObs').value = '';
+            document.getElementById('mcResp').innerHTML = '<option value="">Sem responsável</option>' +
+                responsaveis.map(r => `<option ${c && c.responsavel===r?'selected':''}>${escH(r)}</option>`).join('');
+            document.getElementById('mcExcluir').style.display = c ? 'inline-flex' : 'none';
+            document.getElementById('modalCliente').classList.add('show');
+            setTimeout(()=>document.getElementById('mcNome').focus(), 60);
         }
 
-        function renderProjetosFiltrados() {
-            if (!_mapaAtual) return;
-            const fArea = document.getElementById('filtroArea').value;
-            const fResp = document.getElementById('filtroResp').value;
-            const fStatus = document.getElementById('filtroStatusProj').value;
+        async function salvarCliente(){
+            const id = document.getElementById('mcId').value;
+            const nome = document.getElementById('mcNome').value.trim();
+            if(!nome){ showToast('Informe o nome da empresa.','error'); return; }
+            const corpo = {
+                nome_empresa: nome,
+                cnpj: document.getElementById('mcCnpj').value.trim(),
+                cidade: document.getElementById('mcCidade').value.trim(),
+                estado: document.getElementById('mcEstado').value.trim().toUpperCase(),
+                email: document.getElementById('mcEmail').value.trim(),
+                telefone: document.getElementById('mcTel').value.trim(),
+                responsavel: document.getElementById('mcResp').value,
+                observacoes: document.getElementById('mcObs').value.trim()
+            };
+            const b = document.getElementById('mcSalvar'); b.disabled = true;
+            try{
+                const r = await fetch(id ? '/api/clientes/'+id : '/api/clientes', {
+                    method: id?'PUT':'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify(corpo) });
+                if(!r.ok){ showToast(await motivo(r, id?'Erro ao salvar.':'Erro ao cadastrar.'),'error'); return; }
+                showToast(id?'Cliente atualizado.':'Cliente cadastrado.','success');
+                fechar('modalCliente');
+                await carregar();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+            finally{ b.disabled = false; }
+        }
 
-            let projetos = _mapaAtual.projetos.filter(p => {
-                if (fArea && p.area !== fArea) return false;
-                if (fResp && p.responsavel !== fResp) return false;
-                const eAtivo = !['Finalizado','Cancelado'].includes(p.status);
-                if (fStatus==='ativo' && !eAtivo) return false;
-                if (fStatus==='finalizado' && eAtivo) return false;
-                return true;
-            });
-
-            const ativos = projetos.filter(p => !['Finalizado','Cancelado'].includes(p.status));
-            const finalizados = projetos.filter(p => ['Finalizado','Cancelado'].includes(p.status));
-            const lista = document.getElementById('listaProjetos');
-
-            if (projetos.length === 0) {
-                lista.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">filter_alt_off</span><p>Nenhum projeto com esses filtros.</p></div>`;
+        async function excluirCliente(){
+            const id = document.getElementById('mcId').value;
+            const c = clientes.find(x => String(x.id) === String(id));
+            if(!c) return;
+            if(c.projetos_ativos){
+                showToast(`${c.nome} tem ${c.projetos_ativos} projeto(s) em andamento. Conclua ou mova antes de excluir.`,'error');
                 return;
             }
-
-            let html = '';
-            if (ativos.length > 0) {
-                html += `<div class="secao-titulo"><span class="material-symbols-rounded" style="font-size:16px; color:var(--primary-purple);">bolt</span> Em Andamento (${ativos.length})</div>`;
-                html += ativos.map(p => renderProjeto(p,'ativo')).join('');
-            }
-            if (finalizados.length > 0) {
-                html += `<div class="secao-titulo"><span class="material-symbols-rounded" style="font-size:16px; color:#22c55e;">check_circle</span> Finalizados (${finalizados.length})</div>`;
-                html += finalizados.map(p => renderProjeto(p,'finalizado')).join('');
-            }
-            lista.innerHTML = html;
+            if(!confirm(`Excluir ${c.nome}? A ação não pode ser desfeita.`)) return;
+            try{
+                const r = await fetch('/api/clientes/'+id, { method:'DELETE' });
+                if(!r.ok){ showToast(await motivo(r,'Erro ao excluir.'),'error'); return; }
+                showToast('Cliente excluído.','success');
+                fechar('modalCliente');
+                vendo = null;
+                await carregar();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
         }
 
-        function renderProjeto(p, tipo) {
-            const quadro = AREA_PARA_QUADRO[p.area] || 'geral';
-            return `
-            <div class="proj-item ${tipo}" onclick="irParaProjeto('${quadro}', '${p.id}')">
-                <div class="proj-main">
-                    <div class="proj-nome">${escH(p.nome_projeto)} ${p.area ? `<span class="proj-area-tag">${escH(p.area)}</span>` : ''}</div>
-                    <div class="proj-datas">
-                        <span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:middle;">play_circle</span> Início: ${fmtData(p.data_inicio)}</span>
-                        ${p.data_conclusao ? `<span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:middle;">stop_circle</span> Conclusão: ${fmtData(p.data_conclusao)}</span>` : ''}
-                        ${p.responsavel ? `<span><span class="material-symbols-rounded" style="font-size:13px; vertical-align:middle;">person</span> ${escH(p.responsavel)}</span>` : ''}
-                    </div>
-                </div>
-                <span class="proj-status-badge">${escH(p.status)}</span>
-                <span class="proj-tempo">${fmtTempo(p.tempo_total_segundos||0)}</span>
-                <span class="material-symbols-rounded proj-abrir">arrow_forward</span>
-            </div>`;
+        /* ==================== UTIL ==================== */
+        function fechar(id){ document.getElementById(id).classList.remove('show'); }
+        function fundo(e,id){ if(e.target.id===id) fechar(id); }
+        function showToast(msg,tipo){
+            const c=document.getElementById('toastContainer');
+            const t=document.createElement('div'); t.className='toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${escH(msg)}`;
+            c.appendChild(t); setTimeout(()=>t.remove(),4200);
         }
-
-        function irParaProjeto(quadro, projetoId) {
-            window.location.href = `/board/${quadro}?projeto=${projetoId}`;
-        }
-
-        function fecharMapa() {
-            document.getElementById('mapaOverlay').classList.remove('show');
-            _mapaAtual = null;
-            carregarClientes();
-        }
-
-        // ===== CRUD =====
-        function abrirModalNovo() {
-            document.getElementById('editandoId').value = '';
-            document.getElementById('modalTitulo').textContent = 'Novo Cliente';
-            ['inpNome','inpCnpj','inpTelefone','inpCidade','inpEmail'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('inpEstado').value = '';
-            document.getElementById('btnExcluir').style.display = 'none';
-            document.getElementById('modalCliente').classList.add('show');
-        }
-
-        async function abrirModalEditar(clienteId) {
-            let obj = clientes.find(x => String(x.id) === String(clienteId));
-            if (!obj && _mapaAtual && String(_mapaAtual.cliente.id) === String(clienteId)) obj = _mapaAtual.cliente;
-            if (!obj) return;
-            document.getElementById('editandoId').value = obj.id;
-            document.getElementById('modalTitulo').textContent = 'Editar Cliente';
-            document.getElementById('inpNome').value = obj.nome_empresa || '';
-            document.getElementById('inpCnpj').value = obj.cnpj || '';
-            document.getElementById('inpTelefone').value = obj.telefone || '';
-            document.getElementById('inpCidade').value = obj.cidade || '';
-            document.getElementById('inpEstado').value = obj.estado || '';
-            document.getElementById('inpEmail').value = obj.email || '';
-            document.getElementById('btnExcluir').style.display = 'block';
-            document.getElementById('modalCliente').classList.add('show');
-        }
-
-        function fecharModal() { document.getElementById('modalCliente').classList.remove('show'); }
-
-        async function salvarCliente() {
-            const editandoId = document.getElementById('editandoId').value;
-            const nome = document.getElementById('inpNome').value.trim();
-            if (!nome) { showToast('O nome da empresa é obrigatório.', 'error'); return; }
-            const payload = {
-                nome_empresa: nome,
-                cnpj: document.getElementById('inpCnpj').value.trim(),
-                telefone: document.getElementById('inpTelefone').value.trim(),
-                cidade: document.getElementById('inpCidade').value.trim(),
-                estado: document.getElementById('inpEstado').value,
-                email: document.getElementById('inpEmail').value.trim()
-            };
-            const btn = document.getElementById('btnSalvar');
-            btn.disabled = true; btn.textContent = 'SALVANDO...';
-            try {
-                const url = editandoId ? `/api/clientes/${editandoId}` : '/api/clientes';
-                const method = editandoId ? 'PUT' : 'POST';
-                const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-                if (res.ok) {
-                    showToast(editandoId ? 'Cliente atualizado!' : 'Cliente cadastrado!', 'success');
-                    fecharModal();
-                    if (editandoId && _mapaAtual && String(_mapaAtual.cliente.id) === String(editandoId)) abrirMapa(editandoId);
-                    else carregarClientes();
-                } else { const err = await res.json(); showToast('Erro: ' + (err.mensagem||'falha'), 'error'); }
-            } catch(e) { showToast('Erro de conexão.', 'error'); }
-            finally { btn.disabled = false; btn.textContent = 'SALVAR'; }
-        }
-
-        async function excluirCliente() {
-            const id = document.getElementById('editandoId').value;
-            if (!id) return;
-            if (!confirm('Excluir este cliente? (Só é possível se não houver projetos vinculados)')) return;
-            try {
-                const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
-                if (res.ok) { showToast('Cliente excluído.', 'success'); fecharModal(); fecharMapa(); }
-                else { const err = await res.json(); showToast(err.mensagem || 'Erro ao excluir.', 'error'); }
-            } catch(e) { showToast('Erro de conexão.', 'error'); }
-        }
-
-        function showToast(msg, tipo='success') {
-            const c = document.getElementById('toastContainer');
-            const t = document.createElement('div');
-            t.className = 'toast';
-            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px; color:${tipo==='success'?'var(--accent-lime)':'var(--accent-pink)'};">${tipo==='success'?'check_circle':'error'}</span>${msg}`;
-            c.appendChild(t);
-            setTimeout(() => t.remove(), 3500);
-        }
-
-        document.getElementById('modalCliente').addEventListener('click', function(e){ if(e.target===this) fecharModal(); });
-        document.getElementById('mapaOverlay').addEventListener('click', function(e){ if(e.target===this) fecharMapa(); });
+        document.addEventListener('keydown', function(e){
+            if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+        });
     </script>
 </body>
 </html>
