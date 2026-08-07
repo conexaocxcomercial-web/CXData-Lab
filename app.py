@@ -1162,6 +1162,8 @@ def criar_cliente():
     try:
         novo = {
             "nome_empresa": dados.get("nome_empresa"),
+            "responsavel": dados.get("responsavel"),
+            "observacoes": dados.get("observacoes"),
             "cnpj": dados.get("cnpj"),
             "cidade": dados.get("cidade"),
             "estado": dados.get("estado"),
@@ -1210,6 +1212,259 @@ def excluir_cliente(cliente_id):
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/clientes/carteira', methods=['GET'])
+def carteira_clientes():
+    """Clientes com os números que a tela precisa, agrupados por situação.
+
+    Tudo é calculado aqui: a tela recebe pronto, e o escopo de permissão
+    é aplicado antes de qualquer dado sair do servidor.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        dias_parado = 60
+        try:
+            dias_parado = max(15, min(int(request.args.get('parado', 60)), 365))
+        except (TypeError, ValueError):
+            pass
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        corte = (datetime.now(timezone.utc) - timedelta(days=dias_parado)).isoformat()
+        mes = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+        clientes = (supabase.table("clientes").select("*")
+                    .order("nome_empresa").execute()).data or []
+        todos_proj = (supabase.table("projetos").select("*")
+                      .is_("excluido_em", "null").execute()).data or []
+        projetos = filtrar_projetos_permitidos(todos_proj)
+
+        # Horas por projeto, do mês e do total.
+        horas_mes, horas_total = {}, {}
+        try:
+            ids = [str(p["id"]) for p in projetos]
+            if ids:
+                passo, inicio = 1000, 0
+                while True:
+                    r = (supabase.table("time_logs")
+                         .select("projeto_id, tempo_segundos, criado_em")
+                         .in_("projeto_id", ids).range(inicio, inicio + passo - 1).execute())
+                    if not r.data:
+                        break
+                    for l in r.data:
+                        pid = str(l.get("projeto_id"))
+                        seg = l.get("tempo_segundos") or 0
+                        horas_total[pid] = horas_total.get(pid, 0) + seg
+                        if str(l.get("criado_em") or '') >= mes:
+                            horas_mes[pid] = horas_mes.get(pid, 0) + seg
+                    if len(r.data) < passo:
+                        break
+                    inicio += passo
+        except Exception as e:
+            print("Aviso: time_logs indisponivel na carteira:", e)
+
+        # Quem tem acesso ao portal, por cliente.
+        portal = {}
+        try:
+            ext = (supabase.table("usuarios")
+                   .select("cliente_vinculado_id, ativo")
+                   .eq("tipo_usuario", "externo").execute()).data or []
+            for u in ext:
+                cid = str(u.get("cliente_vinculado_id") or '')
+                if cid and u.get("ativo") is not False:
+                    portal[cid] = portal.get(cid, 0) + 1
+        except Exception as e:
+            print("Aviso: usuarios externos indisponiveis:", e)
+
+        por_cliente = {}
+        for p in projetos:
+            cid = str(p.get("cliente_id") or '')
+            if cid:
+                por_cliente.setdefault(cid, []).append(p)
+
+        saida = []
+        for c in clientes:
+            cid = str(c["id"])
+            meus = por_cliente.get(cid, [])
+            ativos = [p for p in meus if p.get("status") not in STATUS_ENCERRADOS]
+            concluidos = [p for p in meus if p.get("status") == "Finalizado"]
+
+            atrasados, prazo_prox = 0, None
+            for p in ativos:
+                prazo = str(p.get("prazo_data") or '')[:10]
+                if not prazo:
+                    continue
+                if prazo < hoje:
+                    atrasados += 1
+                if prazo_prox is None or prazo < prazo_prox:
+                    prazo_prox = prazo
+
+            hm = sum(horas_mes.get(str(p["id"]), 0) for p in meus) / 3600.0
+            ht = sum(horas_total.get(str(p["id"]), 0) for p in meus) / 3600.0
+
+            # Última atividade: a mudança de fase mais recente entre os projetos.
+            ultima = None
+            for p in meus:
+                for campo in ("data_status_atual", "atualizado_em", "criado_em"):
+                    v = p.get(campo)
+                    if v and (ultima is None or str(v) > ultima):
+                        ultima = str(v)
+                        break
+
+            if c.get("ativo") is False:
+                situacao = "encerrado"
+            elif atrasados:
+                situacao = "atraso"
+            elif ativos:
+                situacao = "em_dia"
+            elif ultima and ultima >= corte:
+                situacao = "em_dia"
+            else:
+                situacao = "parado"
+
+            saida.append({
+                "id": c["id"],
+                "nome": c.get("nome_empresa"),
+                "cnpj": c.get("cnpj"),
+                "cidade": c.get("cidade"),
+                "estado": c.get("estado"),
+                "email": c.get("email"),
+                "telefone": c.get("telefone"),
+                "responsavel": c.get("responsavel"),
+                "criado_em": c.get("criado_em"),
+                "ativo": c.get("ativo") is not False,
+                "situacao": situacao,
+                "projetos_ativos": len(ativos),
+                "projetos_concluidos": len(concluidos),
+                "atrasados": atrasados,
+                "prazo_proximo": prazo_prox,
+                "horas_mes": round(hm),
+                "horas_total": round(ht),
+                "portal": portal.get(cid, 0),
+                "dias_parado": _dias_desde(ultima) if ultima else None,
+                "areas": sorted({p.get("area") for p in ativos if p.get("area")}),
+            })
+
+        resumo = {
+            "total": len(saida),
+            "com_trabalho": sum(1 for c in saida if c["projetos_ativos"]),
+            "com_atraso": sum(1 for c in saida if c["situacao"] == "atraso"),
+            "parados": sum(1 for c in saida if c["situacao"] == "parado"),
+            "horas_mes": sum(c["horas_mes"] for c in saida),
+        }
+        return jsonify({"status": "sucesso", "clientes": saida,
+                        "resumo": resumo, "dias_parado": dias_parado}), 200
+    except Exception as e:
+        print("Erro em carteira_clientes:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a carteira.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/clientes/<cliente_id>/conta', methods=['GET'])
+def conta_cliente(cliente_id):
+    """Detalhe de um cliente: projetos, horas por área e portal."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        mes = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+        res = supabase.table("clientes").select("*").eq("id", cliente_id).limit(1).execute()
+        if not res.data:
+            return jsonify({"status": "erro", "mensagem": "Cliente não encontrado."}), 404
+        cliente = res.data[0]
+
+        todos = (supabase.table("projetos").select("*")
+                 .eq("cliente_id", cliente_id).is_("excluido_em", "null").execute()).data or []
+        projetos = filtrar_projetos_permitidos(todos)
+
+        horas_proj, horas_mes_proj = {}, {}
+        try:
+            ids = [str(p["id"]) for p in projetos]
+            if ids:
+                passo, inicio = 1000, 0
+                while True:
+                    r = (supabase.table("time_logs")
+                         .select("projeto_id, tempo_segundos, criado_em")
+                         .in_("projeto_id", ids).range(inicio, inicio + passo - 1).execute())
+                    if not r.data:
+                        break
+                    for l in r.data:
+                        pid = str(l.get("projeto_id"))
+                        seg = l.get("tempo_segundos") or 0
+                        horas_proj[pid] = horas_proj.get(pid, 0) + seg
+                        if str(l.get("criado_em") or '') >= mes:
+                            horas_mes_proj[pid] = horas_mes_proj.get(pid, 0) + seg
+                    if len(r.data) < passo:
+                        break
+                    inicio += passo
+        except Exception as e:
+            print("Aviso: time_logs indisponivel na conta:", e)
+
+        ativos, concluidos, por_area = [], [], {}
+        for p in projetos:
+            pid = str(p["id"])
+            h = round(horas_proj.get(pid, 0) / 3600.0)
+            item = {
+                "id": p["id"], "nome": p.get("nome_projeto"), "area": p.get("area"),
+                "status": p.get("status"), "responsavel": p.get("responsavel"),
+                "prazo": str(p.get("prazo_data") or '')[:10] or None, "horas": h,
+            }
+            if p.get("status") in STATUS_ENCERRADOS:
+                concluidos.append(item)
+            else:
+                ativos.append(item)
+            a = p.get("area") or "Sem área"
+            por_area[a] = por_area.get(a, 0) + h
+
+        ativos.sort(key=lambda x: (x["prazo"] or "9999", -x["horas"]))
+        prazo_prox = next((p["prazo"] for p in ativos if p["prazo"]), None)
+
+        pessoas = []
+        try:
+            ext = (supabase.table("usuarios")
+                   .select("id, nome, cargo, email, ativo, ultimo_acesso")
+                   .eq("tipo_usuario", "externo")
+                   .eq("cliente_vinculado_id", cliente_id).execute()).data or []
+            pessoas = [{"id": u["id"], "nome": u.get("nome"), "cargo": u.get("cargo"),
+                        "email": u.get("email"), "ativo": u.get("ativo") is not False,
+                        "ultimo_acesso": u.get("ultimo_acesso")} for u in ext]
+        except Exception as e:
+            print("Aviso: usuarios do portal indisponiveis:", e)
+
+        origem = None
+        if cliente.get("lead_id"):
+            try:
+                l = (supabase.table("leads").select("origem, responsavel, movido_em")
+                     .eq("id", cliente["lead_id"]).limit(1).execute())
+                if l.data:
+                    origem = l.data[0]
+            except Exception as e:
+                print("Aviso: lead de origem indisponivel:", e)
+
+        return jsonify({
+            "status": "sucesso",
+            "cliente": cliente,
+            "ativos": ativos,
+            "concluidos": concluidos[:10],
+            "total_concluidos": len(concluidos),
+            "horas_area": sorted(({"area": k, "horas": v} for k, v in por_area.items()
+                                  if v > 0), key=lambda x: -x["horas"]),
+            "horas_mes": round(sum(horas_mes_proj.values()) / 3600.0),
+            "horas_total": round(sum(horas_proj.values()) / 3600.0),
+            "prazo_proximo": prazo_prox,
+            "atrasados": sum(1 for p in ativos if p["prazo"] and p["prazo"] < hoje),
+            "pessoas": pessoas,
+            "origem": origem,
+        }), 200
+    except Exception as e:
+        print("Erro em conta_cliente:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar o cliente.",
+                        "detalhe": str(e)[:300]}), 500
+
 
 @app.route('/api/clientes/<cliente_id>/mapa', methods=['GET'])
 def mapa_cliente(cliente_id):
@@ -2292,7 +2547,7 @@ def painel_operacao():
                 pid = str(l.get('projeto_id') or '')
                 if pid not in permitidos:
                     continue
-                seg = l.get('duracao_segundos') or 0
+                seg = l.get('tempo_segundos') or 0
                 h = seg / 3600.0
                 horas_total += h
                 a = mapa_area.get(pid) or 'Sem área'
