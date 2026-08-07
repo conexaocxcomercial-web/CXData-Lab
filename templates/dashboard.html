@@ -247,7 +247,21 @@
         let diasOp = 30, diasCom = 90;       // comercial usa 90: o ciclo de venda é de ~38 dias
         let quadroOp = '', op = null, com = null;
 
-        document.addEventListener('DOMContentLoaded', () => { carregarOperacao(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            // A sidebar aponta para ?aba=comercial; abrir direto na aba certa
+            // evita o pisca de carregar operação e trocar em seguida.
+            const alvo = new URLSearchParams(window.location.search).get('aba');
+            if(alvo === 'comercial'){
+                abaAtiva = 'comercial';
+                document.querySelectorAll('.aba').forEach(b =>
+                    b.classList.toggle('on', b.getAttribute('data-aba') === 'comercial'));
+                document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
+                document.getElementById('abaComercial').classList.add('on');
+                carregarComercial();
+            } else {
+                carregarOperacao();
+            }
+        });
 
         function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
         function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
@@ -280,6 +294,13 @@
             document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
             document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.add('on');
             atualizarSub();
+            // Mantém a URL coerente com a aba: recarregar a página volta ao mesmo lugar.
+            try{
+                const u = new URL(window.location.href);
+                if(a === 'comercial') u.searchParams.set('aba','comercial');
+                else u.searchParams.delete('aba');
+                window.history.replaceState({}, '', u);
+            }catch(e){}
             if(a === 'comercial' && !com) carregarComercial();
         }
         function atualizarSub(){
