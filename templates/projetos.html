@@ -749,6 +749,21 @@
             border-width:0 2px 2px 0; transform:rotate(45deg) translate(-1px,-1px); }
         .enc-t{ font-size:13px; font-weight:600; display:block; }
         .enc-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.45; display:block; margin-top:3px; }
+
+        /* ===== ABAS DE SUBDIVISÃO ===== */
+        .sub-abas{ display:flex; gap:2px; padding:0 22px; background:#FFF;
+            border-bottom:1px solid #E4E4EA; overflow-x:auto; }
+        .sub-abas::-webkit-scrollbar{ display:none; }
+        .sub-aba{ font-size:12.5px; font-weight:550; padding:11px 14px; color:#7C7C88;
+            cursor:pointer; border:none; background:none; border-bottom:2px solid transparent;
+            white-space:nowrap; display:flex; align-items:center; gap:7px; transition:.14s;
+            font-family:inherit; }
+        .sub-aba:hover{ color:#56565F; }
+        .sub-aba.on{ color:#17171A; font-weight:650; border-bottom-color:#6C5CE7; }
+        .sub-n{ font-size:10px; font-weight:600; padding:1px 7px; border-radius:99px;
+            background:#F7F7F9; color:#7C7C88; font-family:'IBM Plex Mono',monospace; }
+        .sub-aba.on .sub-n{ background:#F1EFFE; color:#6C5CE7; }
+        @media(max-width:900px){ .sub-abas{ padding:0 16px; } }
 </style>
 </head>
 <body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
@@ -777,6 +792,8 @@
         </div>
         <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
+
+    <div class="sub-abas" id="abasSub" style="display:none"></div>
 
     <div class="cmd">
         <span class="cmd-titulo" id="tituloWorkspace">Carregando...</span>
@@ -1138,11 +1155,131 @@
 
     <script>
         const QUADRO_ATUAL = "{{ quadro_atual }}";
+        const SUB_INICIAL  = "{{ sub_atual }}";
+
+        /* ==========================================================
+           SUBDIVISÕES
+           Famílias com mais de um quadro mostram abas. "Todos" é a
+           primeira e responde como a família está no conjunto —
+           pergunta que some se cada subdivisão virar item separado
+           na barra lateral.
+           ========================================================== */
+        const SUBQUADROS = {
+            rhestrategico: [
+                ['mensalista','Mensalista','Acompanhamento contínuo'],
+                ['pccs','PCCS','Plano de Cargos, Carreiras e Salários'],
+                ['pco','PCO','Pesquisa de Clima Organizacional'],
+                ['gd','GD','Gestão de Desempenho']
+            ],
+            educacao: [
+                ['reaprendendo','Reaprendendo','Programa de formação'],
+                ['liderar','Liderar','Programa de liderança'],
+                ['personalizado','Personalizado','Programa sob medida']
+            ],
+            cxdata: [
+                ['pontual','Pontual','Entrega única'],
+                ['mensalista','Mensalista','Acompanhamento contínuo']
+            ],
+            rhinterno: [
+                ['endomarketing','Endomarketing','Comunicação e engajamento'],
+                ['admissao','Admissão','Entrada de pessoas'],
+                ['demissao','Demissão','Saída de pessoas']
+            ]
+        };
+        const SUBS = SUBQUADROS[QUADRO_ATUAL] || [];
+        const SUB_PADRAO = SUBS.length ? SUBS[0][0] : null;
+        let subAtual = (SUB_INICIAL && SUBS.some(s => s[0] === SUB_INICIAL)) ? SUB_INICIAL : '';
+
+        /* As fases do RH Estratégico Mensalista são frentes de trabalho
+           (PCCS, Gestão de Clima, ...), não etapas. Já um PCCS vendido
+           avulso é projeto com começo, meio e fim — por isso as
+           subdivisões pontuais têm fases próprias. */
+        const FASES_SIMPLES = [
+            { id:'Backlog',      nome:'Backlog',      cor:'var(--tinta-3)' },
+            { id:'Em Andamento', nome:'Em Andamento', cor:'var(--acao)' },
+            { id:'Pausado',      nome:'Pausado',      cor:'var(--atencao)' },
+            { id:'Finalizado',   nome:'Finalizado',   cor:'var(--ok)' },
+            { id:'Cancelado',    nome:'Cancelado',    cor:'var(--critico)' }
+        ];
+        const FASES_POR_SUB = {
+            rhestrategico: { pccs: FASES_SIMPLES, pco: FASES_SIMPLES, gd: FASES_SIMPLES }
+        };
+        function fasesDaAba(){
+            return (FASES_POR_SUB[QUADRO_ATUAL] || {})[subAtual] || cfg.colunas;
+        }
+
+        function nomeSub(chave){
+            const s = SUBS.find(x => x[0] === chave);
+            return s ? s[1] : '';
+        }
+        // Card sem subquadro pertence à subdivisão padrão da família:
+        // é o que impede que a migração deixe cards invisíveis.
+        function subDoCard(p){ return p.subquadro || SUB_PADRAO; }
+
+        function renderAbasSub(){
+            const barra = document.getElementById('abasSub');
+            if(!barra) return;
+            if(!SUBS.length){ barra.style.display = 'none'; return; }
+            const base = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
+            const ativo = p => p.status !== 'Finalizado' && p.status !== 'Cancelado';
+            const conta = s => base.filter(p => ativo(p) && subDoCard(p) === s).length;
+            barra.style.display = 'flex';
+            barra.innerHTML =
+                `<button class="sub-aba ${!subAtual?'on':''}" onclick="trocarSub('')">
+                    Todos<span class="sub-n">${base.filter(ativo).length}</span></button>` +
+                SUBS.map(([c,n,d]) => `<button class="sub-aba ${subAtual===c?'on':''}"
+                    onclick="trocarSub('${c}')" title="${d}">
+                    ${n}<span class="sub-n">${conta(c)}</span></button>`).join('');
+        }
+
+        function trocarSub(s){
+            subAtual = s;
+            // A URL acompanha: recarregar volta para a mesma aba.
+            try{ window.history.replaceState({}, '', '/board/' + QUADRO_ATUAL + (s ? '/' + s : '')); }catch(e){}
+            renderizarProjetos();
+        }
         const NIVEL_ACESSO = "{{ nivel_acesso }}";
         const EH_CLIENTE = NIVEL_ACESSO === 'cliente';
         const USUARIO_LOGADO = "{{ usuario_nome }}";
 
         const WORKSPACES = {
+            'educacao': {
+                titulo: 'Educação',
+                areasPermitidas: ['Educação'],
+                atividades: [
+                    "Diagnóstico de necessidade", "Desenho do programa",
+                    "Produção de material", "Aplicação de turma",
+                    "Avaliação de aprendizagem", "Relatório de resultados",
+                    "Reunião com cliente", "Reunião interna",
+                    "Planejamento de atividades (semanal/diário)"
+                ],
+                statusInicial: 'Backlog',
+                colunas: [
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' },
+                    { id: 'Cancelado', nome: 'Cancelado', cor: 'var(--critico)' }
+                ]
+            },
+            'tecnologia': {
+                titulo: 'Tecnologia',
+                areasPermitidas: ['Tecnologia'],
+                atividades: [
+                    "Desenvolvimento", "Correção de erro", "Manutenção de sistema",
+                    "Levantamento de requisitos", "Testes e homologação",
+                    "Implantação", "Suporte interno", "Reunião interna",
+                    "Planejamento de atividades (semanal/diário)"
+                ],
+                statusInicial: 'Backlog',
+                colunas: [
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
+                    { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' },
+                    { id: 'Cancelado', nome: 'Cancelado', cor: 'var(--critico)' }
+                ]
+            },
             'cxdata': {
                 titulo: 'CX Data',
                 areasPermitidas: ['CX Data'],
@@ -1163,7 +1300,8 @@
                     { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
-                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' },
+                    { id: 'Cancelado', nome: 'Cancelado', cor: 'var(--critico)' }
                 ]
             },
             'comercial': {
@@ -1289,7 +1427,8 @@
                     { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
-                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
+                    { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' },
+                    { id: 'Cancelado', nome: 'Cancelado', cor: 'var(--critico)' }
                 ]
             },
             'geral': {
@@ -1343,7 +1482,7 @@
                 statusInicial: 'Backlog',
                 colunas: [
                     { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
-                    { id: 'Backlog', nome: 'Kick-off', cor: '#3b82f6' },
+                    { id: 'Kick-off', nome: 'Kick-off', cor: '#3b82f6' },
                     { id: 'Experiência do Colaborador', nome: 'Experiência do Colaborador', cor: '#8b5cf6' },
                     { id: 'Employer Branding', nome: 'Employer Branding', cor: '#f59e0b' },
                     { id: 'R&S', nome: 'R&S', cor: '#06b6d4' },
@@ -1982,6 +2121,8 @@
 
         function renderizarProjetos() {
             let projetosFiltrados = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
+            if(subAtual) projetosFiltrados = projetosFiltrados.filter(p => subDoCard(p) === subAtual);
+            renderAbasSub();
             atualizarDropdownsFiltro(projetosFiltrados);
 
             const fOrdenacao = document.getElementById('filtroOrdenacao').value;
