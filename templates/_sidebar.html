@@ -124,11 +124,11 @@ html body{
    ============================================================ */
 /* ============================================================
    ÍCONES
-   Com a sidebar aberta, só o Início mostra ícone — o texto basta
-   e a lista fica mais calma. No modo estreito eles reaparecem,
-   porque ali o ícone é a única coisa que resta para navegar.
+   Com a sidebar aberta, nenhum ícone dos itens aparece.
+   No modo estreito eles reaparecem, porque ali o ícone é a
+   única coisa que resta para navegar.
    ============================================================ */
-.cxsidebar .cxsb-item:not([data-path="/"]) > .material-symbols-rounded,
+.cxsidebar .cxsb-item > .material-symbols-rounded,
 .cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:none; }
 
 .cxsidebar .cxsb-item:not([data-path="/"]){ padding-left:14px; }
@@ -200,6 +200,7 @@ html body{
     transition:transform .24s cubic-bezier(.4,0,.2,1);
     box-shadow:none;
   }
+
   .cxsidebar.gaveta{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.2); }
   .cxsb-toggle{ display:none; }
 
@@ -463,6 +464,7 @@ html body{
       if (l) listaAtiva = l.id;
     }
   });
+
   document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(s){
     if (caminho === s.getAttribute('data-path')) {
       s.classList.add('ativo');
