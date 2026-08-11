@@ -735,7 +735,21 @@
         .md-opcao-txt b { display: block; font-size: 13px; font-weight: 600; color: var(--tinta); letter-spacing: -.1px; }
         .md-opcao-txt small { display: block; font-size: 11.5px; color: var(--tinta-3); font-weight: 500; line-height: 1.45; margin-top: 2px; }
         .md-opcao-ico { font-size: 18px; color: var(--tinta-3); flex-shrink: 0; }
-    </style>
+    
+        /* janela de encerramento */
+        .enc-op{ display:flex; align-items:flex-start; gap:11px; padding:12px 13px; width:100%;
+            background:var(--papel-2); border-radius:var(--r-ctrl); cursor:pointer; transition:.14s;
+            box-shadow:inset 0 0 0 1px transparent; }
+        .enc-op:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); }
+        .enc-cx{ width:17px; height:17px; min-width:17px; border-radius:5px; margin-top:1px;
+            box-shadow:inset 0 0 0 1.5px var(--linha-2); transition:.14s;
+            display:flex; align-items:center; justify-content:center; }
+        .enc-cx.on{ background:var(--acao); box-shadow:none; }
+        .enc-cx.on::after{ content:''; width:4px; height:8px; border:solid #fff;
+            border-width:0 2px 2px 0; transform:rotate(45deg) translate(-1px,-1px); }
+        .enc-t{ font-size:13px; font-weight:600; display:block; }
+        .enc-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.45; display:block; margin-top:3px; }
+</style>
 </head>
 <body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
 
@@ -1144,9 +1158,9 @@
                     "Reunião de alinhamento",
                     "Planejamento de atividades (semanal/diário)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
@@ -1167,9 +1181,9 @@
                     "Reunião de alinhamento",
                     "Planejamento de atividades (semanal/diário)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
@@ -1203,9 +1217,9 @@
                     "Reunião de alinhamento",
                     "Planejamento de atividades (semanal/diário)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
@@ -1223,9 +1237,9 @@
                     "Reunião de alinhamento",
                     "Planejamento de atividades (semanal/diário)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
@@ -1246,9 +1260,9 @@
                     "Reunião de alinhamento",
                     "Planejamento de atividades (semanal/diário)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
@@ -1270,9 +1284,9 @@
                     "Reunião de alinhamento",
                     "Planejamento de atividades (semanal/diário)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--acao)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--atencao)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: 'var(--ok)' }
@@ -1295,9 +1309,9 @@
                     "E-mail marketing — criação e disparo", "Follow up — redes sociais", "Follow up — ações de marketing",
                     "Relatório de desempenho (métricas + análise)"
                 ],
-                statusInicial: 'Não Iniciado',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Não Iniciado', nome: 'Backlog', cor: 'var(--text-main)' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--text-main)' },
                     { id: 'Em Andamento', nome: 'Em Andamento', cor: 'var(--primary-purple)' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--accent-pink)' },
                     { id: 'Finalizado', nome: 'Finalizado', cor: '#10b981' }
@@ -1326,9 +1340,10 @@
                 titulo: 'RH Estratégico',
                 areasPermitidas: ['RH Estratégico'],
                 atividades: ["Atividade Estratégica 1", "Atividade Estratégica 2"],
-                statusInicial: 'Kick-off',
+                statusInicial: 'Backlog',
                 colunas: [
-                    { id: 'Kick-off', nome: 'Kick-off', cor: '#3b82f6' },
+                    { id: 'Backlog', nome: 'Backlog', cor: 'var(--tinta-3)' },
+                    { id: 'Backlog', nome: 'Kick-off', cor: '#3b82f6' },
                     { id: 'Experiência do Colaborador', nome: 'Experiência do Colaborador', cor: '#8b5cf6' },
                     { id: 'Employer Branding', nome: 'Employer Branding', cor: '#f59e0b' },
                     { id: 'R&S', nome: 'R&S', cor: '#06b6d4' },
@@ -1765,20 +1780,102 @@
             const colunaContainer = destino.closest('.kanban-column');
             const novoStatus = colunaContainer.getAttribute('data-status');
             
+            if(pedirEncerramento(id, novoStatus)) return;
             try {
-                await fetch(`/api/projetos/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: novoStatus })
-                });
+                await salvarStatus(id, novoStatus);
             } catch (error) { 
                 console.error("Erro ao mover card", error); 
                 showToast("Erro de conexão ao mover o card.", "error");
             }
         }
 
+        /* ==========================================================
+           ENCERRAMENTO
+           Finalizar não é só mudar de coluna: pode gerar pesquisa de
+           satisfação e cobrança. Como nem todo produto gera as duas,
+           quem finaliza escolhe — automação que cria cobrança indevida
+           dá mais trabalho que ausência de automação.
+           ========================================================== */
+        const AREAS_RELACIONAMENTO = ['Recrutamento e seleção', 'RH Estratégico', 'CX Data'];
+        let encPendente = null;
+
+        function salvarStatus(projetoId, novoStatus, encerramento){
+            const corpo = { status: novoStatus };
+            if(encerramento) corpo.encerramento = encerramento;
+            return fetch(`/api/projetos/${projetoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(corpo)
+            });
+        }
+
+        // Devolve true se abriu a janela (e o chamador deve parar).
+        function pedirEncerramento(projetoId, novoStatus){
+            if(novoStatus !== 'Finalizado') return false;
+            const p = projetosGlobais.find(x => x.id === projetoId);
+            if(!p) return false;
+            encPendente = { id: projetoId, status: novoStatus };
+            const sugereRel = AREAS_RELACIONAMENTO.includes(p.area);
+            document.getElementById('encNome').innerText = p.nome_projeto || 'este projeto';
+            document.getElementById('encEmpresa').innerText = p.empresa || 'sem cliente';
+            marcarEnc('encRel', sugereRel);
+            marcarEnc('encCob', false);
+            document.getElementById('encValor').value = '';
+            document.getElementById('encDicaRel').innerText = sugereRel
+                ? 'Sugerido: projetos desta área costumam render nova proposta.'
+                : 'Não sugerido para esta área — marque se quiser mesmo assim.';
+            document.getElementById('encLinhaValor').style.display = 'none';
+            document.getElementById('modalEncerrar').classList.add('show');
+            return true;
+        }
+
+        function marcarEnc(id, valor){
+            const el = document.getElementById(id);
+            el.classList.toggle('on', valor);
+            el.setAttribute('aria-checked', valor ? 'true' : 'false');
+            if(id === 'encCob')
+                document.getElementById('encLinhaValor').style.display = valor ? 'block' : 'none';
+        }
+        function alternarEnc(id){
+            const el = document.getElementById(id);
+            marcarEnc(id, !el.classList.contains('on'));
+        }
+
+        async function confirmarEncerrar(){
+            if(!encPendente) return;
+            const rel = document.getElementById('encRel').classList.contains('on');
+            const cob = document.getElementById('encCob').classList.contains('on');
+            const valorTxt = document.getElementById('encValor').value.replace(/[^\d,.-]/g,'').replace(',','.');
+            const { id, status } = encPendente;
+            encPendente = null;
+            document.getElementById('modalEncerrar').classList.remove('show');
+
+            const proj = projetosGlobais.find(p => p.id === id);
+            if(proj) proj.status = status;
+            renderizarProjetos();
+            try{
+                await salvarStatus(id, status, {
+                    relacionamento: rel, cobranca: cob,
+                    valor: cob && valorTxt ? parseFloat(valorTxt) : null
+                });
+                const partes = [];
+                if(rel) partes.push('entrou no Relacionamento');
+                if(cob) partes.push('cobrança criada');
+                showToast(partes.length ? 'Finalizado · ' + partes.join(' · ') : 'Projeto finalizado', 'success');
+            }catch(e){
+                showToast('Erro ao finalizar no servidor', 'error');
+            }
+        }
+
+        function cancelarEncerrar(){
+            encPendente = null;
+            document.getElementById('modalEncerrar').classList.remove('show');
+            renderizarProjetos();   // devolve o card para onde estava
+        }
+
         // --- MÁGICA: ALTERAR STATUS DIRETO NA LISTA ---
         async function alterarStatusLista(projetoId, novoStatus) {
+            if(pedirEncerramento(projetoId, novoStatus)) return;
             showToast("Atualizando status...", "default");
             
             // Atualiza visualmente na hora (Optimistic UI) para não precisar piscar a tela inteira
@@ -2936,6 +3033,7 @@
             if (!id) return;
             const p = projetosGlobais.find(x => x.id === id);
             if (!p || p.status === novoStatus) return;
+            if (pedirEncerramento(id, novoStatus)) return;
             const anterior = p.status;
             p.status = novoStatus;
             if (visaoAtual === 'kanban') selecionarFase(novoStatus);
@@ -3083,6 +3181,53 @@
                 <div class="folha-tit" id="folhaTitulo"></div>
             </div>
             <div class="folha-lista" id="folhaLista"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalEncerrar" onclick="if(event.target.id==='modalEncerrar')cancelarEncerrar()">
+        <div class="modal" style="max-width:440px">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow">Finalizar projeto</div>
+                    <div class="md-tit" id="encNome">—</div>
+                    <div style="font-size:12px;color:var(--tinta-3);margin-top:3px" id="encEmpresa"></div>
+                </div>
+                <button class="md-x" onclick="cancelarEncerrar()" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <div style="font-size:12.5px;color:var(--tinta-2);line-height:1.55">
+                    O que deve acontecer com este cliente agora?
+                </div>
+
+                <button class="enc-op" onclick="alternarEnc('encRel')">
+                    <span class="enc-cx" id="encRel" role="checkbox" aria-checked="false"></span>
+                    <span style="flex:1;min-width:0;text-align:left">
+                        <span class="enc-t">Entrar no Relacionamento</span>
+                        <span class="enc-d" id="encDicaRel"></span>
+                    </span>
+                </button>
+
+                <button class="enc-op" onclick="alternarEnc('encCob')">
+                    <span class="enc-cx" id="encCob" role="checkbox" aria-checked="false"></span>
+                    <span style="flex:1;min-width:0;text-align:left">
+                        <span class="enc-t">Gerar cobrança no Financeiro</span>
+                        <span class="enc-d">Marque só se esta entrega tem faturamento a emitir.</span>
+                    </span>
+                </button>
+
+                <div id="encLinhaValor" style="display:none">
+                    <div class="ig">
+                        <label for="encValor">Valor a faturar</label>
+                        <input type="text" id="encValor" placeholder="R$ 0,00">
+                    </div>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" style="margin-left:auto" onclick="cancelarEncerrar()">Cancelar</button>
+                <button class="btn btn-acao" onclick="confirmarEncerrar()">
+                    <span class="material-symbols-rounded">check</span>Finalizar</button>
+            </div>
         </div>
     </div>
 
