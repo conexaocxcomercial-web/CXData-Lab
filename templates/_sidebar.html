@@ -124,11 +124,11 @@ html body{
    ============================================================ */
 /* ============================================================
    ÍCONES
-   Com a sidebar aberta, nenhum ícone dos itens aparece.
-   No modo estreito eles reaparecem, porque ali o ícone é a
-   única coisa que resta para navegar.
+   Com a sidebar aberta, só o Início mostra ícone — o texto basta
+   e a lista fica mais calma. No modo estreito eles reaparecem,
+   porque ali o ícone é a única coisa que resta para navegar.
    ============================================================ */
-.cxsidebar .cxsb-item > .material-symbols-rounded,
+.cxsidebar .cxsb-item:not([data-path="/"]) > .material-symbols-rounded,
 .cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:none; }
 
 .cxsidebar .cxsb-item:not([data-path="/"]){ padding-left:14px; }
@@ -200,7 +200,6 @@ html body{
     transition:transform .24s cubic-bezier(.4,0,.2,1);
     box-shadow:none;
   }
-
   .cxsidebar.gaveta{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.2); }
   .cxsb-toggle{ display:none; }
 
@@ -248,9 +247,9 @@ html body{
       <span class="cxsb-item-txt">Início</span>
     </div>
     {% if not eh_person or 'feed' in perm_modulos %}
-    <div class="cxsb-item" data-path="/feed" data-tip="Feed" onclick="location.href='/feed'">
+    <div class="cxsb-item" data-path="/feed" data-tip="Mural" onclick="location.href='/feed'">
       <span class="material-symbols-rounded">campaign</span>
-      <span class="cxsb-item-txt">Feed</span>
+      <span class="cxsb-item-txt">Mural</span>
     </div>
     {% endif %}
 
@@ -464,7 +463,6 @@ html body{
       if (l) listaAtiva = l.id;
     }
   });
-
   document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(s){
     if (caminho === s.getAttribute('data-path')) {
       s.classList.add('ativo');
