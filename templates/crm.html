@@ -381,7 +381,12 @@
             .modal{ max-width:none; border-radius:18px 18px 0 0; }
             .obj-grade{ grid-template-columns:1fr; }
         }
-    </style>
+    
+        .qd-sub{ font-size:10.5px; font-weight:600; padding:2px 6px; border-radius:6px;
+            background:#FFF; color:#56565F; box-shadow:inset 0 0 0 1px #E4E4EA;
+            margin-left:6px; cursor:pointer; font-family:inherit; }
+        .qd.on .qd-sub{ box-shadow:inset 0 0 0 1px #6C5CE7; color:#6C5CE7; }
+</style>
 </head>
 <body>
     <div class="top-bar">
@@ -778,28 +783,39 @@
         const ORIGENS = ['Indicação','Site','LinkedIn','Instagram','Prospecção fria',
                          'Evento','Cliente antigo','Outra'];
 
-        // Quadros de trabalho, para a janela de fechamento.
+        // Quadros oferecidos na janela de fechamento: só entregas ao
+        // cliente, mais o Financeiro para a cobrança. Um contrato não
+        // tem por que virar card de Endomarketing.
         const QUADROS_TRABALHO = [
             ['recrutamento','Recrutamento e Seleção'], ['rhestrategico','RH Estratégico'],
-            ['projetos','Projetos'], ['cxdata','CX Data'], ['rhinterno','RH Interno'],
-            ['comercial','Comercial'], ['marketing','Marketing'], ['financeiro','Adm/Financeiro']
+            ['educacao','Educação'], ['cxdata','CX Data'], ['projetos','Projetos'],
+            ['financeiro','Adm/Financeiro']
         ];
+        // Subdivisões oferecidas quando o quadro tem mais de um destino.
+        const SUBS_FECHAMENTO = {
+            rhestrategico: [['mensalista','Mensalista'],['pccs','PCCS'],['pco','PCO'],['gd','GD']],
+            educacao: [['reaprendendo','Reaprendendo'],['liderar','Liderar'],['personalizado','Personalizado']],
+            cxdata: [['pontual','Pontual'],['mensalista','Mensalista']]
+        };
 
-        // Produtos que a Conexão vende. OKR saiu: é ferramenta interna, não entrega.
-        // Clima e Desempenho saíram junto com os módulos.
-        const PRODUTOS = ['Recrutamento e Seleção','RH Estratégico','CX Data',
-                          'Consultoria','Treinamento','Outro'];
-        // Quadro sugerido ao fechar. O closer confirma ou troca.
+        // Produtos que a Conexão vende, alinhados aos quadros de entrega.
+        // OKR saiu: é ferramenta interna, não entrega.
+        const PRODUTOS = ['Recrutamento e Seleção','RH Estratégico mensal','PCCS','PCO',
+                          'Gestão de Desempenho','Educação','CX Data','Outro'];
+        // Quadro e subdivisão sugeridos ao fechar. O closer confirma ou troca.
         const PRODUTO_QUADRO = {
-            'Recrutamento e Seleção':'recrutamento',
-            'RH Estratégico':'rhestrategico',
-            'CX Data':'cxdata',
-            'Consultoria':'projetos',
-            'Treinamento':'projetos',
-            'Outro':'projetos'
+            'Recrutamento e Seleção': ['recrutamento', null],
+            'RH Estratégico mensal':  ['rhestrategico', 'mensalista'],
+            'PCCS':                   ['rhestrategico', 'pccs'],
+            'PCO':                    ['rhestrategico', 'pco'],
+            'Gestão de Desempenho':   ['rhestrategico', 'gd'],
+            'Educação':               ['educacao', 'reaprendendo'],
+            'CX Data':                ['cxdata', 'pontual'],
+            'Outro':                  ['projetos', null]
         };
         // Produtos que voltam ao Relacionamento quando o card é finalizado
-        const PRODUTO_POS = ['Recrutamento e Seleção','RH Estratégico','CX Data'];
+        const PRODUTO_POS = ['Recrutamento e Seleção','RH Estratégico mensal','PCCS','PCO',
+                             'Gestão de Desempenho','CX Data'];
         const RESPONSAVEIS = ['Jhonattan Luiz','Gabriela Farias','Mirian Meireles','Itiana Andrade',
             'Matheus Alves','Clara Viana','Alisson Maciel','Juliete Cadete','Ana Medeiros',
             'Thallya Rodrigues','Patrick Guilherme','Bárbara Cazé'];
@@ -1132,7 +1148,7 @@
         function abrirFechamento(leadId){
             const l = leads.find(x=>String(x.id)===String(leadId)); if(!l) return;
             fechCtx = { leadId };
-            const sugerido = PRODUTO_QUADRO[l.produto] || 'projetos';
+            const [sugerido, subSugerida] = PRODUTO_QUADRO[l.produto] || ['projetos', null];
 
             document.getElementById('fcEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
             document.getElementById('fcTitulo').innerText = 'Fechar contrato';
@@ -1145,10 +1161,17 @@
             document.getElementById('fcQuadros').innerHTML = QUADROS_TRABALHO.map(([c,n]) => {
                 const marcado = (c === sugerido || c === 'financeiro');
                 const porque = c === sugerido ? 'do produto' : (c === 'financeiro' ? 'cobrança' : '');
+                const subs = SUBS_FECHAMENTO[c];
+                // Quadro com subdivisão precisa saber em qual delas o card entra.
+                const seletor = subs ? `<select class="qd-sub" data-sub-de="${escA(c)}"
+                        onclick="event.stopPropagation()" onchange="atualizarPrevia()">
+                        ${subs.map(([sc,sn]) =>
+                            `<option value="${escA(sc)}" ${c===sugerido&&sc===subSugerida?'selected':''}>${escH(sn)}</option>`
+                        ).join('')}</select>` : '';
                 return `<button type="button" class="qd ${marcado?'on':''}" data-q="${escA(c)}"
                         onclick="this.classList.toggle('on');atualizarPrevia()">
                     <span class="material-symbols-rounded">check</span>${escH(n)}
-                    ${porque?`<span class="qd-p">${porque}</span>`:''}</button>`;
+                    ${porque?`<span class="qd-p">${porque}</span>`:''}${seletor}</button>`;
             }).join('');
 
             atualizarPrevia();
@@ -1157,6 +1180,11 @@
 
         function quadrosMarcados(){
             return [...document.querySelectorAll('#fcQuadros .qd.on')].map(b=>b.getAttribute('data-q'));
+        }
+
+        function subDoQuadro(q){
+            const s = document.querySelector(`#fcQuadros [data-sub-de="${q}"]`);
+            return s ? s.value : null;
         }
 
         function atualizarPrevia(){
@@ -1212,7 +1240,7 @@
                         quantidade: qtd,
                         valor: document.getElementById('fcValor').value || null,
                         cnpj: document.getElementById('fcCnpj').value.trim(),
-                        quadros: quadrosMarcados(),
+                        quadros: quadrosMarcados().map(q => ({ quadro: q, sub: subDoQuadro(q) })),
                         criar_cliente: true
                     })});
                 if(!r.ok){ showToast(await motivoErro(r,'Não foi possível fechar o contrato.'),'error'); return; }
