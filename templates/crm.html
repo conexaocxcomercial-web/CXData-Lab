@@ -184,6 +184,32 @@
         .folha-item .marca{ margin-left:auto; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
 
         /* toast */
+        /* portão e fechamento */
+        .pt-ajuda{ font-size:12px; color:var(--tinta-2); line-height:1.55; background:var(--papel-2);
+            padding:11px 13px; border-radius:var(--r-ctrl); }
+        .ig-dica{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-top:6px; }
+        .qds{ display:flex; gap:6px; flex-wrap:wrap; }
+        .qd{ font-size:12px; font-weight:550; padding:7px 12px; border-radius:var(--r-pill);
+            background:var(--papel); color:var(--tinta-3); cursor:pointer; display:inline-flex;
+            align-items:center; gap:6px; transition:.14s; box-shadow:inset 0 0 0 1px var(--linha); }
+        .qd:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta-2); }
+        .qd .material-symbols-rounded{ font-size:14px; opacity:0; width:0; transition:.14s; }
+        .qd.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600;
+            box-shadow:inset 0 0 0 1px var(--acao); }
+        .qd.on .material-symbols-rounded{ opacity:1; width:14px; }
+        .qd-p{ font-size:9.5px; font-weight:600; padding:1px 6px; border-radius:99px;
+            background:rgba(108,92,231,.14); }
+        .previa{ background:var(--acao-fraco); border-radius:var(--r-ctrl); padding:13px 14px; }
+        .previa-t{ font-size:11px; font-weight:650; color:var(--acao); text-transform:uppercase;
+            letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+        .previa-t .material-symbols-rounded{ font-size:14px; }
+        .pv{ display:flex; align-items:flex-start; gap:9px; padding:5px 0; font-size:12.5px;
+            color:#3C3489; line-height:1.5; }
+        .pv .material-symbols-rounded{ font-size:15px; color:var(--acao); flex-shrink:0; margin-top:1px; }
+        .pv b{ font-weight:650; }
+        .ig3{ display:grid; grid-template-columns:1fr 108px; gap:12px; }
+        @media(max-width:520px){ .ig3{ grid-template-columns:1fr; } }
+
         .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
             display:flex; flex-direction:column; gap:9px; }
         .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
@@ -537,6 +563,72 @@
     </div>
 
     <!-- MODAL DE OBJEÇÃO -->
+    <!-- PORTÃO: dado obrigatório antes de avançar -->
+    <div class="modal-overlay" id="modalPortao">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow" id="ptEyebrow"></div>
+                    <div class="md-tit" id="ptTitulo"></div>
+                </div>
+                <button class="md-x" onclick="cancelarPortao()" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <div class="pt-ajuda" id="ptAjuda"></div>
+                <div id="ptCampos" style="display:flex;flex-direction:column;gap:14px"></div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="cancelarPortao()">Cancelar</button>
+                <button class="btn btn-acao" id="ptSalvar" onclick="confirmarPortao()">
+                    <span class="material-symbols-rounded">check</span>Salvar e mover</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FECHAMENTO: abre os quadros de trabalho -->
+    <div class="modal-overlay" id="modalFechamento">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow" id="fcEyebrow"></div>
+                    <div class="md-tit" id="fcTitulo">Fechar contrato</div>
+                </div>
+                <button class="md-x" onclick="cancelarFechamento()" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <div class="ig3">
+                    <div class="ig"><label for="fcProjeto">Nome do projeto</label>
+                        <input type="text" id="fcProjeto" oninput="atualizarPrevia()"></div>
+                    <div class="ig"><label for="fcQtd">Quantidade</label>
+                        <input type="number" id="fcQtd" min="1" max="50" value="1" oninput="atualizarPrevia()"></div>
+                </div>
+                <div class="ig3">
+                    <div class="ig"><label for="fcCnpj">CNPJ</label>
+                        <input type="text" id="fcCnpj" placeholder="00.000.000/0001-00"></div>
+                    <div class="ig"><label for="fcValor">Valor</label>
+                        <input type="number" id="fcValor" step="0.01" min="0" oninput="atualizarPrevia()"></div>
+                </div>
+                <div class="ig">
+                    <label>Quadros que recebem este contrato</label>
+                    <div class="qds" id="fcQuadros"></div>
+                    <div class="ig-dica">O quadro do produto e o Financeiro já vêm marcados.
+                        Marque outros se a execução envolver mais áreas.</div>
+                </div>
+                <div class="previa">
+                    <div class="previa-t"><span class="material-symbols-rounded">bolt</span>O que vai acontecer</div>
+                    <div id="fcPrevia"></div>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="cancelarFechamento()">Cancelar</button>
+                <button class="btn btn-ok" id="fcSalvar" onclick="confirmarFechamento()">
+                    <span class="material-symbols-rounded">check</span>Fechar contrato</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalObjecao">
         <div class="modal" style="max-width:440px">
             <div class="md-head">
@@ -578,16 +670,46 @@
            Colunas de saída (ganho / nutrição) disparam passagem para
            outro funil — a regra fica aqui e no backend, que valida.
            ========================================================== */
+        /* ==========================================================
+           PORTÕES
+           Movimentos que exigem preencher algo antes de avançar.
+           Tudo que é pedido aqui fica no próprio lead — é dado que
+           ficaria vazio para sempre se não fosse cobrado na hora.
+           ========================================================== */
+        const PORTOES = [
+            { funil:'qualificacao', para:'Contato',
+              titulo:'De onde veio este lead?',
+              ajuda:'Sem a origem, o painel não sabe qual canal converte.',
+              campos:[ {k:'origem', r:'Origem', tipo:'select', obrig:true} ] },
+            { funil:'qualificacao', para:'Ganho',
+              titulo:'O lead passa para o closer',
+              ajuda:'Sem contato e contexto, quem recebe recomeça a conversa do zero.',
+              campos:[ {k:'telefone', r:'Telefone', tipo:'tel', obrig:true},
+                       {k:'email', r:'E-mail', tipo:'email', obrig:true},
+                       {k:'anotacoes', r:'O que já sabemos', tipo:'textarea', obrig:true,
+                        dica:'Necessidade, quem decide, prazo — o que ajudar o closer.'} ] },
+            { funil:'fechamento', para:'Proposta',
+              titulo:'Proposta apresentada',
+              ajuda:'O valor daqui alimenta o painel comercial; o CNPJ vira o cadastro do cliente.',
+              campos:[ {k:'canal_proposta', r:'Como foi apresentada', tipo:'select', obrig:true,
+                        opcoes:['E-mail','WhatsApp','Reunião online','Reunião presencial']},
+                       {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true},
+                       {k:'cnpj', r:'CNPJ', tipo:'text', obrig:true} ] }
+        ];
+        function portaoDe(funil, coluna){
+            return PORTOES.find(p => p.funil===funil && p.para===coluna) || null;
+        }
+
         const FUNIS = {
             qualificacao: {
                 titulo:'Qualificação',
                 colunas:[
                     { id:'Prospecção',  cor:'#94A3B8' },
                     { id:'Contato',     cor:'#0EA5E9' },
-                    { id:'Follow up 1', cor:'#38BDF8' },
-                    { id:'Follow up 2', cor:'#7DD3FC' },
-                    { id:'Follow up 3', cor:'#A5E0FC' },
-                    { id:'Follow up 4', cor:'#C7ECFD' },
+                    { id:'Follow up 1', cor:'#38BDF8', fup:1 },
+                    { id:'Follow up 2', cor:'#5AC8F5', fup:2 },
+                    { id:'Follow up 3', cor:'#7DD3FC', fup:3 },
+                    { id:'Follow up 4', cor:'#A5DEF9', fup:4, ultimoFup:true },
                     { id:'Ganho',       cor:'#0E9F6E', saida:'fechamento' },
                     { id:'Nutrição',    cor:'#C2660B', saida:'nutricao', objecao:true },
                     { id:'Perdido',     cor:'#D42F2F', objecao:true }
@@ -599,25 +721,84 @@
                     { id:'Agendamento', cor:'#6366F1' },
                     { id:'Proposta',    cor:'#8B5CF6' },
                     { id:'Negociação',  cor:'#A855F7' },
-                    { id:'Fechamento',  cor:'#0E9F6E', ganhoFinal:true },
+                    { id:'Ganho',       cor:'#0E9F6E', ganhoFinal:true },
                     { id:'Nutrição',    cor:'#C2660B', saida:'nutricao', objecao:true }
+                ]
+            },
+            relacionamento: {
+                titulo:'Relacionamento',
+                colunas:[
+                    { id:'Backlog',                cor:'#94A3B8' },
+                    { id:'Pesquisa de satisfação', cor:'#DB2777' },
+                    { id:'Follow up 1',            cor:'#EC4899', fup:1 },
+                    { id:'Follow up 2',            cor:'#F062A6', fup:2 },
+                    { id:'Follow up 3',            cor:'#F472B6', fup:3 },
+                    { id:'Follow up 4',            cor:'#F9A8D4', fup:4, ultimoFup:true },
+                    { id:'Ganho',                  cor:'#0E9F6E', saida:'fechamento' },
+                    { id:'Nutrição',               cor:'#C2660B', saida:'nutricao', objecao:true }
                 ]
             },
             nutricao: {
                 titulo:'Nutrição',
                 colunas:[
-                    { id:'Backlog', cor:'#94A3B8' },
-                    ...Array.from({length:10}, (_,i)=>({ id:'Contato '+(i+1), cor:'#E5BE7F' })),
-                    { id:'Ganho',   cor:'#0E9F6E', saida:'fechamento' },
-                    { id:'Perdido', cor:'#D42F2F', objecao:true }
+                    { id:'Backlog',    cor:'#94A3B8' },
+                    { id:'Contato 1',  cor:'#C2660B', fup:1 },
+                    { id:'Contato 2',  cor:'#CB7118', fup:2 },
+                    { id:'Contato 3',  cor:'#D47C25', fup:3 },
+                    { id:'Contato 4',  cor:'#DD8732', fup:4 },
+                    { id:'Contato 5',  cor:'#E5923F', fup:5 },
+                    { id:'Contato 6',  cor:'#E89D4F', fup:6 },
+                    { id:'Contato 7',  cor:'#EBA85F', fup:7 },
+                    { id:'Contato 8',  cor:'#EEB36F', fup:8 },
+                    { id:'Contato 9',  cor:'#F1BE7F', fup:9 },
+                    { id:'Contato 10', cor:'#F4C98F', fup:10, ultimoFup:true },
+                    { id:'Ganho',      cor:'#0E9F6E', saida:'fechamento' },
+                    { id:'Encerrado',  cor:'#7C7C88', objecao:true }
                 ]
             }
         };
-        // Para onde o lead cai ao mudar de funil
-        const ENTRADA = { fechamento:'Agendamento', nutricao:'Backlog', qualificacao:'Prospecção' };
+        const ENTRADA = { fechamento:'Agendamento', nutricao:'Backlog',
+                          qualificacao:'Prospecção', relacionamento:'Backlog' };
+        // A última coluna de follow up de cada funil. Chegar nela sem avançar
+        // é o sinal de que o lead esgotou as tentativas — a tela sugere a
+        // saída, mas quem move é a pessoa.
+        function ultimoFupDe(funil){
+            const c = (FUNIS[funil] || {}).colunas || [];
+            const u = c.filter(x => x.ultimoFup);
+            return u.length ? u[u.length-1].id : null;
+        }
+        function ehFup(funil, coluna){
+            const c = ((FUNIS[funil] || {}).colunas || []).find(x => x.id === coluna);
+            return c ? (c.fup || 0) : 0;
+        }
 
-        const PRODUTOS = ['Recrutamento e Seleção','RH Estratégico','Clima organizacional',
-                          'Gestão de Desempenho','OKR','CX Data','Outro'];
+        // Origens possíveis de um lead. Alimenta o "de onde vêm os que
+        // fecham" no painel comercial, por isso é lista fechada.
+        const ORIGENS = ['Indicação','Site','LinkedIn','Instagram','Prospecção fria',
+                         'Evento','Cliente antigo','Outra'];
+
+        // Quadros de trabalho, para a janela de fechamento.
+        const QUADROS_TRABALHO = [
+            ['recrutamento','Recrutamento e Seleção'], ['rhestrategico','RH Estratégico'],
+            ['projetos','Projetos'], ['cxdata','CX Data'], ['rhinterno','RH Interno'],
+            ['comercial','Comercial'], ['marketing','Marketing'], ['financeiro','Adm/Financeiro']
+        ];
+
+        // Produtos que a Conexão vende. OKR saiu: é ferramenta interna, não entrega.
+        // Clima e Desempenho saíram junto com os módulos.
+        const PRODUTOS = ['Recrutamento e Seleção','RH Estratégico','CX Data',
+                          'Consultoria','Treinamento','Outro'];
+        // Quadro sugerido ao fechar. O closer confirma ou troca.
+        const PRODUTO_QUADRO = {
+            'Recrutamento e Seleção':'recrutamento',
+            'RH Estratégico':'rhestrategico',
+            'CX Data':'cxdata',
+            'Consultoria':'projetos',
+            'Treinamento':'projetos',
+            'Outro':'projetos'
+        };
+        // Produtos que voltam ao Relacionamento quando o card é finalizado
+        const PRODUTO_POS = ['Recrutamento e Seleção','RH Estratégico','CX Data'];
         const RESPONSAVEIS = ['Jhonattan Luiz','Gabriela Farias','Mirian Meireles','Itiana Andrade',
             'Matheus Alves','Clara Viana','Alisson Maciel','Juliete Cadete','Ana Medeiros',
             'Thallya Rodrigues','Patrick Guilherme','Bárbara Cazé'];
@@ -849,6 +1030,16 @@
             const cfg = colunaCfg(funilAtual, novaColuna);
             if(!cfg) return;
 
+            // Ganho no fechamento abre a janela que cria os quadros
+            if(cfg.ganhoFinal){ abrirFechamento(leadId); return; }
+
+            // Portão: falta algum dado obrigatório para este movimento?
+            const portao = portaoDe(funilAtual, novaColuna);
+            if(portao){
+                const faltando = portao.campos.filter(c => !String(l[c.k]||'').trim());
+                if(faltando.length){ abrirPortao(leadId, novaColuna, portao, cfg.saida||null); return; }
+            }
+
             // Colunas que pedem objeção abrem o registro antes de mover
             if(cfg.objecao){
                 objCtx = { leadId, coluna:novaColuna, destinoFunil: cfg.saida || null };
@@ -861,6 +1052,178 @@
                 return;
             }
             await enviarMovimento(leadId, novaColuna, cfg.saida || null, null, null, null);
+        }
+
+        /* ==================== PORTÕES ==================== */
+        let portaoCtx = null;
+
+        function abrirPortao(leadId, coluna, portao, destinoFunil){
+            const l = leads.find(x=>String(x.id)===String(leadId)); if(!l) return;
+            portaoCtx = { leadId, coluna, portao, destinoFunil };
+            document.getElementById('ptEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
+            document.getElementById('ptTitulo').innerText = portao.titulo;
+            document.getElementById('ptAjuda').innerText = portao.ajuda;
+            document.getElementById('ptCampos').innerHTML = portao.campos.map(c => {
+                const v = escA(l[c.k] || '');
+                let campo;
+                if(c.tipo === 'textarea'){
+                    campo = `<textarea id="pt-${escA(c.k)}" rows="3"
+                        placeholder="${escA(c.dica||'')}">${escH(l[c.k]||'')}</textarea>`;
+                } else if(c.tipo === 'select'){
+                    const ops = c.opcoes || ORIGENS;
+                    campo = `<select id="pt-${escA(c.k)}"><option value="">Selecione…</option>` +
+                        ops.map(o=>`<option ${l[c.k]===o?'selected':''}>${escH(o)}</option>`).join('') + '</select>';
+                } else if(c.tipo === 'moeda'){
+                    campo = `<input id="pt-${escA(c.k)}" type="number" step="0.01" min="0"
+                        placeholder="0,00" value="${v}">`;
+                } else {
+                    campo = `<input id="pt-${escA(c.k)}" type="${escA(c.tipo)}" value="${v}">`;
+                }
+                return `<div class="ig"><label for="pt-${escA(c.k)}">${escH(c.r)}</label>${campo}
+                    ${c.dica && c.tipo!=='textarea' ? `<div class="ig-dica">${escH(c.dica)}</div>`:''}</div>`;
+            }).join('');
+            document.getElementById('modalPortao').classList.add('show');
+            const primeiro = document.getElementById('pt-' + portao.campos[0].k);
+            if(primeiro) setTimeout(()=>primeiro.focus(), 60);
+        }
+
+        function cancelarPortao(){
+            document.getElementById('modalPortao').classList.remove('show');
+            portaoCtx = null; render();
+        }
+
+        async function confirmarPortao(){
+            const c = portaoCtx; if(!c) return;
+            const valores = {};
+            for(const campo of c.portao.campos){
+                const el = document.getElementById('pt-' + campo.k);
+                const v = (el ? el.value : '').trim();
+                if(campo.obrig && !v){ showToast('Preencha: ' + campo.r, 'error'); if(el) el.focus(); return; }
+                valores[campo.k] = v;
+            }
+            const l = leads.find(x=>String(x.id)===String(c.leadId));
+            const antes = Object.assign({}, l);
+            Object.assign(l, valores);      // otimista
+            const btn = document.getElementById('ptSalvar'); btn.disabled = true;
+            try{
+                const r = await fetch('/api/leads/'+c.leadId, { method:'PUT',
+                    headers:{'Content-Type':'application/json'}, body: JSON.stringify(valores) });
+                if(!r.ok){
+                    Object.assign(l, antes); render();
+                    showToast(await motivoErro(r,'Não foi possível salvar.'),'error');
+                    return;
+                }
+            }catch(e){
+                Object.assign(l, antes); render();
+                showToast('Sem conexão com o servidor.','error');
+                return;
+            } finally { btn.disabled = false; }
+            document.getElementById('modalPortao').classList.remove('show');
+            portaoCtx = null;
+            await enviarMovimento(c.leadId, c.coluna, c.destinoFunil, null, null, null);
+        }
+
+        /* ==================== FECHAMENTO ==================== */
+        let fechCtx = null;
+
+        function abrirFechamento(leadId){
+            const l = leads.find(x=>String(x.id)===String(leadId)); if(!l) return;
+            fechCtx = { leadId };
+            const sugerido = PRODUTO_QUADRO[l.produto] || 'projetos';
+
+            document.getElementById('fcEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
+            document.getElementById('fcTitulo').innerText = 'Fechar contrato';
+            document.getElementById('fcProjeto').value = l.produto ? (l.produto + ' · ' + (l.empresa||'')) : (l.empresa||'');
+            document.getElementById('fcValor').value = l.valor_estimado || '';
+            document.getElementById('fcQtd').value = 1;
+            document.getElementById('fcCnpj').value = l.cnpj || '';
+
+            // Quadros: o do produto e o Financeiro já vêm marcados.
+            document.getElementById('fcQuadros').innerHTML = QUADROS_TRABALHO.map(([c,n]) => {
+                const marcado = (c === sugerido || c === 'financeiro');
+                const porque = c === sugerido ? 'do produto' : (c === 'financeiro' ? 'cobrança' : '');
+                return `<button type="button" class="qd ${marcado?'on':''}" data-q="${escA(c)}"
+                        onclick="this.classList.toggle('on');atualizarPrevia()">
+                    <span class="material-symbols-rounded">check</span>${escH(n)}
+                    ${porque?`<span class="qd-p">${porque}</span>`:''}</button>`;
+            }).join('');
+
+            atualizarPrevia();
+            document.getElementById('modalFechamento').classList.add('show');
+        }
+
+        function quadrosMarcados(){
+            return [...document.querySelectorAll('#fcQuadros .qd.on')].map(b=>b.getAttribute('data-q'));
+        }
+
+        function atualizarPrevia(){
+            const qtd = Math.max(1, parseInt(document.getElementById('fcQtd').value) || 1);
+            const nome = document.getElementById('fcProjeto').value.trim() || 'Projeto';
+            const valor = document.getElementById('fcValor').value;
+            const marcados = quadrosMarcados();
+            const linhas = [];
+            marcados.filter(q => q !== 'financeiro').forEach(q => {
+                const n = (QUADROS_TRABALHO.find(x=>x[0]===q)||[])[1] || q;
+                linhas.push(`<div class="pv"><span class="material-symbols-rounded">add_task</span>
+                    <span><b>${qtd} ${qtd===1?'card':'cards'}</b> em ${escH(n)}, no Backlog
+                    ${qtd>1?`<br><span style="opacity:.72">${escH(nome)} (1/${qtd}) … (${qtd}/${qtd})</span>`:''}</span></div>`);
+            });
+            if(marcados.includes('financeiro')){
+                linhas.push(`<div class="pv"><span class="material-symbols-rounded">receipt_long</span>
+                    <span><b>1 card</b> em Adm/Financeiro para cobrança${valor?' de '+moedaBR(valor):''}</span></div>`);
+            }
+            linhas.push(`<div class="pv"><span class="material-symbols-rounded">person_alert</span>
+                <span>Quem direciona cada quadro será avisado para definir os responsáveis</span></div>`);
+            if(!marcados.length){
+                linhas.length = 0;
+                linhas.push(`<div class="pv" style="opacity:.7"><span class="material-symbols-rounded">info</span>
+                    <span>Nenhum quadro marcado: o lead vai para Ganho sem gerar trabalho.</span></div>`);
+            }
+            document.getElementById('fcPrevia').innerHTML = linhas.join('');
+        }
+
+        function moedaBR(v){
+            const n = parseFloat(v); if(isNaN(n)) return '';
+            return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+        }
+
+        function cancelarFechamento(){
+            document.getElementById('modalFechamento').classList.remove('show');
+            fechCtx = null; render();
+        }
+
+        async function confirmarFechamento(){
+            const c = fechCtx; if(!c) return;
+            const nome = document.getElementById('fcProjeto').value.trim();
+            if(!nome){ showToast('Informe o nome do projeto.','error'); return; }
+            const qtd = Math.max(1, parseInt(document.getElementById('fcQtd').value) || 1);
+            if(qtd > 50){ showToast('Máximo de 50 cards por contrato.','error'); return; }
+
+            const btn = document.getElementById('fcSalvar'); btn.disabled = true;
+            const l = leads.find(x=>String(x.id)===String(c.leadId));
+            try{
+                const r = await fetch('/api/fluxo/fechar-lead/'+c.leadId, {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        projeto_nome: nome,
+                        quantidade: qtd,
+                        valor: document.getElementById('fcValor').value || null,
+                        cnpj: document.getElementById('fcCnpj').value.trim(),
+                        quadros: quadrosMarcados(),
+                        criar_cliente: true
+                    })});
+                if(!r.ok){ showToast(await motivoErro(r,'Não foi possível fechar o contrato.'),'error'); return; }
+                const d = await r.json();
+                document.getElementById('modalFechamento').classList.remove('show');
+                fechCtx = null;
+                if(l){ l.coluna = 'Ganho'; l.movido_em = new Date().toISOString(); }
+                const n = d.criados || 0;
+                showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
+                            : 'Contrato fechado.', 'success');
+                await carregar();
+            }catch(e){
+                showToast('Sem conexão com o servidor.','error');
+            } finally { btn.disabled = false; }
         }
 
         function escolherObjecao(id){
