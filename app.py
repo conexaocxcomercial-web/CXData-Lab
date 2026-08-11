@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
+import uuid
 
 # Fuso horário de Brasília (UTC-3). Usado para gravar datas de projeto
 # de forma consistente com a realidade local — evita erro de "um dia" na
@@ -53,6 +54,7 @@ CATALOGO = {
     'projeto.editar':     ('Operação', 'Editar projetos', 'Criar, editar e mover cards entre fases.', ('tudo','time','proprio'), False),
     'projeto.excluir':    ('Operação', 'Excluir projetos', 'Enviar projeto para a lixeira.', ('tudo','proprio'), False),
     'projeto.solicitar':  ('Operação', 'Solicitar em outro quadro', 'Abrir demanda para outra área.', (), False),
+    'projeto.atribuir':   ('Operação', 'Atribuir responsável', 'Definir quem fica com um projeto novo.', (), False),
     'tempo.registrar':    ('Operação', 'Registrar tempo', 'Usar o cronômetro e planejar a agenda.', (), False),
     'tempo.ver':          ('Operação', 'Ver tempo lançado', 'Horas na agenda e no histórico dos projetos.', ('tudo','time','proprio'), False),
 
@@ -605,7 +607,8 @@ def atualizar_projeto(projeto_id):
     try:
         atualizacao = {}
         res_atual = (supabase.table("projetos")
-                     .select("status", "data_inicio", "data_conclusao", "area")
+                     .select("status", "data_inicio", "data_conclusao", "area",
+                             "nome_projeto", "empresa", "cliente_id", "origem_lead_id")
                      .eq("id", projeto_id).execute())
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         
@@ -631,6 +634,30 @@ def atualizar_projeto(projeto_id):
             # Trilha de fases: alimenta o gráfico de gargalo do painel.
             # Falha aqui não pode impedir o card de mover.
             if novo_status and novo_status != status_anterior:
+                try:
+                    if novo_status == 'Finalizado':
+                        # O que acontece ao finalizar é escolha de quem finaliza:
+                        # nem toda entrega gera cobrança, e nem todo produto
+                        # entra em relacionamento. A tela pergunta, e o que vier
+                        # marcado chega aqui em `encerramento`.
+                        p = res_atual.data[0] if res_atual.data else {}
+                        enc = d.get("encerramento") or {}
+                        disparar('projeto.finalizado', {
+                            "projeto_id": projeto_id,
+                            "projeto_nome": p.get("nome_projeto"),
+                            "area": p.get("area"),
+                            "cliente_id": p.get("cliente_id"),
+                            "cliente_nome": p.get("empresa"),
+                            "lead_id": p.get("origem_lead_id"),
+                            "quadro": next((q for q, a2 in QUADRO_AREA.items()
+                                            if a2 == p.get("area")), None),
+                            "com_relacionamento": bool(enc.get("relacionamento")),
+                            "com_cobranca": bool(enc.get("cobranca")),
+                            "valor": enc.get("valor"),
+                        })
+                except Exception as e_fluxo:
+                    print("Aviso: fluxo de finalizacao nao rodou:", e_fluxo)
+
                 try:
                     supabase.table("projeto_movimentos").insert({
                         "projeto_id": projeto_id,
@@ -2114,8 +2141,26 @@ def pagina_crm():
 
 # Para onde o lead cai ao trocar de funil. Espelha ENTRADA no crm.html;
 # a validação fica aqui porque o cliente não pode ser a fonte da verdade.
-ENTRADA_FUNIL = {"qualificacao": "Prospecção", "fechamento": "Agendamento", "nutricao": "Backlog"}
+ENTRADA_FUNIL = {"qualificacao": "Prospecção", "fechamento": "Agendamento",
+                 "relacionamento": "Backlog", "nutricao": "Backlog"}
 FUNIS_VALIDOS = set(ENTRADA_FUNIL.keys())
+
+# Colunas de cada funil. O cliente não pode ser a fonte da verdade sobre
+# para onde um lead pode ir, então a lista vive aqui também.
+COLUNAS_FUNIL = {
+    "qualificacao": ["Prospecção", "Contato", "Follow up 1", "Follow up 2",
+                     "Follow up 3", "Follow up 4", "Ganho", "Nutrição", "Perdido"],
+    "fechamento":   ["Agendamento", "Proposta", "Negociação", "Ganho", "Nutrição"],
+    "relacionamento": ["Backlog", "Pesquisa de satisfação", "Follow up 1", "Follow up 2",
+                       "Follow up 3", "Follow up 4", "Ganho", "Nutrição"],
+    "nutricao":     ["Backlog"] + [f"Contato {i}" for i in range(1, 11)]
+                    + ["Ganho", "Encerrado"],
+}
+
+# Última tentativa de cada funil. Chegar nela sem avançar é o sinal de
+# que o lead esgotou o ciclo — a tela sugere a saída, sem mover sozinha.
+ULTIMO_FUP = {"qualificacao": "Follow up 4", "relacionamento": "Follow up 4",
+              "nutricao": "Contato 10"}
 
 
 @app.route('/api/leads', methods=['GET'])
@@ -2445,6 +2490,429 @@ def _mediana(valores):
     v = sorted(valores)
     meio = len(v) // 2
     return v[meio] if len(v) % 2 else (v[meio - 1] + v[meio]) / 2
+
+
+# ============================================================
+# MOTOR DE FLUXOS
+#
+# As rotas não conhecem regra nenhuma: elas anunciam o que
+# aconteceu, e o despachante decide o que fazer. Fluxo novo
+# vira linha em `fluxo_regras`, não código espalhado.
+# ============================================================
+
+# Papéis operacionais por quadro. Vivem no código porque são a lista
+# real do que o motor sabe fazer — crescem quando um fluxo precisa.
+PAPEIS_QUADRO = [
+    ('direciona', 'Direciona os projetos',
+     'Recebe o aviso e escolhe quem fica com cada card novo'),
+    ('cobranca', 'Recebe as cobranças',
+     'Fica com o card de faturamento dos contratos deste quadro'),
+    ('relacionamento', 'Conduz o relacionamento',
+     'Aplica a pesquisa de satisfação depois da entrega'),
+]
+PAPEIS_VALIDOS = {p for p, _, _ in PAPEIS_QUADRO}
+
+# Quadro de destino sugerido por produto. O closer confirma ou troca.
+PRODUTO_QUADRO = {
+    'Recrutamento e Seleção': 'recrutamento',
+    'RH Estratégico': 'rhestrategico',
+    'CX Data': 'cxdata',
+    'Consultoria': 'projetos',
+    'Treinamento': 'projetos',
+    'Outro': 'projetos',
+}
+# Área correspondente a cada quadro, que é o que `projetos.area` guarda.
+QUADRO_AREA = {
+    'recrutamento': 'Recrutamento e seleção',
+    'rhestrategico': 'RH Estratégico',
+    'projetos': 'Projetos',
+    'cxdata': 'CX Data',
+    'comercial': 'Comercial',
+    'marketing': 'Marketing',
+    'financeiro': 'Financeiro',
+    'rhinterno': 'RH Interno',
+}
+FASE_ENTRADA = 'Backlog'
+
+
+def responsavel_do_quadro(quadro, papel):
+    """Quem exerce um papel operacional num quadro. None se ninguém."""
+    try:
+        r = (supabase.table("quadro_responsaveis")
+             .select("usuario_id").eq("quadro", quadro).eq("papel", papel)
+             .limit(1).execute())
+        if r.data and r.data[0].get("usuario_id"):
+            u = (supabase.table("usuarios").select("id, nome")
+                 .eq("id", r.data[0]["usuario_id"]).limit(1).execute())
+            if u.data:
+                return u.data[0]
+    except Exception as e:
+        print("Aviso: responsavel_do_quadro:", e)
+    return None
+
+
+def _condicao_bate(condicao, dados):
+    """Testa a condição da regra contra os dados do evento."""
+    for chave, esperado in (condicao or {}).items():
+        valor = dados.get(chave)
+        if isinstance(esperado, list):
+            if valor not in esperado:
+                return False
+        elif valor != esperado:
+            return False
+    return True
+
+
+def disparar(evento, dados):
+    """Anuncia um evento e executa as regras que casam com ele.
+
+    Falha de regra nunca desfaz o que o usuário fez: fica registrada
+    em `fluxo_execucoes` para alguém resolver depois.
+    """
+    resultados = []
+    try:
+        r = (supabase.table("fluxo_regras").select("*")
+             .eq("evento", evento).eq("ativo", True).order("ordem").execute())
+        regras = r.data or []
+    except Exception as e:
+        print("Aviso: fluxo_regras indisponivel:", e)
+        return resultados
+
+    for regra in regras:
+        if not _condicao_bate(regra.get("condicao"), dados):
+            continue
+        for acao in (regra.get("acoes") or []):
+            tipo = acao.get("tipo")
+            try:
+                fn = ACOES.get(tipo)
+                if not fn:
+                    raise ValueError(f"ação desconhecida: {tipo}")
+                res = fn(acao, dados)
+                resultados.append({"regra": regra["nome"], "acao": tipo, "resultado": res})
+                _registrar_execucao(regra, evento, dados, res, None)
+            except Exception as e:
+                print(f"Erro na regra '{regra.get('nome')}' ({tipo}):", e)
+                _registrar_execucao(regra, evento, dados, None, str(e)[:400])
+    return resultados
+
+
+def _registrar_execucao(regra, evento, dados, resultado, erro):
+    try:
+        supabase.table("fluxo_execucoes").insert({
+            "regra_id": regra.get("id"),
+            "evento": evento,
+            "gatilho_id": str(dados.get("lead_id") or dados.get("projeto_id") or ''),
+            "resultado": resultado,
+            "erro": erro,
+        }).execute()
+    except Exception as e:
+        print("Aviso: fluxo_execucoes:", e)
+
+
+# ---------- ações que o motor sabe executar ----------
+
+def _acao_criar_lead(acao, dados):
+    """Cria um lead novo ligado ao anterior.
+
+    Novo e não reaproveitado: um cliente que fecha três vezes precisa
+    virar três leads, senão a taxa de conversão fica errada.
+    """
+    if acao.get("funil") == "relacionamento" and not dados.get("com_relacionamento"):
+        return {"pulado": "relacionamento nao marcado por quem finalizou"}
+    novo = {
+        "lead": dados.get("cliente_nome") or dados.get("lead_nome"),
+        "empresa": dados.get("cliente_nome") or dados.get("empresa"),
+        "funil": acao.get("funil", "relacionamento"),
+        "coluna": acao.get("coluna", FASE_ENTRADA),
+        "origem": "Cliente da casa",
+        "produto": dados.get("produto"),
+        "lead_pai_id": dados.get("lead_id"),
+        "cliente_id": dados.get("cliente_id"),
+        "contatos": 0,
+        "movido_em": datetime.now(timezone.utc).isoformat(),
+    }
+    quadro = dados.get("quadro")
+    if quadro:
+        resp = responsavel_do_quadro(quadro, "relacionamento")
+        if resp:
+            novo["responsavel"] = resp.get("nome")
+    for c in ("telefone", "email", "cnpj"):
+        if dados.get(c):
+            novo[c] = dados[c]
+    r = supabase.table("leads").insert(novo).execute()
+    return {"lead_id": (r.data or [{}])[0].get("id")}
+
+
+def _acao_mover_lead(acao, dados):
+    """Move o lead para outro funil e coluna."""
+    lead_id = dados.get("lead_id")
+    if not lead_id:
+        raise ValueError("sem lead_id")
+    destino_funil = acao.get("funil", "fechamento")
+    destino_coluna = acao.get("coluna", "Agendamento")
+    supabase.table("leads").update({
+        "funil": destino_funil, "coluna": destino_coluna, "contatos": 0,
+        "movido_em": datetime.now(timezone.utc).isoformat(),
+    }).eq("id", lead_id).execute()
+    try:
+        supabase.table("lead_movimentos").insert({
+            "lead_id": lead_id, "de_funil": dados.get("funil"),
+            "de_coluna": dados.get("coluna"), "para_funil": destino_funil,
+            "para_coluna": destino_coluna, "autor": "fluxo automático",
+        }).execute()
+    except Exception:
+        pass
+    return {"lead_id": lead_id, "funil": destino_funil, "coluna": destino_coluna}
+
+
+def _acao_criar_cobranca(acao, dados):
+    """Card de faturamento no Adm/Financeiro.
+
+    Só roda se quem finalizou marcou a cobrança. Criar cobrança que
+    ninguém pediu é pior que não criar nenhuma: alguém precisa
+    descobrir e apagar.
+    """
+    if acao.get("etapa") == "entrega" and not dados.get("com_cobranca"):
+        return {"pulado": "cobranca nao marcada por quem finalizou"}
+    resp = responsavel_do_quadro('financeiro', 'cobranca')
+    etapa = acao.get("etapa", "fechamento")
+    rotulo = "Emitir NF e boleto" if etapa == "fechamento" else "Faturar entrega"
+    novo = {
+        "nome_projeto": f"{rotulo} · {dados.get('projeto_nome') or dados.get('cliente_nome') or 'contrato'}",
+        "area": QUADRO_AREA['financeiro'],
+        "status": FASE_ENTRADA,
+        "empresa": dados.get("cliente_nome"),
+        "cliente_id": dados.get("cliente_id"),
+        "origem_lead_id": dados.get("lead_id"),
+        "vinculado_a": dados.get("lote_id"),
+        "valor": dados.get("valor"),
+        "responsavel": resp.get("nome") if resp else None,
+        "aguardando_responsavel": resp is None,
+        "data_status_atual": datetime.now(timezone.utc).isoformat(),
+    }
+    r = supabase.table("projetos").insert(novo).execute()
+    return {"projeto_id": (r.data or [{}])[0].get("id"), "responsavel": novo["responsavel"]}
+
+
+def _acao_abrir_quadros(acao, dados):
+    """Cria os cards nos quadros escolhidos na janela de fechamento.
+
+    A escolha vem do closer, não de um mapa fixo: assim qualquer
+    produto futuro funciona sem mudar código.
+    """
+    criados = []
+    for pedido in (dados.get("quadros") or []):
+        quadro = pedido.get("quadro")
+        if quadro not in QUADRO_AREA:
+            continue
+        qtd = max(1, min(int(pedido.get("quantidade") or 1), 50))
+        if quadro == 'financeiro':
+            criados.append(_acao_criar_cobranca({"etapa": "fechamento"}, dados))
+            continue
+        resp = responsavel_do_quadro(quadro, 'direciona')
+        lote = str(uuid.uuid4()) if qtd > 1 else None
+        for i in range(qtd):
+            nome = dados.get("projeto_nome") or dados.get("cliente_nome") or "Novo projeto"
+            if qtd > 1:
+                nome = f"{nome} ({i+1}/{qtd})"
+            novo = {
+                "nome_projeto": nome,
+                "area": QUADRO_AREA[quadro],
+                "status": FASE_ENTRADA,
+                "empresa": dados.get("cliente_nome"),
+                "cliente_id": dados.get("cliente_id"),
+                "origem_lead_id": dados.get("lead_id"),
+                "lote_id": lote,
+                "lote_pos": (i + 1) if qtd > 1 else None,
+                "lote_total": qtd if qtd > 1 else None,
+                "valor": dados.get("valor") if i == 0 else None,
+                "aguardando_responsavel": True,
+                "data_status_atual": datetime.now(timezone.utc).isoformat(),
+            }
+            r = supabase.table("projetos").insert(novo).execute()
+            criados.append({"projeto_id": (r.data or [{}])[0].get("id"),
+                            "quadro": quadro, "avisar": resp.get("nome") if resp else None})
+    return {"criados": len(criados), "itens": criados}
+
+
+ACOES = {
+    "criar_lead": _acao_criar_lead,
+    "mover_lead": _acao_mover_lead,
+    "criar_cobranca": _acao_criar_cobranca,
+    "abrir_quadros": _acao_abrir_quadros,
+}
+
+
+@app.route('/api/fluxo/fechar-lead/<lead_id>', methods=['POST'])
+def fechar_lead(lead_id):
+    """Fecha o contrato: move o lead para Ganho e abre os quadros escolhidos."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        d = request.json or {}
+        r = supabase.table("leads").select("*").eq("id", lead_id).limit(1).execute()
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
+        lead = r.data[0]
+
+        cliente_id = d.get("cliente_id") or lead.get("cliente_id")
+        cliente_nome = d.get("cliente_nome") or lead.get("empresa") or lead.get("lead")
+
+        # Cliente novo criado na hora, já ligado ao lead de origem.
+        if not cliente_id and d.get("criar_cliente"):
+            rc = supabase.table("clientes").insert({
+                "nome_empresa": cliente_nome,
+                "cnpj": d.get("cnpj") or lead.get("cnpj"),
+                "email": lead.get("email"),
+                "telefone": lead.get("telefone"),
+                "lead_id": lead_id,
+                "ativo": True,
+            }).execute()
+            cliente_id = (rc.data or [{}])[0].get("id")
+
+        atual_funil, atual_coluna = lead.get("funil"), lead.get("coluna")
+        supabase.table("leads").update({
+            "funil": "fechamento", "coluna": "Ganho", "cliente_id": cliente_id,
+            "valor_estimado": d.get("valor") or lead.get("valor_estimado"),
+            "movido_em": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", lead_id).execute()
+
+        try:
+            supabase.table("lead_movimentos").insert({
+                "lead_id": lead_id, "de_funil": atual_funil, "de_coluna": atual_coluna,
+                "para_funil": "fechamento", "para_coluna": "Ganho",
+                "autor": session.get('usuario_nome'),
+            }).execute()
+        except Exception:
+            pass
+
+        resultado = disparar('lead.ganho', {
+            "lead_id": lead_id, "funil": "fechamento",
+            "lead_nome": lead.get("lead"),
+            "cliente_id": cliente_id, "cliente_nome": cliente_nome,
+            "produto": d.get("produto") or lead.get("produto"),
+            "projeto_nome": d.get("projeto_nome") or lead.get("produto"),
+            "valor": d.get("valor") or lead.get("valor_estimado"),
+            "quadros": d.get("quadros") or [],
+            "telefone": lead.get("telefone"), "email": lead.get("email"),
+            "cnpj": d.get("cnpj") or lead.get("cnpj"),
+        })
+        return jsonify({"status": "sucesso", "cliente_id": cliente_id, "fluxo": resultado}), 200
+    except Exception as e:
+        print("Erro em fechar_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao fechar o contrato.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/responsaveis', methods=['GET'])
+def listar_responsaveis():
+    """Papéis operacionais de cada quadro."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('papel.gerir') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        r = supabase.table("quadro_responsaveis").select("*").execute()
+        mapa = {}
+        for item in (r.data or []):
+            mapa.setdefault(item["quadro"], {})[item["papel"]] = item.get("usuario_id")
+        pessoas = (supabase.table("usuarios")
+                   .select("id, nome, email, ativo, tipo_usuario")
+                   .order("nome").execute()).data or []
+        return jsonify({
+            "status": "sucesso",
+            "quadros": [{"chave": c, "nome": n} for c, n in QUADROS],
+            "papeis": [{"chave": c, "nome": n, "descricao": dd} for c, n, dd in PAPEIS_QUADRO],
+            "definidos": mapa,
+            "pessoas": [p for p in pessoas
+                        if p.get("ativo") is not False
+                        and (p.get("tipo_usuario") or 'interno') != 'externo'],
+        }), 200
+    except Exception as e:
+        print("Erro em listar_responsaveis:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/responsaveis', methods=['PUT'])
+def definir_responsavel():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('papel.gerir') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.json or {}
+        quadro, papel = d.get("quadro"), d.get("papel")
+        if quadro not in QUADROS_VALIDOS or papel not in PAPEIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Quadro ou papel inválido."}), 400
+        usuario_id = d.get("usuario_id") or None
+        supabase.table("quadro_responsaveis").upsert({
+            "quadro": quadro, "papel": papel, "usuario_id": usuario_id,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        }, on_conflict="quadro,papel").execute()
+        registrar('responsavel_definido', 'quadro', quadro,
+                            {"papel": papel, "usuario_id": usuario_id})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em definir_responsavel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/projetos/aguardando', methods=['GET'])
+def projetos_aguardando():
+    """Cards criados pelo fluxo que ainda não têm responsável."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        r = (supabase.table("projetos").select("*")
+             .eq("aguardando_responsavel", True).is_("excluido_em", "null")
+             .order("criado_em", desc=True).execute())
+        itens = filtrar_projetos_permitidos(r.data or [])
+        return jsonify({"status": "sucesso", "projetos": itens, "total": len(itens)}), 200
+    except Exception as e:
+        print("Erro em projetos_aguardando:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/projetos/<projeto_id>/atribuir', methods=['POST'])
+def atribuir_projeto(projeto_id):
+    """Define o responsável. Com `lote`, vale para todos os cards do contrato."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('projeto.atribuir') or session.get('nivel_acesso') in ('admin', 'gestor')):
+        return jsonify({"status": "erro",
+                        "mensagem": "Você não tem permissão para atribuir projetos."}), 403
+    try:
+        d = request.json or {}
+        responsavel = (d.get("responsavel") or '').strip()
+        if not responsavel:
+            return jsonify({"status": "erro", "mensagem": "Informe o responsável."}), 400
+
+        upd = {"responsavel": responsavel, "aguardando_responsavel": False}
+        if d.get("prazo"):
+            upd["prazo_data"] = d["prazo"]
+
+        r = supabase.table("projetos").select("lote_id").eq("id", projeto_id).limit(1).execute()
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Projeto não encontrado."}), 404
+        lote = r.data[0].get("lote_id")
+
+        if d.get("lote") and lote:
+            res = (supabase.table("projetos").update(upd)
+                   .eq("lote_id", lote).eq("aguardando_responsavel", True).execute())
+            n = len(res.data or [])
+        else:
+            supabase.table("projetos").update(upd).eq("id", projeto_id).execute()
+            n = 1
+        registrar('projeto_atribuido', 'projeto', projeto_id,
+                            {"responsavel": responsavel, "quantidade": n})
+        return jsonify({"status": "sucesso", "atribuidos": n}), 200
+    except Exception as e:
+        print("Erro em atribuir_projeto:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao atribuir.",
+                        "detalhe": str(e)[:300]}), 500
 
 
 @app.route('/api/painel/operacao', methods=['GET'])
