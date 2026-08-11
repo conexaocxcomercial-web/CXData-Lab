@@ -210,6 +210,11 @@ html body{
 @media (prefers-reduced-motion:reduce){
   .cxsidebar, html body, .cxsb-lista, .cxsb-sub{ transition:none !important; }
 }
+
+.cxsb-conta{ margin-left:auto; font-size:9.5px; font-weight:600; padding:1px 7px;
+  border-radius:99px; background:#F7F7F9; color:#7C7C88;
+  font-family:'IBM Plex Mono',monospace; }
+.cxsidebar:not(:hover):not(.fixa) .cxsb-conta{ display:none; }
 </style>
 
 <button class="cxsb-ham" onclick="cxsbGaveta(true)" aria-label="Abrir menu">
@@ -278,54 +283,80 @@ html body{
     </div>
     {% endif %}
 
-    {# ===== QUADROS DE TRABALHO ===== #}
+    {# ===== PRODUTOS ===== #}
+    {% if not eh_person or 'recrutamento' in perm_modulos or 'rhestrategico' in perm_modulos
+          or 'educacao' in perm_modulos or 'cxdata' in perm_modulos or 'projetos' in perm_modulos %}
     <div class="cxsb-sep"></div>
-    <div class="cxsb-grupo" data-g="quadros" onclick="cxsbGrupo(this)">
-      Quadros de trabalho<span class="cxsb-grupo-qtd" id="qtdQuadros">8</span>
+    <div class="cxsb-grupo" data-g="produtos" onclick="cxsbGrupo(this)">
+      Produtos
       <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
-    <div class="cxsb-lista" id="gr-quadros">
+    <div class="cxsb-lista" id="gr-produtos">
       {% if not eh_person or 'recrutamento' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/recrutamento" data-tip="R&amp;S" onclick="location.href='/board/recrutamento'">
+      <div class="cxsb-item" data-path="/board/recrutamento" data-tip="R&S" onclick="location.href='/board/recrutamento'">
         <span class="material-symbols-rounded">group_add</span><span class="cxsb-item-txt">R&amp;S</span>
       </div>
       {% endif %}
       {% if not eh_person or 'rhestrategico' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/rhestrategico" data-tip="RH Estratégico" onclick="location.href='/board/rhestrategico'">
-        <span class="material-symbols-rounded">psychology</span><span class="cxsb-item-txt">RH Estratégico</span>
+        <span class="material-symbols-rounded">insights</span><span class="cxsb-item-txt">RH Estratégico</span><span class="cxsb-conta">4</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'educacao' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/educacao" data-tip="Educação" onclick="location.href='/board/educacao'">
+        <span class="material-symbols-rounded">school</span><span class="cxsb-item-txt">Educação</span><span class="cxsb-conta">3</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'cxdata' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/cxdata" data-tip="CX Data" onclick="location.href='/board/cxdata'">
+        <span class="material-symbols-rounded">database</span><span class="cxsb-item-txt">CX Data</span><span class="cxsb-conta">2</span>
       </div>
       {% endif %}
       {% if not eh_person or 'projetos' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/projetos" data-tip="Projetos" onclick="location.href='/board/projetos'">
-        <span class="material-symbols-rounded">folder_managed</span><span class="cxsb-item-txt">Projetos</span>
+        <span class="material-symbols-rounded">folder</span><span class="cxsb-item-txt">Projetos</span>
       </div>
       {% endif %}
-      {% if not eh_person or 'cxdata' in perm_modulos or 'geral' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/cxdata" data-tip="CX Data" onclick="location.href='/board/cxdata'">
-        <span class="material-symbols-rounded">database</span><span class="cxsb-item-txt">CX Data</span>
-      </div>
-      {% endif %}
-      {% if not eh_person or 'comercial' in perm_modulos or 'geral' in perm_modulos %}
+    </div>
+    {% endif %}
+
+    {# ===== INTERNO ===== #}
+    {% if not eh_person or 'comercial' in perm_modulos or 'marketing' in perm_modulos
+          or 'financeiro' in perm_modulos or 'tecnologia' in perm_modulos
+          or 'rhinterno' in perm_modulos %}
+    <div class="cxsb-sep"></div>
+    <div class="cxsb-grupo" data-g="interno" onclick="cxsbGrupo(this)">
+      Interno
+      <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
+    </div>
+    <div class="cxsb-lista" id="gr-interno">
+      {% if not eh_person or 'comercial' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/comercial" data-tip="Comercial" onclick="location.href='/board/comercial'">
         <span class="material-symbols-rounded">handshake</span><span class="cxsb-item-txt">Comercial</span>
       </div>
       {% endif %}
-      {% if not eh_person or 'marketing' in perm_modulos or 'geral' in perm_modulos %}
+      {% if not eh_person or 'marketing' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/marketing" data-tip="Marketing" onclick="location.href='/board/marketing'">
         <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-txt">Marketing</span>
       </div>
       {% endif %}
-      {% if not eh_person or 'financeiro' in perm_modulos or 'geral' in perm_modulos %}
-      <div class="cxsb-item" data-path="/board/financeiro" data-tip="Financeiro" onclick="location.href='/board/financeiro'">
-        <span class="material-symbols-rounded">payments</span><span class="cxsb-item-txt">Financeiro</span>
+      {% if not eh_person or 'financeiro' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/financeiro" data-tip="Adm/Financeiro" onclick="location.href='/board/financeiro'">
+        <span class="material-symbols-rounded">payments</span><span class="cxsb-item-txt">Adm/Financeiro</span>
+      </div>
+      {% endif %}
+      {% if not eh_person or 'tecnologia' in perm_modulos %}
+      <div class="cxsb-item" data-path="/board/tecnologia" data-tip="Tecnologia" onclick="location.href='/board/tecnologia'">
+        <span class="material-symbols-rounded">terminal</span><span class="cxsb-item-txt">Tecnologia</span>
       </div>
       {% endif %}
       {% if not eh_person or 'rhinterno' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/rhinterno" data-tip="RH Interno" onclick="location.href='/board/rhinterno'">
-        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-txt">RH Interno</span>
+        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-txt">RH Interno</span><span class="cxsb-conta">3</span>
       </div>
       {% endif %}
     </div>
+    {% endif %}
 
     {# ===== GESTÃO ===== #}
     <div class="cxsb-sep"></div>
