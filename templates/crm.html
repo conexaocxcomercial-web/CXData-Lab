@@ -396,6 +396,7 @@
         <div class="segm" role="tablist">
             <button class="segm-btn on" id="tab-qualificacao" onclick="mudarFunil('qualificacao')">Qualificação</button>
             <button class="segm-btn" id="tab-fechamento" onclick="mudarFunil('fechamento')">Fechamento</button>
+            <button class="segm-btn" id="tab-relacionamento" onclick="mudarFunil('relacionamento')">Relacionamento</button>
             <button class="segm-btn" id="tab-nutricao" onclick="mudarFunil('nutricao')">Nutrição</button>
         </div>
         <span class="cmd-cont" id="contador">0 leads</span>
@@ -893,8 +894,10 @@
         /* ==================== RENDER ==================== */
         function mudarFunil(f){
             funilAtual = f; faseMobile = null;
-            ['qualificacao','fechamento','nutricao'].forEach(x=>
-                document.getElementById('tab-'+x).classList.toggle('on', x===f));
+            Object.keys(FUNIS).forEach(x => {
+                const t = document.getElementById('tab-'+x);
+                if(t) t.classList.toggle('on', x===f);
+            });
             render();
         }
         // No celular a busca fica reduzida a ícone; expande ao focar.
@@ -1274,7 +1277,8 @@
             moverLeadId = id;
             document.getElementById('folhaTitulo').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
             const cfg = FUNIS[funilAtual];
-            const CORFUNIL = { qualificacao:'#0EA5E9', fechamento:'#6C5CE7', nutricao:'#C2660B' };
+            const CORFUNIL = { qualificacao:'#0EA5E9', fechamento:'#6C5CE7',
+                               relacionamento:'#DB2777', nutricao:'#C2660B' };
             let html = `<div class="folha-g"><span class="pt" style="background:${CORFUNIL[funilAtual]}"></span>${escH(cfg.titulo)} · funil atual</div>` +
                 cfg.colunas.map(c=>{
                     const atual = c.id===l.coluna;
