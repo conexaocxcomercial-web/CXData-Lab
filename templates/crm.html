@@ -531,6 +531,12 @@
                     <div class="ig"><label for="fEmpresa">Empresa</label><input type="text" id="fEmpresa" placeholder="Nome da empresa"></div>
                     <div class="ig"><label for="fContato">Contato</label><input type="text" id="fContato" placeholder="Nome da pessoa"></div>
                 </div>
+                <div class="ig2">
+                    <div class="ig"><label for="fSegmento">Segmento</label>
+                        <select id="fSegmento"><option value="">—</option></select></div>
+                    <div class="ig"><label for="fLocalizacao">Cidade e estado</label>
+                        <input type="text" id="fLocalizacao" placeholder="Natal, RN"></div>
+                </div>
                 <div class="ig">
                     <label for="fTelefone">Telefone</label>
                     <div class="campo-acao">
@@ -694,6 +700,10 @@
               ajuda:'Sem contato e contexto, quem recebe recomeça a conversa do zero.',
               campos:[ {k:'telefone', r:'Telefone', tipo:'tel', obrig:true},
                        {k:'email', r:'E-mail', tipo:'email', obrig:true},
+                       {k:'segmento', r:'Segmento', tipo:'select', obrig:true,
+                        opcoes:SEGMENTOS},
+                       {k:'localizacao', r:'Cidade e estado', tipo:'text', obrig:true,
+                        dica:'Define se a reunião pode ser presencial.'},
                        {k:'anotacoes', r:'O que já sabemos', tipo:'textarea', obrig:true,
                         dica:'Necessidade, quem decide, prazo — o que ajudar o closer.'} ] },
             { funil:'fechamento', para:'Proposta',
@@ -787,6 +797,13 @@
            diferentes e já haviam divergido entre si. */
         const ORIGENS = ['BNI','Indicação','Prospecção fria','Base de clientes',
                          'Eventos','Redes sociais','Site'];
+
+        /* Segmento e localização mudam a conversa do closer: setor define
+           a dor típica, cidade define se a reunião é presencial. */
+        const SEGMENTOS = ['Indústria','Comércio','Serviços','Saúde','Educação',
+                           'Construção civil','Tecnologia','Agronegócio',
+                           'Transporte e logística','Alimentação','Financeiro',
+                           'Terceiro setor','Outro'];
 
         // Quadros oferecidos na janela de fechamento: só entregas ao
         // cliente, mais o Financeiro para a cobrança. Um contrato não
@@ -1546,6 +1563,8 @@
                 <div class="campo"><div class="campo-r">E-mail</div><div class="campo-v ${temMail?'':'vazio'}">${temMail?escH(l.email):'não informado'}</div></div>
                 <div class="campo"><div class="campo-r">Responsável</div><div class="campo-v">${escH(l.responsavel)||'—'}</div></div>
                 <div class="campo"><div class="campo-r">Origem</div><div class="campo-v ${l.origem?'':'vazio'}">${escH(l.origem)||'não informada'}</div></div>
+                <div class="campo"><div class="campo-r">Segmento</div><div class="campo-v ${l.segmento?'':'vazio'}">${escH(l.segmento)||'não informado'}</div></div>
+                <div class="campo"><div class="campo-r">Localização</div><div class="campo-v ${l.localizacao?'':'vazio'}">${escH(l.localizacao)||'não informada'}</div></div>
                 <div class="campo" style="margin-bottom:18px"><div class="campo-r">Anotações</div>
                     ${l.anotacoes ? `<div class="anot">${escH(l.anotacoes)}</div>` : '<div class="campo-v vazio">sem anotações</div>'}</div>`;
 
@@ -1647,6 +1666,14 @@
                 : 'Nasce em ' + FUNIS[funilAtual].colunas[0].id + ' e já pode receber contato.';
             document.getElementById('fEmpresa').value = l ? (l.empresa||'') : '';
             document.getElementById('fContato').value = l ? (l.contato||'') : '';
+            document.getElementById('fLocalizacao').value = l ? (l.localizacao||'') : '';
+            var seg = l ? (l.segmento || '') : '';
+            var segs = SEGMENTOS.slice();
+            if(seg && segs.indexOf(seg) < 0) segs.push(seg);
+            document.getElementById('fSegmento').innerHTML = '<option value="">—</option>'
+                + segs.map(function(s){
+                    return '<option' + (s === seg ? ' selected' : '') + '>' + escH(s) + '</option>';
+                  }).join('');
             document.getElementById('fTelefone').value = l ? (l.telefone||'') : '';
             document.getElementById('fEmail').value = l ? (l.email||'') : '';
             document.getElementById('fProduto').value = l ? (l.produto||'') : '';
@@ -1679,6 +1706,8 @@
                 produto: document.getElementById('fProduto').value,
                 responsavel: document.getElementById('fResponsavel').value,
                 origem: document.getElementById('fOrigem').value,
+                segmento: document.getElementById('fSegmento').value,
+                localizacao: document.getElementById('fLocalizacao').value.trim(),
                 proximo_contato: document.getElementById('fProximo').value || null,
                 valor_estimado: document.getElementById('fValor').value || null,
                 anotacoes: document.getElementById('fAnotacoes').value.trim()
