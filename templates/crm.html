@@ -639,18 +639,21 @@
             <div class="md-head">
                 <div style="min-width:0">
                     <div class="md-eyebrow" id="objEyebrow"></div>
-                    <div class="md-tit">Qual foi a objeção?</div>
-                    <div class="md-sub">Sem isso não há como saber por que se perde.</div>
+                    <div class="md-tit" id="objTitulo">Qual foi a objeção?</div>
+                    <div class="md-sub" id="objSub">Sem isso não há como saber por que se perde.</div>
                 </div>
             </div>
             <div class="md-corpo">
                 <div class="obj-grade" id="objGrade"></div>
                 <div class="ig"><label for="objDetalhe">Detalhe (opcional)</label><textarea id="objDetalhe" placeholder="O que foi dito, com as palavras dele"></textarea></div>
-                <div class="ig"><label for="objRetomar">Retomar em</label><input type="date" id="objRetomar"></div>
+                <div class="ig" id="objLinhaRetomar"><label for="objRetomar">Retomar em</label>
+                    <input type="date" id="objRetomar"></div>
             </div>
             <div class="md-pe">
                 <button class="btn btn-fant" onclick="cancelarObjecao()">Voltar</button>
-                <button class="btn btn-acao" onclick="confirmarObjecao()"><span class="material-symbols-rounded">water_drop</span>Enviar para nutrição</button>
+                <button class="btn btn-acao" id="objConfirmar" onclick="confirmarObjecao()">
+                    <span class="material-symbols-rounded" id="objIcone">water_drop</span>
+                    <span id="objBotao">Enviar para nutrição</span></button>
             </div>
         </div>
     </div>
@@ -821,6 +824,11 @@
         const RESPONSAVEIS = ['Jhonattan Luiz','Gabriela Farias','Mirian Meireles','Itiana Andrade',
             'Matheus Alves','Clara Viana','Alisson Maciel','Juliete Cadete','Ana Medeiros',
             'Thallya Rodrigues','Patrick Guilherme','Bárbara Cazé'];
+        /* Nutrição e Perdido não são a mesma coisa.
+           Nutrição: houve conversa e o lead disse não agora — volta depois.
+           Perdido: não deu nem para falar. Número errado, e-mail que volta,
+           empresa que fechou. Nutrir quem não tem contato válido é gastar
+           o time com quem não existe. */
         const OBJECOES = [
             { id:'preco',       nome:'Preço',              ico:'payments' },
             { id:'momento',     nome:'Momento',            ico:'schedule' },
@@ -830,6 +838,15 @@
             { id:'sem_interesse',nome:'Sem interesse',     ico:'do_not_disturb' },
             { id:'sem_resposta',nome:'Não respondeu',      ico:'phone_missed' },
             { id:'outra',       nome:'Outra',              ico:'more_horiz' }
+        ];
+
+        const MOTIVOS_PERDA = [
+            { id:'contato_invalido', nome:'Contato não existe',  ico:'phone_disabled' },
+            { id:'nao_localizado',   nome:'Não localizado',      ico:'person_search' },
+            { id:'empresa_fechada',  nome:'Empresa fechou',      ico:'domain_disabled' },
+            { id:'duplicado',        nome:'Lead duplicado',      ico:'content_copy' },
+            { id:'nao_e_publico',    nome:'Fora do perfil',      ico:'block' },
+            { id:'outra_perda',      nome:'Outro motivo',        ico:'more_horiz' }
         ];
         const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
             ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
@@ -1063,9 +1080,31 @@
 
             // Colunas que pedem objeção abrem o registro antes de mover
             if(cfg.objecao){
-                objCtx = { leadId, coluna:novaColuna, destinoFunil: cfg.saida || null };
+                const ehPerda = (novaColuna === 'Perdido');
+                objCtx = { leadId, coluna:novaColuna, destinoFunil: cfg.saida || null, ehPerda };
                 objSelecionada = null;
-                document.querySelectorAll('.obj').forEach(o=>o.classList.remove('on'));
+
+                // Perdido não é objeção comercial: é ausência de contato.
+                // Mesma janela, conteúdo diferente.
+                const lista = ehPerda ? MOTIVOS_PERDA : OBJECOES;
+                document.getElementById('objGrade').innerHTML = lista.map(o =>
+                    `<button class="obj" data-obj="${o.id}" onclick="escolherObjecao('${o.id}')">
+                        <span class="material-symbols-rounded">${o.ico}</span>
+                        <span class="obj-txt">${escH(o.nome)}</span></button>`).join('');
+
+                document.getElementById('objTitulo').innerText = ehPerda
+                    ? 'Por que não deu para falar?'
+                    : 'Qual foi a objeção?';
+                document.getElementById('objSub').innerText = ehPerda
+                    ? 'Perdido é para quem não se consegue contato. Se houve conversa e ele disse não agora, use Nutrição.'
+                    : 'Sem isso não há como saber por que se perde.';
+                document.getElementById('objBotao').innerText = ehPerda
+                    ? 'Marcar como perdido' : 'Enviar para nutrição';
+                document.getElementById('objIcone').innerText = ehPerda ? 'person_off' : 'water_drop';
+                document.getElementById('objConfirmar').className = 'btn ' + (ehPerda ? 'btn-perigo' : 'btn-acao');
+                // Retomar não faz sentido para quem não tem contato válido.
+                document.getElementById('objLinhaRetomar').style.display = ehPerda ? 'none' : 'block';
+
                 document.getElementById('objDetalhe').value = '';
                 document.getElementById('objRetomar').value = '';
                 document.getElementById('objEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
