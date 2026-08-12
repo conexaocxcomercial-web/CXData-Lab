@@ -743,10 +743,44 @@
               titulo:'Proposta apresentada',
               ajuda:'O valor daqui alimenta o painel comercial; o CNPJ vira o cadastro do cliente.',
               campos:[ {k:'canal_proposta', r:'Como foi apresentada', tipo:'select', obrig:true,
-                        opcoes:['E-mail','WhatsApp','Reunião online','Reunião presencial']},
+                        opcoes:['E-mail','WhatsApp','Ligação','Reunião online','Reunião presencial']},
                        {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true},
-                       {k:'cnpj', r:'CNPJ', tipo:'text', obrig:true} ] }
+                       {k:'cnpj', r:'CNPJ', tipo:'cnpj', obrig:true} ] }
         ];
+        /* ==================== CNPJ ====================
+           Um CNPJ inválido no cadastro do cliente vira problema na
+           emissão da nota. Validar aqui, no momento em que o dado
+           entra, é mais barato que descobrir depois. */
+        function mascaraCNPJ(el){
+            var d = el.value.replace(/\D/g, '').slice(0, 14);
+            var s = d;
+            if(d.length > 12) s = d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, '$1.$2.$3/$4-$5');
+            else if(d.length > 8) s = d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/, '$1.$2.$3/$4');
+            else if(d.length > 5) s = d.replace(/^(\d{2})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+            else if(d.length > 2) s = d.replace(/^(\d{2})(\d{0,3})$/, '$1.$2');
+            el.value = s;
+            el.classList.toggle('erro', d.length === 14 && !cnpjValido(d));
+        }
+
+        function cnpjValido(cnpj){
+            var d = String(cnpj || '').replace(/\D/g, '');
+            if(d.length !== 14) return false;
+            // 00000000000000, 11111111111111 e afins passam no cálculo
+            // dos dígitos mas não existem.
+            if(/^(\d)\1{13}$/.test(d)) return false;
+            var calc = function(base){
+                var peso = base.length - 7, soma = 0, i;
+                for(i = 0; i < base.length; i++){
+                    soma += parseInt(base.charAt(i), 10) * peso;
+                    peso = peso - 1 < 2 ? 9 : peso - 1;
+                }
+                var r = soma % 11;
+                return r < 2 ? 0 : 11 - r;
+            };
+            return calc(d.slice(0, 12)) === parseInt(d.charAt(12), 10)
+                && calc(d.slice(0, 13)) === parseInt(d.charAt(13), 10);
+        }
+
         function portaoDe(funil, coluna){
             return PORTOES.find(p => p.funil===funil && p.para===coluna) || null;
         }
@@ -1182,6 +1216,11 @@
                     // mas as que a Conexão atende se repetem.
                     campo = `<input id="pt-${escA(c.k)}" type="text"
                         placeholder="Natal" value="${v}">`;
+                } else if(c.tipo === 'cnpj'){
+                    // inputmode numérico abre o teclado de números no celular
+                    campo = `<input id="pt-${escA(c.k)}" type="text" inputmode="numeric"
+                        maxlength="18" placeholder="00.000.000/0000-00" value="${v}"
+                        oninput="mascaraCNPJ(this)">`;
                 } else if(c.tipo === 'moeda'){
                     campo = `<input id="pt-${escA(c.k)}" type="number" step="0.01" min="0"
                         placeholder="0,00" value="${v}">`;
@@ -1208,6 +1247,12 @@
                 const el = document.getElementById('pt-' + campo.k);
                 const v = (el ? el.value : '').trim();
                 if(campo.obrig && !v){ showToast('Preencha: ' + campo.r, 'error'); if(el) el.focus(); return; }
+                // CNPJ errado aqui vira nota fiscal recusada depois.
+                if(campo.tipo === 'cnpj' && v && !cnpjValido(v)){
+                    showToast('CNPJ inválido. Confira os números.', 'error');
+                    if(el){ el.classList.add('erro'); el.focus(); }
+                    return;
+                }
                 valores[campo.k] = v;
             }
             const l = leads.find(x=>String(x.id)===String(c.leadId));
