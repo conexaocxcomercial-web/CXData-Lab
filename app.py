@@ -3419,15 +3419,11 @@ def listar_papeis():
     try:
         papeis = (supabase.table("papeis").select("*").order("ordem").execute()).data or []
         caps = (supabase.table("papel_capacidades").select("*").execute()).data or []
-        quadros = (supabase.table("papel_quadros").select("*").execute()).data or []
         usuarios = (supabase.table("usuarios").select("id, papel_id").execute()).data or []
 
         por_papel = {}
         for c in caps:
             por_papel.setdefault(str(c["papel_id"]), {})[c["capacidade"]] = c["escopo"]
-        quad_papel = {}
-        for q in quadros:
-            quad_papel.setdefault(str(q["papel_id"]), []).append(q["quadro"])
         contagem = {}
         for u in usuarios:
             if u.get("papel_id"):
@@ -3436,7 +3432,9 @@ def listar_papeis():
         for p in papeis:
             pid = str(p["id"])
             p["capacidades"] = por_papel.get(pid, {})
-            p["quadros"] = quad_papel.get(pid, [])
+            # Quadros deixaram de ser do papel: cada pessoa tem os seus,
+            # em usuarios.quadros. A chave fica vazia por compatibilidade.
+            p["quadros"] = []
             p["pessoas"] = contagem.get(pid, 0)
 
         return jsonify({"status": "sucesso", "papeis": papeis}), 200
@@ -3507,12 +3505,6 @@ def atualizar_papel(papel_id):
                                "escopo": esc if escopos else "tudo"})
             if linhas:
                 supabase.table("papel_capacidades").insert(linhas).execute()
-
-        if "quadros" in d:
-            supabase.table("papel_quadros").delete().eq("papel_id", papel_id).execute()
-            qs = [{"papel_id": papel_id, "quadro": q} for q in (d["quadros"] or [])]
-            if qs:
-                supabase.table("papel_quadros").insert(qs).execute()
 
         registrar("papel_alterado", "papeis", papel_id,
                   {"campos": list(upd.keys()),
@@ -4555,25 +4547,6 @@ import secrets
 
 # adicionar participante (copia competências do cargo + cria avaliações conforme formato)
 
-def _gd_gerar_avaliacoes(ciclo_id, pessoa_id, formato, pessoa):
-    """Cria as avaliações conforme o formato (90/180/360)."""
-    import secrets as _s
-    def cria(papel, avaliador_id):
-        supabase.table("gd_avaliacoes").insert({
-            "ciclo_id":ciclo_id,"pessoa_id":pessoa_id,"avaliador_pessoa_id":avaliador_id,
-            "papel":papel,"status":"pendente","token":_s.token_urlsafe(12)
-        }).execute()
-    # gestor sempre avalia
-    cria("gestor", pessoa.get("gestor_id"))
-    if formato in ("180","360"):
-        cria("autoavaliacao", pessoa_id)
-    if formato == "360":
-        # pares = mesmo gestor; liderados = quem tem essa pessoa como gestor
-        if pessoa.get("gestor_id"):
-            pares = supabase.table("gd_pessoas").select("id").eq("gestor_id", pessoa["gestor_id"]).neq("id", pessoa_id).execute().data or []
-            for par in pares: cria("par", par["id"])
-        liderados = supabase.table("gd_pessoas").select("id").eq("gestor_id", pessoa_id).execute().data or []
-        for lid in liderados: cria("liderado", lid["id"])
 
 
 # ===== AVALIAÇÃO PÚBLICA (por token) =====
