@@ -620,8 +620,9 @@
                         <input type="number" id="fcQtd" min="1" max="50" value="1" oninput="atualizarPrevia()"></div>
                 </div>
                 <div class="ig3">
-                    <div class="ig"><label for="fcCnpj">CNPJ</label>
-                        <input type="text" id="fcCnpj" placeholder="00.000.000/0001-00"></div>
+                    <div class="ig"><label for="fcCnpj">CNPJ do contratante</label>
+                        <input type="text" id="fcCnpj" inputmode="numeric" maxlength="18"
+                               placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)"></div>
                     <div class="ig"><label for="fcValor">Valor</label>
                         <input type="number" id="fcValor" step="0.01" min="0" oninput="atualizarPrevia()"></div>
                 </div>
@@ -741,11 +742,18 @@
                         dica:'Necessidade, quem decide, prazo — o que ajudar o closer.'} ] },
             { funil:'fechamento', para:'Proposta',
               titulo:'Proposta apresentada',
-              ajuda:'O valor daqui alimenta o painel comercial; o CNPJ vira o cadastro do cliente.',
+              ajuda:'O valor daqui alimenta o painel comercial.',
               campos:[ {k:'canal_proposta', r:'Como foi apresentada', tipo:'select', obrig:true,
                         opcoes:['E-mail','WhatsApp','Ligação','Reunião online','Reunião presencial']},
-                       {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true},
-                       {k:'cnpj', r:'CNPJ', tipo:'cnpj', obrig:true} ] }
+                       {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true} ] },
+            /* CNPJ só aqui: na proposta o closer costuma não ter ainda.
+               Em negociação já há intenção de contrato, e o dado vira o
+               cadastro do cliente. Quem pula direto para Ganho encontra
+               a mesma exigência na janela de fechamento. */
+            { funil:'fechamento', para:'Negociação',
+              titulo:'Entrando em negociação',
+              ajuda:'O CNPJ vira o cadastro do cliente e a emissão da nota.',
+              campos:[ {k:'cnpj', r:'CNPJ', tipo:'cnpj', obrig:true} ] }
         ];
         /* ==================== CNPJ ====================
            Um CNPJ inválido no cadastro do cliente vira problema na
@@ -1364,6 +1372,18 @@
             if(!nome){ showToast('Informe o nome do projeto.','error'); return; }
             const qtd = Math.max(1, parseInt(document.getElementById('fcQtd').value) || 1);
             if(qtd > 50){ showToast('Máximo de 50 cards por contrato.','error'); return; }
+            // Quem pulou Negociação chega aqui sem CNPJ: a exigência é a
+            // mesma, senão o cliente nasce sem o dado que a nota precisa.
+            const cnpjEl = document.getElementById('fcCnpj');
+            const cnpj = cnpjEl.value.trim();
+            if(!cnpj){
+                showToast('Informe o CNPJ: ele vira o cadastro do cliente.','error');
+                cnpjEl.classList.add('erro'); cnpjEl.focus(); return;
+            }
+            if(!cnpjValido(cnpj)){
+                showToast('CNPJ inválido. Confira os números.','error');
+                cnpjEl.classList.add('erro'); cnpjEl.focus(); return;
+            }
 
             const btn = document.getElementById('fcSalvar'); btn.disabled = true;
             const l = leads.find(x=>String(x.id)===String(c.leadId));
