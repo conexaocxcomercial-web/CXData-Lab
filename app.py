@@ -3395,11 +3395,20 @@ def painel_comercial():
         destino = {"nutricao": len(nutricao), "perdido": len(perdidos),
                    "ativos": len(ativos)}
 
-        # --- objeções ---
-        objecoes = {}
+        # --- objeções e motivos de perda ---
+        # São coisas diferentes: objeção é "conversamos e ele disse não
+        # agora"; perda é "não deu para falar". Misturar as duas faria
+        # "contato não existe" competir com "preço" no mesmo gráfico.
+        MOTIVOS_PERDA = ('contato_invalido', 'nao_localizado', 'empresa_fechada',
+                         'duplicado', 'nao_e_publico', 'outra_perda')
+        objecoes, perdas = {}, {}
         for m in movs:
             o = m.get('objecao')
-            if o:
+            if not o:
+                continue
+            if o in MOTIVOS_PERDA or m.get('para_coluna') == 'Perdido':
+                perdas[o] = perdas.get(o, 0) + 1
+            else:
                 objecoes[o] = objecoes.get(o, 0) + 1
 
         # --- origem que converte ---
@@ -3461,6 +3470,8 @@ def painel_comercial():
             "destino": destino,
             "objecoes": sorted(({"objecao": k, "qtd": v} for k, v in objecoes.items()),
                                key=lambda x: -x["qtd"]),
+            "perdas": sorted(({"motivo": k, "qtd": v} for k, v in perdas.items()),
+                             key=lambda x: -x["qtd"]),
             "origens": origens,
             "equipe": equipe,
             "nutricao": len(nutricao),
