@@ -536,7 +536,7 @@
                         <select id="fSegmento"><option value="">—</option></select></div>
                     <div class="ig2" style="gap:9px">
                         <div class="ig"><label for="fCidade">Cidade</label>
-                            <input type="text" id="fCidade" list="cidadesLista" placeholder="Natal"></div>
+                            <input type="text" id="fCidade" placeholder="Natal"></div>
                         <div class="ig" style="max-width:92px"><label for="fEstado">UF</label>
                             <select id="fEstado"><option value="">—</option></select></div>
                     </div>
@@ -696,14 +696,12 @@
            ========================================================== */
         /* Segmento e localização mudam a conversa do closer: setor define
            a dor típica, cidade define se a reunião é presencial. */
-        /* Estado é lista fechada; cidade sugere o que já foi digitado
-           antes, mas aceita qualquer valor — o Brasil tem 5.570 cidades
-           e travar a lista impediria cadastrar cliente novo. */
+        /* Estado é lista fechada: "R.N.", "rn" e "Rio Grande do Norte" são
+           o erro humano mais comum, e a lista resolve. Cidade fica livre
+           para digitar — são 5.570 no Brasil, e qualquer sugestão vira
+           uma lista longa que atrapalha mais do que ajuda. */
         const ESTADOS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
                          'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
-        const CIDADES_COMUNS = ['Natal','Parnamirim','Mossoró','São Gonçalo do Amarante',
-                                'Macaíba','Caicó','Currais Novos','Assu','João Pessoa',
-                                'Campina Grande','Recife','Fortaleza','João Câmara'];
 
         const SEGMENTOS = [
             'Indústria',
@@ -955,18 +953,6 @@
             await carregar();
         }
 
-        function atualizarCidades(){
-            // As cidades que já aparecem nos leads entram na sugestão:
-            // quem digitou "Parnamirim" uma vez não digita de novo errado.
-            var vistas = {};
-            CIDADES_COMUNS.forEach(function(c){ vistas[c] = true; });
-            (leads || []).forEach(function(l){ if(l.cidade) vistas[l.cidade] = true; });
-            var dl = document.getElementById('cidadesLista');
-            if(dl) dl.innerHTML = Object.keys(vistas).sort().map(function(c){
-                return '<option value="' + escA(c) + '">';
-            }).join('');
-        }
-
         async function carregar(){
             try{
                 const r = await fetch('/api/leads');
@@ -981,7 +967,6 @@
                 const d = await r.json();
                 leads = d.leads || [];
             }catch(e){ leads = []; showToast('Sem conexão com o servidor.','error'); }
-            atualizarCidades();
             render();
         }
 
@@ -1195,7 +1180,7 @@
                 } else if(c.tipo === 'cidade'){
                     // Lista aberta com sugestão: o Brasil tem 5.570 cidades,
                     // mas as que a Conexão atende se repetem.
-                    campo = `<input id="pt-${escA(c.k)}" type="text" list="cidadesLista"
+                    campo = `<input id="pt-${escA(c.k)}" type="text"
                         placeholder="Natal" value="${v}">`;
                 } else if(c.tipo === 'moeda'){
                     campo = `<input id="pt-${escA(c.k)}" type="number" step="0.01" min="0"
@@ -1819,6 +1804,5 @@
             }
         });
     </script>
-    <datalist id="cidadesLista"></datalist>
 </body>
 </html>
