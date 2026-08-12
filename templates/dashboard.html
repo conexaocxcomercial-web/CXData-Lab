@@ -238,6 +238,9 @@
         const QUADROS = [['recrutamento','Recrutamento e Seleção'],['rhestrategico','RH Estratégico'],
             ['projetos','Projetos'],['rhinterno','RH Interno'],['cxdata','CX Data'],
             ['comercial','Comercial'],['marketing','Marketing'],['financeiro','Adm/Financeiro']];
+        const ROT_PERDA = { contato_invalido:'Contato não existe', nao_localizado:'Não localizado',
+            empresa_fechada:'Empresa fechou', duplicado:'Lead duplicado',
+            nao_e_publico:'Fora do perfil', outra_perda:'Outro motivo' };
         const ROT_OBJECAO = { preco:'Preço', momento:'Momento', sem_verba:'Sem verba',
             concorrente:'Concorrente', nao_decisor:'Não decisor', sem_interesse:'Sem interesse',
             sem_resposta:'Sem resposta', outra:'Outra' };
@@ -641,8 +644,8 @@
 
                     <div class="gr">
                         <div class="gr-cab"><div>
-                            <div class="gr-t">Por que perdemos</div>
-                            <div class="gr-s">Objeções registradas ao mover para Nutrição ou Perdido.</div></div></div>
+                            <div class="gr-t">Por que não avançam</div>
+                            <div class="gr-s">Objeções de quem foi para nutrição — houve conversa e ele disse não agora.</div></div></div>
                         <div class="gr-corpo">
                             ${com.objecoes.length ? com.objecoes.map(o => {
                                 const max = Math.max(1, ...com.objecoes.map(x=>x.qtd));
@@ -652,6 +655,18 @@
                                     <span class="bh-t"><i style="width:${o.qtd/max*100}%;background:${cr}"></i></span>
                                     <span class="bh-v">${o.qtd}</span></div>`;
                             }).join('') : '<div class="conclusao">Nenhuma objeção registrada no período.</div>'}
+
+                            ${(com.perdas && com.perdas.length) ? `
+                            <div class="legenda" style="margin-top:16px">
+                                <span class="lg" style="color:var(--tinta-3)">Perdidos por falta de contato</span>
+                            </div>
+                            ${com.perdas.map(p => {
+                                const max = Math.max(1, ...com.perdas.map(x=>x.qtd));
+                                return `<div class="bh">
+                                    <span class="bh-rot"><span>${escH(ROT_PERDA[p.motivo]||p.motivo)}</span></span>
+                                    <span class="bh-t"><i style="width:${p.qtd/max*100}%;background:var(--linha-2)"></i></span>
+                                    <span class="bh-v">${p.qtd}</span></div>`;
+                            }).join('')}` : ''}
                         </div>
                     </div>
                 </div>
