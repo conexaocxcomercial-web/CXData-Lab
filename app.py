@@ -2330,7 +2330,8 @@ def criar_lead():
             # Segmento e localização: o closer precisa dos dois para
             # preparar a reunião. São exigidos no portão de Ganho.
             "segmento": d.get("segmento") or None,
-            "localizacao": (d.get("localizacao") or "").strip() or None,
+            "cidade": (d.get("cidade") or "").strip() or None,
+            "estado": (d.get("estado") or "").strip().upper()[:2] or None,
             "anotacoes": (d.get("anotacoes") or "").strip(),
             "proximo_contato": d.get("proximo_contato") or None,
             "valor_estimado": d.get("valor_estimado") or None,
@@ -2358,7 +2359,7 @@ def atualizar_lead(lead_id):
         # Lista fechada: funil e coluna só mudam pela rota de mover,
         # que registra a trilha e aplica as passagens.
         campos = ["empresa", "contato", "telefone", "email", "produto", "responsavel",
-                  "origem", "segmento", "localizacao", "anotacoes",
+                  "origem", "segmento", "cidade", "estado", "anotacoes",
                   "proximo_contato", "valor_estimado", "cnpj", "canal_proposta"]
         upd = {k: d[k] for k in campos if k in d}
         if not upd:
