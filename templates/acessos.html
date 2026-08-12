@@ -15,217 +15,238 @@
             --ok:#0E9F6E; --ok-fraco:#E6F7F0;
             --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
             --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
-            --externo:#DB2777; --externo-fraco:#FCE7F3;
+            --azul:#1A5FA0; --azul-fraco:#E9F2FB;
             --r-card:12px; --r-ctrl:9px; --r-pill:999px;
             --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
             --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
-            --e-pop:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
             --accent-lime:#BEF533; --accent-pink:#FF43C0;
         }
         *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
         button,input,select,textarea{ font-family:inherit; border:none; background:none; color:inherit; }
         body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
               min-height:100vh; -webkit-font-smoothing:antialiased; }
-        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
         :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
         @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
         ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
         ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
+        /* ===== ESTRUTURA ===== */
         .top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
             justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
             position:sticky; top:0; z-index:20; }
         .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
         .top-bar-logo span{ color:var(--acao); }
 
-        /* ===== CABEÇALHO DA TELA ===== */
-        .cabecalho{ background:var(--papel); border-bottom:1px solid var(--linha);
+        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; height:56px;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap;
             position:sticky; top:56px; z-index:15; }
-        .cb-topo{ max-width:1160px; margin:0 auto; padding:20px 22px 0; }
-        .cb-tit{ font-size:22px; font-weight:700; letter-spacing:-.7px; line-height:1.1; }
-        .cb-sub{ font-size:13px; color:var(--tinta-3); margin-top:5px; line-height:1.5; max-width:560px; }
-        .cb-abas{ max-width:1160px; margin:0 auto; padding:0 22px; display:flex; gap:2px; margin-top:16px; }
-        .aba{ font-size:13px; font-weight:550; padding:10px 14px; color:var(--tinta-3); cursor:pointer;
-            border-bottom:2px solid transparent; transition:.14s; display:flex; align-items:center; gap:7px; }
-        .aba:hover{ color:var(--tinta-2); }
-        .aba.on{ color:var(--tinta); font-weight:650; border-bottom-color:var(--acao); }
-        .aba-n{ font-size:10.5px; font-weight:600; padding:1px 7px; border-radius:99px;
-            background:var(--papel-2); color:var(--tinta-3); }
-        .aba.on .aba-n{ background:var(--acao-fraco); color:var(--acao); }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+        .segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); cursor:pointer;
+            padding:6px 13px; border-radius:6px; white-space:nowrap; transition:.15s;
+            display:flex; align-items:center; gap:6px; }
+        .segm-btn:hover{ color:var(--tinta); }
+        .segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600;
+            box-shadow:0 1px 2px rgba(0,0,0,.07); }
+        .segm-n{ font-size:10.5px; font-weight:600; opacity:.6; font-family:'IBM Plex Mono',monospace; }
+        .segm-btn.on .segm-n{ opacity:1; color:var(--acao); }
+        .cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
 
-        .wrap{ max-width:1160px; margin:0 auto; padding:20px 22px 80px; }
+        .btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+            gap:6px; padding:8px 13px; border-radius:var(--r-ctrl); white-space:nowrap; transition:.14s; }
+        .btn .material-symbols-rounded{ font-size:17px; }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+        .btn-acao:disabled{ opacity:.55; cursor:default; }
+        .btn-borda{ background:var(--papel); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha); }
+        .btn-borda:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta); }
+        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
+        .btn-perigo:hover{ background:#FDEDED; }
+
+        .busca{ position:relative; width:250px; }
+        .busca .material-symbols-rounded{ position:absolute; left:11px; top:50%; transform:translateY(-50%);
+            font-size:17px; color:var(--tinta-3); pointer-events:none; }
+        .busca input{ width:100%; font-size:12.5px; padding:8px 12px 8px 35px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; color:var(--tinta); transition:.14s; }
+        .busca input::placeholder{ color:var(--tinta-3); }
+        .busca input:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .filtro{ font-size:12.5px; font-weight:500; padding:8px 11px; background:var(--papel-2);
+            border-radius:var(--r-ctrl); color:var(--tinta-2); cursor:pointer; outline:none; }
+        .filtro:focus{ box-shadow:0 0 0 2px var(--acao-fraco); }
+
+        .wrap{ max-width:1240px; margin:0 auto; padding:20px 22px 90px; }
         .painel-aba{ display:none; }
         .painel-aba.on{ display:block; }
 
         /* ===== ESTADOS ===== */
-        .loading{ text-align:center; padding:64px; color:var(--tinta-3); font-size:13px; font-weight:500; }
-        .empty{ text-align:center; padding:56px 24px; color:var(--tinta-3); background:var(--papel);
+        .esqueleto{ height:58px; background:var(--papel); border-radius:10px; margin-bottom:7px;
+            box-shadow:var(--e1); position:relative; overflow:hidden; }
+        .esqueleto::after{ content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
+            animation:brilho 1.4s infinite; }
+        @keyframes brilho{ from{ transform:translateX(-100%); } to{ transform:translateX(100%); } }
+        .vazio{ text-align:center; padding:56px 24px; background:var(--papel);
             border-radius:var(--r-card); box-shadow:var(--e1); }
-        .empty .material-symbols-rounded{ font-size:38px; opacity:.3; display:block; margin-bottom:12px; }
-        .empty h3{ font-size:14.5px; font-weight:650; color:var(--tinta-2); margin-bottom:5px; }
-        .empty p{ font-size:12.5px; font-weight:500; line-height:1.6; max-width:340px; margin:0 auto; }
+        .vazio .material-symbols-rounded{ font-size:40px; color:var(--linha-2); display:block; margin-bottom:13px; }
+        .vazio h3{ font-size:15px; font-weight:650; color:var(--tinta); margin-bottom:6px; }
+        .vazio p{ font-size:13px; font-weight:450; line-height:1.6; max-width:400px; margin:0 auto 18px;
+            color:var(--tinta-3); }
 
-        /* ===== BARRA DE FERRAMENTAS ===== */
-        .ferramentas{ display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
-        .busca{ position:relative; flex:1; min-width:200px; max-width:320px; }
-        .busca .material-symbols-rounded{ position:absolute; left:11px; top:50%; transform:translateY(-50%);
-            font-size:18px; color:var(--tinta-3); pointer-events:none; }
-        .busca input{ width:100%; font-size:13px; padding:9px 12px 9px 36px; background:var(--papel);
-            border:1px solid var(--linha); border-radius:var(--r-ctrl); outline:none; color:var(--tinta);
-            transition:.14s; }
-        .busca input::placeholder{ color:var(--tinta-3); }
-        .busca input:focus{ border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
-        .filtro{ font-size:12.5px; font-weight:550; padding:9px 12px; background:var(--papel);
-            border:1px solid var(--linha); border-radius:var(--r-ctrl); color:var(--tinta-2);
-            cursor:pointer; outline:none; transition:.14s; }
-        .filtro:focus{ border-color:var(--acao); }
-        .cont{ margin-left:auto; font-size:12.5px; font-weight:550; color:var(--tinta-3); }
-        .cont b{ font-weight:650; color:var(--tinta); }
+        .faixa{ border-radius:var(--r-card); padding:14px 16px; display:flex; gap:12px;
+            align-items:flex-start; margin-bottom:12px; }
+        .faixa .material-symbols-rounded{ font-size:19px; flex-shrink:0; margin-top:1px; }
+        .fx-t{ font-size:13px; font-weight:650; margin-bottom:3px; }
+        .fx-s{ font-size:12.5px; line-height:1.55; }
+        .fx-acao{ margin-left:auto; flex-shrink:0; }
+        .faixa.aviso{ background:var(--at-fundo); box-shadow:0 0 0 1px var(--at-borda); }
+        .faixa.aviso .material-symbols-rounded, .faixa.aviso .fx-t, .faixa.aviso .fx-s{ color:#7A4A0C; }
+        .faixa.critica{ background:var(--cr-fundo); box-shadow:0 0 0 1px var(--cr-borda); }
+        .faixa.critica .material-symbols-rounded, .faixa.critica .fx-t, .faixa.critica .fx-s{ color:#8A1F1F; }
+        .faixa.info{ background:var(--acao-fraco); box-shadow:0 0 0 1px #D6CEFB; }
+        .faixa.info .material-symbols-rounded, .faixa.info .fx-t, .faixa.info .fx-s{ color:#3C3489; }
 
-        /* ===== RESUMO ===== */
-        .resumo{ display:flex; gap:1px; background:var(--linha); border-radius:var(--r-card);
-            overflow:hidden; margin-bottom:20px; box-shadow:var(--e1); }
-        .rs{ flex:1; background:var(--papel); padding:13px 16px; min-width:0; cursor:pointer;
-            transition:.14s; text-align:left; }
-        .rs:hover{ background:var(--papel-2); }
-        .rs.on{ background:var(--papel-2); }
-        .rs-topo{ display:flex; align-items:center; gap:7px; margin-bottom:7px; }
-        .rs-pt{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-        .rs-rot{ font-size:11px; font-weight:600; color:var(--tinta-3); letter-spacing:.2px;
-            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .rs-v{ font-size:21px; font-weight:700; letter-spacing:-.6px; line-height:1; }
-        .rs-p{ font-size:10.5px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
-        @media(max-width:760px){ .resumo{ flex-wrap:wrap; } .rs{ min-width:calc(50% - 1px); } }
+        /* ===== TABELA ===== */
+        .tabela{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
+        .th, .tr{ display:grid; grid-template-columns:2.2fr 1.3fr 1.1fr 1.4fr 112px 34px;
+            gap:14px; padding:0 16px; align-items:center; }
+        .th{ height:38px; background:var(--papel-2); border-bottom:1px solid var(--linha); }
+        .th div{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); }
+        .tr{ min-height:62px; border-bottom:1px solid var(--papel-2); cursor:pointer;
+            transition:background .12s; width:100%; text-align:left; }
+        .tr:last-child{ border-bottom:none; }
+        .tr:hover{ background:var(--papel-2); }
+        .tr.sel{ background:var(--acao-fraco); }
+        .tr.inativa .pes-nome, .tr.inativa .av{ opacity:.45; }
 
-        /* ===== GRUPO POR NÍVEL ===== */
-        .grupo{ margin-bottom:26px; }
-        .gr-cab{ display:flex; align-items:center; gap:11px; margin-bottom:10px; padding:0 2px; }
-        .gr-ico{ width:28px; height:28px; min-width:28px; border-radius:8px; display:flex;
-            align-items:center; justify-content:center; }
-        .gr-ico .material-symbols-rounded{ font-size:16px; }
-        .gr-t{ font-size:13.5px; font-weight:650; letter-spacing:-.2px; }
-        .gr-d{ font-size:12px; color:var(--tinta-3); }
-        .gr-n{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--tinta-3);
-            background:var(--papel); padding:4px 10px; border-radius:99px; box-shadow:var(--e1); }
+        .pes{ display:flex; align-items:center; gap:11px; min-width:0; }
+        .av{ width:34px; height:34px; min-width:34px; border-radius:50%; display:flex;
+            align-items:center; justify-content:center; font-size:11px; font-weight:650; }
+        .pes-txt{ min-width:0; }
+        .pes-nome{ font-size:13px; font-weight:600; letter-spacing:-.1px; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; display:block; }
+        .pes-mail{ font-size:11.5px; color:var(--tinta-3); overflow:hidden; text-overflow:ellipsis;
+            white-space:nowrap; margin-top:1px; display:block; }
+        .cel{ font-size:12.5px; color:var(--tinta-2); overflow:hidden; text-overflow:ellipsis;
+            white-space:nowrap; display:block; }
+        .cel.fraca{ color:var(--tinta-3); font-style:italic; }
+        .cel-sub{ font-size:11px; color:var(--tinta-3); display:block; margin-top:2px;
+            font-family:'IBM Plex Mono',monospace; }
 
-        /* ===== CARTÃO DE PESSOA ===== */
-        .pc{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
-            margin-bottom:7px; overflow:hidden; transition:box-shadow .14s; }
-        .pc:hover{ box-shadow:var(--e2); }
-        .pc.aberto{ box-shadow:var(--e2); }
-        .pc-cab{ padding:13px 16px; display:flex; align-items:center; gap:13px; cursor:pointer;
-            width:100%; text-align:left; }
-        .av{ width:36px; height:36px; min-width:36px; border-radius:50%; display:flex;
-            align-items:center; justify-content:center; font-size:11.5px; font-weight:600; }
-        .pc-id{ flex:1; min-width:0; }
-        .pc-nome{ font-size:13.5px; font-weight:650; letter-spacing:-.1px; overflow:hidden;
-            text-overflow:ellipsis; white-space:nowrap; }
-        .pc-mail{ font-size:11.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
-            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px; }
-        .pc-selos{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
-        .selo{ font-size:11px; font-weight:600; padding:4px 10px; border-radius:99px; white-space:nowrap;
-            display:inline-flex; align-items:center; gap:5px; }
-        .selo .material-symbols-rounded{ font-size:13px; }
-        .s-eq{ background:var(--papel-2); color:var(--tinta-2); }
-        .s-q{ background:#E9F2FB; color:#1A5FA0; }
-        .s-a{ background:var(--ok-fraco); color:var(--ok); }
-        .s-aj{ background:var(--at-fundo); color:var(--atencao); }
+        .nivel-p{ font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:99px;
+            display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+        .nivel-p .pt{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+        .selo{ font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:99px;
+            display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+        .selo .material-symbols-rounded{ font-size:12px; }
+        .s-ok{ background:var(--ok-fraco); color:var(--ok); }
+        .s-at{ background:var(--at-fundo); color:var(--atencao); }
+        .s-cr{ background:var(--cr-fundo); color:var(--critico); }
         .s-n{ background:var(--papel-2); color:var(--tinta-3); }
-        .s-off{ background:var(--papel-2); color:var(--tinta-3); }
-        .s-alerta{ background:var(--cr-fundo); color:var(--critico); }
-        .pc-seta{ width:26px; height:26px; min-width:26px; border-radius:7px; display:flex;
-            align-items:center; justify-content:center; color:var(--tinta-3); transition:.14s; }
-        .pc.aberto .pc-seta{ background:var(--papel-2); color:var(--tinta); transform:rotate(180deg); }
-        .pc-seta .material-symbols-rounded{ font-size:19px; }
-        .pc.inativo .av, .pc.inativo .pc-id{ opacity:.45; }
+        .tr-seta{ color:var(--linha-2); display:flex; justify-content:flex-end; }
+        .tr-seta .material-symbols-rounded{ font-size:19px; }
+        .tr:hover .tr-seta{ color:var(--tinta-3); }
 
-        /* ===== CORPO EXPANDIDO ===== */
-        .pc-corpo{ display:none; border-top:1px solid var(--linha); background:var(--papel-2); }
-        .pc.aberto .pc-corpo{ display:grid; grid-template-columns:274px 1fr; }
-        @media(max-width:820px){ .pc.aberto .pc-corpo{ grid-template-columns:1fr; } }
-        .col-e{ padding:18px; border-right:1px solid var(--linha); }
-        .col-d{ padding:18px; min-width:0; }
-        @media(max-width:820px){ .col-e{ border-right:none; border-bottom:1px solid var(--linha); } }
-        .campo{ margin-bottom:20px; }
-        .campo:last-child{ margin-bottom:0; }
-        .campo-t{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
-            color:var(--tinta-3); margin-bottom:9px; display:flex; align-items:center; gap:7px; }
-        .campo-t .cnt{ font-weight:600; color:var(--tinta-2); background:var(--papel);
-            padding:1px 7px; border-radius:99px; letter-spacing:0; box-shadow:var(--e1); }
+        @media(max-width:1040px){
+            .th{ display:none; }
+            .tr{ grid-template-columns:1fr auto; gap:9px; padding:13px 15px; align-items:center; }
+            .cel-cargo, .cel-equipe, .tr-seta{ display:none; }
+            .pes{ grid-column:1/-1; }
+            .cel-nivel{ grid-column:1; }
+            .cel-sit{ grid-column:2; text-align:right; }
+        }
+
+        /* ===== PAINEL LATERAL ===== */
+        .painel-fundo{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.32); z-index:900; }
+        .painel-fundo.show{ display:block; }
+        .painel{ position:fixed; top:0; right:0; bottom:0; width:100%; max-width:440px;
+            background:var(--papel); z-index:901; display:none; flex-direction:column;
+            box-shadow:-8px 0 40px rgba(23,23,26,.14); }
+        .painel.show{ display:flex; }
+        .pn-head{ padding:18px 20px 16px; border-bottom:1px solid var(--linha); display:flex;
+            gap:13px; align-items:flex-start; flex-shrink:0; }
+        .pn-av{ width:42px; height:42px; min-width:42px; border-radius:50%; display:flex;
+            align-items:center; justify-content:center; font-size:13px; font-weight:650; }
+        .pn-id{ flex:1; min-width:0; }
+        .pn-nome{ font-size:16px; font-weight:650; letter-spacing:-.3px; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; }
+        .pn-mail{ font-size:12px; color:var(--tinta-3); margin-top:2px; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; }
+        .pn-x{ width:30px; height:30px; border-radius:8px; background:var(--papel-2); color:var(--tinta-3);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+        .pn-x:hover{ background:var(--linha); color:var(--tinta); }
+        .pn-x .material-symbols-rounded{ font-size:18px; }
+        .pn-corpo{ padding:18px 20px 24px; overflow-y:auto; flex:1; }
+        .pn-pe{ padding:12px 20px; border-top:1px solid var(--linha); background:var(--papel-2);
+            display:flex; gap:9px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+        .pn-status{ font-size:11.5px; color:var(--tinta-3); font-weight:500; flex:1; min-width:110px;
+            display:flex; align-items:center; gap:6px; }
+        .pn-status.salvo{ color:var(--ok); }
+        .pn-status .material-symbols-rounded{ font-size:14px; }
+
+        .bloco{ margin-bottom:22px; }
+        .bloco:last-child{ margin-bottom:0; }
+        .bl-t{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+        .bl-cnt{ font-weight:600; color:var(--tinta-2); background:var(--papel-2); padding:1px 7px;
+            border-radius:99px; letter-spacing:0; }
+        .bl-acao{ margin-left:auto; font-size:11px; font-weight:600; color:var(--acao); cursor:pointer;
+            padding:4px 8px; border-radius:6px; letter-spacing:0; text-transform:none; }
+        .bl-acao:hover{ background:var(--acao-fraco); }
         .dica{ font-size:11.5px; color:var(--tinta-3); line-height:1.5; margin-top:9px; }
         .dica.alerta{ color:var(--atencao); }
 
-        /* níveis como opções */
         .niveis{ display:flex; flex-direction:column; gap:5px; }
-        .nv{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:var(--r-ctrl);
-            background:var(--papel); cursor:pointer; transition:.14s; width:100%; text-align:left;
-            box-shadow:inset 0 0 0 1px var(--linha); }
+        .nv{ display:flex; align-items:flex-start; gap:11px; padding:11px 13px; border-radius:var(--r-ctrl);
+            background:var(--papel-2); cursor:pointer; transition:.14s; width:100%; text-align:left;
+            box-shadow:inset 0 0 0 1px transparent; }
         .nv:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); }
-        .nv.on{ box-shadow:inset 0 0 0 1.5px var(--cor,var(--acao)); background:var(--papel); }
-        .nv-r{ width:15px; height:15px; min-width:15px; border-radius:50%; margin-top:1px;
+        .nv.on{ background:var(--papel); box-shadow:inset 0 0 0 1.5px var(--cor,var(--acao)); }
+        .nv-r{ width:16px; height:16px; min-width:16px; border-radius:50%; margin-top:1px;
             box-shadow:inset 0 0 0 1.5px var(--linha-2); transition:.14s; }
-        .nv.on .nv-r{ box-shadow:inset 0 0 0 4.5px var(--cor,var(--acao)); }
-        .nv-txt{ flex:1; min-width:0; }
-        .nv-t{ font-size:12.5px; font-weight:600; color:var(--tinta); display:flex; align-items:center; gap:6px; }
+        .nv.on .nv-r{ box-shadow:inset 0 0 0 5px var(--cor,var(--acao)); }
+        .nv-t{ font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:7px; }
         .nv-t .material-symbols-rounded{ font-size:15px; color:var(--cor,var(--tinta-3)); }
-        .nv-d{ font-size:11px; color:var(--tinta-3); line-height:1.45; margin-top:2px; }
-        .nv:disabled{ opacity:.5; cursor:not-allowed; }
+        .nv-d{ font-size:11px; color:var(--tinta-3); line-height:1.45; margin-top:2px; display:block; }
 
-        .eq-campo{ position:relative; }
-        .eq-campo input{ width:100%; font-size:12.5px; padding:9px 12px; background:var(--papel);
-            border:1px solid var(--linha); border-radius:var(--r-ctrl); color:var(--tinta); outline:none; transition:.14s; }
-        .eq-campo input:focus{ border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
-        .eq-campo input::placeholder{ color:var(--tinta-3); }
+        .campo input{ width:100%; font-size:13px; padding:10px 12px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta);
+            outline:none; transition:.14s; }
+        .campo input:focus{ background:var(--papel); border-color:var(--acao);
+            box-shadow:0 0 0 3px var(--acao-fraco); }
+        .campo input::placeholder{ color:var(--tinta-3); }
 
-        /* chips de quadro e área */
         .chips{ display:flex; gap:6px; flex-wrap:wrap; }
-        .chip{ font-size:12px; font-weight:550; padding:7px 12px; border-radius:var(--r-pill);
-            background:var(--papel); color:var(--tinta-3); cursor:pointer; display:inline-flex;
-            align-items:center; gap:6px; transition:.14s; box-shadow:inset 0 0 0 1px var(--linha); }
-        .chip:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta-2); }
-        .chip .material-symbols-rounded{ font-size:14px; opacity:0; width:0; transition:.14s; }
+        .chip{ font-size:12px; font-weight:500; padding:7px 12px; border-radius:var(--r-pill);
+            background:var(--papel-2); color:var(--tinta-2); cursor:pointer; display:inline-flex;
+            align-items:center; gap:6px; transition:.14s; }
+        .chip:hover{ background:var(--linha); }
+        .chip .material-symbols-rounded{ font-size:14px; display:none; }
         .chip.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600;
             box-shadow:inset 0 0 0 1px var(--acao); }
-        .chip.on .material-symbols-rounded{ opacity:1; width:14px; }
-        .chip:disabled{ opacity:.5; cursor:not-allowed; }
-        .chip-tudo{ font-size:11.5px; font-weight:600; color:var(--acao); cursor:pointer;
-            padding:7px 10px; border-radius:var(--r-pill); transition:.14s; }
-        .chip-tudo:hover{ background:var(--acao-fraco); }
+        .chip.on .material-symbols-rounded{ display:block; }
 
-        .divisor{ height:1px; background:var(--linha); margin:20px 0; }
+        .conta-l{ font-size:12.5px; color:var(--tinta-2); line-height:1.95; }
+        .conta-l b{ font-weight:650; color:var(--tinta); }
 
-        /* pé do cartão */
-        .pc-pe{ grid-column:1/-1; border-top:1px solid var(--linha); padding:11px 18px;
-            display:flex; align-items:center; gap:11px; flex-wrap:wrap; background:var(--papel); }
-        .pe-status{ font-size:11.5px; color:var(--tinta-3); font-weight:500; flex:1; min-width:140px;
-            display:flex; align-items:center; gap:6px; }
-        .pe-status .material-symbols-rounded{ font-size:14px; }
-        .pe-status.salvo{ color:var(--ok); }
-        .btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
-            gap:6px; padding:7px 12px; border-radius:var(--r-ctrl); transition:.14s; white-space:nowrap; }
-        .btn .material-symbols-rounded{ font-size:16px; }
-        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
-        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
-        .btn-borda{ background:var(--papel); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha); }
-        .btn-borda:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta); }
-        .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
-        .btn-perigo:hover{ background:#FDEDED; }
-        .btn-acao{ background:var(--acao); color:#fff; }
-        .btn-acao:hover{ background:#5a4bd4; }
-
-        /* ===== ABA NÍVEIS ===== */
-        .nivel-card{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
-            margin-bottom:11px; overflow:hidden; }
-        .nc-cab{ padding:16px 18px; display:flex; align-items:flex-start; gap:13px; }
+        /* ===== NÍVEIS ===== */
+        .nc{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            margin-bottom:10px; overflow:hidden; }
+        .nc-cab{ padding:15px 17px; display:flex; align-items:flex-start; gap:13px; }
         .nc-ico{ width:36px; height:36px; min-width:36px; border-radius:10px; display:flex;
             align-items:center; justify-content:center; }
         .nc-ico .material-symbols-rounded{ font-size:19px; }
-        .nc-t{ font-size:14.5px; font-weight:650; letter-spacing:-.2px; }
+        .nc-t{ font-size:14px; font-weight:650; letter-spacing:-.2px; }
         .nc-d{ font-size:12.5px; color:var(--tinta-3); margin-top:3px; line-height:1.5; }
         .nc-n{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--tinta-3);
             background:var(--papel-2); padding:5px 11px; border-radius:99px; white-space:nowrap; }
-        .nc-caps{ padding:0 18px 16px; display:flex; gap:6px; flex-wrap:wrap; }
-        .capsula{ font-size:11px; font-weight:550; padding:4px 10px; border-radius:99px;
+        .nc-caps{ padding:0 17px 15px; display:flex; gap:6px; flex-wrap:wrap; }
+        .capsula{ font-size:11px; font-weight:500; padding:4px 10px; border-radius:99px;
             background:var(--papel-2); color:var(--tinta-2); display:inline-flex; align-items:center; gap:5px; }
         .capsula .esc{ font-size:9.5px; font-weight:600; padding:1px 6px; border-radius:99px; }
         .esc-tudo{ background:var(--ok-fraco); color:var(--ok); }
@@ -234,34 +255,54 @@
         .capsula.sensivel{ background:#F3EEFF; color:#7C3AED; }
 
         /* ===== REGISTRO ===== */
-        .reg{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
-        .rl{ display:grid; grid-template-columns:120px 1fr 150px; gap:14px; padding:12px 18px;
-            border-bottom:1px solid var(--linha); align-items:baseline; }
-        .rl:last-child{ border:none; }
-        .rl.th{ background:var(--papel-2); }
-        .rl.th div{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3); }
-        .rl-q{ font-size:11.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; }
-        .rl-o{ font-size:12.5px; color:var(--tinta-2); line-height:1.5; }
-        .rl-o b{ font-weight:650; color:var(--tinta); }
-        .rl-w{ font-size:12px; color:var(--tinta-2); font-weight:550; }
-        .rl-det{ font-size:11px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; margin-top:3px; }
-        .rl.divg{ background:var(--at-fundo); }
-        .rl.divg .rl-o{ color:#7A4A0C; }
-        @media(max-width:760px){ .rl{ grid-template-columns:1fr; gap:4px; } .rl.th{ display:none; } }
+        .reg-l{ display:grid; grid-template-columns:130px 1fr 150px; gap:14px; padding:12px 16px;
+            border-bottom:1px solid var(--papel-2); align-items:baseline; }
+        .reg-l:last-child{ border:none; }
+        .reg-q{ font-size:11.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace; }
+        .reg-o{ font-size:12.5px; color:var(--tinta-2); line-height:1.5; }
+        .reg-o b{ font-weight:650; color:var(--tinta); }
+        .reg-w{ font-size:12px; color:var(--tinta-2); font-weight:500; }
+        @media(max-width:760px){ .reg-l{ grid-template-columns:1fr; gap:4px; } }
 
-        .faixa{ border-radius:var(--r-card); padding:15px 17px; display:flex; gap:12px;
-            align-items:flex-start; margin-bottom:16px; }
-        .faixa .material-symbols-rounded{ font-size:19px; flex-shrink:0; margin-top:1px; }
-        .fx-t{ font-size:13px; font-weight:650; margin-bottom:3px; }
-        .fx-s{ font-size:12.5px; line-height:1.55; }
-        .faixa.aviso{ background:var(--at-fundo); box-shadow:0 0 0 1px var(--at-borda); }
-        .faixa.aviso .material-symbols-rounded, .faixa.aviso .fx-t, .faixa.aviso .fx-s{ color:#7A4A0C; }
-        .faixa.limpo{ background:var(--ok-fraco); box-shadow:0 0 0 1px #A5DEC8; }
-        .faixa.limpo .material-symbols-rounded, .faixa.limpo .fx-t, .faixa.limpo .fx-s{ color:#0A5C42; }
-        .faixa.info{ background:var(--acao-fraco); box-shadow:0 0 0 1px #D6CEFB; }
-        .faixa.info .material-symbols-rounded, .faixa.info .fx-t, .faixa.info .fx-s{ color:#3C3489; }
+        /* ===== MODAL ===== */
+        .modal-fundo{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            justify-content:center; align-items:center; padding:20px; }
+        .modal-fundo.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:500px; max-height:92vh;
+            overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha); display:flex;
+            align-items:flex-start; gap:12px; flex-shrink:0; }
+        .md-ey{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:4px; }
+        .md-t{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .md-corpo{ padding:18px 20px 22px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
+        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); display:flex; gap:9px;
+            background:var(--papel-2); flex-shrink:0; flex-wrap:wrap; }
+        .ig label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .ig input, .ig select{ width:100%; font-size:13px; padding:10px 12px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta);
+            outline:none; transition:.14s; }
+        .ig input:focus, .ig select:focus{ background:var(--papel); border-color:var(--acao);
+            box-shadow:0 0 0 3px var(--acao-fraco); }
+        .ig input.erro{ border-color:var(--critico); box-shadow:0 0 0 3px var(--cr-fundo); }
+        .ig2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        @media(max-width:520px){ .ig2{ grid-template-columns:1fr; } }
+        .ig-dica{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-top:6px; }
+        .ig-erro{ font-size:11.5px; color:var(--critico); font-weight:500; margin-top:6px; display:none; }
+        .ig-erro.show{ display:block; }
+        .senha-linha{ display:flex; gap:8px; }
+        .senha-linha input{ flex:1; font-family:'IBM Plex Mono',monospace; }
+        .md-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); padding-top:8px; border-top:1px solid var(--linha); }
+        .caixa-aviso{ background:var(--at-fundo); border-radius:var(--r-ctrl);
+            box-shadow:0 0 0 1px var(--at-borda); padding:11px 13px; display:flex; gap:9px;
+            align-items:flex-start; }
+        .caixa-aviso .material-symbols-rounded{ font-size:16px; color:var(--atencao);
+            flex-shrink:0; margin-top:1px; }
+        .caixa-aviso > span:last-child{ font-size:12px; line-height:1.5; color:#7A4A0C; }
 
-        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10002;
             display:flex; flex-direction:column; gap:9px; }
         .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
             font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
@@ -269,63 +310,17 @@
 
         @media (max-width:900px){
             .top-bar{ padding:0 16px 0 60px; }
-            .cb-topo{ padding:16px 16px 0; }
-            .cb-abas{ padding:0 16px; overflow-x:auto; }
-            .cb-abas::-webkit-scrollbar{ display:none; }
-            .aba{ white-space:nowrap; }
-            .wrap{ padding:16px 16px 70px; }
-            .pc-cab{ flex-wrap:wrap; gap:10px; }
-            .pc-selos{ width:100%; justify-content:flex-start; padding-left:49px; }
-            .cont{ width:100%; margin-left:0; }
-        }
-
-        .cb-linha{ display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; }
-        .cb-linha > button{ margin-left:auto; flex-shrink:0; }
-
-        /* ===== JANELA DE CADASTRO ===== */
-        .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45);
-            z-index:1000; justify-content:center; align-items:center; padding:20px; }
-        .modal-overlay.show{ display:flex; }
-        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:520px;
-            max-height:92vh; overflow:hidden; display:flex; flex-direction:column;
-            box-shadow:0 24px 60px rgba(23,23,26,.22); }
-        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha);
-            display:flex; align-items:flex-start; gap:12px; flex-shrink:0; }
-        .md-ey{ font-size:10.5px; font-weight:600; text-transform:uppercase;
-            letter-spacing:.5px; color:var(--tinta-3); margin-bottom:4px; }
-        .md-t{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
-        .md-x{ margin-left:auto; width:28px; height:28px; border-radius:8px;
-            background:var(--papel-2); color:var(--tinta-3); display:flex;
-            align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
-        .md-x .material-symbols-rounded{ font-size:17px; }
-        .md-corpo{ padding:18px 20px 22px; display:flex; flex-direction:column;
-            gap:14px; overflow-y:auto; }
-        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); display:flex;
-            gap:9px; background:var(--papel-2); flex-shrink:0; flex-wrap:wrap; }
-        .ig label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
-            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
-        .ig input, .ig select{ width:100%; font-size:13px; color:var(--tinta);
-            padding:10px 12px; background:var(--papel-2); border:1px solid transparent;
-            border-radius:var(--r-ctrl); outline:none; transition:.14s; font-family:inherit; }
-        .ig input:focus, .ig select:focus{ background:var(--papel); border-color:var(--acao);
-            box-shadow:0 0 0 3px var(--acao-fraco); }
-        .ig2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        @media(max-width:520px){ .ig2{ grid-template-columns:1fr; } }
-        .ig-dica{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-top:6px; }
-        .ig-dica.alerta{ color:var(--atencao); }
-        .senha-linha{ display:flex; gap:8px; }
-        .senha-linha input{ flex:1; font-family:'IBM Plex Mono',monospace; }
-        .md-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
-            letter-spacing:.5px; color:var(--tinta-3); padding-top:6px;
-            border-top:1px solid var(--linha); margin-top:2px; }
-        .aviso-caixa{ background:var(--at-fundo); border-radius:var(--r-ctrl);
-            box-shadow:0 0 0 1px var(--at-borda); padding:11px 13px; display:flex;
-            gap:9px; align-items:flex-start; }
-        .aviso-caixa .material-symbols-rounded{ font-size:16px; color:var(--atencao);
-            flex-shrink:0; margin-top:1px; }
-        .aviso-caixa span:last-child{ font-size:12px; line-height:1.5; color:#7A4A0C; }
-        @media (max-width:900px){
-            .modal-overlay{ padding:0; align-items:flex-end; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            .cmd-tit, .cmd-sep{ display:none; }
+            .segm{ width:100%; overflow-x:auto; }
+            .segm::-webkit-scrollbar{ display:none; }
+            .segm-btn{ flex:1; justify-content:center; }
+            .cmd-dir{ width:100%; margin-left:0; }
+            .cmd-dir .btn{ flex:1; justify-content:center; }
+            .wrap{ padding:16px 16px 80px; }
+            .busca{ flex:1; width:auto; min-width:150px; }
+            .painel{ max-width:none; }
+            .modal-fundo{ padding:0; align-items:flex-end; }
             .modal{ max-width:none; border-radius:18px 18px 0 0; }
         }
     </style>
@@ -337,53 +332,68 @@
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="cabecalho">
-        <div class="cb-topo">
-            <div class="cb-linha">
-                <div>
-                    <h1 class="cb-tit">Acessos</h1>
-                    <p class="cb-sub">Defina o nível de cada pessoa, em quais quadros ela trabalha
-                       e quais áreas da plataforma pode abrir.</p>
-                </div>
-                <button class="btn btn-acao" onclick="abrirNovaPessoa()">
-                    <span class="material-symbols-rounded">person_add</span>Nova pessoa</button>
-            </div>
+    <div class="cmd">
+        <span class="cmd-tit">Acessos</span>
+        <div class="cmd-sep"></div>
+        <div class="segm" role="tablist">
+            <button class="segm-btn on" id="tab-pessoas" role="tab" aria-selected="true"
+                    onclick="acessos.aba('pessoas')">Pessoas<span class="segm-n" id="nPessoas"></span></button>
+            <button class="segm-btn" id="tab-niveis" role="tab" aria-selected="false"
+                    onclick="acessos.aba('niveis')">Níveis</button>
+            <button class="segm-btn" id="tab-registro" role="tab" aria-selected="false"
+                    onclick="acessos.aba('registro')">Registro</button>
         </div>
-        <div class="cb-abas">
-            <button class="aba on" data-aba="pessoas" onclick="trocarAba('pessoas')">
-                Pessoas<span class="aba-n" id="nPessoas">–</span></button>
-            <button class="aba" data-aba="niveis" onclick="trocarAba('niveis')">Níveis</button>
-            <button class="aba" data-aba="registro" onclick="trocarAba('registro')">Registro</button>
-        </div>
+        <div class="cmd-dir" id="cmdDir"></div>
     </div>
 
     <div class="wrap">
-        <div class="painel-aba on" id="abaPessoas"><div class="loading">Carregando...</div></div>
-        <div class="painel-aba" id="abaNiveis"><div class="loading">Carregando...</div></div>
-        <div class="painel-aba" id="abaRegistro"><div class="loading">Carregando...</div></div>
+        <div class="painel-aba on" id="abaPessoas"></div>
+        <div class="painel-aba" id="abaNiveis"></div>
+        <div class="painel-aba" id="abaRegistro"></div>
     </div>
 
-    <div class="modal-overlay" id="modalPessoa" onclick="if(event.target.id==='modalPessoa')fecharPessoa()">
+    <div class="painel-fundo" id="painelFundo" onclick="acessos.fecharPainel()"></div>
+    <aside class="painel" id="painelPessoa" role="dialog" aria-modal="true" aria-labelledby="pnNome">
+        <div class="pn-head">
+            <span class="pn-av" id="pnAv"></span>
+            <div class="pn-id">
+                <div class="pn-nome" id="pnNome">—</div>
+                <div class="pn-mail" id="pnMail"></div>
+            </div>
+            <button class="pn-x" onclick="acessos.fecharPainel()" aria-label="Fechar">
+                <span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div class="pn-corpo" id="pnCorpo"></div>
+        <div class="pn-pe">
+            <span class="pn-status" id="pnStatus">Vale no próximo login desta pessoa.</span>
+            <button class="btn btn-borda" id="pnEditar">
+                <span class="material-symbols-rounded">edit</span>Dados e senha</button>
+            <button class="btn btn-perigo" id="pnAtivo"></button>
+        </div>
+    </aside>
+
+    <div class="modal-fundo" id="modalPessoa" onclick="if(event.target.id==='modalPessoa')acessos.fecharModal()">
         <div class="modal">
             <div class="md-head">
                 <div style="min-width:0">
                     <div class="md-ey">Acessos</div>
                     <div class="md-t" id="mpTitulo">Nova pessoa</div>
                 </div>
-                <button class="md-x" onclick="fecharPessoa()" aria-label="Fechar">
+                <button class="pn-x" style="margin-left:auto" onclick="acessos.fecharModal()" aria-label="Fechar">
                     <span class="material-symbols-rounded">close</span></button>
             </div>
             <div class="md-corpo">
                 <input type="hidden" id="mpId">
-
                 <div class="ig">
                     <label for="mpNome">Nome completo</label>
-                    <input type="text" id="mpNome" placeholder="Como aparece na plataforma" maxlength="120">
+                    <input type="text" id="mpNome" maxlength="120" placeholder="Como aparece na plataforma">
+                    <div class="ig-erro" id="errNome">Informe o nome.</div>
                 </div>
                 <div class="ig2">
                     <div class="ig"><label for="mpEmail">E-mail</label>
                         <input type="email" id="mpEmail" placeholder="pessoa@conexao.com"
-                               autocapitalize="none" spellcheck="false"></div>
+                               autocapitalize="none" spellcheck="false">
+                        <div class="ig-erro" id="errEmail">Informe um e-mail válido.</div></div>
                     <div class="ig"><label for="mpCargo">Cargo</label>
                         <input type="text" id="mpCargo" placeholder="Ex.: Consultora de R&amp;S"></div>
                 </div>
@@ -398,633 +408,850 @@
                 <div class="ig">
                     <label for="mpNivel">Nível</label>
                     <select id="mpNivel"></select>
-                    <div class="ig-dica" id="mpNivelDica">O nível define o que a pessoa enxerga.
-                        Quadros e áreas você ajusta depois, no cartão dela.</div>
+                    <div class="ig-dica" id="mpNivelDica"></div>
                 </div>
-
-                <div class="ig" id="mpBlocoSenha">
-                    <label for="mpSenha">Senha inicial</label>
+                <div class="ig">
+                    <label for="mpSenha">Senha</label>
                     <div class="senha-linha">
                         <input type="text" id="mpSenha" placeholder="mínimo 8 caracteres">
-                        <button class="btn btn-borda" onclick="gerarSenha()" type="button">
+                        <button class="btn btn-borda" type="button" onclick="acessos.gerarSenha()">
                             <span class="material-symbols-rounded">casino</span>Gerar</button>
                     </div>
-                    <div class="ig-dica">Anote antes de salvar: depois de gravada, a senha vira
-                        um hash e nem quem administra consegue lê-la.</div>
+                    <div class="ig-erro" id="errSenha">A senha precisa de pelo menos 8 caracteres.</div>
+                    <div class="ig-dica" id="mpSenhaDica"></div>
                 </div>
-
-                <div class="aviso-caixa" id="mpAvisoSenha" style="display:none">
+                <div class="caixa-aviso" id="mpAvisoSenha" style="display:none">
                     <span class="material-symbols-rounded">key</span>
-                    <span>Você está definindo uma senha nova. A anterior deixa de valer assim
-                        que salvar, e a pessoa precisa receber esta por fora.</span>
+                    <span>A senha anterior deixa de valer assim que salvar. Envie a nova por um
+                        canal seguro.</span>
                 </div>
             </div>
             <div class="md-pe">
-                <button class="btn btn-fant" style="margin-left:auto" onclick="fecharPessoa()">Cancelar</button>
-                <button class="btn btn-acao" id="mpSalvar" onclick="salvarPessoa()">
+                <button class="btn btn-fant" style="margin-left:auto" onclick="acessos.fecharModal()">Cancelar</button>
+                <button class="btn btn-acao" id="mpSalvar" onclick="acessos.salvar()">
                     <span class="material-symbols-rounded">check</span>Salvar</button>
             </div>
         </div>
     </div>
 
+    <datalist id="equipesLista"></datalist>
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        const USUARIO = "{{ usuario_nome }}";
+    window.acessos = (function(){
+        'use strict';
 
-        /* Cor por nível: comunica alcance de poder, não decoração.
-           Vermelho = configura o sistema; roxo = vê tudo; verde = time;
-           neutro = só o próprio; rosa = externo. */
-        const CORES_NIVEL = {
+        /* A cor do nível comunica alcance de poder: vermelho configura o
+           sistema, roxo vê tudo, verde vê o time, cinza vê o próprio,
+           rosa é externo. */
+        var VISUAL = {
             'Administrador': { cor:'#D42F2F', fundo:'#FBE3E3', ico:'shield_person' },
             'Diretoria':     { cor:'#6C5CE7', fundo:'#F1EFFE', ico:'diamond' },
             'Líder':         { cor:'#0E9F6E', fundo:'#E6F7F0', ico:'supervisor_account' },
             'Colaborador':   { cor:'#56565F', fundo:'#F7F7F9', ico:'badge' },
             'Cliente':       { cor:'#DB2777', fundo:'#FCE7F3', ico:'business' }
         };
-        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
+        var VISUAL_PADRAO = { cor:'#7C7C88', fundo:'#F7F7F9', ico:'badge' };
+        var SEM_NIVEL = { cor:'#C2660B', fundo:'#FFF0D6', ico:'help' };
+        var PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
             ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
-        const ROT_ESCOPO = { tudo:'todos', time:'do time', proprio:'próprios' };
+        var ROT_ESCOPO = { tudo:'todos', time:'do time', proprio:'próprios' };
+        var ROT_ACAO = {
+            papel_criado:'criou o nível', papel_alterado:'alterou o nível',
+            papel_excluido:'excluiu o nível', acesso_alterado:'alterou o acesso de',
+            pessoa_criada:'cadastrou', senha_redefinida:'redefiniu a senha de',
+            divergencia_permissao:'divergência entre modelos'
+        };
+        var ROT_CAMPO = { papel_id:'nível', quadros:'quadros', areas:'áreas', equipe:'equipe',
+            ativo:'situação', ajustes:'ajustes', cargo:'cargo', telefone:'telefone', nome:'nome',
+            email:'e-mail' };
 
-        let catalogo = [], gruposCat = [], quadros = [], areas = [];
-        let niveis = [], pessoas = [], equipes = [];
-        let abertos = new Set(), filtroNivel = '', busca = '';
-        let abaAtiva = 'pessoas', salvando = {};
+        var st = {
+            pessoas: [], niveis: [], equipes: [], quadros: [], areas: [], catalogo: [],
+            busca: '', fNivel: '', fSit: '',
+            aba: 'pessoas', aberta: null, salvo: null,
+            carregando: true, erro: null, semNiveis: false
+        };
 
-        document.addEventListener('DOMContentLoaded', iniciar);
-
-        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
-        function cor(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=n.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
-        function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
-        function visualNivel(nome){ return CORES_NIVEL[nome] || { cor:'#7C7C88', fundo:'#F7F7F9', ico:'badge' }; }
-
-        async function motivo(resp, padrao){
-            try{ const d = await resp.json();
-                if(d && d.detalhe) return (d.mensagem||padrao)+' '+d.detalhe;
+        /* ---------- utilidades ---------- */
+        function esc(s){
+            if(s === null || s === undefined) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        function escA(s){ return esc(s).replace(/'/g,'&#39;'); }
+        function el(id){ return document.getElementById(id); }
+        function cor(n){
+            var h = 0, i;
+            for(i = 0; i < (n||'').length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
+            return PALETA[Math.abs(h) % PALETA.length];
+        }
+        function iniciais(n){
+            return (n||'?').trim().split(/\s+/).map(function(x){ return x.charAt(0); })
+                   .slice(0,2).join('').toUpperCase();
+        }
+        function visualDe(nome){ return VISUAL[nome] || VISUAL_PADRAO; }
+        function nivelDe(p){
+            for(var i = 0; i < st.niveis.length; i++)
+                if(String(st.niveis[i].id) === String(p.papel_id)) return st.niveis[i];
+            return null;
+        }
+        /* Se os níveis não carregam, ainda mostramos que a pessoa TEM um.
+           Some o nome, não a informação de que existe. */
+        function nomeNivel(p){
+            var n = nivelDe(p);
+            if(n) return n.nome;
+            return p.papel_id ? 'Nível definido' : null;
+        }
+        function achar(id){
+            for(var i = 0; i < st.pessoas.length; i++)
+                if(String(st.pessoas[i].id) === String(id)) return st.pessoas[i];
+            return null;
+        }
+        function quando(s){
+            if(!s) return null;
+            var d = new Date(s);
+            if(isNaN(d.getTime())) return null;
+            var dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+            if(dias <= 0) return 'hoje';
+            if(dias === 1) return 'ontem';
+            if(dias < 30) return 'há ' + dias + ' dias';
+            return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+        }
+        function dataHora(s){
+            var d = new Date(s);
+            if(isNaN(d.getTime())) return '—';
+            var hoje = new Date().toDateString() === d.toDateString();
+            return (hoje ? 'hoje' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}))
+                 + ' · ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        }
+        function motivo(resp, padrao){
+            return resp.json().then(function(d){
+                if(d && d.detalhe) return (d.mensagem || padrao) + ' ' + d.detalhe;
                 if(d && d.mensagem) return d.mensagem;
                 if(d && d.erro) return d.erro;
-            }catch(e){}
-            return padrao+' (HTTP '+resp.status+')';
+                return padrao;
+            })['catch'](function(){ return padrao + ' (HTTP ' + resp.status + ')'; });
         }
-        function erroEm(alvo, msg){
-            document.getElementById(alvo).innerHTML =
-                `<div class="empty"><span class="material-symbols-rounded">error</span>
-                 <h3>Não foi possível carregar</h3><p>${escH(msg)}</p></div>`;
+        function toast(msg, tipo){
+            var t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:'
+                + (tipo === 'error' ? 'var(--accent-pink)' : 'var(--accent-lime)') + '">'
+                + (tipo === 'error' ? 'error' : 'check_circle') + '</span>' + esc(msg);
+            el('toastContainer').appendChild(t);
+            setTimeout(function(){ t.remove(); }, 4200);
         }
-
-        async function iniciar(){
-            try{
-                const r = await fetch('/api/acessos/catalogo');
-                if(!r.ok){ erroEm('abaPessoas', await motivo(r,'Erro ao carregar o catálogo.')); return; }
-                const d = await r.json();
-                catalogo = d.capacidades || []; gruposCat = d.grupos || [];
-                quadros = d.quadros || []; areas = d.areas || [];
-            }catch(e){ erroEm('abaPessoas','Sem conexão com o servidor.'); return; }
-            await Promise.all([carregarNiveis(), carregarPessoas()]);
+        function esqueletos(n){
+            var h = '', i;
+            for(i = 0; i < n; i++) h += '<div class="esqueleto"></div>';
+            return h;
         }
 
+        /* ==================== CARGA ==================== */
+        function iniciar(){
+            desenhar();
+            /* Catálogo e níveis são complementares. Se falharem, a lista de
+               pessoas continua aparecendo — foi o oposto disso que deixou a
+               tela vazia mostrando "13 pessoas". */
+            Promise.all([
+                fetch('/api/acessos/catalogo').then(function(r){ return r.ok ? r.json() : null; })
+                    ['catch'](function(){ return null; }),
+                fetch('/api/acessos/papeis').then(function(r){ return r.ok ? r.json() : null; })
+                    ['catch'](function(){ return null; })
+            ]).then(function(res){
+                if(res[0]){
+                    st.catalogo = res[0].capacidades || [];
+                    st.quadros  = res[0].quadros || [];
+                    st.areas    = res[0].areas || [];
+                }
+                if(res[1] && res[1].papeis && res[1].papeis.length){
+                    st.niveis = res[1].papeis.slice().sort(function(a,b){
+                        return (a.ordem || 99) - (b.ordem || 99);
+                    });
+                } else {
+                    st.semNiveis = true;
+                }
+                return carregarPessoas();
+            });
+        }
+
+        function carregarPessoas(){
+            return fetch('/api/acessos/pessoas').then(function(r){
+                if(!r.ok) return motivo(r, 'Não foi possível carregar as pessoas.')
+                    .then(function(m){ st.erro = m; });
+                return r.json().then(function(d){
+                    st.pessoas = d.pessoas || [];
+                    st.equipes = d.equipes || [];
+                    st.erro = null;
+                });
+            })['catch'](function(){
+                st.erro = 'Sem conexão com o servidor.';
+            }).then(function(){
+                st.carregando = false;
+                desenhar();
+            });
+        }
+
+        /* ==================== DESENHO ==================== */
         function trocarAba(a){
-            abaAtiva = a;
-            document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.getAttribute('data-aba')===a));
-            document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
-            document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.add('on');
-            if(a === 'niveis') renderNiveis();
+            st.aba = a;
+            ['pessoas','niveis','registro'].forEach(function(x){
+                var t = el('tab-' + x);
+                if(t){ t.classList.toggle('on', x === a); t.setAttribute('aria-selected', x === a); }
+                el('aba' + x.charAt(0).toUpperCase() + x.slice(1)).classList.toggle('on', x === a);
+            });
+            desenhar();
             if(a === 'registro') carregarRegistro();
         }
 
-        /* ==================== DADOS ==================== */
-        async function carregarNiveis(){
-            try{
-                const r = await fetch('/api/acessos/papeis');
-                if(!r.ok) return;
-                const d = await r.json();
-                niveis = (d.papeis || []).sort((a,b)=>(a.ordem||99)-(b.ordem||99));
-            }catch(e){}
+        function desenhar(){
+            el('nPessoas').innerText = st.pessoas.length || '';
+            el('cmdDir').innerHTML = st.aba === 'pessoas'
+                ? '<button class="btn btn-acao" onclick="acessos.nova()">'
+                + '<span class="material-symbols-rounded">person_add</span>Nova pessoa</button>'
+                : '';
+            if(st.aba === 'pessoas') desenharPessoas();
+            if(st.aba === 'niveis') desenharNiveis();
         }
 
-        async function carregarPessoas(){
-            try{
-                const r = await fetch('/api/acessos/pessoas');
-                if(!r.ok){ erroEm('abaPessoas', await motivo(r,'Erro ao carregar pessoas.')); return; }
-                const d = await r.json();
-                pessoas = d.pessoas || []; equipes = d.equipes || [];
-            }catch(e){ erroEm('abaPessoas','Sem conexão com o servidor.'); return; }
-            renderPessoas();
-        }
-
-        function nivelDe(p){ return niveis.find(n => String(n.id) === String(p.papel_id)); }
-        function nomeNivel(p){ const n = nivelDe(p); return n ? n.nome : null; }
-
-        /* ==================== PESSOAS ==================== */
-        function renderPessoas(){
-            document.getElementById('nPessoas').innerText = pessoas.length;
-
-            const t = busca.trim().toLowerCase();
-            const lista = pessoas.filter(p => {
-                if(t && !(p.nome||'').toLowerCase().includes(t) && !(p.email||'').toLowerCase().includes(t)) return false;
-                if(filtroNivel === '__sem') return !p.papel_id;
-                if(filtroNivel && String(p.papel_id) !== filtroNivel) return false;
+        function filtrar(){
+            var t = st.busca.trim().toLowerCase();
+            return st.pessoas.filter(function(p){
+                if(t){
+                    var alvo = ((p.nome||'') + ' ' + (p.email||'') + ' ' + (p.cargo||'')).toLowerCase();
+                    if(alvo.indexOf(t) < 0) return false;
+                }
+                if(st.fNivel === '__sem' && p.papel_id) return false;
+                if(st.fNivel && st.fNivel !== '__sem' && String(p.papel_id) !== st.fNivel) return false;
+                if(st.fSit === 'ativo' && p.ativo === false) return false;
+                if(st.fSit === 'inativo' && p.ativo !== false) return false;
+                if(st.fSit === 'pendente' && !(p.tem_senha === false || !p.papel_id)) return false;
                 return true;
             });
+        }
 
-            // Agrupa por nível: a hierarquia de acesso É a estrutura da lista.
-            const ordem = niveis.map(n => String(n.id)).concat(['__sem']);
-            const porNivel = {};
-            lista.forEach(p => {
-                const k = p.papel_id ? String(p.papel_id) : '__sem';
-                (porNivel[k] = porNivel[k] || []).push(p);
-            });
+        function desenharPessoas(){
+            var alvo = el('abaPessoas');
 
-            const semPapel = pessoas.filter(p => !p.papel_id).length;
-            const admins = pessoas.filter(p => nomeNivel(p) === 'Administrador' && p.ativo !== false).length;
+            if(st.carregando){ alvo.innerHTML = esqueletos(6); return; }
 
-            let html = resumoHtml() + ferramentasHtml(lista.length);
-
-            if(semPapel){
-                html += `<div class="faixa info"><span class="material-symbols-rounded">info</span>
-                    <div><div class="fx-t">${semPapel} pessoa${semPapel===1?'':'s'} sem nível definido</div>
-                    <div class="fx-s">Enquanto não tiverem nível, seguem no modelo antigo de permissões.
-                    Defina o nível e peça para saírem e entrarem de novo.</div></div></div>`;
+            if(st.erro){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">cloud_off</span>'
+                    + '<h3>Não foi possível carregar</h3><p>' + esc(st.erro) + '</p>'
+                    + '<button class="btn btn-acao" style="display:inline-flex" onclick="acessos.recarregar()">'
+                    + '<span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>';
+                return;
             }
-            if(admins > 2){
-                html += `<div class="faixa aviso"><span class="material-symbols-rounded">gpp_maybe</span>
-                    <div><div class="fx-t">${admins} pessoas com nível Administrador</div>
-                    <div class="fx-s">Administrador configura acessos e apaga em definitivo.
-                    Quem só precisa enxergar tudo cabe em Diretoria.</div></div></div>`;
+            if(!st.pessoas.length){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">group</span>'
+                    + '<h3>Ninguém cadastrado ainda</h3>'
+                    + '<p>Cadastre a primeira pessoa para definir níveis, quadros e áreas de acesso.</p>'
+                    + '<button class="btn btn-acao" style="display:inline-flex" onclick="acessos.nova()">'
+                    + '<span class="material-symbols-rounded">person_add</span>Nova pessoa</button></div>';
+                return;
             }
+
+            var lista = filtrar();
+            var html = barraFiltros(lista.length) + avisos();
 
             if(!lista.length){
-                html += `<div class="empty"><span class="material-symbols-rounded">person_search</span>
-                    <h3>Ninguém encontrado</h3><p>Ajuste a busca ou o filtro de nível para ver mais pessoas.</p></div>`;
+                html += '<div class="vazio"><span class="material-symbols-rounded">search_off</span>'
+                     + '<h3>Nada encontrado</h3><p>Ajuste a busca ou os filtros para ver mais pessoas.</p>'
+                     + '<button class="btn btn-borda" style="display:inline-flex" onclick="acessos.limpar()">'
+                     + 'Limpar filtros</button></div>';
             } else {
-                ordem.forEach(k => {
-                    const gente = porNivel[k];
-                    if(!gente || !gente.length) return;
-                    const n = k === '__sem' ? null : niveis.find(x => String(x.id) === k);
-                    const nome = n ? n.nome : 'Sem nível';
-                    const v = n ? visualNivel(nome) : { cor:'#C2660B', fundo:'#FFF0D6', ico:'help' };
-                    html += `<section class="grupo">
-                        <header class="gr-cab">
-                            <span class="gr-ico" style="background:${v.fundo}">
-                                <span class="material-symbols-rounded" style="color:${v.cor}">${v.ico}</span></span>
-                            <div><div class="gr-t">${escH(nome)}</div>
-                                <div class="gr-d">${escH(n ? (n.descricao||'') : 'Ainda usando o modelo antigo')}</div></div>
-                            <span class="gr-n">${gente.length}</span>
-                        </header>
-                        ${gente.map(cartaoPessoa).join('')}
-                    </section>`;
-                });
+                html += '<div class="tabela">'
+                     + '<div class="th"><div>Pessoa</div><div>Cargo</div><div>Nível</div>'
+                     + '<div>Equipe e acesso</div><div>Situação</div><div></div></div>'
+                     + lista.map(linha).join('') + '</div>';
             }
-            document.getElementById('abaPessoas').innerHTML = html;
-            const bp = document.getElementById('buscaPessoa');
-            if(bp && document.activeElement !== bp) bp.value = busca;
+            alvo.innerHTML = html;
+
+            var b = el('buscaPessoa');
+            if(b && document.activeElement !== b) b.value = st.busca;
         }
 
-        function resumoHtml(){
-            const cont = {};
-            pessoas.forEach(p => { const n = nomeNivel(p) || 'Sem nível'; cont[n] = (cont[n]||0)+1; });
-            const ordem = niveis.map(n => n.nome).concat(cont['Sem nível'] ? ['Sem nível'] : []);
-            return `<div class="resumo">${ordem.map(nome => {
-                const v = nome === 'Sem nível' ? { cor:'#C2660B' } : visualNivel(nome);
-                const n = cont[nome] || 0;
-                const alvo = nome === 'Sem nível' ? '__sem' : (niveis.find(x=>x.nome===nome)||{}).id;
-                const ativo = String(filtroNivel) === String(alvo);
-                return `<button class="rs ${ativo?'on':''}" onclick="filtrarNivel('${escA(alvo)}')">
-                    <div class="rs-topo"><span class="rs-pt" style="background:${v.cor}"></span>
-                        <span class="rs-rot">${escH(nome)}</span></div>
-                    <div class="rs-v num" style="color:${n?v.cor:'var(--linha-2)'}">${n}</div>
-                    <div class="rs-p">${ativo?'filtrando':(n===1?'pessoa':'pessoas')}</div>
-                </button>`;
-            }).join('')}</div>`;
+        function barraFiltros(qtd){
+            var opts = '<option value="">Todos os níveis</option>'
+                + st.niveis.map(function(n){
+                    return '<option value="' + escA(n.id) + '"'
+                        + (String(st.fNivel) === String(n.id) ? ' selected' : '') + '>'
+                        + esc(n.nome) + '</option>';
+                  }).join('')
+                + '<option value="__sem"' + (st.fNivel === '__sem' ? ' selected' : '')
+                + '>Sem nível</option>';
+            var sits = [['','Todas as situações'],['ativo','Só ativos'],
+                        ['inativo','Só inativos'],['pendente','Com pendência']];
+            var sit = sits.map(function(o){
+                return '<option value="' + o[0] + '"'
+                    + (st.fSit === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+            }).join('');
+            return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;flex-wrap:wrap">'
+                + '<div class="busca"><span class="material-symbols-rounded">search</span>'
+                + '<input id="buscaPessoa" placeholder="Buscar por nome, e-mail ou cargo" '
+                + 'value="' + escA(st.busca) + '" oninput="acessos.buscar(this.value)"></div>'
+                + '<select class="filtro" onchange="acessos.fNivel(this.value)">' + opts + '</select>'
+                + '<select class="filtro" onchange="acessos.fSit(this.value)">' + sit + '</select>'
+                + '<span style="margin-left:auto;font-size:12.5px;font-weight:500;color:var(--tinta-3)">'
+                + (qtd === st.pessoas.length
+                    ? '<b style="font-weight:650;color:var(--tinta)">' + st.pessoas.length + '</b> pessoas'
+                    : '<b style="font-weight:650;color:var(--tinta)">' + qtd + '</b> de ' + st.pessoas.length)
+                + '</span></div>';
         }
 
-        function ferramentasHtml(qtd){
-            return `<div class="ferramentas">
-                <div class="busca"><span class="material-symbols-rounded">search</span>
-                    <input id="buscaPessoa" placeholder="Buscar por nome ou e-mail" value="${escA(busca)}"
-                           oninput="aoBuscar(this.value)"></div>
-                <select class="filtro" onchange="filtrarNivel(this.value)">
-                    <option value="">Todos os níveis</option>
-                    ${niveis.map(n=>`<option value="${escA(n.id)}" ${String(filtroNivel)===String(n.id)?'selected':''}>${escH(n.nome)}</option>`).join('')}
-                    <option value="__sem" ${filtroNivel==='__sem'?'selected':''}>Sem nível</option>
-                </select>
-                <span class="cont">${qtd === pessoas.length ? `<b>${pessoas.length}</b> pessoas` : `<b>${qtd}</b> de ${pessoas.length}`}</span>
-            </div>`;
+        function faixa(tipo, ico, titulo, texto, atalho, rotulo){
+            return '<div class="faixa ' + tipo + '">'
+                + '<span class="material-symbols-rounded">' + ico + '</span>'
+                + '<div><div class="fx-t">' + esc(titulo) + '</div>'
+                + '<div class="fx-s">' + esc(texto) + '</div></div>'
+                + (atalho ? '<span class="fx-acao"><button class="btn btn-borda" '
+                    + 'onclick="acessos.atalho(\'' + atalho + '\')">' + esc(rotulo)
+                    + '</button></span>' : '')
+                + '</div>';
         }
 
-        function aoBuscar(v){ busca = v; renderPessoas(); }
-        function filtrarNivel(v){ filtroNivel = (String(filtroNivel)===String(v)) ? '' : v; renderPessoas(); }
-
-        function cartaoPessoa(p){
-            const [bg,fg] = cor(p.nome);
-            const aberto = abertos.has(String(p.id));
-            const inativo = p.ativo === false;
-            const qs = p.quadros || [], as = p.areas || [];
-            const ajustes = Object.keys(p.ajustes || {}).length;
-
-            const selos = [];
-            if(inativo) selos.push(`<span class="selo s-off"><span class="material-symbols-rounded">block</span>Inativo</span>`);
-            if(p.equipe) selos.push(`<span class="selo s-eq"><span class="material-symbols-rounded">groups</span>${escH(p.equipe)}</span>`);
-            if(qs.length) selos.push(`<span class="selo s-q">${qs.length} ${qs.length===1?'quadro':'quadros'}</span>`);
-            else if(!p.tipo_usuario || p.tipo_usuario === 'interno')
-                selos.push(`<span class="selo s-alerta"><span class="material-symbols-rounded">warning</span>Sem quadro</span>`);
-            if(as.length) selos.push(`<span class="selo s-a">${as.length} ${as.length===1?'área':'áreas'}</span>`);
-            if(ajustes) selos.push(`<span class="selo s-aj"><span class="material-symbols-rounded">tune</span>${ajustes} ${ajustes===1?'ajuste':'ajustes'}</span>`);
-            // Sem senha a pessoa não entra: é mais urgente que qualquer
-            // permissão que ela tenha ou deixe de ter.
-            if(p.tem_senha === false)
-                selos.push(`<span class="selo s-alerta"><span class="material-symbols-rounded">key_off</span>Sem senha</span>`);
-            else if(!p.ultimo_acesso)
-                selos.push(`<span class="selo s-n"><span class="material-symbols-rounded">schedule</span>Nunca entrou</span>`);
-
-            return `<article class="pc ${aberto?'aberto':''} ${inativo?'inativo':''}" id="pc-${escA(p.id)}">
-                <button class="pc-cab" onclick="alternar('${escA(p.id)}')" aria-expanded="${aberto}">
-                    <span class="av" style="background:${bg};color:${fg}">${iniciais(p.nome)}</span>
-                    <span class="pc-id"><span class="pc-nome">${escH(p.nome)}</span>
-                        <span class="pc-mail">${escH(p.email)}${p.cargo ? ' · ' + escH(p.cargo) : ''}</span></span>
-                    <span class="pc-selos">${selos.join('')}</span>
-                    <span class="pc-seta"><span class="material-symbols-rounded">expand_more</span></span>
-                </button>
-                ${aberto ? corpoPessoa(p) : ''}
-            </article>`;
+        function avisos(){
+            var h = '';
+            if(st.semNiveis){
+                h += faixa('critica','error','Os níveis não carregaram',
+                    'A lista abaixo continua funcionando, mas o nome de cada nível não aparece. '
+                    + 'Confira se o SQL de acessos já rodou no banco.');
+            }
+            var semSenha = st.pessoas.filter(function(p){ return p.tem_senha === false; }).length;
+            if(semSenha){
+                h += faixa('critica','key_off',
+                    semSenha + (semSenha === 1 ? ' pessoa sem senha' : ' pessoas sem senha'),
+                    'Sem senha ninguém entra na plataforma, por mais permissões que tenha.',
+                    'pendente','Ver quem');
+            }
+            var semNivel = st.pessoas.filter(function(p){ return !p.papel_id; }).length;
+            if(semNivel && !st.semNiveis){
+                h += faixa('info','info',
+                    semNivel + (semNivel === 1 ? ' pessoa sem nível' : ' pessoas sem nível'),
+                    'Enquanto não tiverem nível, seguem no modelo antigo de permissões. '
+                    + 'Defina o nível e peça para saírem e entrarem de novo.',
+                    '__sem','Ver quem');
+            }
+            var admins = st.pessoas.filter(function(p){
+                return nomeNivel(p) === 'Administrador' && p.ativo !== false;
+            }).length;
+            if(admins > 2){
+                h += faixa('aviso','gpp_maybe', admins + ' pessoas com nível Administrador',
+                    'Administrador configura acessos e apaga em definitivo. '
+                    + 'Quem só precisa enxergar tudo cabe em Diretoria.');
+            }
+            return h;
         }
 
-        function corpoPessoa(p){
-            const qs = p.quadros || [], as = p.areas || [];
-            const externo = p.tipo_usuario === 'externo';
-            const nivelNome = nomeNivel(p);
-            const ehLider = nivelNome === 'Líder';
-            const internos = niveis.filter(n => !n.externo);
-            const listaNiveis = externo ? niveis.filter(n => n.externo) : internos;
-            const semEquipe = ehLider && !p.equipe;
+        function linha(p){
+            var c = cor(p.nome), nome = nomeNivel(p), v = nome ? visualDe(nome) : SEM_NIVEL;
+            var qs = (p.quadros || []).length, as = (p.areas || []).length;
+            var ajs = Object.keys(p.ajustes || {}).length;
 
-            return `<div class="pc-corpo">
-                <div class="col-e">
-                    <div class="campo">
-                        <div class="campo-t">Nível de acesso</div>
-                        <div class="niveis">
-                            ${listaNiveis.map(n => {
-                                const v = visualNivel(n.nome);
-                                const on = String(n.id) === String(p.papel_id);
-                                return `<button class="nv ${on?'on':''}" style="--cor:${v.cor}"
-                                        onclick="mudar('${escA(p.id)}','papel_id','${escA(n.id)}')">
-                                    <span class="nv-r"></span>
-                                    <span class="nv-txt">
-                                        <span class="nv-t"><span class="material-symbols-rounded">${v.ico}</span>${escH(n.nome)}</span>
-                                        <span class="nv-d">${escH(n.descricao||'')}</span>
-                                    </span></button>`;
-                            }).join('')}
-                        </div>
-                    </div>
-                    <div class="campo">
-                        <div class="campo-t">Equipe</div>
-                        <div class="eq-campo">
-                            <input list="equipesLista" value="${escA(p.equipe||'')}" placeholder="Ex.: Comercial"
-                                   onchange="mudar('${escA(p.id)}','equipe',this.value)">
-                        </div>
-                        <div class="dica ${semEquipe?'alerta':''}">
-                            ${semEquipe
-                                ? 'O nível Líder precisa de equipe. Sem ela, esta pessoa enxerga só o que é dela.'
-                                : 'Define quem o nível Líder enxerga.'}
-                        </div>
-                    </div>
-                </div>
+            var sit;
+            if(p.ativo === false){
+                sit = '<span class="selo s-n"><span class="material-symbols-rounded">block</span>Inativo</span>';
+            } else if(p.tem_senha === false){
+                sit = '<span class="selo s-cr"><span class="material-symbols-rounded">key_off</span>Sem senha</span>';
+            } else if(!p.ultimo_acesso){
+                sit = '<span class="selo s-at">Nunca entrou</span>';
+            } else {
+                sit = '<span class="selo s-ok">' + esc(quando(p.ultimo_acesso)) + '</span>';
+            }
 
-                <div class="col-d">
-                    <div class="campo">
-                        <div class="campo-t">Quadros de trabalho
-                            <span class="cnt">${qs.length} de ${quadros.length}</span>
-                            <button class="chip-tudo" onclick="marcarTudo('${escA(p.id)}','quadros')">
-                                ${qs.length === quadros.length ? 'Limpar' : 'Marcar todos'}</button>
-                        </div>
-                        <div class="chips">
-                            ${quadros.map(q => `<button class="chip ${qs.includes(q.chave)?'on':''}"
-                                onclick="alternarItem('${escA(p.id)}','quadros','${escA(q.chave)}')">
-                                <span class="material-symbols-rounded">check</span>${escH(q.nome)}</button>`).join('')}
-                        </div>
-                        ${!qs.length ? '<div class="dica alerta">Sem quadro marcado, esta pessoa não vê nenhum quadro de trabalho.</div>' : ''}
-                    </div>
+            var acesso = [];
+            if(qs) acesso.push(qs + (qs === 1 ? ' quadro' : ' quadros'));
+            if(as) acesso.push(as + (as === 1 ? ' área' : ' áreas'));
+            if(ajs) acesso.push(ajs + (ajs === 1 ? ' ajuste' : ' ajustes'));
 
-                    <div class="divisor"></div>
-
-                    <div class="campo">
-                        <div class="campo-t">Áreas da plataforma
-                            <span class="cnt">${as.length} de ${areas.length}</span>
-                            <button class="chip-tudo" onclick="marcarTudo('${escA(p.id)}','areas')">
-                                ${as.length === areas.length ? 'Limpar' : 'Marcar todas'}</button>
-                        </div>
-                        <div class="chips">
-                            ${areas.map(a => `<button class="chip ${as.includes(a.chave)?'on':''}"
-                                onclick="alternarItem('${escA(p.id)}','areas','${escA(a.chave)}')" title="${escA(a.descricao)}">
-                                <span class="material-symbols-rounded">check</span>${escH(a.nome)}</button>`).join('')}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pc-pe">
-                    <span class="pe-status ${salvando[p.id]==='ok'?'salvo':''}" id="st-${escA(p.id)}">
-                        ${salvando[p.id]==='ok'
-                            ? '<span class="material-symbols-rounded">check_circle</span>Alterações salvas'
-                            : 'As alterações valem no próximo login desta pessoa.'}
-                    </span>
-                    <button class="btn btn-borda" onclick="abrirEditarPessoa('${escA(p.id)}')">
-                        <span class="material-symbols-rounded">edit</span>Dados e senha</button>
-                    <button class="btn ${p.ativo===false?'btn-acao':'btn-perigo'}"
-                            onclick="mudar('${escA(p.id)}','ativo',${p.ativo===false})">
-                        <span class="material-symbols-rounded">${p.ativo===false?'person_check':'block'}</span>
-                        ${p.ativo===false?'Reativar acesso':'Desativar acesso'}</button>
-                </div>
-            </div>`;
+            return '<button class="tr' + (p.ativo === false ? ' inativa' : '')
+                + (st.aberta === String(p.id) ? ' sel' : '') + '"'
+                + ' onclick="acessos.abrir(\'' + escA(p.id) + '\')">'
+                + '<span class="pes"><span class="av" style="background:' + c[0] + ';color:' + c[1] + '">'
+                + iniciais(p.nome) + '</span><span class="pes-txt">'
+                + '<span class="pes-nome">' + esc(p.nome) + '</span>'
+                + '<span class="pes-mail">' + esc(p.email) + '</span></span></span>'
+                + '<span class="cel cel-cargo' + (p.cargo ? '' : ' fraca') + '">'
+                + esc(p.cargo || 'sem cargo') + '</span>'
+                + '<span class="cel-nivel"><span class="nivel-p" style="background:' + v.fundo
+                + ';color:' + v.cor + '"><span class="pt" style="background:' + v.cor + '"></span>'
+                + esc(nome || 'Sem nível') + '</span></span>'
+                + '<span class="cel cel-equipe">' + esc(p.equipe || '—')
+                + (acesso.length ? '<span class="cel-sub">' + acesso.join(' · ') + '</span>' : '')
+                + '</span>'
+                + '<span class="cel-sit">' + sit + '</span>'
+                + '<span class="tr-seta"><span class="material-symbols-rounded">chevron_right</span></span>'
+                + '</button>';
         }
 
-        function alternar(id){
-            const k = String(id);
-            if(abertos.has(k)) abertos.delete(k); else abertos.add(k);
-            renderPessoas();
+        /* ==================== PAINEL ==================== */
+        function abrir(id){
+            var p = achar(id);
+            if(!p) return;
+            st.aberta = String(id);
+            var c = cor(p.nome);
+            var av = el('pnAv');
+            av.style.background = c[0];
+            av.style.color = c[1];
+            av.innerText = iniciais(p.nome);
+            el('pnNome').innerText = p.nome || '—';
+            el('pnMail').innerText = (p.email || '') + (p.cargo ? ' · ' + p.cargo : '');
+            el('pnEditar').onclick = function(){ editar(id); };
+            var bt = el('pnAtivo');
+            bt.className = 'btn ' + (p.ativo === false ? 'btn-acao' : 'btn-perigo');
+            bt.innerHTML = '<span class="material-symbols-rounded">'
+                + (p.ativo === false ? 'person_check' : 'block') + '</span>'
+                + (p.ativo === false ? 'Reativar' : 'Desativar');
+            bt.onclick = function(){ mudar(id, 'ativo', p.ativo === false); };
+            desenharPainel(p);
+            el('painelFundo').classList.add('show');
+            el('painelPessoa').classList.add('show');
+            desenharPessoas();
         }
 
-        function alternarItem(id, campo, valor){
-            const p = pessoas.find(x => String(x.id)===String(id)); if(!p) return;
-            const atual = (p[campo] || []).slice();
-            const i = atual.indexOf(valor);
-            if(i >= 0) atual.splice(i,1); else atual.push(valor);
+        function desenharPainel(p){
+            var externo = p.tipo_usuario === 'externo';
+            var nome = nomeNivel(p);
+            var semEquipe = nome === 'Líder' && !p.equipe;
+            var qs = p.quadros || [], as = p.areas || [];
+            var h = '';
+
+            if(!st.niveis.length){
+                h += '<div class="faixa critica" style="margin-bottom:18px">'
+                   + '<span class="material-symbols-rounded">error</span>'
+                   + '<div><div class="fx-t">Níveis indisponíveis</div>'
+                   + '<div class="fx-s">Quadros e áreas continuam editáveis abaixo.</div></div></div>';
+            } else {
+                var lista = st.niveis.filter(function(n){ return externo ? n.externo : !n.externo; });
+                h += '<div class="bloco"><div class="bl-t">Nível de acesso</div><div class="niveis">'
+                  + lista.map(function(n){
+                        var v = visualDe(n.nome);
+                        var on = String(n.id) === String(p.papel_id);
+                        return '<button class="nv' + (on ? ' on' : '') + '" style="--cor:' + v.cor + '"'
+                            + ' onclick="acessos.mudar(\'' + escA(p.id) + '\',\'papel_id\',\''
+                            + escA(n.id) + '\')"><span class="nv-r"></span>'
+                            + '<span style="flex:1;min-width:0">'
+                            + '<span class="nv-t"><span class="material-symbols-rounded">' + v.ico
+                            + '</span>' + esc(n.nome) + '</span>'
+                            + '<span class="nv-d">' + esc(n.descricao || '') + '</span></span></button>';
+                    }).join('')
+                  + '</div></div>';
+            }
+
+            h += '<div class="bloco"><div class="bl-t">Equipe</div><div class="campo">'
+              + '<input value="' + escA(p.equipe || '') + '" list="equipesLista" placeholder="Ex.: R&amp;S"'
+              + ' onchange="acessos.mudar(\'' + escA(p.id) + '\',\'equipe\',this.value)"></div>'
+              + '<div class="dica' + (semEquipe ? ' alerta' : '') + '">'
+              + (semEquipe
+                    ? 'O nível Líder precisa de equipe. Sem ela, esta pessoa enxerga só o que é dela.'
+                    : 'Define quem o nível Líder enxerga.')
+              + '</div></div>';
+
+            if(st.quadros.length){
+                h += '<div class="bloco"><div class="bl-t">Quadros de trabalho'
+                  + '<span class="bl-cnt">' + qs.length + ' de ' + st.quadros.length + '</span>'
+                  + '<button class="bl-acao" onclick="acessos.tudo(\'' + escA(p.id) + '\',\'quadros\')">'
+                  + (qs.length === st.quadros.length ? 'Limpar' : 'Marcar todos') + '</button></div>'
+                  + '<div class="chips">'
+                  + st.quadros.map(function(q){
+                        return '<button class="chip' + (qs.indexOf(q.chave) >= 0 ? ' on' : '') + '"'
+                            + ' onclick="acessos.alternar(\'' + escA(p.id) + '\',\'quadros\',\''
+                            + escA(q.chave) + '\')"><span class="material-symbols-rounded">check</span>'
+                            + esc(q.nome) + '</button>';
+                    }).join('')
+                  + '</div>'
+                  + (!qs.length ? '<div class="dica alerta">Sem quadro marcado, esta pessoa não vê '
+                        + 'nenhum quadro de trabalho.</div>' : '')
+                  + '</div>';
+            }
+
+            if(st.areas.length){
+                h += '<div class="bloco"><div class="bl-t">Áreas da plataforma'
+                  + '<span class="bl-cnt">' + as.length + ' de ' + st.areas.length + '</span>'
+                  + '<button class="bl-acao" onclick="acessos.tudo(\'' + escA(p.id) + '\',\'areas\')">'
+                  + (as.length === st.areas.length ? 'Limpar' : 'Marcar todas') + '</button></div>'
+                  + '<div class="chips">'
+                  + st.areas.map(function(a){
+                        return '<button class="chip' + (as.indexOf(a.chave) >= 0 ? ' on' : '') + '"'
+                            + ' title="' + escA(a.descricao || '') + '"'
+                            + ' onclick="acessos.alternar(\'' + escA(p.id) + '\',\'areas\',\''
+                            + escA(a.chave) + '\')"><span class="material-symbols-rounded">check</span>'
+                            + esc(a.nome) + '</button>';
+                    }).join('')
+                  + '</div></div>';
+            }
+
+            h += '<div class="bloco"><div class="bl-t">Conta</div><div class="conta-l">'
+              + 'Senha: <b>' + (p.tem_senha === false ? 'não definida' : 'definida') + '</b><br>'
+              + 'Último acesso: <b>' + (quando(p.ultimo_acesso) || 'nunca entrou') + '</b><br>'
+              + 'Situação: <b>' + (p.ativo === false ? 'inativa' : 'ativa') + '</b>'
+              + '</div></div>';
+
+            el('pnCorpo').innerHTML = h;
+            var s = el('pnStatus');
+            s.className = 'pn-status' + (st.salvo === String(p.id) ? ' salvo' : '');
+            s.innerHTML = st.salvo === String(p.id)
+                ? '<span class="material-symbols-rounded">check_circle</span>Alterações salvas'
+                : 'Vale no próximo login desta pessoa.';
+        }
+
+        function fecharPainel(){
+            st.aberta = null;
+            el('painelFundo').classList.remove('show');
+            el('painelPessoa').classList.remove('show');
+            desenharPessoas();
+        }
+
+        /* ==================== EDIÇÃO ==================== */
+        function mudar(id, campo, valor){
+            var p = achar(id);
+            if(!p) return;
+            var anterior = p[campo];
+            p[campo] = valor;                    // otimista: a tela responde na hora
+            if(campo === 'equipe' && valor && st.equipes.indexOf(valor) < 0) st.equipes.push(valor);
+            desenharPainel(p);
+            desenharPessoas();
+
+            var corpo = {};
+            corpo[campo] = valor;
+            fetch('/api/acessos/pessoas/' + id, {
+                method: 'PUT', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(corpo)
+            }).then(function(r){
+                if(!r.ok){
+                    p[campo] = anterior;         // desfaz o que o servidor recusou
+                    return motivo(r, 'Não foi possível salvar.').then(function(m){
+                        toast(m, 'error');
+                        if(st.aberta) desenharPainel(p);
+                        desenharPessoas();
+                    });
+                }
+                st.salvo = String(id);
+                if(st.aberta) desenharPainel(p);
+                setTimeout(function(){
+                    if(st.salvo === String(id)){
+                        st.salvo = null;
+                        if(st.aberta === String(id)) desenharPainel(p);
+                    }
+                }, 2600);
+            })['catch'](function(){
+                p[campo] = anterior;
+                toast('Sem conexão com o servidor.', 'error');
+                if(st.aberta) desenharPainel(p);
+                desenharPessoas();
+            });
+        }
+
+        function alternar(id, campo, valor){
+            var p = achar(id);
+            if(!p) return;
+            var atual = (p[campo] || []).slice();
+            var i = atual.indexOf(valor);
+            if(i >= 0) atual.splice(i, 1); else atual.push(valor);
             mudar(id, campo, atual);
         }
 
         function marcarTudo(id, campo){
-            const p = pessoas.find(x => String(x.id)===String(id)); if(!p) return;
-            const todos = campo === 'quadros' ? quadros.map(q=>q.chave) : areas.map(a=>a.chave);
-            const cheio = (p[campo]||[]).length === todos.length;
-            mudar(id, campo, cheio ? [] : todos);
-        }
-
-        async function mudar(id, campo, valor){
-            const p = pessoas.find(x => String(x.id)===String(id)); if(!p) return;
-            const anterior = p[campo];
-            p[campo] = valor;                       // otimista: a tela responde na hora
-            if(campo === 'equipe' && valor && !equipes.includes(valor)) equipes.push(valor);
-            renderPessoas();
-            try{
-                const corpo = {}; corpo[campo] = valor;
-                const r = await fetch('/api/acessos/pessoas/'+id, {
-                    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(corpo) });
-                if(!r.ok){
-                    p[campo] = anterior;            // desfaz o que o servidor recusou
-                    showToast(await motivo(r,'Não foi possível salvar.'),'error');
-                    renderPessoas();
-                    return;
-                }
-                salvando[id] = 'ok';
-                renderPessoas();
-                setTimeout(()=>{ delete salvando[id]; if(abertos.has(String(id))) renderPessoas(); }, 2600);
-                if(campo === 'papel_id') carregarNiveis().then(renderPessoas);
-            }catch(e){
-                p[campo] = anterior;
-                showToast('Sem conexão com o servidor.','error');
-                renderPessoas();
-            }
-        }
-
-        /* ==================== NÍVEIS ==================== */
-        function renderNiveis(){
-            if(!niveis.length){ erroEm('abaNiveis','Nenhum nível cadastrado.'); return; }
-            document.getElementById('abaNiveis').innerHTML = `
-                <div class="faixa info"><span class="material-symbols-rounded">info</span>
-                    <div><div class="fx-t">O que cada nível permite</div>
-                    <div class="fx-s">Os níveis são fixos e valem para toda a plataforma.
-                    O que muda por pessoa são os quadros, as áreas e a equipe — tudo na aba Pessoas.</div></div></div>
-                ${niveis.map(n => {
-                    const v = visualNivel(n.nome);
-                    const caps = Object.entries(n.capacidades || {});
-                    return `<div class="nivel-card">
-                        <div class="nc-cab">
-                            <span class="nc-ico" style="background:${v.fundo}">
-                                <span class="material-symbols-rounded" style="color:${v.cor}">${v.ico}</span></span>
-                            <div style="flex:1;min-width:0">
-                                <div class="nc-t">${escH(n.nome)}</div>
-                                <div class="nc-d">${escH(n.descricao||'')}</div>
-                            </div>
-                            <span class="nc-n">${n.pessoas||0} ${(n.pessoas||0)===1?'pessoa':'pessoas'}</span>
-                        </div>
-                        <div class="nc-caps">
-                            ${caps.length ? caps.map(([c,e]) => {
-                                const info = catalogo.find(x => x.chave === c) || { rotulo:c, escopos:[], sensivel:false };
-                                return `<span class="capsula ${info.sensivel?'sensivel':''}">${escH(info.rotulo)}
-                                    ${info.escopos && info.escopos.length ? `<span class="esc esc-${escA(e)}">${ROT_ESCOPO[e]||e}</span>` : ''}</span>`;
-                            }).join('') : '<span class="capsula">Nenhuma permissão</span>'}
-                        </div>
-                    </div>`;
-                }).join('')}`;
-        }
-
-        /* ==================== REGISTRO ==================== */
-        const ROT_ACAO = {
-            papel_criado:'criou o nível', papel_alterado:'alterou o nível',
-            papel_excluido:'excluiu o nível', acesso_alterado:'alterou o acesso de',
-            divergencia_permissao:'divergência entre modelos',
-        };
-        const ROT_CAMPO = { papel_id:'nível', quadros:'quadros', areas:'áreas',
-                            equipe:'equipe', ativo:'situação', ajustes:'ajustes' };
-
-        async function carregarRegistro(){
-            document.getElementById('abaRegistro').innerHTML = '<div class="loading">Carregando...</div>';
-            let regs = [];
-            try{
-                const r = await fetch('/api/acessos/auditoria');
-                if(!r.ok){ erroEm('abaRegistro', await motivo(r,'Erro ao carregar o registro.')); return; }
-                const d = await r.json();
-                regs = d.registros || [];
-            }catch(e){ erroEm('abaRegistro','Sem conexão com o servidor.'); return; }
-
-            const divs = regs.filter(r => r.acao === 'divergencia_permissao');
-            const distintas = new Set(divs.map(r => {
-                const d = r.detalhe || {};
-                return [r.recurso, d.antigo, d.novo, d.nivel].join('|');
-            })).size;
-
-            const faixa = divs.length
-                ? `<div class="faixa aviso"><span class="material-symbols-rounded">warning</span>
-                    <div><div class="fx-t">${distintas} divergência${distintas===1?'':'s'} entre o modelo antigo e o novo</div>
-                    <div class="fx-s">Nada quebrou: enquanto houver divergência, o modelo antigo continua decidindo.
-                    Ajuste os níveis até a lista zerar.</div></div></div>`
-                : `<div class="faixa limpo"><span class="material-symbols-rounded">check_circle</span>
-                    <div><div class="fx-t">Os dois modelos estão concordando</div>
-                    <div class="fx-s">Depois de alguns dias assim, o modelo novo pode assumir com segurança.</div></div></div>`;
-
-            document.getElementById('abaRegistro').innerHTML = faixa + `
-                <div class="reg">
-                    <div class="rl th"><div>Quando</div><div>O que aconteceu</div><div>Quem fez</div></div>
-                    ${regs.length ? regs.map(r => {
-                        const d = r.detalhe || {};
-                        const div = r.acao === 'divergencia_permissao';
-                        let texto, det = '';
-                        if(div){
-                            texto = `<b>${escH(r.recurso)}</b> — antigo diz <b>${d.antigo?'sim':'não'}</b>, novo diz <b>${d.novo?'sim':'não'}</b>`;
-                            if(d.papel) det = `nível: ${escH(d.papel)}`;
-                        } else if(r.acao === 'acesso_alterado'){
-                            const campos = Object.keys(d).map(k => ROT_CAMPO[k] || k);
-                            texto = `alterou <b>${escH(campos.join(', ') || 'o acesso')}</b> de alguém`;
-                        } else {
-                            texto = `${escH(ROT_ACAO[r.acao] || r.acao)} <b>${escH(d.nome || r.alvo_id || '')}</b>`;
-                        }
-                        return `<div class="rl ${div?'divg':''}">
-                            <div class="rl-q">${fmtData(r.criado_em)}</div>
-                            <div><div class="rl-o">${texto}</div>${det?`<div class="rl-det">${det}</div>`:''}</div>
-                            <div class="rl-w">${escH(r.usuario)||'—'}</div>
-                        </div>`;
-                    }).join('') : `<div class="empty"><span class="material-symbols-rounded">history</span>
-                        <h3>Nada registrado ainda</h3><p>As alterações de acesso aparecem aqui assim que acontecerem.</p></div>`}
-                </div>`;
-        }
-
-        function fmtData(s){
-            const d = new Date(s); if(isNaN(d)) return '—';
-            const hoje = new Date();
-            const mesmoDia = d.toDateString() === hoje.toDateString();
-            return (mesmoDia ? 'hoje' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}))
-                   + ' · ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        }
-
-
-        /* ==================== CADASTRO DE PESSOA ==================== */
-        function abrirNovaPessoa(){
-            document.getElementById('mpId').value = '';
-            document.getElementById('mpTitulo').innerText = 'Nova pessoa';
-            ['mpNome','mpEmail','mpCargo','mpTelefone','mpEquipe','mpSenha']
-                .forEach(i => document.getElementById(i).value = '');
-            document.getElementById('mpBlocoSenha').style.display = 'block';
-            document.getElementById('mpAvisoSenha').style.display = 'none';
-            document.getElementById('mpNivel').innerHTML =
-                '<option value="">Sem nível definido</option>' +
-                niveis.filter(n => !n.externo)
-                      .map(n => `<option value="${escA(n.id)}">${escH(n.nome)}</option>`).join('');
-            document.getElementById('mpNivelDica').innerText =
-                'O nível define o que a pessoa enxerga. Quadros e áreas você ajusta depois, no cartão dela.';
-            atualizarEquipes();
-            document.getElementById('modalPessoa').classList.add('show');
-            setTimeout(() => document.getElementById('mpNome').focus(), 60);
-        }
-
-        function abrirEditarPessoa(id){
-            const p = pessoas.find(x => String(x.id) === String(id));
+            var p = achar(id);
             if(!p) return;
-            document.getElementById('mpId').value = p.id;
-            document.getElementById('mpTitulo').innerText = 'Editar ' + (p.nome || 'pessoa');
-            document.getElementById('mpNome').value = p.nome || '';
-            document.getElementById('mpEmail').value = p.email || '';
-            document.getElementById('mpCargo').value = p.cargo || '';
-            document.getElementById('mpTelefone').value = p.telefone || '';
-            document.getElementById('mpEquipe').value = p.equipe || '';
-            document.getElementById('mpSenha').value = '';
-            // Na edição a senha é opcional: em branco, a atual continua valendo.
-            document.getElementById('mpBlocoSenha').style.display = 'block';
-            document.getElementById('mpAvisoSenha').style.display = 'none';
-            document.getElementById('mpNivel').innerHTML =
-                '<option value="">Sem nível definido</option>' +
-                niveis.filter(n => !n.externo || String(n.id) === String(p.papel_id))
-                      .map(n => `<option value="${escA(n.id)}" ${String(n.id)===String(p.papel_id)?'selected':''}>${escH(n.nome)}</option>`).join('');
-            document.getElementById('mpNivelDica').innerText = p.tem_senha
-                ? 'Deixe a senha em branco para manter a atual.'
-                : 'Esta pessoa ainda não tem senha definida.';
+            var fonte = campo === 'quadros' ? st.quadros : st.areas;
+            var todos = fonte.map(function(x){ return x.chave; });
+            mudar(id, campo, (p[campo] || []).length === todos.length ? [] : todos);
+        }
+
+        /* ==================== CADASTRO ==================== */
+        function limparErros(){
+            ['mpNome','mpEmail','mpSenha'].forEach(function(i){ el(i).classList.remove('erro'); });
+            ['errNome','errEmail','errSenha'].forEach(function(i){ el(i).classList.remove('show'); });
+        }
+
+        function nova(){
+            el('mpId').value = '';
+            el('mpTitulo').innerText = 'Nova pessoa';
+            ['mpNome','mpEmail','mpCargo','mpTelefone','mpEquipe','mpSenha'].forEach(function(i){
+                el(i).value = '';
+            });
+            limparErros();
+            el('mpAvisoSenha').style.display = 'none';
+            el('mpSenhaDica').innerText = 'Anote antes de salvar: depois de gravada vira um hash, '
+                + 'e nem quem administra consegue lê-la.';
+            preencherNiveis(null);
+            el('mpNivelDica').innerText = 'Quadros e áreas você ajusta depois, no painel da pessoa.';
             atualizarEquipes();
-            document.getElementById('modalPessoa').classList.add('show');
-            setTimeout(() => document.getElementById('mpNome').focus(), 60);
+            el('modalPessoa').classList.add('show');
+            setTimeout(function(){ el('mpNome').focus(); }, 60);
+        }
+
+        function editar(id){
+            var p = achar(id);
+            if(!p) return;
+            el('mpId').value = p.id;
+            el('mpTitulo').innerText = 'Editar ' + (p.nome || 'pessoa');
+            el('mpNome').value = p.nome || '';
+            el('mpEmail').value = p.email || '';
+            el('mpCargo').value = p.cargo || '';
+            el('mpTelefone').value = p.telefone || '';
+            el('mpEquipe').value = p.equipe || '';
+            el('mpSenha').value = '';
+            limparErros();
+            el('mpAvisoSenha').style.display = 'none';
+            el('mpSenhaDica').innerText = p.tem_senha === false
+                ? 'Esta pessoa ainda não tem senha e não consegue entrar.'
+                : 'Deixe em branco para manter a senha atual.';
+            preencherNiveis(p);
+            el('mpNivelDica').innerText = 'Quadros e áreas você ajusta no painel da pessoa.';
+            atualizarEquipes();
+            el('modalPessoa').classList.add('show');
+            setTimeout(function(){ el('mpNome').focus(); }, 60);
+        }
+
+        function preencherNiveis(p){
+            var atual = p ? p.papel_id : null;
+            var lista = st.niveis.filter(function(n){
+                return !n.externo || String(n.id) === String(atual);
+            });
+            el('mpNivel').innerHTML = '<option value="">Sem nível definido</option>'
+                + lista.map(function(n){
+                    return '<option value="' + escA(n.id) + '"'
+                        + (String(n.id) === String(atual) ? ' selected' : '') + '>'
+                        + esc(n.nome) + '</option>';
+                  }).join('');
         }
 
         function atualizarEquipes(){
-            const dl = document.getElementById('equipesLista');
-            if(dl) dl.innerHTML = equipes.map(e => `<option value="${escA(e)}">`).join('');
+            el('equipesLista').innerHTML = st.equipes.map(function(e){
+                return '<option value="' + escA(e) + '">';
+            }).join('');
         }
 
-        function fecharPessoa(){ document.getElementById('modalPessoa').classList.remove('show'); }
+        function fecharModal(){ el('modalPessoa').classList.remove('show'); }
 
-        async function gerarSenha(){
-            try{
-                const r = await fetch('/api/usuarios/gerar-senha');
-                if(r.ok){
-                    const d = await r.json();
-                    document.getElementById('mpSenha').value = d.senha || '';
-                    if(document.getElementById('mpId').value)
-                        document.getElementById('mpAvisoSenha').style.display = 'flex';
-                    return;
-                }
-            }catch(e){}
-            // O servidor é a fonte preferida; isto é só para não travar a tela.
-            const alfabeto = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            const a = new Uint32Array(12);
-            (window.crypto || window.msCrypto).getRandomValues(a);
-            document.getElementById('mpSenha').value =
-                [...a].map(n => alfabeto[n % alfabeto.length]).join('');
-            if(document.getElementById('mpId').value)
-                document.getElementById('mpAvisoSenha').style.display = 'flex';
-        }
-
-        async function salvarPessoa(){
-            const id = document.getElementById('mpId').value;
-            const nome = document.getElementById('mpNome').value.trim();
-            const email = document.getElementById('mpEmail').value.trim().toLowerCase();
-            const senha = document.getElementById('mpSenha').value;
-
-            if(!nome){ showToast('Informe o nome.','error'); return; }
-            if(!email || !email.includes('@')){ showToast('Informe um e-mail válido.','error'); return; }
-            if(!id && senha.length < 8){
-                showToast('A senha inicial precisa de pelo menos 8 caracteres.','error'); return;
-            }
-            if(id && senha && senha.length < 8){
-                showToast('A senha nova precisa de pelo menos 8 caracteres.','error'); return;
-            }
-
-            const corpo = {
-                nome, email,
-                cargo: document.getElementById('mpCargo').value.trim(),
-                telefone: document.getElementById('mpTelefone').value.trim(),
-                equipe: document.getElementById('mpEquipe').value.trim(),
-                papel_id: document.getElementById('mpNivel').value || null
-            };
-            const b = document.getElementById('mpSalvar');
-            b.disabled = true;
-            try{
-                if(!id){
-                    corpo.senha = senha;
-                    const r = await fetch('/api/acessos/pessoas', {
-                        method:'POST', headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify(corpo) });
-                    if(!r.ok){ showToast(await motivo(r,'Não foi possível cadastrar.'),'error'); return; }
-                    showToast('Pessoa cadastrada. Envie a senha por um canal seguro.','success');
+        function gerarSenha(){
+            fetch('/api/usuarios/gerar-senha').then(function(r){
+                return r.ok ? r.json() : null;
+            })['catch'](function(){ return null; }).then(function(d){
+                if(d && d.senha){
+                    el('mpSenha').value = d.senha;
                 } else {
-                    const r = await fetch('/api/acessos/pessoas/'+id, {
-                        method:'PUT', headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify(corpo) });
-                    if(!r.ok){ showToast(await motivo(r,'Não foi possível salvar.'),'error'); return; }
-                    // Senha vai em rota própria: é a única alteração que
-                    // precisa de registro separado na auditoria.
-                    if(senha){
-                        const rs = await fetch('/api/acessos/pessoas/'+id+'/senha', {
-                            method:'PUT', headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify({ senha }) });
-                        if(!rs.ok){ showToast(await motivo(rs,'Dados salvos, mas a senha não.'),'error'); return; }
-                    }
-                    showToast(senha ? 'Dados e senha atualizados.' : 'Dados atualizados.','success');
+                    /* Reserva local, só para a tela não travar se a rota falhar. */
+                    var alfabeto = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                    var a = new Uint32Array(12);
+                    (window.crypto || window.msCrypto).getRandomValues(a);
+                    el('mpSenha').value = Array.prototype.map.call(a, function(n){
+                        return alfabeto.charAt(n % alfabeto.length);
+                    }).join('');
                 }
-                fecharPessoa();
-                await carregarPessoas();
-            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
-            finally{ b.disabled = false; }
+                el('mpSenha').classList.remove('erro');
+                el('errSenha').classList.remove('show');
+                if(el('mpId').value) el('mpAvisoSenha').style.display = 'flex';
+            });
+        }
+
+        function marcar(campo, erro, ruim){
+            el(campo).classList.toggle('erro', ruim);
+            el(erro).classList.toggle('show', ruim);
+            return !ruim;
+        }
+
+        function salvar(){
+            var id = el('mpId').value;
+            var nome = el('mpNome').value.trim();
+            var email = el('mpEmail').value.trim().toLowerCase();
+            var senha = el('mpSenha').value;
+
+            var okNome = marcar('mpNome','errNome', !nome);
+            var okMail = marcar('mpEmail','errEmail', !email || email.indexOf('@') < 1);
+            var senhaRuim = (!id && senha.length < 8) || (!!id && !!senha && senha.length < 8);
+            var okSenha = marcar('mpSenha','errSenha', senhaRuim);
+            if(!okNome){ el('mpNome').focus(); return; }
+            if(!okMail){ el('mpEmail').focus(); return; }
+            if(!okSenha){ el('mpSenha').focus(); return; }
+
+            var corpo = {
+                nome: nome, email: email,
+                cargo: el('mpCargo').value.trim(),
+                telefone: el('mpTelefone').value.trim(),
+                equipe: el('mpEquipe').value.trim(),
+                papel_id: el('mpNivel').value || null
+            };
+            var b = el('mpSalvar');
+            b.disabled = true;
+
+            var req;
+            if(!id){
+                corpo.senha = senha;
+                req = fetch('/api/acessos/pessoas', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify(corpo)
+                }).then(function(r){
+                    if(!r.ok) return motivo(r, 'Não foi possível cadastrar.')
+                        .then(function(m){ throw new Error(m); });
+                    toast('Pessoa cadastrada. Envie a senha por um canal seguro.', 'success');
+                });
+            } else {
+                req = fetch('/api/acessos/pessoas/' + id, {
+                    method:'PUT', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify(corpo)
+                }).then(function(r){
+                    if(!r.ok) return motivo(r, 'Não foi possível salvar.')
+                        .then(function(m){ throw new Error(m); });
+                    /* A senha vai em rota própria: é a única alteração que
+                       merece linha própria na auditoria. */
+                    if(!senha){ toast('Dados atualizados.', 'success'); return; }
+                    return fetch('/api/acessos/pessoas/' + id + '/senha', {
+                        method:'PUT', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ senha: senha })
+                    }).then(function(rs){
+                        if(!rs.ok) return motivo(rs, 'Dados salvos, mas a senha não.')
+                            .then(function(m){ throw new Error(m); });
+                        toast('Dados e senha atualizados.', 'success');
+                    });
+                });
+            }
+
+            req.then(function(){
+                fecharModal();
+                return carregarPessoas();
+            }).then(function(){
+                if(st.aberta){
+                    var p = achar(st.aberta);
+                    if(p) desenharPainel(p); else fecharPainel();
+                }
+            })['catch'](function(e){
+                toast(e.message || 'Sem conexão com o servidor.', 'error');
+            }).then(function(){ b.disabled = false; });
+        }
+
+        /* ==================== NÍVEIS ==================== */
+        function desenharNiveis(){
+            var alvo = el('abaNiveis');
+            if(!st.niveis.length){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">shield_person</span>'
+                    + '<h3>Nenhum nível cadastrado</h3>'
+                    + '<p>Os cinco níveis são criados pelo SQL de acessos. '
+                    + 'Se esta lista está vazia, o script ainda não rodou no banco.</p></div>';
+                return;
+            }
+            alvo.innerHTML = faixa('info','info','O que cada nível permite',
+                    'Os níveis são fixos e valem para toda a plataforma. O que muda por pessoa '
+                    + 'são os quadros, as áreas e a equipe — tudo na aba Pessoas.')
+                + st.niveis.map(function(n){
+                    var v = visualDe(n.nome);
+                    var caps = Object.keys(n.capacidades || {});
+                    return '<div class="nc"><div class="nc-cab">'
+                        + '<span class="nc-ico" style="background:' + v.fundo + '">'
+                        + '<span class="material-symbols-rounded" style="color:' + v.cor + '">'
+                        + v.ico + '</span></span>'
+                        + '<div style="flex:1;min-width:0"><div class="nc-t">' + esc(n.nome) + '</div>'
+                        + '<div class="nc-d">' + esc(n.descricao || '') + '</div></div>'
+                        + '<span class="nc-n">' + (n.pessoas || 0)
+                        + ((n.pessoas || 0) === 1 ? ' pessoa' : ' pessoas') + '</span></div>'
+                        + '<div class="nc-caps">'
+                        + (caps.length ? caps.map(function(c){
+                            var info = null, i;
+                            for(i = 0; i < st.catalogo.length; i++)
+                                if(st.catalogo[i].chave === c) info = st.catalogo[i];
+                            if(!info) info = { rotulo:c, escopos:[], sensivel:false };
+                            var e = n.capacidades[c];
+                            return '<span class="capsula' + (info.sensivel ? ' sensivel' : '') + '">'
+                                + esc(info.rotulo)
+                                + (info.escopos && info.escopos.length
+                                    ? '<span class="esc esc-' + escA(e) + '">'
+                                      + esc(ROT_ESCOPO[e] || e) + '</span>' : '')
+                                + '</span>';
+                          }).join('') : '<span class="capsula">Nenhuma permissão</span>')
+                        + '</div></div>';
+                }).join('');
+        }
+
+        /* ==================== REGISTRO ==================== */
+        function carregarRegistro(){
+            var alvo = el('abaRegistro');
+            alvo.innerHTML = esqueletos(5);
+            fetch('/api/acessos/auditoria').then(function(r){
+                if(!r.ok) return motivo(r, 'Erro ao carregar o registro.').then(function(m){
+                    alvo.innerHTML = '<div class="vazio">'
+                        + '<span class="material-symbols-rounded">cloud_off</span>'
+                        + '<h3>Não foi possível carregar</h3><p>' + esc(m) + '</p></div>';
+                    return null;
+                });
+                return r.json();
+            }).then(function(d){
+                if(!d) return;
+                var regs = d.registros || [];
+                var divs = regs.filter(function(r){ return r.acao === 'divergencia_permissao'; });
+                var topo = divs.length
+                    ? faixa('aviso','warning', divs.length + ' divergência'
+                        + (divs.length === 1 ? '' : 's') + ' entre o modelo antigo e o novo',
+                        'Nada quebrou: enquanto houver divergência, o modelo antigo continua decidindo.')
+                    : faixa('info','check_circle','Os dois modelos estão concordando',
+                        'Depois de alguns dias assim, o modelo novo pode assumir com segurança.');
+
+                alvo.innerHTML = topo + '<div class="tabela">'
+                    + (regs.length ? regs.map(function(r){
+                        var det = r.detalhe || {}, txt;
+                        if(r.acao === 'divergencia_permissao'){
+                            txt = '<b>' + esc(r.recurso) + '</b> — antigo diz <b>'
+                                + (det.antigo ? 'sim' : 'não') + '</b>, novo diz <b>'
+                                + (det.novo ? 'sim' : 'não') + '</b>';
+                        } else if(r.acao === 'acesso_alterado'){
+                            var campos = Object.keys(det).map(function(k){ return ROT_CAMPO[k] || k; });
+                            txt = 'alterou <b>' + esc(campos.join(', ') || 'o acesso') + '</b>';
+                        } else {
+                            txt = esc(ROT_ACAO[r.acao] || r.acao) + ' <b>'
+                                + esc(det.nome || r.alvo_id || '') + '</b>';
+                        }
+                        return '<div class="reg-l"><div class="reg-q">' + dataHora(r.criado_em)
+                            + '</div><div class="reg-o">' + txt + '</div>'
+                            + '<div class="reg-w">' + (esc(r.usuario) || '—') + '</div></div>';
+                      }).join('')
+                      : '<div class="vazio" style="box-shadow:none">'
+                        + '<span class="material-symbols-rounded">history</span>'
+                        + '<h3>Nada registrado ainda</h3>'
+                        + '<p>As alterações de acesso aparecem aqui assim que acontecerem.</p></div>')
+                    + '</div>';
+            });
         }
 
         document.addEventListener('keydown', function(e){
-            if(e.key === 'Escape') fecharPessoa();
+            if(e.key !== 'Escape') return;
+            if(el('modalPessoa').classList.contains('show')) fecharModal();
+            else if(el('painelPessoa').classList.contains('show')) fecharPainel();
         });
+        document.addEventListener('DOMContentLoaded', iniciar);
 
-        /* ==================== UTIL ==================== */
-        function showToast(msg,tipo){
-            const c=document.getElementById('toastContainer');
-            const t=document.createElement('div'); t.className='toast';
-            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${escH(msg)}`;
-            c.appendChild(t); setTimeout(()=>t.remove(),4200);
-        }
+        /* Uma ponte só para os onclick do HTML gerado, em vez de dezenas
+           de funções soltas no escopo global. */
+        return {
+            aba: trocarAba,
+            abrir: abrir,
+            mudar: mudar,
+            alternar: alternar,
+            tudo: marcarTudo,
+            nova: nova,
+            salvar: salvar,
+            gerarSenha: gerarSenha,
+            fecharPainel: fecharPainel,
+            fecharModal: fecharModal,
+            recarregar: function(){ st.carregando = true; st.erro = null; desenhar(); carregarPessoas(); },
+            buscar: function(v){ st.busca = v; desenharPessoas(); },
+            fNivel: function(v){ st.fNivel = v; desenharPessoas(); },
+            fSit: function(v){ st.fSit = v; desenharPessoas(); },
+            limpar: function(){ st.busca = ''; st.fNivel = ''; st.fSit = ''; desenharPessoas(); },
+            atalho: function(f){
+                if(f === '__sem'){ st.fNivel = '__sem'; st.fSit = ''; }
+                else { st.fSit = f; st.fNivel = ''; }
+                st.busca = '';
+                desenharPessoas();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+            _st: st
+        };
+    })();
     </script>
-    <datalist id="equipesLista"></datalist>
 </body>
 </html>
