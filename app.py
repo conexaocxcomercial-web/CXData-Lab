@@ -252,7 +252,6 @@ MAPA_MODULO_CAP = {
     'crm':           'crm.lead.ver',
     'feed':          'feed.publicar',
     'lixeira':       'lixeira.ver',
-    'externos':      'cliente.portal.gerir',
     'configuracoes': 'papel.gerir',
 }
 
@@ -1080,90 +1079,10 @@ def projetos_para_selecao():
 
 # --- USUÁRIOS EXTERNOS (somente admin) ---
 
-@app.route('/externos')
-def externos_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login', proximo=request.path))
-    if not is_admin():
-        return redirect(url_for('index'))
-    return render_template('externos.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
 
-@app.route('/api/externos', methods=['GET'])
-def listar_externos():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        res = supabase.table("usuarios").select(
-            "id, nome, email, cargo, nivel_acesso, tipo_usuario, papel_externo, cliente_vinculado_id, perm_modulos, perm_clientes_modo, perm_clientes_ids, perm_projetos_modo, perm_projetos_ids, criado_em"
-        ).eq("tipo_usuario", "externo").order("nome", desc=False).execute()
-        return jsonify({"status": "sucesso", "externos": res.data}), 200
-    except Exception as e:
-        print(f"[CRITICAL] Erro no GET Externos: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar usuários externos."}), 500
 
-@app.route('/api/externos', methods=['POST'])
-def criar_externo():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    dados = request.json
-    try:
-        senha_texto = dados.get("senha")
-        if not senha_texto:
-            return jsonify({"status": "erro", "mensagem": "Senha é obrigatória."}), 400
-        if not dados.get("cliente_vinculado_id"):
-            return jsonify({"status": "erro", "mensagem": "Selecione qual cliente é este usuário."}), 400
 
-        novo = {
-            "nome": dados.get("nome"),
-            "email": dados.get("email"),
-            "cargo": dados.get("cargo"),
-            "nivel_acesso": "personalizado",   # externo usa a engine de permissões
-            "tipo_usuario": "externo",
-            "papel_externo": dados.get("papel_externo", "visualizador"),
-            # Só o hash é gravado. A coluna `senha` em texto puro é legado
-            # e deixa de receber valor a partir daqui.
-            "senha_hash": gerar_hash(senha_texto)
-        }
-        novo.update(montar_permissoes({**dados, "tipo_usuario": "externo", "nivel_acesso": "personalizado"}))
-        supabase.table("usuarios").insert(novo).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[CRITICAL] Erro no POST Externo: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
-@app.route('/api/externos/<usuario_id>', methods=['PUT'])
-def atualizar_externo(usuario_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    dados = request.json
-    try:
-        atualizacao = {}
-        if "nome" in dados: atualizacao["nome"] = dados["nome"]
-        if "email" in dados: atualizacao["email"] = dados["email"]
-        if "cargo" in dados: atualizacao["cargo"] = dados["cargo"]
-        if "papel_externo" in dados: atualizacao["papel_externo"] = dados["papel_externo"]
-        atualizacao["tipo_usuario"] = "externo"
-        atualizacao["nivel_acesso"] = "personalizado"
-        atualizacao.update(montar_permissoes({**dados, "tipo_usuario": "externo", "nivel_acesso": "personalizado"}))
-        if dados.get("senha"):
-            # Ao trocar a senha, o texto puro antigo é apagado de vez.
-            atualizacao["senha"] = None
-            atualizacao["senha_hash"] = gerar_hash(dados["senha"])
-        supabase.table("usuarios").update(atualizacao).eq("id", usuario_id).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[CRITICAL] Erro no PUT Externo: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/externos/<usuario_id>', methods=['DELETE'])
-def excluir_externo(usuario_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("usuarios").delete().eq("id", usuario_id).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 
 # --- CLIENTES ---
