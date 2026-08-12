@@ -241,6 +241,7 @@
             .modal-overlay{ padding:0; align-items:flex-end; }
             .modal{ max-width:none; border-radius:18px 18px 0 0; }
         }
+        .ig input.erro{ border-color:var(--critico); box-shadow:0 0 0 3px var(--cr-fundo); }
     </style>
 </head>
 <body>
@@ -284,7 +285,8 @@
                 </div>
                 <div class="ig2">
                     <div class="ig"><label for="mcCnpj">CNPJ</label>
-                        <input type="text" id="mcCnpj" placeholder="00.000.000/0001-00"></div>
+                        <input type="text" id="mcCnpj" inputmode="numeric" maxlength="18"
+                               placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)"></div>
                     <div class="ig"><label for="mcResp">Responsável na Conexão</label>
                         <select id="mcResp"><option value="">Sem responsável</option></select></div>
                 </div>
@@ -348,6 +350,35 @@
         }
         function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
         function soDigitos(s){ return String(s||'').replace(/\D/g,''); }
+
+        /* CNPJ errado no cadastro vira nota fiscal recusada depois.
+           Validar na entrada é mais barato que descobrir na emissão. */
+        function mascaraCNPJ(el){
+            var d = soDigitos(el.value).slice(0, 14), s = d;
+            if(d.length > 12) s = d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, '$1.$2.$3/$4-$5');
+            else if(d.length > 8) s = d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/, '$1.$2.$3/$4');
+            else if(d.length > 5) s = d.replace(/^(\d{2})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+            else if(d.length > 2) s = d.replace(/^(\d{2})(\d{0,3})$/, '$1.$2');
+            el.value = s;
+            el.classList.toggle('erro', d.length === 14 && !cnpjValido(d));
+        }
+
+        function cnpjValido(cnpj){
+            var d = soDigitos(cnpj);
+            if(d.length !== 14) return false;
+            if(/^(\d)\1{13}$/.test(d)) return false;
+            var calc = function(base){
+                var peso = base.length - 7, soma = 0, i;
+                for(i = 0; i < base.length; i++){
+                    soma += parseInt(base.charAt(i), 10) * peso;
+                    peso = peso - 1 < 2 ? 9 : peso - 1;
+                }
+                var r = soma % 11;
+                return r < 2 ? 0 : 11 - r;
+            };
+            return calc(d.slice(0, 12)) === parseInt(d.charAt(12), 10)
+                && calc(d.slice(0, 13)) === parseInt(d.charAt(13), 10);
+        }
 
         function tempoDeCasa(desde){
             if(!desde) return null;
@@ -700,6 +731,13 @@
             const id = document.getElementById('mcId').value;
             const nome = document.getElementById('mcNome').value.trim();
             if(!nome){ showToast('Informe o nome da empresa.','error'); return; }
+            var cnpj = document.getElementById('mcCnpj').value.trim();
+            if(cnpj && !cnpjValido(cnpj)){
+                showToast('CNPJ inválido. Confira os números.','error');
+                document.getElementById('mcCnpj').classList.add('erro');
+                document.getElementById('mcCnpj').focus();
+                return;
+            }
             const corpo = {
                 nome_empresa: nome,
                 cnpj: document.getElementById('mcCnpj').value.trim(),
