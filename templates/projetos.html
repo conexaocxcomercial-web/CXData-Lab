@@ -102,7 +102,7 @@
         .segm { display: flex; background: var(--papel-2); border-radius: var(--r-ctrl); padding: 3px; gap: 2px; }
         .segm-btn { font: inherit; font-size: 12.5px; font-weight: 500; color: var(--tinta-2); background: none; border: none; cursor: pointer; padding: 6px 13px; border-radius: 6px; display: flex; align-items: center; gap: 6px; transition: .15s; white-space: nowrap; }
         .segm-btn:hover { color: var(--tinta); }
-        .segm-btn.active { background: var(--papel); color: var(--tinta); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.07); }
+        .segm-btn.on { background: var(--papel); color: var(--tinta); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.07); }
         .segm-btn .material-symbols-rounded { font-size: 17px; }
 
         .busca { position: relative; width: 260px; }
@@ -709,11 +709,7 @@
             /* No celular o quadro já empilha os cards; a Lista viraria uma
                tabela rolando na horizontal, sem ganho. */
             #tab-lista { display: none; }
-            .segm { padding: 3px; }
             .list-view-container { display: none !important; }
-            /* o quadro no celular já é uma lista vertical: a aba Lista duplicaria */
-            #tab-lista { display: none; }
-            .segm { padding: 3px; }
             /* player vira barra de largura total, acima da barra do navegador */
             .floating-player {
                 left: 12px; right: 12px; bottom: 12px; max-width: none;
@@ -751,19 +747,25 @@
         .enc-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.45; display:block; margin-top:3px; }
 
         /* ===== ABAS DE SUBDIVISÃO ===== */
-        .sub-abas{ display:flex; gap:2px; padding:0 22px; background:#FFF;
-            border-bottom:1px solid #E4E4EA; overflow-x:auto; }
-        .sub-abas::-webkit-scrollbar{ display:none; }
-        .sub-aba{ font-size:12.5px; font-weight:550; padding:11px 14px; color:#7C7C88;
-            cursor:pointer; border:none; background:none; border-bottom:2px solid transparent;
-            white-space:nowrap; display:flex; align-items:center; gap:7px; transition:.14s;
-            font-family:inherit; }
-        .sub-aba:hover{ color:#56565F; }
-        .sub-aba.on{ color:#17171A; font-weight:650; border-bottom-color:#6C5CE7; }
-        .sub-n{ font-size:10px; font-weight:600; padding:1px 7px; border-radius:99px;
-            background:#F7F7F9; color:#7C7C88; font-family:'IBM Plex Mono',monospace; }
-        .sub-aba.on .sub-n{ background:#F1EFFE; color:#6C5CE7; }
-        @media(max-width:900px){ .sub-abas{ padding:0 16px; } }
+        /* Subdivisões: mesmo segmented dos funis do CRM, para quem
+           navega entre os dois não precisar aprender dois padrões. */
+        .sub-n{ font-size:10.5px; font-weight:600; margin-left:6px; opacity:.62;
+            font-family:'IBM Plex Mono',monospace; }
+        .segm-btn.on .sub-n{ opacity:1; color:var(--primary-purple, #6C5CE7); }
+
+        /* Quadro x Lista: é preferência de exibição, não navegação.
+           Fica à direita, como ícone, longe do que muda o conteúdo. */
+        .visao{ display:flex; background:var(--surface-2, #F7F7F9); border-radius:8px; padding:2px; gap:2px; }
+        .visao-btn{ width:30px; height:28px; border:none; background:none; cursor:pointer;
+            border-radius:6px; display:flex; align-items:center; justify-content:center;
+            color:var(--ink-3, #7C7C88); transition:.15s; }
+        .visao-btn:hover{ color:var(--ink-2, #56565F); }
+        .visao-btn.on{ background:#FFF; color:var(--ink, #17171A); box-shadow:0 1px 2px rgba(0,0,0,.07); }
+        .visao-btn .material-symbols-rounded{ font-size:18px; }
+        @media(max-width:900px){
+            .segm{ overflow-x:auto; max-width:100%; }
+            .segm::-webkit-scrollbar{ display:none; }
+        }
 </style>
 </head>
 <body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
@@ -793,17 +795,20 @@
         <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
 
-    <div class="sub-abas" id="abasSub" style="display:none"></div>
-
     <div class="cmd">
         <span class="cmd-titulo" id="tituloWorkspace">Carregando...</span>
+        <div class="cmd-sep" id="sepSub" style="display:none"></div>
+        <div class="segm" id="abasSub" role="tablist" style="display:none"></div>
         <span class="cmd-cont" id="contadorAbertos">0 em aberto</span>
-        <div class="cmd-sep"></div>
-        <div class="segm" role="tablist">
-            <button class="segm-btn active" id="tab-kanban" role="tab" aria-selected="true" onclick="mudarVisao('kanban')"><span class="material-symbols-rounded">view_kanban</span>Quadro</button>
-            <button class="segm-btn" id="tab-lista" role="tab" aria-selected="false" onclick="mudarVisao('lista')"><span class="material-symbols-rounded">format_list_bulleted</span>Lista</button>
-        </div>
         <div class="cmd-dir">
+            <div class="visao" role="tablist" aria-label="Modo de exibição">
+                <button class="visao-btn on" id="tab-kanban" role="tab" aria-selected="true"
+                        onclick="mudarVisao('kanban')" title="Quadro" aria-label="Quadro">
+                    <span class="material-symbols-rounded">view_kanban</span></button>
+                <button class="visao-btn" id="tab-lista" role="tab" aria-selected="false"
+                        onclick="mudarVisao('lista')" title="Lista" aria-label="Lista">
+                    <span class="material-symbols-rounded">format_list_bulleted</span></button>
+            </div>
             <div class="busca">
                 <span class="material-symbols-rounded">search</span>
                 <input type="text" id="filtroBusca" placeholder="Buscar projeto ou cliente" autocomplete="off" oninput="renderizarProjetos()">
@@ -1218,18 +1223,25 @@
 
         function renderAbasSub(){
             const barra = document.getElementById('abasSub');
+            const sep = document.getElementById('sepSub');
             if(!barra) return;
-            if(!SUBS.length){ barra.style.display = 'none'; return; }
+            if(!SUBS.length){
+                barra.style.display = 'none';
+                if(sep) sep.style.display = 'none';
+                return;
+            }
             const base = projetosGlobais.filter(p => cfg.areasPermitidas.includes(p.area));
             const ativo = p => p.status !== 'Finalizado' && p.status !== 'Cancelado';
             const conta = s => base.filter(p => ativo(p) && subDoCard(p) === s).length;
             barra.style.display = 'flex';
+            if(sep) sep.style.display = 'block';
             barra.innerHTML =
-                `<button class="sub-aba ${!subAtual?'on':''}" onclick="trocarSub('')">
-                    Todos<span class="sub-n">${base.filter(ativo).length}</span></button>` +
-                SUBS.map(([c,n,d]) => `<button class="sub-aba ${subAtual===c?'on':''}"
-                    onclick="trocarSub('${c}')" title="${d}">
-                    ${n}<span class="sub-n">${conta(c)}</span></button>`).join('');
+                `<button class="segm-btn ${!subAtual?'on':''}" role="tab"
+                    aria-selected="${!subAtual}" onclick="trocarSub('')">Todos<span
+                    class="sub-n">${base.filter(ativo).length}</span></button>` +
+                SUBS.map(([c,n,d]) => `<button class="segm-btn ${subAtual===c?'on':''}" role="tab"
+                    aria-selected="${subAtual===c}" onclick="trocarSub('${c}')"
+                    title="${d}">${n}<span class="sub-n">${conta(c)}</span></button>`).join('');
         }
 
         function trocarSub(s){
@@ -1676,12 +1688,18 @@
         window.addEventListener('resize', forcarQuadroNoMobile);
 
         function mudarVisao(novaVisao) {
+            // No celular o quadro já empilha os cards; a lista viraria
+            // tabela rolando na horizontal, sem ganho.
             if (novaVisao === 'lista' && window.innerWidth <= 900) return;
-            if (novaVisao === 'lista' && window.innerWidth <= 900) novaVisao = 'kanban';
             visaoAtual = novaVisao;
-            document.querySelectorAll('.segm-btn').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+            // Só os botões de visão: as abas de subdivisão também são
+            // .segm-btn e seriam desmarcadas junto.
+            document.querySelectorAll('.visao-btn').forEach(t => {
+                t.classList.remove('on');
+                t.setAttribute('aria-selected', 'false');
+            });
             const aba = document.getElementById(`tab-${novaVisao}`);
-            aba.classList.add('active'); aba.setAttribute('aria-selected','true');
+            if (aba) { aba.classList.add('on'); aba.setAttribute('aria-selected', 'true'); }
             
             document.getElementById('boardDinamico').style.display = novaVisao === 'kanban' ? 'flex' : 'none';
             document.getElementById('listViewDinamico').style.display = novaVisao === 'lista' ? 'block' : 'none';
