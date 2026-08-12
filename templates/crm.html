@@ -534,8 +534,12 @@
                 <div class="ig2">
                     <div class="ig"><label for="fSegmento">Segmento</label>
                         <select id="fSegmento"><option value="">—</option></select></div>
-                    <div class="ig"><label for="fLocalizacao">Cidade e estado</label>
-                        <input type="text" id="fLocalizacao" placeholder="Natal, RN"></div>
+                    <div class="ig2" style="gap:9px">
+                        <div class="ig"><label for="fCidade">Cidade</label>
+                            <input type="text" id="fCidade" list="cidadesLista" placeholder="Natal"></div>
+                        <div class="ig" style="max-width:92px"><label for="fEstado">UF</label>
+                            <select id="fEstado"><option value="">—</option></select></div>
+                    </div>
                 </div>
                 <div class="ig">
                     <label for="fTelefone">Telefone</label>
@@ -692,10 +696,33 @@
            ========================================================== */
         /* Segmento e localização mudam a conversa do closer: setor define
            a dor típica, cidade define se a reunião é presencial. */
-        const SEGMENTOS = ['Indústria','Comércio','Serviços','Saúde','Educação',
-                           'Construção civil','Tecnologia','Agronegócio',
-                           'Transporte e logística','Alimentação','Financeiro',
-                           'Terceiro setor','Outro'];
+        /* Estado é lista fechada; cidade sugere o que já foi digitado
+           antes, mas aceita qualquer valor — o Brasil tem 5.570 cidades
+           e travar a lista impediria cadastrar cliente novo. */
+        const ESTADOS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+                         'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+        const CIDADES_COMUNS = ['Natal','Parnamirim','Mossoró','São Gonçalo do Amarante',
+                                'Macaíba','Caicó','Currais Novos','Assu','João Pessoa',
+                                'Campina Grande','Recife','Fortaleza','João Câmara'];
+
+        const SEGMENTOS = [
+            'Indústria',
+            'Varejo e vestuário',
+            'Comércio atacadista',
+            'Concessionária de veículos',
+            'Construção civil',
+            'Contabilidade',
+            'Serviços profissionais',
+            'Saúde',
+            'Educação',
+            'Tecnologia',
+            'Agronegócio',
+            'Transporte e logística',
+            'Alimentação',
+            'Financeiro',
+            'Terceiro setor',
+            'Outro'
+        ];
 
         const PORTOES = [
             { funil:'qualificacao', para:'Contato',
@@ -709,8 +736,9 @@
                        {k:'email', r:'E-mail', tipo:'email', obrig:true},
                        {k:'segmento', r:'Segmento', tipo:'select', obrig:true,
                         opcoes:SEGMENTOS},
-                       {k:'localizacao', r:'Cidade e estado', tipo:'text', obrig:true,
+                       {k:'cidade', r:'Cidade', tipo:'cidade', obrig:true,
                         dica:'Define se a reunião pode ser presencial.'},
+                       {k:'estado', r:'Estado', tipo:'select', obrig:true, opcoes:ESTADOS},
                        {k:'anotacoes', r:'O que já sabemos', tipo:'textarea', obrig:true,
                         dica:'Necessidade, quem decide, prazo — o que ajudar o closer.'} ] },
             { funil:'fechamento', para:'Proposta',
@@ -927,6 +955,18 @@
             await carregar();
         }
 
+        function atualizarCidades(){
+            // As cidades que já aparecem nos leads entram na sugestão:
+            // quem digitou "Parnamirim" uma vez não digita de novo errado.
+            var vistas = {};
+            CIDADES_COMUNS.forEach(function(c){ vistas[c] = true; });
+            (leads || []).forEach(function(l){ if(l.cidade) vistas[l.cidade] = true; });
+            var dl = document.getElementById('cidadesLista');
+            if(dl) dl.innerHTML = Object.keys(vistas).sort().map(function(c){
+                return '<option value="' + escA(c) + '">';
+            }).join('');
+        }
+
         async function carregar(){
             try{
                 const r = await fetch('/api/leads');
@@ -941,6 +981,7 @@
                 const d = await r.json();
                 leads = d.leads || [];
             }catch(e){ leads = []; showToast('Sem conexão com o servidor.','error'); }
+            atualizarCidades();
             render();
         }
 
@@ -1151,6 +1192,11 @@
                     const ops = c.opcoes || ORIGENS;
                     campo = `<select id="pt-${escA(c.k)}"><option value="">Selecione…</option>` +
                         ops.map(o=>`<option ${l[c.k]===o?'selected':''}>${escH(o)}</option>`).join('') + '</select>';
+                } else if(c.tipo === 'cidade'){
+                    // Lista aberta com sugestão: o Brasil tem 5.570 cidades,
+                    // mas as que a Conexão atende se repetem.
+                    campo = `<input id="pt-${escA(c.k)}" type="text" list="cidadesLista"
+                        placeholder="Natal" value="${v}">`;
                 } else if(c.tipo === 'moeda'){
                     campo = `<input id="pt-${escA(c.k)}" type="number" step="0.01" min="0"
                         placeholder="0,00" value="${v}">`;
@@ -1565,7 +1611,7 @@
                 <div class="campo"><div class="campo-r">Responsável</div><div class="campo-v">${escH(l.responsavel)||'—'}</div></div>
                 <div class="campo"><div class="campo-r">Origem</div><div class="campo-v ${l.origem?'':'vazio'}">${escH(l.origem)||'não informada'}</div></div>
                 <div class="campo"><div class="campo-r">Segmento</div><div class="campo-v ${l.segmento?'':'vazio'}">${escH(l.segmento)||'não informado'}</div></div>
-                <div class="campo"><div class="campo-r">Localização</div><div class="campo-v ${l.localizacao?'':'vazio'}">${escH(l.localizacao)||'não informada'}</div></div>
+                <div class="campo"><div class="campo-r">Localização</div><div class="campo-v ${l.cidade?'':'vazio'}">${l.cidade ? escH(l.cidade) + (l.estado ? ', ' + escH(l.estado) : '') : 'não informada'}</div></div>
                 <div class="campo" style="margin-bottom:18px"><div class="campo-r">Anotações</div>
                     ${l.anotacoes ? `<div class="anot">${escH(l.anotacoes)}</div>` : '<div class="campo-v vazio">sem anotações</div>'}</div>`;
 
@@ -1667,7 +1713,12 @@
                 : 'Nasce em ' + FUNIS[funilAtual].colunas[0].id + ' e já pode receber contato.';
             document.getElementById('fEmpresa').value = l ? (l.empresa||'') : '';
             document.getElementById('fContato').value = l ? (l.contato||'') : '';
-            document.getElementById('fLocalizacao').value = l ? (l.localizacao||'') : '';
+            document.getElementById('fCidade').value = l ? (l.cidade||'') : '';
+            var uf = l ? (l.estado || '') : '';
+            document.getElementById('fEstado').innerHTML = '<option value="">—</option>'
+                + ESTADOS.map(function(e){
+                    return '<option' + (e === uf ? ' selected' : '') + '>' + e + '</option>';
+                  }).join('');
             var seg = l ? (l.segmento || '') : '';
             var segs = SEGMENTOS.slice();
             if(seg && segs.indexOf(seg) < 0) segs.push(seg);
@@ -1708,7 +1759,8 @@
                 responsavel: document.getElementById('fResponsavel').value,
                 origem: document.getElementById('fOrigem').value,
                 segmento: document.getElementById('fSegmento').value,
-                localizacao: document.getElementById('fLocalizacao').value.trim(),
+                cidade: document.getElementById('fCidade').value.trim(),
+                estado: document.getElementById('fEstado').value,
                 proximo_contato: document.getElementById('fProximo').value || null,
                 valor_estimado: document.getElementById('fValor').value || null,
                 anotacoes: document.getElementById('fAnotacoes').value.trim()
@@ -1767,5 +1819,6 @@
             }
         });
     </script>
+    <datalist id="cidadesLista"></datalist>
 </body>
 </html>
