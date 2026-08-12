@@ -551,9 +551,8 @@
                     <div class="ig"><label for="fResponsavel">Responsável</label><select id="fResponsavel"></select></div>
                 </div>
                 <div class="ig2">
-                    <div class="ig"><label for="fOrigem">Origem</label><select id="fOrigem">
-                        <option value="">—</option><option>Indicação</option><option>Site</option><option>Prospecção ativa</option>
-                        <option>Evento</option><option>Redes sociais</option><option>Cliente antigo</option></select></div>
+                    <div class="ig"><label for="fOrigem">Origem</label>
+                        <select id="fOrigem"><option value="">—</option></select></div>
                     <div class="ig"><label for="fProximo">Próximo contato</label><input type="date" id="fProximo"></div>
                 </div>
                 <div class="ig"><label for="fValor">Valor estimado (opcional)</label><input type="number" id="fValor" step="any" placeholder="0,00"></div>
@@ -780,8 +779,11 @@
 
         // Origens possíveis de um lead. Alimenta o "de onde vêm os que
         // fecham" no painel comercial, por isso é lista fechada.
-        const ORIGENS = ['Indicação','Site','LinkedIn','Instagram','Prospecção fria',
-                         'Evento','Cliente antigo','Outra'];
+        /* Fonte única das origens: o formulário do card e o portão de
+           Prospecção → Contato leem daqui. Estavam em três lugares
+           diferentes e já haviam divergido entre si. */
+        const ORIGENS = ['BNI','Indicação','Prospecção fria','Base de clientes',
+                         'Eventos','Redes sociais','Site'];
 
         // Quadros oferecidos na janela de fechamento: só entregas ao
         // cliente, mais o Financeiro para a cobrança. Um contrato não
@@ -1610,7 +1612,16 @@
             document.getElementById('fEmail').value = l ? (l.email||'') : '';
             document.getElementById('fProduto').value = l ? (l.produto||'') : '';
             document.getElementById('fResponsavel').value = l ? (l.responsavel||USUARIO) : USUARIO;
-            document.getElementById('fOrigem').value = l ? (l.origem||'') : '';
+            // Monta as opções a partir de ORIGENS. Se o lead tiver uma
+            // origem antiga que saiu da lista, ela entra também — senão
+            // o select viria vazio e a informação se perderia ao salvar.
+            var atual = l ? (l.origem || '') : '';
+            var lista = ORIGENS.slice();
+            if(atual && lista.indexOf(atual) < 0) lista.push(atual);
+            document.getElementById('fOrigem').innerHTML = '<option value="">—</option>'
+                + lista.map(function(o){
+                    return '<option' + (o === atual ? ' selected' : '') + '>' + escH(o) + '</option>';
+                  }).join('');
             document.getElementById('fProximo').value = l && l.proximo_contato ? String(l.proximo_contato).split('T')[0] : '';
             document.getElementById('fValor').value = l && l.valor_estimado ? l.valor_estimado : '';
             document.getElementById('fAnotacoes').value = l ? (l.anotacoes||'') : '';
