@@ -514,13 +514,45 @@ def index():
     return render_template('index.html', usuario=session.get('usuario_nome'), usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/board/<nome_quadro>')
-def tela_projetos(nome_quadro):
+@app.route('/board/<nome_quadro>/<sub>')
+def tela_projetos(nome_quadro, sub=None):
+    """Abre a família inteira, ou já numa subdivisão.
+
+    /board/rhestrategico      -> abas Todos, Mensalista, PCCS, PCO, GD
+    /board/rhestrategico/pccs -> abre direto na aba PCCS
+    """
     if 'usuario_id' not in session:
         return redirect(url_for('login', proximo=request.path))
-    # Personalizado/externo: só acessa o quadro se tiver o módulo liberado
+    # Permissão é da família: quem vê RH Estratégico vê as quatro.
     if (is_personalizado() or is_externo()) and not pode_acessar_modulo(nome_quadro):
         return redirect(url_for('index'))
-    return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+    # Subdivisão inventada na URL volta para a família, em vez de
+    # abrir uma aba que não existe.
+    if sub and not sub_valida(nome_quadro, sub):
+        return redirect(url_for('tela_projetos', nome_quadro=nome_quadro))
+    return render_template('projetos.html',
+                           quadro_atual=nome_quadro,
+                           sub_atual=sub or '',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+
+
+@app.route('/api/quadros/arvore', methods=['GET'])
+def arvore_quadros():
+    """A árvore de quadros, filtrada pelo que a pessoa pode ver."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    permitidos = quadros_permitidos()
+    tudo = session.get('nivel_acesso') in ('admin', 'gestor') and not is_personalizado()
+    saida = []
+    for chave, area, produto, icone, subs in ARVORE_QUADROS:
+        if not tudo and permitidos and chave not in permitidos:
+            continue
+        saida.append({
+            "chave": chave, "area": area, "produto": produto, "icone": icone,
+            "subs": [{"chave": s[0], "nome": s[1], "descricao": s[2]} for s in subs],
+        })
+    return jsonify({"status": "sucesso", "quadros": saida}), 200
 
 # --- API PROJETOS ---
 
@@ -2429,6 +2461,25 @@ def listar_divergencias():
 # ACESSOS — papéis, pessoas e auditoria
 # ============================================================
 
+def registrar_auditoria(acao, recurso, alvo_id, detalhe=None):
+    """Grava uma ação no registro de acessos.
+
+    Falha aqui nunca derruba a operação: perder um registro de
+    auditoria é ruim, mas impedir o cadastro de alguém é pior.
+    """
+    try:
+        supabase.table("auditoria").insert({
+            "usuario": session.get('usuario_nome'),
+            "usuario_id": str(session.get('usuario_id', '')),
+            "acao": acao,
+            "recurso": recurso,
+            "alvo_id": str(alvo_id) if alvo_id else None,
+            "detalhe": detalhe or {},
+        }).execute()
+    except Exception as e:
+        print("Aviso: auditoria nao registrada:", e)
+
+
 def pode_gerir_acessos():
     """Durante a migração, aceita os dois modelos: quem já tem a
     capacidade nova, ou quem é admin pelo modelo antigo. Sem isso a
@@ -2522,16 +2573,61 @@ PRODUTO_QUADRO = {
     'Outro': 'projetos',
 }
 # Área correspondente a cada quadro, que é o que `projetos.area` guarda.
-QUADRO_AREA = {
-    'recrutamento': 'Recrutamento e seleção',
-    'rhestrategico': 'RH Estratégico',
-    'projetos': 'Projetos',
-    'cxdata': 'CX Data',
-    'comercial': 'Comercial',
-    'marketing': 'Marketing',
-    'financeiro': 'Financeiro',
-    'rhinterno': 'RH Interno',
-}
+# ============================================================
+# ÁRVORE DE QUADROS
+#
+# Dez famílias, dezoito quadros. A família é o que aparece na
+# barra lateral e o que carrega permissão e responsabilidade;
+# a subdivisão é aba dentro da tela.
+#
+# 'produto' separa o que o cliente compra do que sustenta a casa:
+# é o que permite medir horas faturáveis e impedir que um contrato
+# caia num quadro interno por engano.
+# ============================================================
+ARVORE_QUADROS = [
+    # chave           área (projetos.area)      produto  ícone        subdivisões
+    ('recrutamento',  'Recrutamento e seleção',  True,  'group_add', []),
+    ('rhestrategico', 'RH Estratégico',          True,  'insights', [
+        ('mensalista', 'Mensalista', 'Acompanhamento contínuo'),
+        ('pccs',       'PCCS',       'Plano de Cargos, Carreiras e Salários'),
+        ('pco',        'PCO',        'Pesquisa de Clima Organizacional'),
+        ('gd',         'GD',         'Gestão de Desempenho'),
+    ]),
+    ('educacao',      'Educação',                True,  'school', [
+        ('reaprendendo',  'Reaprendendo',  'Programa de formação'),
+        ('liderar',       'Liderar',       'Programa de liderança'),
+        ('personalizado', 'Personalizado', 'Programa sob medida'),
+    ]),
+    ('cxdata',        'CX Data',                 True,  'database', [
+        ('pontual',    'Pontual',    'Entrega única'),
+        ('mensalista', 'Mensalista', 'Acompanhamento contínuo'),
+    ]),
+    ('projetos',      'Projetos',                True,  'folder', []),
+
+    ('comercial',     'Comercial',               False, 'handshake', []),
+    ('marketing',     'Marketing',               False, 'campaign', []),
+    ('financeiro',    'Financeiro',              False, 'payments', []),
+    ('tecnologia',    'Tecnologia',              False, 'terminal', []),
+    ('rhinterno',     'RH Interno',              False, 'badge', [
+        ('endomarketing', 'Endomarketing', 'Comunicação e engajamento'),
+        ('admissao',      'Admissão',      'Entrada de pessoas'),
+        ('demissao',      'Demissão',      'Saída de pessoas'),
+    ]),
+]
+
+QUADRO_AREA = {c: a for c, a, _, _, _ in ARVORE_QUADROS}
+QUADROS_PRODUTO = [c for c, _, p, _, _ in ARVORE_QUADROS if p]
+QUADROS_INTERNOS = [c for c, _, p, _, _ in ARVORE_QUADROS if not p]
+SUBQUADROS = {c: [s[0] for s in subs] for c, _, _, _, subs in ARVORE_QUADROS if subs}
+# Onde o card cai quando ninguém escolheu subdivisão: a primeira da lista.
+SUB_PADRAO = {c: subs[0][0] for c, _, _, _, subs in ARVORE_QUADROS if subs}
+
+
+def sub_valida(quadro, sub):
+    """True se a subdivisão pertence ao quadro. Sem sub também é válido."""
+    if not sub:
+        return True
+    return sub in SUBQUADROS.get(quadro, [])
 FASE_ENTRADA = 'Backlog'
 
 
@@ -2706,6 +2802,13 @@ def _acao_abrir_quadros(acao, dados):
         if quadro not in QUADRO_AREA:
             continue
         qtd = max(1, min(int(pedido.get("quantidade") or 1), 50))
+        # Subdivisão escolhida na janela; se vier inválida ou vazia,
+        # cai na padrão da família em vez de ficar sem lugar.
+        sub = pedido.get("sub")
+        if not sub_valida(quadro, sub):
+            sub = None
+        if not sub:
+            sub = SUB_PADRAO.get(quadro)
         if quadro == 'financeiro':
             criados.append(_acao_criar_cobranca({"etapa": "fechamento"}, dados))
             continue
@@ -2718,6 +2821,7 @@ def _acao_abrir_quadros(acao, dados):
             novo = {
                 "nome_projeto": nome,
                 "area": QUADRO_AREA[quadro],
+                "subquadro": sub,
                 "status": FASE_ENTRADA,
                 "empresa": dados.get("cliente_nome"),
                 "cliente_id": dados.get("cliente_id"),
@@ -3461,15 +3565,102 @@ def listar_pessoas_acessos():
         # Nunca selecionar '*' aqui: a tabela ainda tem a coluna `senha`
         # em texto puro, e ela não pode sair do servidor.
         res = (supabase.table("usuarios")
-               .select("id, nome, email, papel_id, equipe, ativo, nivel_acesso, "
-                       "tipo_usuario, quadros, areas, ajustes")
+               .select("id, nome, email, cargo, telefone, papel_id, equipe, ativo, "
+                       "nivel_acesso, tipo_usuario, quadros, areas, ajustes, "
+                       "ultimo_acesso, criado_em, senha_hash")
                .order("nome").execute())
         pessoas = res.data or []
+        # O hash não pode sair do servidor. Vira um booleano: a tela só
+        # precisa saber se a pessoa já tem senha definida.
+        for p in pessoas:
+            p["tem_senha"] = bool(p.pop("senha_hash", None))
         equipes = sorted({p["equipe"] for p in pessoas if p.get("equipe")})
         return jsonify({"status": "sucesso", "pessoas": pessoas, "equipes": equipes}), 200
     except Exception as e:
         print("Erro em listar_pessoas_acessos:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar pessoas.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas', methods=['POST'])
+def criar_pessoa_acessos():
+    """Cadastra uma pessoa direto na tela de Acessos."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.json or {}
+        nome = (d.get("nome") or "").strip()
+        email = (d.get("email") or "").strip().lower()
+        senha = d.get("senha") or ""
+        if not nome or not email:
+            return jsonify({"status": "erro", "mensagem": "Nome e e-mail são obrigatórios."}), 400
+        if len(senha) < 8:
+            return jsonify({"status": "erro",
+                            "mensagem": "A senha precisa de pelo menos 8 caracteres."}), 400
+
+        existe = supabase.table("usuarios").select("id").eq("email", email).limit(1).execute()
+        if existe.data:
+            return jsonify({"status": "erro",
+                            "mensagem": "Já existe alguém com este e-mail."}), 409
+
+        novo = {
+            "nome": nome,
+            "email": email,
+            "cargo": (d.get("cargo") or "").strip() or None,
+            "telefone": (d.get("telefone") or "").strip() or None,
+            "equipe": (d.get("equipe") or "").strip() or None,
+            "papel_id": d.get("papel_id") or None,
+            "tipo_usuario": "interno",
+            "nivel_acesso": d.get("nivel_acesso") or "colaborador",
+            "ativo": True,
+            # Só o hash. A coluna `senha` em texto puro é legado e não
+            # recebe valor desde a correção do login.
+            "senha_hash": gerar_hash(senha),
+            "quadros": [q for q in (d.get("quadros") or []) if q in QUADRO_AREA],
+            "areas": [a for a in (d.get("areas") or []) if a in AREAS_VALIDAS],
+            "ajustes": {},
+            "perm_modulos": [],
+        }
+        res = supabase.table("usuarios").insert(novo).execute()
+        criado = (res.data or [{}])[0]
+        registrar_auditoria('pessoa_criada', 'usuario', criado.get("id"),
+                            {"nome": nome, "email": email})
+        criado.pop("senha_hash", None)
+        criado.pop("senha", None)
+        return jsonify({"status": "sucesso", "pessoa": criado}), 201
+    except Exception as e:
+        print("Erro em criar_pessoa_acessos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao cadastrar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas/<usuario_id>/senha', methods=['PUT'])
+def redefinir_senha_acessos(usuario_id):
+    """Define uma senha nova para alguém.
+
+    Quem redefine nunca vê a senha antiga — ela não existe em texto
+    puro. A pessoa recebe a nova por fora e troca depois.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        senha = (request.json or {}).get("senha") or ""
+        if len(senha) < 8:
+            return jsonify({"status": "erro",
+                            "mensagem": "A senha precisa de pelo menos 8 caracteres."}), 400
+        supabase.table("usuarios").update({
+            "senha_hash": gerar_hash(senha),
+            "senha": None,          # apaga o legado em texto puro
+        }).eq("id", usuario_id).execute()
+        registrar_auditoria('senha_redefinida', 'usuario', usuario_id, {})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em redefinir_senha_acessos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao redefinir a senha.",
                         "detalhe": str(e)[:300]}), 500
 
 
@@ -3484,6 +3675,9 @@ def atualizar_acesso_pessoa(usuario_id):
         upd = {}
         if "papel_id" in d:
             upd["papel_id"] = d["papel_id"] or None
+        for campo in ("cargo", "telefone"):
+            if campo in d:
+                upd[campo] = (d[campo] or "").strip() or None
         if "equipe" in d:
             upd["equipe"] = (d["equipe"] or "").strip() or None
         if "ativo" in d:
