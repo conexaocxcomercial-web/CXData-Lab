@@ -130,6 +130,7 @@
         .s-q{ background:#E9F2FB; color:#1A5FA0; }
         .s-a{ background:var(--ok-fraco); color:var(--ok); }
         .s-aj{ background:var(--at-fundo); color:var(--atencao); }
+        .s-n{ background:var(--papel-2); color:var(--tinta-3); }
         .s-off{ background:var(--papel-2); color:var(--tinta-3); }
         .s-alerta{ background:var(--cr-fundo); color:var(--critico); }
         .pc-seta{ width:26px; height:26px; min-width:26px; border-radius:7px; display:flex;
@@ -205,6 +206,8 @@
         .btn .material-symbols-rounded{ font-size:16px; }
         .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
         .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-borda{ background:var(--papel); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha); }
+        .btn-borda:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta); }
         .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
         .btn-perigo:hover{ background:#FDEDED; }
         .btn-acao{ background:var(--acao); color:#fff; }
@@ -275,6 +278,56 @@
             .pc-selos{ width:100%; justify-content:flex-start; padding-left:49px; }
             .cont{ width:100%; margin-left:0; }
         }
+
+        .cb-linha{ display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+        .cb-linha > button{ margin-left:auto; flex-shrink:0; }
+
+        /* ===== JANELA DE CADASTRO ===== */
+        .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45);
+            z-index:1000; justify-content:center; align-items:center; padding:20px; }
+        .modal-overlay.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:520px;
+            max-height:92vh; overflow:hidden; display:flex; flex-direction:column;
+            box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha);
+            display:flex; align-items:flex-start; gap:12px; flex-shrink:0; }
+        .md-ey{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; color:var(--tinta-3); margin-bottom:4px; }
+        .md-t{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .md-x{ margin-left:auto; width:28px; height:28px; border-radius:8px;
+            background:var(--papel-2); color:var(--tinta-3); display:flex;
+            align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+        .md-x .material-symbols-rounded{ font-size:17px; }
+        .md-corpo{ padding:18px 20px 22px; display:flex; flex-direction:column;
+            gap:14px; overflow-y:auto; }
+        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); display:flex;
+            gap:9px; background:var(--papel-2); flex-shrink:0; flex-wrap:wrap; }
+        .ig label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .ig input, .ig select{ width:100%; font-size:13px; color:var(--tinta);
+            padding:10px 12px; background:var(--papel-2); border:1px solid transparent;
+            border-radius:var(--r-ctrl); outline:none; transition:.14s; font-family:inherit; }
+        .ig input:focus, .ig select:focus{ background:var(--papel); border-color:var(--acao);
+            box-shadow:0 0 0 3px var(--acao-fraco); }
+        .ig2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        @media(max-width:520px){ .ig2{ grid-template-columns:1fr; } }
+        .ig-dica{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-top:6px; }
+        .ig-dica.alerta{ color:var(--atencao); }
+        .senha-linha{ display:flex; gap:8px; }
+        .senha-linha input{ flex:1; font-family:'IBM Plex Mono',monospace; }
+        .md-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; color:var(--tinta-3); padding-top:6px;
+            border-top:1px solid var(--linha); margin-top:2px; }
+        .aviso-caixa{ background:var(--at-fundo); border-radius:var(--r-ctrl);
+            box-shadow:0 0 0 1px var(--at-borda); padding:11px 13px; display:flex;
+            gap:9px; align-items:flex-start; }
+        .aviso-caixa .material-symbols-rounded{ font-size:16px; color:var(--atencao);
+            flex-shrink:0; margin-top:1px; }
+        .aviso-caixa span:last-child{ font-size:12px; line-height:1.5; color:#7A4A0C; }
+        @media (max-width:900px){
+            .modal-overlay{ padding:0; align-items:flex-end; }
+            .modal{ max-width:none; border-radius:18px 18px 0 0; }
+        }
     </style>
 </head>
 <body>
@@ -286,9 +339,15 @@
 
     <div class="cabecalho">
         <div class="cb-topo">
-            <h1 class="cb-tit">Acessos</h1>
-            <p class="cb-sub">Defina o nível de cada pessoa, em quais quadros ela trabalha
-               e quais áreas da plataforma pode abrir.</p>
+            <div class="cb-linha">
+                <div>
+                    <h1 class="cb-tit">Acessos</h1>
+                    <p class="cb-sub">Defina o nível de cada pessoa, em quais quadros ela trabalha
+                       e quais áreas da plataforma pode abrir.</p>
+                </div>
+                <button class="btn btn-acao" onclick="abrirNovaPessoa()">
+                    <span class="material-symbols-rounded">person_add</span>Nova pessoa</button>
+            </div>
         </div>
         <div class="cb-abas">
             <button class="aba on" data-aba="pessoas" onclick="trocarAba('pessoas')">
@@ -302,6 +361,70 @@
         <div class="painel-aba on" id="abaPessoas"><div class="loading">Carregando...</div></div>
         <div class="painel-aba" id="abaNiveis"><div class="loading">Carregando...</div></div>
         <div class="painel-aba" id="abaRegistro"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <div class="modal-overlay" id="modalPessoa" onclick="if(event.target.id==='modalPessoa')fecharPessoa()">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-ey">Acessos</div>
+                    <div class="md-t" id="mpTitulo">Nova pessoa</div>
+                </div>
+                <button class="md-x" onclick="fecharPessoa()" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <input type="hidden" id="mpId">
+
+                <div class="ig">
+                    <label for="mpNome">Nome completo</label>
+                    <input type="text" id="mpNome" placeholder="Como aparece na plataforma" maxlength="120">
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="mpEmail">E-mail</label>
+                        <input type="email" id="mpEmail" placeholder="pessoa@conexao.com"
+                               autocapitalize="none" spellcheck="false"></div>
+                    <div class="ig"><label for="mpCargo">Cargo</label>
+                        <input type="text" id="mpCargo" placeholder="Ex.: Consultora de R&amp;S"></div>
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="mpTelefone">Telefone</label>
+                        <input type="text" id="mpTelefone" placeholder="(84) 90000-0000"></div>
+                    <div class="ig"><label for="mpEquipe">Equipe</label>
+                        <input type="text" id="mpEquipe" list="equipesLista" placeholder="Ex.: R&amp;S"></div>
+                </div>
+
+                <div class="md-secao">Acesso</div>
+                <div class="ig">
+                    <label for="mpNivel">Nível</label>
+                    <select id="mpNivel"></select>
+                    <div class="ig-dica" id="mpNivelDica">O nível define o que a pessoa enxerga.
+                        Quadros e áreas você ajusta depois, no cartão dela.</div>
+                </div>
+
+                <div class="ig" id="mpBlocoSenha">
+                    <label for="mpSenha">Senha inicial</label>
+                    <div class="senha-linha">
+                        <input type="text" id="mpSenha" placeholder="mínimo 8 caracteres">
+                        <button class="btn btn-borda" onclick="gerarSenha()" type="button">
+                            <span class="material-symbols-rounded">casino</span>Gerar</button>
+                    </div>
+                    <div class="ig-dica">Anote antes de salvar: depois de gravada, a senha vira
+                        um hash e nem quem administra consegue lê-la.</div>
+                </div>
+
+                <div class="aviso-caixa" id="mpAvisoSenha" style="display:none">
+                    <span class="material-symbols-rounded">key</span>
+                    <span>Você está definindo uma senha nova. A anterior deixa de valer assim
+                        que salvar, e a pessoa precisa receber esta por fora.</span>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" style="margin-left:auto" onclick="fecharPessoa()">Cancelar</button>
+                <button class="btn btn-acao" id="mpSalvar" onclick="salvarPessoa()">
+                    <span class="material-symbols-rounded">check</span>Salvar</button>
+            </div>
+        </div>
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
@@ -508,12 +631,18 @@
                 selos.push(`<span class="selo s-alerta"><span class="material-symbols-rounded">warning</span>Sem quadro</span>`);
             if(as.length) selos.push(`<span class="selo s-a">${as.length} ${as.length===1?'área':'áreas'}</span>`);
             if(ajustes) selos.push(`<span class="selo s-aj"><span class="material-symbols-rounded">tune</span>${ajustes} ${ajustes===1?'ajuste':'ajustes'}</span>`);
+            // Sem senha a pessoa não entra: é mais urgente que qualquer
+            // permissão que ela tenha ou deixe de ter.
+            if(p.tem_senha === false)
+                selos.push(`<span class="selo s-alerta"><span class="material-symbols-rounded">key_off</span>Sem senha</span>`);
+            else if(!p.ultimo_acesso)
+                selos.push(`<span class="selo s-n"><span class="material-symbols-rounded">schedule</span>Nunca entrou</span>`);
 
             return `<article class="pc ${aberto?'aberto':''} ${inativo?'inativo':''}" id="pc-${escA(p.id)}">
                 <button class="pc-cab" onclick="alternar('${escA(p.id)}')" aria-expanded="${aberto}">
                     <span class="av" style="background:${bg};color:${fg}">${iniciais(p.nome)}</span>
                     <span class="pc-id"><span class="pc-nome">${escH(p.nome)}</span>
-                        <span class="pc-mail">${escH(p.email)}</span></span>
+                        <span class="pc-mail">${escH(p.email)}${p.cargo ? ' · ' + escH(p.cargo) : ''}</span></span>
                     <span class="pc-selos">${selos.join('')}</span>
                     <span class="pc-seta"><span class="material-symbols-rounded">expand_more</span></span>
                 </button>
@@ -599,6 +728,8 @@
                             ? '<span class="material-symbols-rounded">check_circle</span>Alterações salvas'
                             : 'As alterações valem no próximo login desta pessoa.'}
                     </span>
+                    <button class="btn btn-borda" onclick="abrirEditarPessoa('${escA(p.id)}')">
+                        <span class="material-symbols-rounded">edit</span>Dados e senha</button>
                     <button class="btn ${p.ativo===false?'btn-acao':'btn-perigo'}"
                             onclick="mudar('${escA(p.id)}','ativo',${p.ativo===false})">
                         <span class="material-symbols-rounded">${p.ativo===false?'person_check':'block'}</span>
@@ -754,6 +885,137 @@
             return (mesmoDia ? 'hoje' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}))
                    + ' · ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
         }
+
+
+        /* ==================== CADASTRO DE PESSOA ==================== */
+        function abrirNovaPessoa(){
+            document.getElementById('mpId').value = '';
+            document.getElementById('mpTitulo').innerText = 'Nova pessoa';
+            ['mpNome','mpEmail','mpCargo','mpTelefone','mpEquipe','mpSenha']
+                .forEach(i => document.getElementById(i).value = '');
+            document.getElementById('mpBlocoSenha').style.display = 'block';
+            document.getElementById('mpAvisoSenha').style.display = 'none';
+            document.getElementById('mpNivel').innerHTML =
+                '<option value="">Sem nível definido</option>' +
+                niveis.filter(n => !n.externo)
+                      .map(n => `<option value="${escA(n.id)}">${escH(n.nome)}</option>`).join('');
+            document.getElementById('mpNivelDica').innerText =
+                'O nível define o que a pessoa enxerga. Quadros e áreas você ajusta depois, no cartão dela.';
+            atualizarEquipes();
+            document.getElementById('modalPessoa').classList.add('show');
+            setTimeout(() => document.getElementById('mpNome').focus(), 60);
+        }
+
+        function abrirEditarPessoa(id){
+            const p = pessoas.find(x => String(x.id) === String(id));
+            if(!p) return;
+            document.getElementById('mpId').value = p.id;
+            document.getElementById('mpTitulo').innerText = 'Editar ' + (p.nome || 'pessoa');
+            document.getElementById('mpNome').value = p.nome || '';
+            document.getElementById('mpEmail').value = p.email || '';
+            document.getElementById('mpCargo').value = p.cargo || '';
+            document.getElementById('mpTelefone').value = p.telefone || '';
+            document.getElementById('mpEquipe').value = p.equipe || '';
+            document.getElementById('mpSenha').value = '';
+            // Na edição a senha é opcional: em branco, a atual continua valendo.
+            document.getElementById('mpBlocoSenha').style.display = 'block';
+            document.getElementById('mpAvisoSenha').style.display = 'none';
+            document.getElementById('mpNivel').innerHTML =
+                '<option value="">Sem nível definido</option>' +
+                niveis.filter(n => !n.externo || String(n.id) === String(p.papel_id))
+                      .map(n => `<option value="${escA(n.id)}" ${String(n.id)===String(p.papel_id)?'selected':''}>${escH(n.nome)}</option>`).join('');
+            document.getElementById('mpNivelDica').innerText = p.tem_senha
+                ? 'Deixe a senha em branco para manter a atual.'
+                : 'Esta pessoa ainda não tem senha definida.';
+            atualizarEquipes();
+            document.getElementById('modalPessoa').classList.add('show');
+            setTimeout(() => document.getElementById('mpNome').focus(), 60);
+        }
+
+        function atualizarEquipes(){
+            const dl = document.getElementById('equipesLista');
+            if(dl) dl.innerHTML = equipes.map(e => `<option value="${escA(e)}">`).join('');
+        }
+
+        function fecharPessoa(){ document.getElementById('modalPessoa').classList.remove('show'); }
+
+        async function gerarSenha(){
+            try{
+                const r = await fetch('/api/usuarios/gerar-senha');
+                if(r.ok){
+                    const d = await r.json();
+                    document.getElementById('mpSenha').value = d.senha || '';
+                    if(document.getElementById('mpId').value)
+                        document.getElementById('mpAvisoSenha').style.display = 'flex';
+                    return;
+                }
+            }catch(e){}
+            // O servidor é a fonte preferida; isto é só para não travar a tela.
+            const alfabeto = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const a = new Uint32Array(12);
+            (window.crypto || window.msCrypto).getRandomValues(a);
+            document.getElementById('mpSenha').value =
+                [...a].map(n => alfabeto[n % alfabeto.length]).join('');
+            if(document.getElementById('mpId').value)
+                document.getElementById('mpAvisoSenha').style.display = 'flex';
+        }
+
+        async function salvarPessoa(){
+            const id = document.getElementById('mpId').value;
+            const nome = document.getElementById('mpNome').value.trim();
+            const email = document.getElementById('mpEmail').value.trim().toLowerCase();
+            const senha = document.getElementById('mpSenha').value;
+
+            if(!nome){ showToast('Informe o nome.','error'); return; }
+            if(!email || !email.includes('@')){ showToast('Informe um e-mail válido.','error'); return; }
+            if(!id && senha.length < 8){
+                showToast('A senha inicial precisa de pelo menos 8 caracteres.','error'); return;
+            }
+            if(id && senha && senha.length < 8){
+                showToast('A senha nova precisa de pelo menos 8 caracteres.','error'); return;
+            }
+
+            const corpo = {
+                nome, email,
+                cargo: document.getElementById('mpCargo').value.trim(),
+                telefone: document.getElementById('mpTelefone').value.trim(),
+                equipe: document.getElementById('mpEquipe').value.trim(),
+                papel_id: document.getElementById('mpNivel').value || null
+            };
+            const b = document.getElementById('mpSalvar');
+            b.disabled = true;
+            try{
+                if(!id){
+                    corpo.senha = senha;
+                    const r = await fetch('/api/acessos/pessoas', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify(corpo) });
+                    if(!r.ok){ showToast(await motivo(r,'Não foi possível cadastrar.'),'error'); return; }
+                    showToast('Pessoa cadastrada. Envie a senha por um canal seguro.','success');
+                } else {
+                    const r = await fetch('/api/acessos/pessoas/'+id, {
+                        method:'PUT', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify(corpo) });
+                    if(!r.ok){ showToast(await motivo(r,'Não foi possível salvar.'),'error'); return; }
+                    // Senha vai em rota própria: é a única alteração que
+                    // precisa de registro separado na auditoria.
+                    if(senha){
+                        const rs = await fetch('/api/acessos/pessoas/'+id+'/senha', {
+                            method:'PUT', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ senha }) });
+                        if(!rs.ok){ showToast(await motivo(rs,'Dados salvos, mas a senha não.'),'error'); return; }
+                    }
+                    showToast(senha ? 'Dados e senha atualizados.' : 'Dados atualizados.','success');
+                }
+                fecharPessoa();
+                await carregarPessoas();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+            finally{ b.disabled = false; }
+        }
+
+        document.addEventListener('keydown', function(e){
+            if(e.key === 'Escape') fecharPessoa();
+        });
 
         /* ==================== UTIL ==================== */
         function showToast(msg,tipo){
