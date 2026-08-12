@@ -2327,6 +2327,10 @@ def criar_lead():
             "produto": d.get("produto") or None,
             "responsavel": d.get("responsavel") or session.get('usuario_nome', ''),
             "origem": d.get("origem") or None,
+            # Segmento e localização: o closer precisa dos dois para
+            # preparar a reunião. São exigidos no portão de Ganho.
+            "segmento": d.get("segmento") or None,
+            "localizacao": (d.get("localizacao") or "").strip() or None,
             "anotacoes": (d.get("anotacoes") or "").strip(),
             "proximo_contato": d.get("proximo_contato") or None,
             "valor_estimado": d.get("valor_estimado") or None,
@@ -2354,7 +2358,8 @@ def atualizar_lead(lead_id):
         # Lista fechada: funil e coluna só mudam pela rota de mover,
         # que registra a trilha e aplica as passagens.
         campos = ["empresa", "contato", "telefone", "email", "produto", "responsavel",
-                  "origem", "anotacoes", "proximo_contato", "valor_estimado"]
+                  "origem", "segmento", "localizacao", "anotacoes",
+                  "proximo_contato", "valor_estimado", "cnpj", "canal_proposta"]
         upd = {k: d[k] for k in campos if k in d}
         if not upd:
             return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
