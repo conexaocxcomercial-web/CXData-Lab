@@ -690,6 +690,13 @@
            Tudo que é pedido aqui fica no próprio lead — é dado que
            ficaria vazio para sempre se não fosse cobrado na hora.
            ========================================================== */
+        /* Segmento e localização mudam a conversa do closer: setor define
+           a dor típica, cidade define se a reunião é presencial. */
+        const SEGMENTOS = ['Indústria','Comércio','Serviços','Saúde','Educação',
+                           'Construção civil','Tecnologia','Agronegócio',
+                           'Transporte e logística','Alimentação','Financeiro',
+                           'Terceiro setor','Outro'];
+
         const PORTOES = [
             { funil:'qualificacao', para:'Contato',
               titulo:'De onde veio este lead?',
@@ -798,12 +805,6 @@
         const ORIGENS = ['BNI','Indicação','Prospecção fria','Base de clientes',
                          'Eventos','Redes sociais','Site'];
 
-        /* Segmento e localização mudam a conversa do closer: setor define
-           a dor típica, cidade define se a reunião é presencial. */
-        const SEGMENTOS = ['Indústria','Comércio','Serviços','Saúde','Educação',
-                           'Construção civil','Tecnologia','Agronegócio',
-                           'Transporte e logística','Alimentação','Financeiro',
-                           'Terceiro setor','Outro'];
 
         // Quadros oferecidos na janela de fechamento: só entregas ao
         // cliente, mais o Financeiro para a cobrança. Um contrato não
