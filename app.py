@@ -735,7 +735,10 @@ def excluir_projeto(projeto_id):
     if is_externo(): return jsonify({"erro": "Acesso negado"}), 403
     try:
         # SOFT DELETE: marca como excluído em vez de apagar (vai para a lixeira)
-        supabase.table("projetos").update({"excluido_em": datetime.now().isoformat()}).eq("id", projeto_id).execute()
+        supabase.table("projetos").update({
+            "excluido_em": datetime.now(timezone.utc).isoformat(),
+            "excluido_por": session.get('usuario_nome'),
+        }).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir o projeto."}), 500
@@ -747,45 +750,213 @@ def excluir_projeto(projeto_id):
 def lixeira_page():
     if 'usuario_id' not in session:
         return redirect(url_for('login', proximo=request.path))
-    if not is_admin():
+    if not pode_ver_lixeira():
         return redirect(url_for('index'))
-    return render_template('lixeira.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+    return render_template('lixeira.html',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso'),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
 
 @app.route('/api/lixeira', methods=['GET'])
 def listar_lixeira():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    """Tudo que foi excluído: projetos, clientes e leads.
+
+    Leads estavam de fora — a exclusão do CRM já gravava
+    `excluido_em`, mas a lixeira nunca olhava para lá, então todo
+    lead excluído ficava invisível para sempre.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_lixeira():
+        return jsonify({"erro": "Acesso negado"}), 403
     try:
-        res_proj = supabase.table("projetos").select("*").not_.is_("excluido_em", "null").execute()
-        res_cli = supabase.table("clientes").select("*").not_.is_("excluido_em", "null").execute()
-        return jsonify({"status": "sucesso", "projetos": res_proj.data or [], "clientes": res_cli.data or []}), 200
+        itens = []
+
+        proj = (supabase.table("projetos").select("*")
+                .not_.is_("excluido_em", "null").execute()).data or []
+        # Horas por projeto, para dizer o que se perde antes de apagar.
+        horas = {}
+        if proj:
+            try:
+                r = (supabase.table("time_logs")
+                     .select("projeto_id, tempo_segundos")
+                     .in_("projeto_id", [str(p["id"]) for p in proj]).execute())
+                for l in (r.data or []):
+                    pid = str(l.get("projeto_id"))
+                    horas[pid] = horas.get(pid, 0) + (l.get("tempo_segundos") or 0)
+            except Exception as e:
+                print("Aviso: horas da lixeira indisponiveis:", e)
+        for p in proj:
+            itens.append({
+                "id": p["id"], "tipo": "projeto",
+                "nome": p.get("nome_projeto"),
+                "detalhe": p.get("empresa") or "sem cliente",
+                "area": p.get("area"),
+                "status": p.get("status"),
+                "horas": round(horas.get(str(p["id"]), 0) / 3600.0),
+                "excluido_em": p.get("excluido_em"),
+                "excluido_por": p.get("excluido_por"),
+            })
+
+        cli = (supabase.table("clientes").select("*")
+               .not_.is_("excluido_em", "null").execute()).data or []
+        # Projetos que ficaram na lixeira junto com o cliente.
+        for c in cli:
+            juntos = sum(1 for p in proj if str(p.get("cliente_id")) == str(c["id"]))
+            itens.append({
+                "id": c["id"], "tipo": "cliente",
+                "nome": c.get("nome_empresa"),
+                "detalhe": c.get("cidade") or "sem cidade",
+                "area": None, "status": None,
+                "projetos_juntos": juntos,
+                "excluido_em": c.get("excluido_em"),
+                "excluido_por": c.get("excluido_por"),
+            })
+
+        try:
+            leads = (supabase.table("leads").select("*")
+                     .not_.is_("excluido_em", "null").execute()).data or []
+            for l in leads:
+                itens.append({
+                    "id": l["id"], "tipo": "lead",
+                    "nome": l.get("lead") or l.get("empresa") or "lead sem nome",
+                    "detalhe": (l.get("empresa") or "") + (
+                        " · " + str(l.get("coluna")) if l.get("coluna") else ""),
+                    "area": "CRM", "status": l.get("coluna"),
+                    "funil": l.get("funil"),
+                    "valor": l.get("valor_estimado"),
+                    "excluido_em": l.get("excluido_em"),
+                    "excluido_por": l.get("excluido_por"),
+                })
+        except Exception as e:
+            print("Aviso: leads da lixeira indisponiveis:", e)
+
+        itens.sort(key=lambda x: str(x.get("excluido_em") or ""), reverse=True)
+        return jsonify({
+            "status": "sucesso",
+            "itens": itens,
+            "pode_purgar": pode('lixeira.purgar') or is_admin(),
+        }), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro na lixeira: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a lixeira."}), 500
+        print("Erro na lixeira:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a lixeira.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+TABELA_DO_TIPO = {"projeto": "projetos", "cliente": "clientes", "lead": "leads"}
+
 
 @app.route('/api/lixeira/<tipo>/<item_id>/restaurar', methods=['PUT'])
 def restaurar_item(tipo, item_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    tabela = "projetos" if tipo == "projeto" else "clientes" if tipo == "cliente" else None
-    if not tabela: return jsonify({"status": "erro", "mensagem": "Tipo invalido."}), 400
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_lixeira():
+        return jsonify({"erro": "Acesso negado"}), 403
+    tabela = TABELA_DO_TIPO.get(tipo)
+    if not tabela:
+        return jsonify({"status": "erro", "mensagem": "Tipo inválido."}), 400
     try:
-        supabase.table(tabela).update({"excluido_em": None}).eq("id", item_id).execute()
-        return jsonify({"status": "sucesso"}), 200
+        aviso = None
+        if tipo == "projeto":
+            # A fase pode ter deixado de existir enquanto o card estava
+            # na lixeira. Nesse caso volta para o Backlog, avisando.
+            r = (supabase.table("projetos").select("status, area")
+                 .eq("id", item_id).limit(1).execute())
+            if r.data:
+                st = r.data[0].get("status")
+                if st in ('Não Iniciado', 'Kick-off') and st != FASE_ENTRADA:
+                    supabase.table("projetos").update(
+                        {"status": FASE_ENTRADA}).eq("id", item_id).execute()
+                    aviso = f"A fase '{st}' não existe mais; o projeto voltou para {FASE_ENTRADA}."
+
+        supabase.table(tabela).update(
+            {"excluido_em": None, "excluido_por": None}).eq("id", item_id).execute()
+        registrar_auditoria('item_restaurado', tipo, item_id, {})
+        return jsonify({"status": "sucesso", "aviso": aviso}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+        print("Erro ao restaurar:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao restaurar.",
+                        "detalhe": str(e)[:300]}), 500
+
 
 @app.route('/api/lixeira/<tipo>/<item_id>/definitivo', methods=['DELETE'])
 def excluir_definitivo(tipo, item_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    tabela = "projetos" if tipo == "projeto" else "clientes" if tipo == "cliente" else None
-    if not tabela: return jsonify({"status": "erro", "mensagem": "Tipo invalido."}), 400
+    """Apaga do banco. Não tem volta.
+
+    Exige `lixeira.purgar`, que é capacidade sensível: quem tem
+    apenas `lixeira.ver` restaura, mas não apaga.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('lixeira.purgar') or is_admin()):
+        return jsonify({"status": "erro",
+                        "mensagem": "Só quem administra pode apagar em definitivo."}), 403
+    tabela = TABELA_DO_TIPO.get(tipo)
+    if not tabela:
+        return jsonify({"status": "erro", "mensagem": "Tipo inválido."}), 400
     try:
+        # Guarda o nome antes de apagar: depois não há como saber
+        # o que foi removido.
+        campo = {"projetos": "nome_projeto", "clientes": "nome_empresa", "leads": "lead"}[tabela]
+        r = supabase.table(tabela).select(campo).eq("id", item_id).limit(1).execute()
+        nome = (r.data or [{}])[0].get(campo)
+
         supabase.table(tabela).delete().eq("id", item_id).execute()
+        registrar_auditoria('item_purgado', tipo, item_id, {"nome": nome})
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+        print("Erro ao excluir em definitivo:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/lixeira/lote', methods=['POST'])
+def lixeira_lote():
+    """Restaura ou apaga vários itens de uma vez.
+
+    Cada item é tratado isolado: um que falhe não impede os outros,
+    e a resposta diz quantos deram certo.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_lixeira():
+        return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json or {}
+    acao = d.get("acao")
+    itens = d.get("itens") or []
+    if acao not in ("restaurar", "purgar"):
+        return jsonify({"status": "erro", "mensagem": "Ação inválida."}), 400
+    if acao == "purgar" and not (pode('lixeira.purgar') or is_admin()):
+        return jsonify({"status": "erro",
+                        "mensagem": "Só quem administra pode apagar em definitivo."}), 403
+    if len(itens) > 100:
+        return jsonify({"status": "erro", "mensagem": "Máximo de 100 itens por vez."}), 400
+
+    ok, falhas = 0, []
+    for it in itens:
+        tabela = TABELA_DO_TIPO.get(it.get("tipo"))
+        item_id = it.get("id")
+        if not tabela or not item_id:
+            falhas.append(it.get("nome") or "item")
+            continue
+        try:
+            if acao == "restaurar":
+                supabase.table(tabela).update(
+                    {"excluido_em": None, "excluido_por": None}).eq("id", item_id).execute()
+            else:
+                supabase.table(tabela).delete().eq("id", item_id).execute()
+            ok += 1
+        except Exception as e:
+            print(f"Erro no lote ({acao} {tabela} {item_id}):", e)
+            falhas.append(it.get("nome") or str(item_id))
+
+    registrar_auditoria(
+        'lote_restaurado' if acao == 'restaurar' else 'lote_purgado',
+        'lixeira', None, {"quantidade": ok, "falhas": len(falhas)})
+    return jsonify({"status": "sucesso", "feitos": ok, "falhas": falhas}), 200
+
 
 # --- API TIMER ---
 
@@ -1186,7 +1357,10 @@ def excluir_cliente(cliente_id):
             return jsonify({"status": "erro", "mensagem": f"Cliente tem {len(ativos)} projeto(s) vinculado(s). Não pode ser excluído."}), 400
 
         # SOFT DELETE: vai para a lixeira
-        supabase.table("clientes").update({"excluido_em": datetime.now().isoformat()}).eq("id", cliente_id).execute()
+        supabase.table("clientes").update({
+            "excluido_em": datetime.now(timezone.utc).isoformat(),
+            "excluido_por": session.get('usuario_nome'),
+        }).eq("id", cliente_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
@@ -2200,7 +2374,8 @@ def excluir_lead(lead_id):
     try:
         # Exclusão lógica: o histórico de movimentos continua fazendo sentido.
         supabase.table("leads").update(
-            {"excluido_em": datetime.now(timezone.utc).isoformat()}
+            {"excluido_em": datetime.now(timezone.utc).isoformat(),
+             "excluido_por": session.get('usuario_nome')}
         ).eq("id", lead_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
@@ -2397,6 +2572,11 @@ def registrar_auditoria(acao, recurso, alvo_id, detalhe=None):
         }).execute()
     except Exception as e:
         print("Aviso: auditoria nao registrada:", e)
+
+
+def pode_ver_lixeira():
+    """Ver e restaurar. Apagar em definitivo exige lixeira.purgar."""
+    return pode('lixeira.ver') or is_admin()
 
 
 def pode_gerir_acessos():
@@ -3767,7 +3947,8 @@ def excluir_post(post_id):
         if not _pode_mexer_no_post(atual.data[0]):
             return jsonify({"status": "erro", "mensagem": "Você só exclui os seus posts."}), 403
         supabase.table("posts").update(
-            {"excluido_em": datetime.now(timezone.utc).isoformat()}
+            {"excluido_em": datetime.now(timezone.utc).isoformat(),
+             "excluido_por": session.get('usuario_nome')}
         ).eq("id", post_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
@@ -3855,7 +4036,8 @@ def excluir_comentario_post(comentario_id):
                 and (c.get("autor") or '') != session.get('usuario_nome', '')):
             return jsonify({"status": "erro", "mensagem": "Você só exclui os seus."}), 403
         supabase.table("post_comentarios").update(
-            {"excluido_em": datetime.now(timezone.utc).isoformat()}
+            {"excluido_em": datetime.now(timezone.utc).isoformat(),
+             "excluido_por": session.get('usuario_nome')}
         ).eq("id", comentario_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
