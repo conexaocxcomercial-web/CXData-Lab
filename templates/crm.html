@@ -75,7 +75,11 @@
         .m-fase-q{ font-size:11px; opacity:.7; }
 
         .board{ display:flex; padding:14px 22px 20px; gap:10px; overflow-x:auto; flex-grow:1; align-items:flex-start; }
-        .col{ width:216px; min-width:216px; display:flex; flex-direction:column; max-height:100%;
+        /* 246px: o rodapé do card carrega avatar, nome, valor e dias.
+           Com 216 o nome truncava em "Jhonatt...". Como os funis agora
+           têm até 13 colunas, a rolagem horizontal é inevitável de
+           qualquer forma; melhor colunas legíveis do que muitas ilegíveis. */
+        .col{ width:246px; min-width:246px; display:flex; flex-direction:column; max-height:100%;
             background:rgba(255,255,255,.5); border-radius:var(--r-card); padding:8px; transition:background .18s, box-shadow .18s; }
         .col.drag-over{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
         .col-h{ display:flex; align-items:center; gap:7px; padding:4px 6px 10px; flex-shrink:0; }
@@ -108,16 +112,25 @@
         .ac-mail:hover{ background:var(--acao); color:#fff; }
         .ac-fone{ background:var(--papel-2); color:var(--tinta-2); }
         .ac-fone:hover{ background:var(--tinta); color:#fff; }
-        .lc-pe{ display:flex; align-items:center; gap:6px; }
+        /* O rodapé estava em uma linha só e o nome disputava espaço com
+           o valor: com R$ 215.700 o card espremia "Jhonattan" em
+           "Jhonatt...". Valor e prazo vão para a linha de cima, onde
+           não competem com nada. */
+        .lc-pe{ display:flex; align-items:center; gap:6px; margin-top:8px;
+            padding-top:8px; border-top:1px solid var(--linha); }
         .lc-av{ width:19px; height:19px; min-width:19px; border-radius:50%; display:flex; align-items:center;
             justify-content:center; font-size:8px; font-weight:600; }
-        .lc-quem{ font-size:10.5px; color:var(--tinta-3); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .lc-dias{ margin-left:auto; font-size:10px; color:var(--tinta-3); font-weight:500; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
+        .lc-quem{ font-size:10.5px; color:var(--tinta-3); font-weight:500; white-space:nowrap;
+            overflow:hidden; text-overflow:ellipsis; min-width:0; }
+        .lc-num{ display:flex; align-items:baseline; gap:8px; margin-top:7px; }
+        .lc-dias{ margin-left:auto; font-size:10px; color:var(--tinta-3); font-weight:500;
+            font-family:'IBM Plex Mono',monospace; white-space:nowrap; flex-shrink:0; }
         .lc-dias.alerta{ color:var(--atencao); font-weight:600; }
         .lc-prox{ display:flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:var(--acao); margin-top:6px; }
         .lc-prox .material-symbols-rounded{ font-size:12px; }
         .lc-prox.hoje{ color:var(--critico); }
-        .lc-valor{ font-size:11.5px; font-weight:650; font-family:'IBM Plex Mono',monospace; color:var(--ok); }
+        .lc-valor{ font-size:13px; font-weight:700; font-family:'IBM Plex Mono',monospace;
+            color:var(--ok); white-space:nowrap; letter-spacing:-.3px; }
         .lc-mover{ position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:7px;
             background:rgba(0,0,0,.05); color:var(--tinta-3); display:none; align-items:center; justify-content:center; cursor:pointer; border:none; }
         .lc-mover .material-symbols-rounded{ font-size:15px; }
@@ -1151,12 +1164,18 @@
                     <button class="ac ac-mail" ${temMail?'':'style="opacity:.35"'} title="E-mail" onclick="abrirEmail('${escA(l.email||'')}')"><span class="material-symbols-rounded">mail</span></button>
                     <button class="ac ac-fone" ${temTel?'':'style="opacity:.35"'} title="Ligar" onclick="ligar('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">call</span></button>
                 </div>
+                ${l.valor_estimado ? `<div class="lc-num">
+                    <span class="lc-valor">R$ ${Number(l.valor_estimado).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
+                    <span class="lc-dias ${parado?'alerta':''}">${parado ? dias+'d parado' : dias+'d'}</span>
+                </div>
                 <div class="lc-pe">
                     <span class="lc-av" style="background:${bg};color:${fg}">${iniciais(l.responsavel)}</span>
                     <span class="lc-quem">${escH((l.responsavel||'').split(' ')[0])}</span>
-                    ${l.valor_estimado ? `<span class="lc-valor">R$ ${Number(l.valor_estimado).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>` : ''}
-                    <span class="lc-dias ${parado?'alerta':''}">${parado ? dias+'d parado' : dias+'d'}</span>
-                </div>
+                </div>` : `<div class="lc-pe">
+                    <span class="lc-av" style="background:${bg};color:${fg}">${iniciais(l.responsavel)}</span>
+                    <span class="lc-quem">${escH((l.responsavel||'').split(' ')[0])}</span>
+                    <span class="lc-dias ${parado?'alerta':''}" style="margin-left:auto">${parado ? dias+'d parado' : dias+'d'}</span>
+                </div>`}
                 ${prox ? `<div class="lc-prox ${proxHoje?'hoje':''}">
                     <span class="material-symbols-rounded">${proxHoje?'notifications_active':'event'}</span>
                     ${proxHoje ? 'Retornar hoje' : 'Retornar '+prox.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</div>` : ''}
