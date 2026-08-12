@@ -4,37 +4,204 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lixeira | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
-        :root { --bg-board:#f4f4f5; --text-main:#1e1e1e; --text-muted:#71717a; --primary-purple:#7371ff; --accent-lime:#bef533; --accent-pink:#ff43c0; }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-thumb { background: #d4d4d8; }
-        .top-bar { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); height: 70px; min-height: 70px; flex-shrink: 0; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 30px rgba(0,0,0,0.02); z-index: 10; }
-        .top-bar-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; cursor: pointer; }
-        .top-bar-logo span { color: var(--primary-purple); }
-        .command-bar { padding: 24px 40px 14px 40px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 6px 40px 40px 40px; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; font-size: 12px; font-weight: 800; cursor: pointer; background: rgba(255,255,255,0.7); border-radius: 50px !important; transition: 0.2s; color: var(--text-muted); }
-        .tab.active { background: var(--text-main); color: #fff; }
-        .item-row { background: #fff; padding: 16px 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-        .item-icon { width: 42px; height: 42px; min-width: 42px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; border-radius: 12px !important; color: var(--text-muted); }
-        .item-info { flex-grow: 1; min-width: 0; }
-        .item-nome { font-size: 14px; font-weight: 800; }
-        .item-meta { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
-        .btn-restaurar { background: #dcfce7; color: #166534; padding: 9px 16px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 50px !important; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .btn-restaurar:hover { background: #bbf7d0; }
-        .btn-deletar { background: transparent; color: #a1a1aa; padding: 9px; cursor: pointer; border-radius: 10px !important; display: flex; transition: 0.2s; }
-        .btn-deletar:hover { background: #fee2e2; color: #ef4444; }
-        .empty-state { text-align:center; padding: 70px 20px; color: var(--text-muted); }
-        .empty-state .material-symbols-rounded { font-size: 54px; opacity: 0.2; display:block; margin-bottom: 14px; }
-        .empty-state p { font-size: 13px; font-weight: 600; }
-        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: rgba(30,30,30,0.95); color: white; padding: 12px 22px; border-radius: 50px !important; font-size: 12px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease forwards; }
-        @keyframes slideUp { from { opacity:0; transform: translateY(15px);} to {opacity:1; transform: translateY(0);} }
-        .info-banner { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px 18px; font-size: 12px; color: #854d0e; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --azul:#1A5FA0; --azul-fraco:#E9F2FB;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --accent-lime:#BEF533; --accent-pink:#FF43C0;
+        }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
+        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+              min-height:100vh; -webkit-font-smoothing:antialiased; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
+
+        .top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+            justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+            position:sticky; top:0; z-index:20; }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
+
+        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; height:56px;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap;
+            position:sticky; top:56px; z-index:15; }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+        .segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); cursor:pointer;
+            padding:6px 13px; border-radius:6px; white-space:nowrap; transition:.15s;
+            display:flex; align-items:center; gap:6px; }
+        .segm-btn:hover{ color:var(--tinta); }
+        .segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600;
+            box-shadow:0 1px 2px rgba(0,0,0,.07); }
+        .segm-n{ font-size:10.5px; font-weight:600; opacity:.6; font-family:'IBM Plex Mono',monospace; }
+        .segm-btn.on .segm-n{ opacity:1; color:var(--acao); }
+        .cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+        .busca{ position:relative; width:230px; }
+        .busca .material-symbols-rounded{ position:absolute; left:11px; top:50%; transform:translateY(-50%);
+            font-size:17px; color:var(--tinta-3); pointer-events:none; }
+        .busca input{ width:100%; font-size:12.5px; padding:8px 12px 8px 35px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; color:var(--tinta); transition:.14s; }
+        .busca input::placeholder{ color:var(--tinta-3); }
+        .busca input:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+
+        .wrap{ max-width:1240px; margin:0 auto; padding:20px 22px 90px; }
+
+        .btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+            gap:6px; padding:8px 13px; border-radius:var(--r-ctrl); white-space:nowrap; transition:.14s; }
+        .btn .material-symbols-rounded{ font-size:17px; }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+        .btn-borda{ background:var(--papel); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha); }
+        .btn-borda:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta); }
+        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-perigo{ background:var(--critico); color:#fff; }
+        .btn-perigo:hover{ background:#b82727; }
+        .btn-perigo:disabled{ opacity:.45; cursor:default; }
+        .btn-mini{ font-size:11.5px; padding:6px 10px; }
+
+        /* estados */
+        .esqueleto{ height:60px; background:var(--papel); border-radius:10px; margin-bottom:7px;
+            box-shadow:var(--e1); position:relative; overflow:hidden; }
+        .esqueleto::after{ content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
+            animation:brilho 1.4s infinite; }
+        @keyframes brilho{ from{ transform:translateX(-100%); } to{ transform:translateX(100%); } }
+        .vazio{ text-align:center; padding:56px 24px; background:var(--papel);
+            border-radius:var(--r-card); box-shadow:var(--e1); }
+        .vazio .material-symbols-rounded{ font-size:40px; color:var(--linha-2); display:block; margin-bottom:13px; }
+        .vazio h3{ font-size:15px; font-weight:650; margin-bottom:6px; }
+        .vazio p{ font-size:13px; line-height:1.6; max-width:400px; margin:0 auto 18px; color:var(--tinta-3); }
+
+        .faixa{ border-radius:var(--r-card); padding:14px 16px; display:flex; gap:12px;
+            align-items:flex-start; margin-bottom:12px; }
+        .faixa .material-symbols-rounded{ font-size:19px; flex-shrink:0; margin-top:1px; }
+        .fx-t{ font-size:13px; font-weight:650; margin-bottom:3px; }
+        .fx-s{ font-size:12.5px; line-height:1.55; }
+        .faixa.aviso{ background:var(--at-fundo); box-shadow:0 0 0 1px var(--at-borda); }
+        .faixa.aviso .material-symbols-rounded, .faixa.aviso .fx-t, .faixa.aviso .fx-s{ color:#7A4A0C; }
+        .faixa.critica{ background:var(--cr-fundo); box-shadow:0 0 0 1px var(--cr-borda); }
+        .faixa.critica .material-symbols-rounded, .faixa.critica .fx-t, .faixa.critica .fx-s{ color:#8A1F1F; }
+        .faixa.info{ background:var(--acao-fraco); box-shadow:0 0 0 1px #D6CEFB; }
+        .faixa.info .material-symbols-rounded, .faixa.info .fx-t, .faixa.info .fx-s{ color:#3C3489; }
+
+        /* barra de seleção */
+        .barra-sel{ background:var(--tinta); color:#fff; border-radius:var(--r-card); padding:11px 16px;
+            display:flex; align-items:center; gap:13px; margin-bottom:12px; flex-wrap:wrap; }
+        .barra-sel .conta{ font-size:12.5px; font-weight:600; }
+        .barra-sel .dir{ margin-left:auto; display:flex; gap:8px; }
+        .btn-branco{ background:rgba(255,255,255,.14); color:#fff; font-size:12px; font-weight:600;
+            padding:7px 12px; border-radius:var(--r-ctrl); display:inline-flex; align-items:center;
+            gap:6px; cursor:pointer; transition:.14s; }
+        .btn-branco:hover{ background:rgba(255,255,255,.24); }
+        .btn-branco.perigo{ background:var(--critico); }
+        .btn-branco.perigo:hover{ background:#e04545; }
+        .btn-branco .material-symbols-rounded{ font-size:16px; }
+        .btn-limpar{ font-size:12px; color:rgba(255,255,255,.65); cursor:pointer; padding:7px 8px; }
+        .btn-limpar:hover{ color:#fff; }
+
+        /* tabela */
+        .tabela{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
+        .th, .tr{ display:grid; grid-template-columns:34px 2.2fr 1.1fr 1.2fr 1fr 128px;
+            gap:14px; padding:0 16px; align-items:center; }
+        .th{ height:38px; background:var(--papel-2); border-bottom:1px solid var(--linha); }
+        .th div{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); }
+        .tr{ min-height:62px; border-bottom:1px solid var(--papel-2); transition:background .12s; }
+        .tr:last-child{ border-bottom:none; }
+        .tr:hover{ background:var(--papel-2); }
+        .tr.marcada{ background:var(--acao-fraco); }
+        .cx{ width:17px; height:17px; min-width:17px; border-radius:5px; cursor:pointer;
+            box-shadow:inset 0 0 0 1.5px var(--linha-2); display:flex; align-items:center;
+            justify-content:center; transition:.14s; }
+        .cx:hover{ box-shadow:inset 0 0 0 1.5px var(--tinta-3); }
+        .cx.on{ background:var(--acao); box-shadow:none; }
+        .cx.on::after{ content:''; width:4px; height:8px; border:solid #fff;
+            border-width:0 2px 2px 0; transform:rotate(45deg) translate(-1px,-1px); }
+        .it-nome{ font-size:13px; font-weight:600; letter-spacing:-.1px; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; }
+        .it-sub{ font-size:11.5px; color:var(--tinta-3); margin-top:2px; display:flex; gap:7px;
+            align-items:center; flex-wrap:wrap; }
+        .cel{ font-size:12.5px; color:var(--tinta-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .cel.fraca{ color:var(--tinta-3); font-style:italic; }
+        .acoes{ display:flex; gap:6px; justify-content:flex-end; }
+        .pilula{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+        .p-projeto{ background:var(--azul-fraco); color:var(--azul); }
+        .p-cliente{ background:var(--ok-fraco); color:var(--ok); }
+        .p-lead{ background:#F3EEFF; color:#7C3AED; }
+        .p-n{ background:var(--papel-2); color:var(--tinta-3); }
+        .p-cr{ background:var(--cr-fundo); color:var(--critico); }
+        .p-at{ background:var(--at-fundo); color:var(--atencao); }
+        @media(max-width:1040px){
+            .th{ display:none; }
+            .tr{ grid-template-columns:34px 1fr; gap:10px; padding:13px 15px; align-items:flex-start; }
+            .cel-area, .cel-quem, .cel-quando{ display:none; }
+            .acoes{ grid-column:2; justify-content:flex-start; margin-top:8px; }
+        }
+
+        /* confirmação */
+        .modal-fundo{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            justify-content:center; align-items:center; padding:20px; }
+        .modal-fundo.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:450px; max-height:92vh;
+            overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha); display:flex;
+            gap:12px; align-items:flex-start; flex-shrink:0; }
+        .md-ico{ width:36px; height:36px; min-width:36px; border-radius:10px; background:var(--cr-fundo);
+            display:flex; align-items:center; justify-content:center; }
+        .md-ico .material-symbols-rounded{ font-size:19px; color:var(--critico); }
+        .md-t{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .md-s{ font-size:12.5px; color:var(--tinta-3); margin-top:3px; line-height:1.5; }
+        .md-corpo{ padding:17px 20px 20px; display:flex; flex-direction:column; gap:13px; overflow-y:auto; }
+        .md-lista{ background:var(--papel-2); border-radius:var(--r-ctrl); padding:11px 13px;
+            font-size:12.5px; color:var(--tinta-2); line-height:1.7; max-height:180px; overflow-y:auto; }
+        .md-lista b{ font-weight:650; color:var(--tinta); }
+        .md-perde{ color:var(--critico); }
+        .md-conf label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3);
+            text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+        .md-conf input{ width:100%; font-size:13px; padding:10px 12px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); font-family:'IBM Plex Mono',monospace;
+            outline:none; transition:.14s; }
+        .md-conf input:focus{ background:var(--papel); border-color:var(--critico);
+            box-shadow:0 0 0 3px var(--cr-fundo); }
+        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); background:var(--papel-2);
+            display:flex; gap:9px; justify-content:flex-end; flex-shrink:0; }
+
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10002;
+            display:flex; flex-direction:column; gap:9px; }
+        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
+            display:flex; align-items:center; gap:9px; max-width:88vw; }
+
+        @media (max-width:900px){
+            .top-bar{ padding:0 16px 0 60px; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            .cmd-tit, .cmd-sep{ display:none; }
+            .segm{ width:100%; overflow-x:auto; }
+            .segm::-webkit-scrollbar{ display:none; }
+            .segm-btn{ flex:1; justify-content:center; }
+            .cmd-dir{ width:100%; margin-left:0; }
+            .busca{ flex:1; width:auto; }
+            .wrap{ padding:16px 16px 80px; }
+            .modal-fundo{ padding:0; align-items:flex-end; }
+            .modal{ max-width:none; border-radius:18px 18px 0 0; }
+        }
     </style>
 </head>
 <body>
@@ -44,109 +211,390 @@
     </div>
     {% include '_sidebar.html' %}
 
-    <div class="command-bar">
-        <div>
-            <h2 style="font-size:22px; font-weight:900; letter-spacing:-0.5px;">Lixeira</h2>
-            <p style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;">Itens excluídos podem ser restaurados ou removidos definitivamente</p>
+    <div class="cmd">
+        <span class="cmd-tit">Lixeira</span>
+        <div class="cmd-sep"></div>
+        <div class="segm" id="abas" role="tablist"></div>
+        <div class="cmd-dir">
+            <div class="busca"><span class="material-symbols-rounded">search</span>
+                <input id="busca" placeholder="Buscar na lixeira" oninput="lixeira.buscar(this.value)"></div>
         </div>
     </div>
 
-    <div class="scroll-area">
-        <div class="info-banner">
-            <span class="material-symbols-rounded" style="font-size:18px;">info</span>
-            Itens aqui não aparecem na plataforma. Restaure para reativar, ou exclua definitivamente (esta ação é irreversível).
+    <div class="wrap" id="conteudo"></div>
+
+    <div class="modal-fundo" id="modalPurgar" onclick="if(event.target.id==='modalPurgar')lixeira.fecharModal()">
+        <div class="modal">
+            <div class="md-head">
+                <span class="md-ico"><span class="material-symbols-rounded">delete_forever</span></span>
+                <div style="min-width:0">
+                    <div class="md-t" id="mpTitulo">Excluir em definitivo</div>
+                    <div class="md-s">Isto não pode ser desfeito. Os dados saem do banco.</div>
+                </div>
+            </div>
+            <div class="md-corpo">
+                <div class="md-lista" id="mpLista"></div>
+                <div class="md-conf">
+                    <label for="mpConf">Para confirmar, escreva EXCLUIR</label>
+                    <input type="text" id="mpConf" placeholder="EXCLUIR" autocapitalize="characters"
+                           spellcheck="false" oninput="lixeira.conferir(this.value)">
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="lixeira.fecharModal()">Cancelar</button>
+                <button class="btn btn-perigo" id="mpConfirmar" disabled onclick="lixeira.purgar()">
+                    <span class="material-symbols-rounded">delete_forever</span>Excluir em definitivo</button>
+            </div>
         </div>
-        <div class="tabs">
-            <div class="tab active" id="tab-projetos" onclick="mudarAba('projetos')">Projetos</div>
-            <div class="tab" id="tab-clientes" onclick="mudarAba('clientes')">Clientes</div>
-        </div>
-        <div id="conteudo"></div>
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        let nomeUsuario = '{{ usuario_nome }}';
-        let dados = { projetos: [], clientes: [] };
-        let abaAtual = 'projetos';
+    window.lixeira = (function(){
+        'use strict';
 
-        document.addEventListener('DOMContentLoaded', carregar);
+        var ROT_TIPO = { projeto:'Projeto', cliente:'Cliente', lead:'Lead' };
+        var VELHO_DIAS = 90;
 
-        async function carregar() {
-            try {
-                const res = await fetch('/api/lixeira');
-                if (res.status === 403) { document.body.innerHTML = '<div style="padding:60px;text-align:center;font-weight:700;">Acesso negado.</div>'; return; }
-                const data = await res.json();
-                dados.projetos = data.projetos || [];
-                dados.clientes = data.clientes || [];
-                render();
-            } catch(e) { showToast('Erro ao carregar lixeira.', 'error'); }
+        var st = {
+            itens: [], podePurgar: false, busca: '', aba: 'tudo',
+            marcados: {}, carregando: true, erro: null, enviando: false
+        };
+
+        function esc(s){
+            if(s === null || s === undefined) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        function escA(s){ return esc(s).replace(/'/g,'&#39;'); }
+        function el(id){ return document.getElementById(id); }
+        function chave(i){ return i.tipo + ':' + i.id; }
+
+        function dias(s){
+            if(!s) return null;
+            var d = new Date(s);
+            if(isNaN(d.getTime())) return null;
+            return Math.floor((Date.now() - d.getTime()) / 86400000);
+        }
+        function quando(s){
+            var n = dias(s);
+            if(n === null) return '—';
+            if(n <= 0) return 'hoje';
+            if(n === 1) return 'ontem';
+            if(n < 30) return 'há ' + n + ' dias';
+            if(n < 365) return 'há ' + Math.floor(n/30) + ' meses';
+            return 'há mais de um ano';
+        }
+        function moeda(v){
+            if(!v) return null;
+            var n = parseFloat(v);
+            if(isNaN(n)) return null;
+            return n >= 1000 ? 'R$ ' + (n/1000).toFixed(n >= 10000 ? 0 : 1).replace('.',',') + 'k'
+                             : 'R$ ' + Math.round(n);
+        }
+        function motivo(resp, padrao){
+            return resp.json().then(function(d){
+                if(d && d.detalhe) return (d.mensagem || padrao) + ' ' + d.detalhe;
+                if(d && d.mensagem) return d.mensagem;
+                if(d && d.erro) return d.erro;
+                return padrao;
+            })['catch'](function(){ return padrao + ' (HTTP ' + resp.status + ')'; });
+        }
+        function toast(msg, tipo){
+            var t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:'
+                + (tipo === 'error' ? 'var(--accent-pink)' : 'var(--accent-lime)') + '">'
+                + (tipo === 'error' ? 'error' : 'check_circle') + '</span>' + esc(msg);
+            el('toastContainer').appendChild(t);
+            setTimeout(function(){ t.remove(); }, 4500);
         }
 
-        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-        function fmtData(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('pt-BR'); }
-
-        function mudarAba(aba) {
-            abaAtual = aba;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + aba).classList.add('active');
-            render();
+        /* ==================== CARGA ==================== */
+        function carregar(){
+            return fetch('/api/lixeira').then(function(r){
+                if(!r.ok) return motivo(r, 'Não foi possível carregar a lixeira.')
+                    .then(function(m){ st.erro = m; });
+                return r.json().then(function(d){
+                    st.itens = d.itens || [];
+                    st.podePurgar = !!d.pode_purgar;
+                    st.erro = null;
+                });
+            })['catch'](function(){
+                st.erro = 'Sem conexão com o servidor.';
+            }).then(function(){
+                st.carregando = false;
+                // Marcação some no recarregamento: manter selecionado um
+                // item que já não existe levaria a ações sobre o nada.
+                st.marcados = {};
+                desenhar();
+            });
         }
 
-        function render() {
-            const c = document.getElementById('conteudo');
-            const lista = dados[abaAtual];
-            if (!lista || lista.length === 0) {
-                c.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">delete_outline</span><p>Nenhum ${abaAtual === 'projetos' ? 'projeto' : 'cliente'} na lixeira.</p></div>`;
-                return;
-            }
-            const tipo = abaAtual === 'projetos' ? 'projeto' : 'cliente';
-            c.innerHTML = lista.map(item => {
-                const nome = abaAtual === 'projetos' ? item.nome_projeto : item.nome_empresa;
-                const meta = abaAtual === 'projetos'
-                    ? `${escH(item.empresa || 'Sem cliente')} · Excluído em ${fmtData(item.excluido_em)}`
-                    : `Excluído em ${fmtData(item.excluido_em)}`;
-                return `
-                <div class="item-row">
-                    <div class="item-icon"><span class="material-symbols-rounded">${abaAtual === 'projetos' ? 'folder' : 'apartment'}</span></div>
-                    <div class="item-info">
-                        <div class="item-nome">${escH(nome)}</div>
-                        <div class="item-meta">${meta}</div>
-                    </div>
-                    <div class="btn-restaurar" onclick="restaurar('${tipo}', '${item.id}')">
-                        <span class="material-symbols-rounded" style="font-size:16px;">restore</span> RESTAURAR
-                    </div>
-                    <div class="btn-deletar" onclick="deletarDefinitivo('${tipo}', '${item.id}', '${escH(nome).replace(/'/g, "")}')" title="Excluir definitivamente">
-                        <span class="material-symbols-rounded" style="font-size:18px;">delete_forever</span>
-                    </div>
-                </div>`;
+        /* ==================== DESENHO ==================== */
+        function porTipo(t){
+            return st.itens.filter(function(i){ return i.tipo === t; }).length;
+        }
+
+        function desenharAbas(){
+            var abas = [['tudo','Tudo', st.itens.length],
+                        ['projeto','Projetos', porTipo('projeto')],
+                        ['lead','Leads', porTipo('lead')],
+                        ['cliente','Clientes', porTipo('cliente')]];
+            el('abas').innerHTML = abas.map(function(a){
+                return '<button class="segm-btn' + (st.aba === a[0] ? ' on' : '') + '" role="tab"'
+                    + ' aria-selected="' + (st.aba === a[0]) + '"'
+                    + ' onclick="lixeira.aba(\'' + a[0] + '\')">' + a[1]
+                    + '<span class="segm-n">' + a[2] + '</span></button>';
             }).join('');
         }
 
-        async function restaurar(tipo, id) {
-            try {
-                const res = await fetch(`/api/lixeira/${tipo}/${id}/restaurar`, { method: 'PUT' });
-                if (res.ok) { showToast('Item restaurado!', 'success'); carregar(); }
-                else showToast('Erro ao restaurar.', 'error');
-            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        function filtrar(){
+            var t = st.busca.trim().toLowerCase();
+            return st.itens.filter(function(i){
+                if(st.aba !== 'tudo' && i.tipo !== st.aba) return false;
+                if(!t) return true;
+                var alvo = ((i.nome||'') + ' ' + (i.detalhe||'') + ' '
+                          + (i.area||'') + ' ' + (i.excluido_por||'')).toLowerCase();
+                return alvo.indexOf(t) >= 0;
+            });
         }
 
-        async function deletarDefinitivo(tipo, id, nome) {
-            if (!confirm(`Excluir DEFINITIVAMENTE "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
-            try {
-                const res = await fetch(`/api/lixeira/${tipo}/${id}/definitivo`, { method: 'DELETE' });
-                if (res.ok) { showToast('Item excluído definitivamente.', 'success'); carregar(); }
-                else showToast('Erro ao excluir.', 'error');
-            } catch(e) { showToast('Erro de conexão.', 'error'); }
+        function desenhar(){
+            desenharAbas();
+            var alvo = el('conteudo');
+
+            if(st.carregando){
+                alvo.innerHTML = '<div class="esqueleto"></div><div class="esqueleto"></div>'
+                    + '<div class="esqueleto"></div><div class="esqueleto"></div>';
+                return;
+            }
+            if(st.erro){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">cloud_off</span>'
+                    + '<h3>Não foi possível carregar</h3><p>' + esc(st.erro) + '</p>'
+                    + '<button class="btn btn-acao" style="display:inline-flex" onclick="lixeira.recarregar()">'
+                    + '<span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>';
+                return;
+            }
+            if(!st.itens.length){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">delete</span>'
+                    + '<h3>A lixeira está vazia</h3>'
+                    + '<p>Projetos, leads e clientes excluídos aparecem aqui e podem ser '
+                    + 'restaurados a qualquer momento.</p></div>';
+                return;
+            }
+
+            var lista = filtrar();
+            var html = avisos() + barraSelecao();
+
+            if(!lista.length){
+                html += '<div class="vazio"><span class="material-symbols-rounded">search_off</span>'
+                     + '<h3>Nada encontrado</h3><p>Ajuste a busca ou troque de aba.</p></div>';
+            } else {
+                var todosMarcados = lista.every(function(i){ return st.marcados[chave(i)]; });
+                html += '<div class="tabela">'
+                     + '<div class="th"><div><span class="cx' + (todosMarcados ? ' on' : '') + '"'
+                     + ' onclick="lixeira.marcarTodos()" role="checkbox"'
+                     + ' aria-checked="' + todosMarcados + '"></span></div>'
+                     + '<div>Item</div><div>Área</div><div>Excluído por</div><div>Quando</div><div></div></div>'
+                     + lista.map(linha).join('') + '</div>';
+            }
+            alvo.innerHTML = html;
+
+            var b = el('busca');
+            if(b && document.activeElement !== b) b.value = st.busca;
         }
 
-        function showToast(msg, tipo='success') {
-            const c = document.getElementById('toastContainer');
-            const t = document.createElement('div');
-            t.className = 'toast';
-            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px; color:${tipo==='success'?'var(--accent-lime)':'var(--accent-pink)'};">${tipo==='success'?'check_circle':'error'}</span>${msg}`;
-            c.appendChild(t); setTimeout(() => t.remove(), 3500);
+        function avisos(){
+            var h = '';
+            var velhos = st.itens.filter(function(i){
+                var n = dias(i.excluido_em);
+                return n !== null && n > VELHO_DIAS;
+            }).length;
+            if(velhos){
+                h += '<div class="faixa aviso"><span class="material-symbols-rounded">schedule</span>'
+                   + '<div><div class="fx-t">' + velhos
+                   + (velhos === 1 ? ' item está aqui' : ' itens estão aqui')
+                   + ' há mais de ' + VELHO_DIAS + ' dias</div>'
+                   + '<div class="fx-s">Nada é apagado automaticamente — numa consultoria, um '
+                   + 'projeto antigo pode virar prova em discussão contratual. Mas vale revisar '
+                   + 'o que já não faz falta.</div></div></div>';
+            }
+            if(!st.podePurgar){
+                h += '<div class="faixa info"><span class="material-symbols-rounded">lock</span>'
+                   + '<div><div class="fx-t">Você pode restaurar, mas não apagar em definitivo</div>'
+                   + '<div class="fx-s">Apagar do banco exige a capacidade de purgar a lixeira, '
+                   + 'que hoje é só do nível Administrador.</div></div></div>';
+            }
+            return h;
         }
+
+        function marcadosLista(){
+            var out = [];
+            st.itens.forEach(function(i){ if(st.marcados[chave(i)]) out.push(i); });
+            return out;
+        }
+
+        function barraSelecao(){
+            var m = marcadosLista();
+            if(!m.length) return '';
+            return '<div class="barra-sel"><span class="cx on"></span>'
+                + '<span class="conta">' + m.length
+                + (m.length === 1 ? ' item selecionado' : ' itens selecionados') + '</span>'
+                + '<span class="btn-limpar" onclick="lixeira.limparSelecao()">Limpar</span>'
+                + '<span class="dir">'
+                + '<span class="btn-branco" onclick="lixeira.restaurarLote()">'
+                + '<span class="material-symbols-rounded">restore</span>Restaurar</span>'
+                + (st.podePurgar
+                    ? '<span class="btn-branco perigo" onclick="lixeira.abrirModal()">'
+                      + '<span class="material-symbols-rounded">delete_forever</span>'
+                      + 'Excluir em definitivo</span>'
+                    : '')
+                + '</span></div>';
+        }
+
+        function linha(i){
+            var k = chave(i), marcado = !!st.marcados[k];
+            var sub = [];
+            sub.push('<span class="pilula p-' + i.tipo + '">' + ROT_TIPO[i.tipo] + '</span>');
+            if(i.detalhe) sub.push(esc(i.detalhe));
+            // O que se perde junto aparece antes da decisão, não depois.
+            if(i.tipo === 'projeto' && i.horas)
+                sub.push('<span class="pilula p-n">' + i.horas + 'h lançadas</span>');
+            if(i.tipo === 'cliente' && i.projetos_juntos)
+                sub.push('<span class="pilula p-at">' + i.projetos_juntos
+                    + (i.projetos_juntos === 1 ? ' projeto junto' : ' projetos juntos') + '</span>');
+            if(i.tipo === 'lead' && moeda(i.valor))
+                sub.push('<span class="pilula p-n">' + moeda(i.valor) + '</span>');
+            var n = dias(i.excluido_em);
+            if(n !== null && n > VELHO_DIAS)
+                sub.push('<span class="pilula p-cr">há ' + n + ' dias</span>');
+
+            return '<div class="tr' + (marcado ? ' marcada' : '') + '">'
+                + '<div><span class="cx' + (marcado ? ' on' : '') + '"'
+                + ' onclick="lixeira.marcar(\'' + escA(k) + '\')" role="checkbox"'
+                + ' aria-checked="' + marcado + '"></span></div>'
+                + '<div><div class="it-nome">' + esc(i.nome) + '</div>'
+                + '<div class="it-sub">' + sub.join('') + '</div></div>'
+                + '<div class="cel cel-area">' + esc(i.area || '—') + '</div>'
+                + '<div class="cel cel-quem' + (i.excluido_por ? '' : ' fraca') + '">'
+                + esc(i.excluido_por || 'não registrado') + '</div>'
+                + '<div class="cel cel-quando">' + quando(i.excluido_em) + '</div>'
+                + '<div class="acoes"><button class="btn btn-borda btn-mini"'
+                + ' onclick="lixeira.restaurar(\'' + escA(i.tipo) + '\',\'' + escA(i.id) + '\')">'
+                + '<span class="material-symbols-rounded">restore</span>Restaurar</button></div>'
+                + '</div>';
+        }
+
+        /* ==================== AÇÕES ==================== */
+        function restaurar(tipo, id){
+            if(st.enviando) return;
+            st.enviando = true;
+            fetch('/api/lixeira/' + tipo + '/' + id + '/restaurar', { method:'PUT' })
+                .then(function(r){
+                    if(!r.ok) return motivo(r, 'Não foi possível restaurar.')
+                        .then(function(m){ throw new Error(m); });
+                    return r.json();
+                }).then(function(d){
+                    toast(d.aviso || (ROT_TIPO[tipo] + ' restaurado.'), 'success');
+                    return carregar();
+                })['catch'](function(e){
+                    toast(e.message || 'Sem conexão com o servidor.', 'error');
+                }).then(function(){ st.enviando = false; });
+        }
+
+        function lote(acao){
+            var m = marcadosLista();
+            if(!m.length || st.enviando) return;
+            st.enviando = true;
+            return fetch('/api/lixeira/lote', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    acao: acao,
+                    itens: m.map(function(i){ return { tipo:i.tipo, id:i.id, nome:i.nome }; })
+                })
+            }).then(function(r){
+                if(!r.ok) return motivo(r, 'Não foi possível concluir.')
+                    .then(function(msg){ throw new Error(msg); });
+                return r.json();
+            }).then(function(d){
+                var verbo = acao === 'restaurar' ? 'restaurado' : 'excluído';
+                var msg = d.feitos + (d.feitos === 1 ? ' item ' + verbo : ' itens ' + verbo + 's');
+                if(d.falhas && d.falhas.length) msg += ' · ' + d.falhas.length + ' falharam';
+                toast(msg, d.falhas && d.falhas.length ? 'error' : 'success');
+                fecharModal();
+                return carregar();
+            })['catch'](function(e){
+                toast(e.message || 'Sem conexão com o servidor.', 'error');
+            }).then(function(){ st.enviando = false; });
+        }
+
+        /* ==================== CONFIRMAÇÃO ==================== */
+        function abrirModal(){
+            var m = marcadosLista();
+            if(!m.length) return;
+            el('mpTitulo').innerText = 'Excluir ' + m.length
+                + (m.length === 1 ? ' item em definitivo' : ' itens em definitivo');
+            el('mpLista').innerHTML = m.map(function(i){
+                var perde = '';
+                if(i.tipo === 'projeto' && i.horas)
+                    perde = '<br><span class="md-perde">↳ ' + i.horas
+                          + 'h de tempo lançado ficam sem projeto</span>';
+                if(i.tipo === 'cliente' && i.projetos_juntos)
+                    perde = '<br><span class="md-perde">↳ ' + i.projetos_juntos
+                          + ' projeto(s) continuam na lixeira, sem cliente</span>';
+                if(i.tipo === 'lead')
+                    perde = '<br><span style="color:var(--tinta-3)">↳ histórico de movimentação no funil</span>';
+                return '<b>' + esc(i.nome) + '</b> — ' + ROT_TIPO[i.tipo].toLowerCase() + perde;
+            }).join('<br>');
+            el('mpConf').value = '';
+            el('mpConfirmar').disabled = true;
+            el('modalPurgar').classList.add('show');
+            setTimeout(function(){ el('mpConf').focus(); }, 60);
+        }
+
+        function fecharModal(){ el('modalPurgar').classList.remove('show'); }
+
+        /* Digitar EXCLUIR é incômodo de propósito: confirmação com botão
+           "Sim" vira reflexo depois da terceira vez; digitar exige ler. */
+        function conferir(v){
+            el('mpConfirmar').disabled = v.trim().toUpperCase() !== 'EXCLUIR';
+        }
+
+        document.addEventListener('keydown', function(e){
+            if(e.key === 'Escape') fecharModal();
+        });
+        document.addEventListener('DOMContentLoaded', function(){ desenhar(); carregar(); });
+
+        return {
+            aba: function(a){ st.aba = a; desenhar(); },
+            buscar: function(v){ st.busca = v; desenhar(); },
+            recarregar: function(){ st.carregando = true; st.erro = null; desenhar(); carregar(); },
+            marcar: function(k){
+                if(st.marcados[k]) delete st.marcados[k]; else st.marcados[k] = true;
+                desenhar();
+            },
+            marcarTodos: function(){
+                var lista = filtrar();
+                var todos = lista.every(function(i){ return st.marcados[chave(i)]; });
+                lista.forEach(function(i){
+                    if(todos) delete st.marcados[chave(i)]; else st.marcados[chave(i)] = true;
+                });
+                desenhar();
+            },
+            limparSelecao: function(){ st.marcados = {}; desenhar(); },
+            restaurar: restaurar,
+            restaurarLote: function(){ lote('restaurar'); },
+            purgar: function(){ lote('purgar'); },
+            abrirModal: abrirModal,
+            fecharModal: fecharModal,
+            conferir: conferir,
+            _st: st
+        };
+    })();
     </script>
 </body>
 </html>
