@@ -789,8 +789,44 @@
                 && calc(d.slice(0, 13)) === parseInt(d.charAt(13), 10);
         }
 
-        function portaoDe(funil, coluna){
-            return PORTOES.find(p => p.funil===funil && p.para===coluna) || null;
+        /* Pular etapas não pode pular exigências.
+           Ir de Agendamento direto para Negociação deixaria o lead sem
+           valor nem canal — e o painel comercial passaria a ter
+           negociação de valor zero. O portão junta tudo que ficou para
+           trás no caminho, não só o da coluna de destino. */
+        function portaoDe(funil, coluna, colunaAtual){
+            const cols = (FUNIS[funil] || {}).colunas || [];
+            const idx = function(c){ return cols.findIndex(function(x){ return x.id === c; }); };
+            const iDestino = idx(coluna);
+            const iAtual = colunaAtual === undefined ? -1 : idx(colunaAtual);
+
+            // Só acumula quando avança. Voltar não deve cobrar nada.
+            const acumula = iDestino > iAtual;
+            const aplicaveis = PORTOES.filter(function(p){
+                if(p.funil !== funil) return false;
+                if(!acumula) return p.para === coluna;
+                const i = idx(p.para);
+                return i > iAtual && i <= iDestino;
+            });
+            if(!aplicaveis.length) return null;
+            if(aplicaveis.length === 1) return aplicaveis[0];
+
+            // Vários portões viram um só: uma janela, sem campo repetido.
+            const vistos = {}, campos = [];
+            aplicaveis.forEach(function(p){
+                p.campos.forEach(function(c){
+                    if(vistos[c.k]) return;
+                    vistos[c.k] = true;
+                    campos.push(c);
+                });
+            });
+            const ultimo = aplicaveis[aplicaveis.length - 1];
+            return {
+                funil: funil, para: coluna,
+                titulo: ultimo.titulo,
+                ajuda: 'Este movimento pula etapas — confirme o que ficou para trás.',
+                campos: campos
+            };
         }
 
         const FUNIS = {
@@ -1158,7 +1194,7 @@
             if(cfg.ganhoFinal){ abrirFechamento(leadId); return; }
 
             // Portão: falta algum dado obrigatório para este movimento?
-            const portao = portaoDe(funilAtual, novaColuna);
+            const portao = portaoDe(funilAtual, novaColuna, l.coluna);
             if(portao){
                 const faltando = portao.campos.filter(c => !String(l[c.k]||'').trim());
                 if(faltando.length){ abrirPortao(leadId, novaColuna, portao, cfg.saida||null); return; }
