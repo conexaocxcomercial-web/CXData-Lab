@@ -657,8 +657,7 @@
             <div class="md-corpo">
                 <div class="obj-grade" id="objGrade"></div>
                 <div class="ig"><label for="objDetalhe">Detalhe (opcional)</label><textarea id="objDetalhe" placeholder="O que foi dito, com as palavras dele"></textarea></div>
-                <div class="ig" id="objLinhaRetomar"><label for="objRetomar">Retomar em</label>
-                    <input type="date" id="objRetomar"></div>
+
             </div>
             <div class="md-pe">
                 <button class="btn btn-fant" onclick="cancelarObjecao()">Voltar</button>
@@ -1224,16 +1223,13 @@
                     ? 'Marcar como perdido' : 'Enviar para nutrição';
                 document.getElementById('objIcone').innerText = ehPerda ? 'person_off' : 'water_drop';
                 document.getElementById('objConfirmar').className = 'btn ' + (ehPerda ? 'btn-perigo' : 'btn-acao');
-                // Retomar não faz sentido para quem não tem contato válido.
-                document.getElementById('objLinhaRetomar').style.display = ehPerda ? 'none' : 'block';
 
                 document.getElementById('objDetalhe').value = '';
-                document.getElementById('objRetomar').value = '';
                 document.getElementById('objEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
                 document.getElementById('modalObjecao').classList.add('show');
                 return;
             }
-            await enviarMovimento(leadId, novaColuna, cfg.saida || null, null, null, null);
+            await enviarMovimento(leadId, novaColuna, cfg.saida || null, null, null);
         }
 
         /* ==================== PORTÕES ==================== */
@@ -1318,7 +1314,7 @@
             } finally { btn.disabled = false; }
             document.getElementById('modalPortao').classList.remove('show');
             portaoCtx = null;
-            await enviarMovimento(c.leadId, c.coluna, c.destinoFunil, null, null, null);
+            await enviarMovimento(c.leadId, c.coluna, c.destinoFunil, null, null);
         }
 
         /* ==================== FECHAMENTO ==================== */
@@ -1458,23 +1454,25 @@
             const c = objCtx;
             document.getElementById('modalObjecao').classList.remove('show');
             await enviarMovimento(c.leadId, c.coluna, c.destinoFunil, objSelecionada,
-                document.getElementById('objDetalhe').value.trim(),
-                document.getElementById('objRetomar').value || null);
+                document.getElementById('objDetalhe').value.trim());
             objCtx = null;
         }
 
-        async function enviarMovimento(leadId, coluna, destinoFunil, objecao, detalhe, retomar){
+        /* A data de retomada saiu daqui: o funil de nutrição já define o
+           ritmo de contato, e uma data paralela seria uma segunda fonte
+           de verdade sobre a mesma coisa. Quem quiser marcar um retorno
+           específico usa o campo do card. */
+        async function enviarMovimento(leadId, coluna, destinoFunil, objecao, detalhe){
             const l = leads.find(x=>String(x.id)===String(leadId));
-            const antes = { funil:l.funil, coluna:l.coluna, proximo_contato:l.proximo_contato };
+            const antes = { funil:l.funil, coluna:l.coluna };
             // otimista: move na tela e desfaz se o servidor recusar
             l.coluna = coluna;
             if(destinoFunil){ l.funil = destinoFunil; l.coluna = ENTRADA[destinoFunil]; }
-            if(retomar) l.proximo_contato = retomar;
             l.movido_em = new Date().toISOString();
             render();
             try{
                 const r = await fetch(`/api/leads/${leadId}/mover`, { method:'POST', headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({ coluna, destino_funil:destinoFunil, objecao, objecao_detalhe:detalhe, proximo_contato:retomar })});
+                    body: JSON.stringify({ coluna, destino_funil:destinoFunil, objecao, objecao_detalhe:detalhe })});
                 if(!r.ok){
                     Object.assign(l, antes); render();
                     showToast(await motivoErro(r,'Não foi possível mover.'),'error');
@@ -1524,7 +1522,7 @@
             const id = moverLeadId;
             document.getElementById('folhaMover').classList.remove('on');
             moverLeadId = null;
-            if(id) enviarMovimento(id, ENTRADA[destino], destino, null, null, null);
+            if(id) enviarMovimento(id, ENTRADA[destino], destino, null, null);
         }
         function confirmarMover(coluna){
             const id = moverLeadId;
