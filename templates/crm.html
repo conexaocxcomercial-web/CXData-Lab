@@ -188,17 +188,28 @@
         .pt-ajuda{ font-size:12px; color:var(--tinta-2); line-height:1.55; background:var(--papel-2);
             padding:11px 13px; border-radius:var(--r-ctrl); }
         .ig-dica{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-top:6px; }
-        .qds{ display:flex; gap:6px; flex-wrap:wrap; }
-        .qd{ font-size:12px; font-weight:550; padding:7px 12px; border-radius:var(--r-pill);
-            background:var(--papel); color:var(--tinta-3); cursor:pointer; display:inline-flex;
-            align-items:center; gap:6px; transition:.14s; box-shadow:inset 0 0 0 1px var(--linha); }
-        .qd:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta-2); }
-        .qd .material-symbols-rounded{ font-size:14px; opacity:0; width:0; transition:.14s; }
-        .qd.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600;
-            box-shadow:inset 0 0 0 1px var(--acao); }
-        .qd.on .material-symbols-rounded{ opacity:1; width:14px; }
-        .qd-p{ font-size:9.5px; font-weight:600; padding:1px 6px; border-radius:99px;
-            background:rgba(108,92,231,.14); }
+        /* Lista vertical, uma linha por quadro. Com pílulas soltas, os
+           que tinham subdivisão viravam blocos de alturas diferentes e
+           não dava para varrer a coluna do que está marcado. */
+        .qds{ display:flex; flex-direction:column; gap:1px; background:var(--linha);
+            border-radius:var(--r-ctrl); overflow:hidden; box-shadow:inset 0 0 0 1px var(--linha); }
+        .qd{ display:flex; align-items:center; gap:10px; padding:10px 12px; width:100%;
+            background:var(--papel); cursor:pointer; transition:.12s; text-align:left;
+            font-family:inherit; }
+        .qd:hover{ background:var(--papel-2); }
+        .qd.on{ background:var(--acao-fraco); }
+        .qd-cx{ width:16px; height:16px; min-width:16px; border-radius:5px; transition:.12s;
+            box-shadow:inset 0 0 0 1.5px var(--linha-2); display:flex;
+            align-items:center; justify-content:center; }
+        .qd.on .qd-cx{ background:var(--acao); box-shadow:none; }
+        .qd.on .qd-cx::after{ content:''; width:4px; height:8px; border:solid #fff;
+            border-width:0 2px 2px 0; transform:rotate(45deg) translate(-1px,-1px); }
+        .qd-nome{ font-size:12.5px; font-weight:550; color:var(--tinta-2); }
+        .qd.on .qd-nome{ color:var(--tinta); font-weight:600; }
+        .qd-p{ font-size:9.5px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--acao-fraco); color:var(--acao); white-space:nowrap; }
+        .qd.on .qd-p{ background:rgba(108,92,231,.16); }
+        .qd-dir{ margin-left:auto; display:flex; align-items:center; gap:8px; }
         .previa{ background:var(--acao-fraco); border-radius:var(--r-ctrl); padding:13px 14px; }
         .previa-t{ font-size:11px; font-weight:650; color:var(--acao); text-transform:uppercase;
             letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
@@ -208,6 +219,9 @@
         .pv .material-symbols-rounded{ font-size:15px; color:var(--acao); flex-shrink:0; margin-top:1px; }
         .pv b{ font-weight:650; }
         .ig3{ display:grid; grid-template-columns:1fr 108px; gap:12px; }
+        .ig-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; color:var(--tinta-3); padding-top:6px; margin-bottom:9px;
+            border-top:1px solid var(--linha); padding-top:14px; }
         @media(max-width:520px){ .ig3{ grid-template-columns:1fr; } }
 
         .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
@@ -382,10 +396,12 @@
             .obj-grade{ grid-template-columns:1fr; }
         }
     
-        .qd-sub{ font-size:10.5px; font-weight:600; padding:2px 6px; border-radius:6px;
-            background:#FFF; color:#56565F; box-shadow:inset 0 0 0 1px #E4E4EA;
-            margin-left:6px; cursor:pointer; font-family:inherit; }
-        .qd.on .qd-sub{ box-shadow:inset 0 0 0 1px #6C5CE7; color:#6C5CE7; }
+        .qd-sub{ font-size:11.5px; font-weight:550; padding:5px 9px; border-radius:6px;
+            background:var(--papel-2); color:var(--tinta-2); cursor:pointer;
+            font-family:inherit; border:none; outline:none; max-width:150px; }
+        .qd-sub:focus{ box-shadow:0 0 0 2px var(--acao-fraco); }
+        .qd.on .qd-sub{ background:var(--papel); color:var(--acao); font-weight:600; }
+        .qd.off .qd-sub{ opacity:.45; }
 </style>
 </head>
 <body>
@@ -627,7 +643,7 @@
                         <input type="number" id="fcValor" step="0.01" min="0" oninput="atualizarPrevia()"></div>
                 </div>
                 <div class="ig">
-                    <label>Quadros que recebem este contrato</label>
+                    <div class="ig-secao">Onde o trabalho vai acontecer</div>
                     <div class="qds" id="fcQuadros"></div>
                     <div class="ig-dica">O quadro do produto e o Financeiro já vêm marcados.
                         Marque outros se a execução envolver mais áreas.</div>
@@ -1337,20 +1353,30 @@
                 const marcado = (c === sugerido || c === 'financeiro');
                 const porque = c === sugerido ? 'do produto' : (c === 'financeiro' ? 'cobrança' : '');
                 const subs = SUBS_FECHAMENTO[c];
-                // Quadro com subdivisão precisa saber em qual delas o card entra.
+                // O select fica à direita, alinhado com os outros, e só
+                // reage quando o quadro está marcado.
                 const seletor = subs ? `<select class="qd-sub" data-sub-de="${escA(c)}"
                         onclick="event.stopPropagation()" onchange="atualizarPrevia()">
                         ${subs.map(([sc,sn]) =>
                             `<option value="${escA(sc)}" ${c===sugerido&&sc===subSugerida?'selected':''}>${escH(sn)}</option>`
                         ).join('')}</select>` : '';
-                return `<button type="button" class="qd ${marcado?'on':''}" data-q="${escA(c)}"
-                        onclick="this.classList.toggle('on');atualizarPrevia()">
-                    <span class="material-symbols-rounded">check</span>${escH(n)}
-                    ${porque?`<span class="qd-p">${porque}</span>`:''}${seletor}</button>`;
+                return `<button type="button" class="qd ${marcado?'on':'off'}" data-q="${escA(c)}"
+                        role="checkbox" aria-checked="${marcado}" onclick="alternarQuadro(this)">
+                    <span class="qd-cx"></span>
+                    <span class="qd-nome">${escH(n)}</span>
+                    ${porque?`<span class="qd-p">${porque}</span>`:''}
+                    <span class="qd-dir">${seletor}</span></button>`;
             }).join('');
 
             atualizarPrevia();
             document.getElementById('modalFechamento').classList.add('show');
+        }
+
+        function alternarQuadro(el){
+            const on = el.classList.toggle('on');
+            el.classList.toggle('off', !on);
+            el.setAttribute('aria-checked', on ? 'true' : 'false');
+            atualizarPrevia();
         }
 
         function quadrosMarcados(){
