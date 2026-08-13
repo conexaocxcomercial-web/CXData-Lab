@@ -90,16 +90,12 @@ GRUPOS_ORDEM = ['Operação', 'Comercial', 'Clientes', 'OKR', 'Comunicação', '
 
 # Quadros de trabalho e áreas da plataforma. Ficam no código porque
 # são a lista real de telas que existem — não configuração.
-QUADROS = [
-    ('recrutamento',  'Recrutamento e Seleção'),
-    ('rhestrategico', 'RH Estratégico'),
-    ('projetos',      'Projetos'),
-    ('rhinterno',     'RH Interno'),
-    ('cxdata',        'CX Data'),
-    ('comercial',     'Comercial'),
-    ('marketing',     'Marketing'),
-    ('financeiro',    'Adm/Financeiro'),
-]
+# Lista de quadros para as telas de acesso. Definida aqui porque é
+# usada antes de ARVORE_QUADROS existir; a função sincroniza_quadros()
+# logo abaixo da árvore substitui esta lista pela versão completa.
+# Sem isso, Educação e Tecnologia sumiam da tela de acessos e ninguém
+# conseguia liberar esses quadros para ninguém.
+QUADROS = []
 AREAS = [
     ('agenda',    'Agenda',    'calendar_month', 'Planejamento do dia e cronômetro'),
     ('crm',       'CRM',       'filter_alt',     'Funis de qualificação, fechamento e nutrição'),
@@ -2768,6 +2764,11 @@ QUADROS_INTERNOS = [c for c, _, p, _, _ in ARVORE_QUADROS if not p]
 SUBQUADROS = {c: [s[0] for s in subs] for c, _, _, _, subs in ARVORE_QUADROS if subs}
 # Onde o card cai quando ninguém escolheu subdivisão: a primeira da lista.
 SUB_PADRAO = {c: subs[0][0] for c, _, _, _, subs in ARVORE_QUADROS if subs}
+
+
+# A lista de quadros das telas de acesso vem da árvore, não de uma
+# cópia manual: duas fontes divergem no primeiro quadro novo.
+QUADROS[:] = [(chave, area) for chave, area, _, _, _ in ARVORE_QUADROS]
 
 
 def sub_valida(quadro, sub):
