@@ -768,20 +768,37 @@
         }
 
         /* ===== FILA DE ATRIBUIÇÃO =====
-           Card que nasce sem dono precisa ser visto por quem direciona,
-           senão o trabalho fica esperando alguém reparar. */
-        .fila-faixa{ background:var(--at-fundo); border-bottom:1px solid var(--at-borda);
-            padding:11px 22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-        .ff-ico{ color:var(--atencao); display:flex; }
-        .ff-ico .material-symbols-rounded{ font-size:19px; }
-        .ff-txt{ font-size:12.5px; color:#7A4A0C; font-weight:550; }
-        .ff-txt b{ font-weight:700; }
-        .ff-dir{ margin-left:auto; display:flex; gap:8px; }
-        .btn-ambar{ background:var(--atencao); color:#fff; font-size:12px; font-weight:600;
-            padding:7px 12px; border-radius:9px; display:inline-flex; align-items:center;
-            gap:6px; cursor:pointer; }
-        .btn-ambar:hover{ background:#a85809; }
-        .btn-ambar .material-symbols-rounded{ font-size:16px; }
+           Card sem dono precisa ser visto por quem direciona. Mas
+           distribuir três vagas não é emergência: a faixa de largura
+           total usava a cor de prazo estourado e empurrava o quadro
+           para baixo. Virou pílula ao lado do contador. */
+        .btn-mini{ font-size:11.5px; padding:6px 10px; }
+        .pilula-fila{ display:inline-flex; align-items:center; gap:7px; font-size:12px;
+            font-weight:600; padding:7px 12px; border-radius:99px; background:var(--at-fundo);
+            color:var(--atencao); box-shadow:inset 0 0 0 1px var(--at-borda);
+            cursor:pointer; white-space:nowrap; transition:.14s; }
+        .pilula-fila:hover{ background:#FBE6C4; }
+        .pilula-fila .material-symbols-rounded{ font-size:15px; }
+        .pf-n{ background:var(--atencao); color:#fff; font-size:10px; font-weight:700;
+            min-width:16px; height:16px; border-radius:99px; display:inline-flex;
+            align-items:center; justify-content:center; padding:0 5px;
+            font-family:'IBM Plex Mono',monospace; }
+        /* A urgência cresce com o tempo, em vez de nascer no máximo. */
+        .pilula-fila.velha{ background:var(--cr-fundo); color:var(--critico);
+            box-shadow:inset 0 0 0 1px var(--cr-borda); }
+        .pilula-fila.velha:hover{ background:#F8D5D5; }
+        .pilula-fila.velha .pf-n{ background:var(--critico); }
+
+        /* Card sem dono se identifica onde está: quem olha o Backlog
+           resolve ali, sem abrir janela. */
+        .card-sem-dono{ box-shadow:0 0 0 1px var(--at-borda),
+            0 1px 2px rgba(23,23,26,.05) !important; background:#FFFDF8 !important; }
+        .btn-escolher{ display:inline-flex; align-items:center; gap:5px; font-size:10.5px;
+            font-weight:600; color:var(--atencao); background:var(--at-fundo);
+            padding:4px 10px; border-radius:99px; margin-top:9px; cursor:pointer;
+            border:none; font-family:inherit; transition:.14s; }
+        .btn-escolher:hover{ background:#FBE6C4; }
+        .btn-escolher .material-symbols-rounded{ font-size:13px; }
 
         .fila-item{ background:var(--papel); border-radius:12px; padding:14px 16px;
             display:flex; gap:13px; align-items:center; margin-bottom:8px;
@@ -797,11 +814,23 @@
         .fi-pil.lote{ background:#E9F2FB; color:#1A5FA0; }
         .fi-pil.espera{ background:var(--at-fundo); color:var(--atencao); }
         .fi-dir{ display:flex; gap:7px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
-        .fi-sel{ font-size:12px; font-weight:550; padding:7px 10px; border-radius:9px;
-            background:var(--papel-2); color:var(--tinta-2); cursor:pointer; outline:none; }
-        .fi-sel:focus{ box-shadow:0 0 0 2px var(--acao-fraco); }
+        /* A carga ao lado do nome responde a pergunta antes de ela ser
+           feita. Um select esconderia justamente o dado que decide. */
+        .fi-pes{ display:flex; gap:6px; flex-wrap:wrap; margin-top:11px;
+            padding-top:11px; border-top:1px solid var(--papel-2); }
+        .pes-op{ display:inline-flex; align-items:center; gap:7px; font-size:12px;
+            font-weight:500; padding:6px 11px 6px 6px; border-radius:99px;
+            background:var(--papel-2); color:var(--tinta-2); cursor:pointer;
+            border:none; font-family:inherit; transition:.14s; }
+        .pes-op:hover{ background:var(--linha); }
+        .pes-op.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600;
+            box-shadow:inset 0 0 0 1px var(--acao); }
+        .po-av{ width:21px; height:21px; min-width:21px; border-radius:50%; display:flex;
+            align-items:center; justify-content:center; font-size:8.5px; font-weight:650; }
+        .po-carga{ font-size:9.5px; opacity:.7; font-family:'IBM Plex Mono',monospace; }
+        .fi-pe{ display:flex; gap:8px; margin-top:11px; align-items:center; flex-wrap:wrap; }
+        .fi-dica{ font-size:11px; color:var(--tinta-3); flex:1; min-width:120px; }
         @media(max-width:760px){
-            .fila-faixa{ padding:11px 16px; }
             .fila-item{ flex-direction:column; align-items:stretch; }
             .fi-dir{ justify-content:flex-end; }
         }
@@ -848,13 +877,12 @@
         <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
 
-    <div class="fila-faixa" id="filaFaixa" style="display:none"></div>
-
     <div class="cmd">
         <span class="cmd-titulo" id="tituloWorkspace">Carregando...</span>
         <div class="cmd-sep" id="sepSub" style="display:none"></div>
         <div class="segm" id="abasSub" role="tablist" style="display:none"></div>
         <span class="cmd-cont" id="contadorAbertos">0 em aberto</span>
+        <button class="pilula-fila" id="pilulaFila" style="display:none" onclick="abrirFila()"></button>
         <div class="cmd-dir">
             <div class="visao" role="tablist" aria-label="Modo de exibição">
                 <button class="visao-btn on" id="tab-kanban" role="tab" aria-selected="true"
@@ -1707,29 +1735,34 @@
         async function carregarFila(){
             try{
                 const r = await fetch('/api/quadros/fila?quadro=' + encodeURIComponent(QUADRO_ATUAL));
-                if(!r.ok){ document.getElementById('filaFaixa').style.display = 'none'; return; }
+                if(!r.ok){ filaEspera = []; desenharFaixaFila(); return; }
                 const d = await r.json();
                 filaEspera = d.projetos || [];
                 filaPessoas = d.pessoas || [];
                 desenharFaixaFila();
             }catch(e){
-                document.getElementById('filaFaixa').style.display = 'none';
+                // Fila é complemento: falha aqui não pode derrubar o quadro.
+                filaEspera = [];
+                desenharFaixaFila();
             }
         }
 
         function desenharFaixaFila(){
-            const f = document.getElementById('filaFaixa');
+            const f = document.getElementById('pilulaFila');
+            if(!f) return;
             if(!filaEspera.length){ f.style.display = 'none'; return; }
             const n = filaEspera.length;
             const antigo = filaEspera.reduce((m, p) => Math.max(m, diasDe(p.criado_em)), 0);
-            f.style.display = 'flex';
-            f.innerHTML = '<span class="ff-ico"><span class="material-symbols-rounded">person_off</span></span>'
-                + '<span class="ff-txt"><b>' + n + (n === 1 ? ' card espera' : ' cards esperam')
-                + ' responsável</b>'
-                + (antigo >= 2 ? ' · o mais antigo há ' + antigo + ' dias' : '')
-                + '. Enquanto ninguém assume, o trabalho não começa.</span>'
-                + '<span class="ff-dir"><button class="btn-ambar" onclick="abrirFila()">'
-                + '<span class="material-symbols-rounded">how_to_reg</span>Atribuir agora</button></span>';
+            // Vermelho só depois de dois dias: quando tudo é urgente,
+            // nada é.
+            f.className = 'pilula-fila' + (antigo >= 2 ? ' velha' : '');
+            f.style.display = 'inline-flex';
+            f.title = n === 1 ? 'Um card espera responsável'
+                              : n + ' cards esperam responsável';
+            f.innerHTML = '<span class="material-symbols-rounded">how_to_reg</span>Atribuir'
+                + '<span class="pf-n">' + n + '</span>'
+                + (antigo >= 2 ? '<span style="font-weight:500;opacity:.85">há ' + antigo
+                    + ' dias</span>' : '');
         }
 
         function diasDe(iso){
@@ -1739,12 +1772,19 @@
             return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
         }
 
-        function abrirFila(){
+        function abrirFila(focoId){
+            if(!filaEspera.length) return;
             filaEscolha = {};
+            // Clicando no card, ele vem primeiro: a pessoa clicou
+            // naquele, não na lista.
+            if(focoId){
+                const alvo = filaEspera.filter(p => String(p.id) === String(focoId));
+                filaEspera = alvo.concat(filaEspera.filter(p => String(p.id) !== String(focoId)));
+            }
             document.getElementById('mfLista').innerHTML = filaEspera.map(itemFila).join('');
             document.getElementById('mfTitulo').innerText = filaEspera.length
                 + (filaEspera.length === 1 ? ' card esperando' : ' cards esperando');
-            document.getElementById('modalFila').classList.add('show');
+            document.getElementById('modalFila').style.display = 'flex';
         }
 
         function itemFila(p){
@@ -1766,26 +1806,68 @@
                     + 'Configurar quadro</a></div></div>';
             }
 
-            return '<div class="fila-item"><div class="fi-id">'
+            const escolhido = filaEscolha[p.id];
+            // A carga vem dos cards em aberto do quadro. É o dado que
+            // decide, e um select o esconderia.
+            const pessoas = filaPessoas.map(x => {
+                const c = cargaDe(x.nome);
+                const cor = corDe(x.nome);
+                return '<button class="pes-op' + (escolhido === x.nome ? ' on' : '') + '"'
+                    + ' onclick="escolherFila(\'' + escAttr(p.id) + '\',\'' + escAttr(x.nome) + '\')">'
+                    + '<span class="po-av" style="background:' + cor[0] + ';color:' + cor[1] + '">'
+                    + iniciaisDe(x.nome) + '</span>'
+                    + escH(x.nome.split(' ')[0])
+                    + '<span class="po-carga">' + c + '</span></button>';
+            }).join('');
+
+            const menor = filaPessoas.reduce((a, b) =>
+                cargaDe(b.nome) < cargaDe(a.nome) ? b : a, filaPessoas[0]);
+
+            return '<div class="fila-item" style="flex-direction:column;align-items:stretch">'
+                + '<div class="fi-id">'
                 + '<div class="fi-emp">' + escH(p.empresa || 'sem cliente') + '</div>'
                 + '<div class="fi-nome">' + escH(p.nome_projeto) + '</div>'
                 + '<div class="fi-meta">' + meta.join('') + '</div></div>'
-                + '<div class="fi-dir">'
-                + '<select class="fi-sel" onchange="escolherFila(\'' + escAttr(p.id) + '\', this.value)">'
-                + '<option value="">Escolher pessoa</option>'
-                + filaPessoas.map(x => '<option value="' + escAttr(x.nome) + '">' + escH(x.nome) + '</option>').join('')
-                + '</select>'
-                + '<button class="btn btn-acao" onclick="atribuirDaFila(\'' + escAttr(p.id) + '\', false)">'
-                + '<span class="material-symbols-rounded">check</span>Atribuir</button>'
-                + (p.lote_total > 1
-                    ? '<button class="btn btn-borda" title="Atribuir os ' + p.lote_total
-                      + ' cards do contrato à mesma pessoa" onclick="atribuirDaFila(\''
-                      + escAttr(p.id) + '\', true)">Todos os ' + p.lote_total + '</button>'
-                    : '')
-                + '</div></div>';
+                + '<div class="fi-pes">' + pessoas + '</div>'
+                + (escolhido ? '<div class="fi-pe">'
+                    + '<span class="fi-dica">' + (escolhido === menor.nome
+                        ? escH(menor.nome.split(' ')[0]) + ' tem menos cards em aberto.'
+                        : 'A pessoa é avisada na hora.') + '</span>'
+                    + (p.lote_total > 1
+                        ? '<button class="btn btn-borda btn-mini" onclick="atribuirDaFila(\''
+                          + escAttr(p.id) + '\', true)">Os ' + p.lote_total + ' do contrato</button>'
+                        : '')
+                    + '<button class="btn btn-acao btn-mini" onclick="atribuirDaFila(\''
+                    + escAttr(p.id) + '\', false)">'
+                    + '<span class="material-symbols-rounded">check</span>Atribuir</button>'
+                    + '</div>' : '')
+                + '</div>';
         }
 
-        function escolherFila(id, nome){ filaEscolha[id] = nome; }
+        /* Cards em aberto de cada pessoa neste quadro. */
+        function cargaDe(nome){
+            const ativo = p => p.status !== 'Finalizado' && p.status !== 'Cancelado';
+            return projetosGlobais.filter(p =>
+                cfg.areasPermitidas.includes(p.area) && ativo(p) && p.responsavel === nome).length;
+        }
+
+        function iniciaisDe(n){
+            return (n||'?').trim().split(/\s+/).map(x => x.charAt(0)).slice(0,2).join('').toUpperCase();
+        }
+
+        const PALETA_FILA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
+            ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
+        function corDe(n){
+            let h = 0;
+            for(let i = 0; i < (n||'').length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
+            return PALETA_FILA[Math.abs(h) % PALETA_FILA.length];
+        }
+
+        function escolherFila(id, nome){
+            // Clicar de novo na mesma pessoa desmarca.
+            filaEscolha[id] = filaEscolha[id] === nome ? null : nome;
+            document.getElementById('mfLista').innerHTML = filaEspera.map(itemFila).join('');
+        }
 
         async function atribuirDaFila(id, lote){
             const nome = filaEscolha[id];
@@ -1801,7 +1883,7 @@
                     ? d.total + ' cards atribuídos a ' + nome
                     : 'Card atribuído a ' + nome, 'success');
                 await carregarFila();
-                if(!filaEspera.length) document.getElementById('modalFila').classList.remove('show');
+                if(!filaEspera.length) fecharModal('modalFila');
                 else abrirFila();
                 carregarProjetos();
             }catch(e){ showToast('Sem conexão com o servidor.', 'error'); }
@@ -2477,7 +2559,7 @@
                      </button>`;
 
                 const cardHTML = `
-                <div class="card ${est.classe}" id="${p.id}" draggable="true"
+                <div class="card ${est.classe}${p.aguardando_responsavel ? ' card-sem-dono' : ''}" id="${p.id}" draggable="true"
                      ondragstart="arrastarCard(event)" ondragend="finalizarArrasto(event)"
                      onclick="abrirDetalhes('${escAttr(p.id)}', event)">
                     <button class="btn-mover" title="Mover para outra fase" aria-label="Mover ${escAttr(p.nome_projeto)}"
@@ -2490,14 +2572,20 @@
                         <span class="c-alerta">${alerta}</span>
                     </div>
                     <div class="c-nome">${escH(p.nome_projeto)}</div>
-                    <div class="c-rodape">
+                    ${p.aguardando_responsavel ? `<div class="c-rodape">
+                        <button class="btn-escolher" onclick="event.stopPropagation();abrirFila('${escAttr(p.id)}')">
+                            <span class="material-symbols-rounded">person_add</span>${
+                                filaPessoas.length ? 'Escolher quem executa' : 'Sem responsável'}
+                        </button>
+                        ${blocoTempo}
+                    </div>` : `<div class="c-rodape">
                         <div class="c-pessoa">
                             <span class="av" style="background:${avBg}; color:${avFg};">${iniciais}</span>
                             <span class="c-resp">${escH(p.responsavel)}</span>
                         </div>
                         ${blocoTempo}
                         ${botaoPlay}
-                    </div>
+                    </div>`}
                     ${blocoAcao}
                     ${blocoTrilho}
                 </div>`;
