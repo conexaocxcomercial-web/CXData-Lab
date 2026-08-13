@@ -2776,7 +2776,19 @@ def disparar(evento, dados):
              .eq("evento", evento).eq("ativo", True).order("ordem").execute())
         regras = r.data or []
     except Exception as e:
-        print("Aviso: fluxo_regras indisponivel:", e)
+        print(f"ERRO: nao foi possivel ler fluxo_regras para '{evento}':", e)
+        _registrar_execucao(None, evento, dados, None,
+                            f"fluxo_regras indisponivel: {str(e)[:300]}")
+        return resultados
+
+    # Zero regras não é normal quando o evento existe no desenho do fluxo.
+    # Registrar aqui evita o ponto cego: sem isso, um contrato fechado
+    # que não abre quadro nenhum não deixa rastro em lugar algum.
+    if not regras:
+        print(f"AVISO: nenhuma regra ativa para o evento '{evento}'. "
+              f"Confira se fluxo.sql rodou e se o RLS libera leitura.")
+        _registrar_execucao(None, evento, dados, None,
+                            "nenhuma regra ativa encontrada para este evento")
         return resultados
 
     for regra in regras:
@@ -2798,9 +2810,12 @@ def disparar(evento, dados):
 
 
 def _registrar_execucao(regra, evento, dados, resultado, erro):
+    """Guarda o que o motor tentou. `regra` pode vir None quando a
+    falha acontece antes de haver regra: é justamente esse o caso que
+    não deixava rastro nenhum."""
     try:
         supabase.table("fluxo_execucoes").insert({
-            "regra_id": regra.get("id"),
+            "regra_id": (regra or {}).get("id"),
             "evento": evento,
             "gatilho_id": str(dados.get("lead_id") or dados.get("projeto_id") or ''),
             "resultado": resultado,
