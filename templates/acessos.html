@@ -526,7 +526,8 @@
             busca: '', fNivel: '', fSit: '',
             aba: 'pessoas', aberta: null, salvo: null,
             carregando: true, erro: null, semNiveis: false,
-            quadros: [], pessoasQuadro: [], qEdit: null, erroQuadros: null
+            quadros: [], pessoasQuadro: [], qEdit: null, erroQuadros: null,
+            carregandoQuadros: false
         };
 
         /* ---------- utilidades ---------- */
@@ -1198,6 +1199,8 @@
         };
 
         function carregarQuadros(){
+            st.carregandoQuadros = true;
+            desenharQuadros();
             return fetch('/api/quadros/config').then(function(r){
                 if(!r.ok) return motivo(r, 'Não foi possível carregar os quadros.')
                     .then(function(m){ st.erroQuadros = m; });
@@ -1208,12 +1211,17 @@
                 });
             })['catch'](function(){
                 st.erroQuadros = 'Sem conexão com o servidor.';
-            }).then(desenharQuadros);
+            }).then(function(){
+                st.carregandoQuadros = false;
+                desenharQuadros();
+            });
         }
 
         function desenharQuadros(){
             var alvo = el('abaQuadros');
             el('nQuadros').innerText = st.quadros.length || '';
+
+            if(st.carregandoQuadros){ alvo.innerHTML = esqueletos(6); return; }
 
             if(st.erroQuadros){
                 alvo.innerHTML = '<div class="vazio">'
@@ -1224,7 +1232,22 @@
                     + '<span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>';
                 return;
             }
-            if(!st.quadros.length){ alvo.innerHTML = esqueletos(6); return; }
+            // Lista vazia com a rota respondendo 200 significa que o
+            // servidor não enxergou as tabelas. Esqueleto eterno aqui
+            // deixa a tela em branco sem dizer por quê.
+            if(!st.quadros.length){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">dashboard</span>'
+                    + '<h3>Nenhum quadro chegou do servidor</h3>'
+                    + '<p>As tabelas de configuração podem não existir ainda, ou o Row Level '
+                    + 'Security está bloqueando a leitura pela aplicação. Rode '
+                    + '<code>responsabilidades.sql</code> e, se o problema seguir, '
+                    + '<code>rls-acessos.sql</code>.</p>'
+                    + '<button class="btn btn-acao" style="display:inline-flex" '
+                    + 'onclick="acessos.recarregarQuadros()">'
+                    + '<span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>';
+                return;
+            }
 
             var esperando = st.quadros.reduce(function(s,q){ return s + (q.esperando||0); }, 0);
             var semConfig = st.quadros.filter(function(q){ return !configurado(q); }).length;
