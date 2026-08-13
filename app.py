@@ -2935,6 +2935,91 @@ def _inserir_projeto(novo):
         return supabase.table("projetos").insert(reduzido).execute()
 
 
+MODOS_QUADRO = ('direto', 'fila', 'rodizio')
+
+
+def config_do_quadro(quadro):
+    """Como o quadro distribui os cards que chegam.
+
+    Sem registro, responde 'fila': é o comportamento atual, então
+    quadro não configurado continua funcionando como antes.
+    """
+    try:
+        r = (supabase.table("quadro_config").select("modo")
+             .eq("quadro", quadro).limit(1).execute())
+        if r.data and r.data[0].get("modo") in MODOS_QUADRO:
+            return r.data[0]["modo"]
+    except Exception as e:
+        print("Aviso: quadro_config indisponivel:", e)
+    return 'fila'
+
+
+def executores_do_quadro(quadro):
+    """Quem pode receber card deste quadro, com nome resolvido."""
+    try:
+        r = (supabase.table("quadro_executores").select("usuario_id")
+             .eq("quadro", quadro).execute())
+        ids = [x["usuario_id"] for x in (r.data or []) if x.get("usuario_id")]
+        if not ids:
+            return []
+        u = (supabase.table("usuarios").select("id, nome, ativo")
+             .in_("id", ids).execute())
+        return [x for x in (u.data or []) if x.get("ativo") is not False]
+    except Exception as e:
+        print("Aviso: executores_do_quadro:", e)
+        return []
+
+
+def escolher_por_rodizio(quadro):
+    """Quem tem menos cards em aberto neste quadro.
+
+    Empate resolve pelo primeiro da lista, que é estável: o
+    critério não pode variar entre duas chamadas seguidas.
+    """
+    pessoas = executores_do_quadro(quadro)
+    if not pessoas:
+        return None
+    area = QUADRO_AREA.get(quadro)
+    carga = {p["nome"]: 0 for p in pessoas}
+    try:
+        r = (supabase.table("projetos").select("responsavel")
+             .eq("area", area).is_("excluido_em", "null").execute())
+        for p in (r.data or []):
+            nome = p.get("responsavel")
+            if nome in carga:
+                carga[nome] += 1
+    except Exception as e:
+        print("Aviso: carga para rodizio:", e)
+    return min(pessoas, key=lambda p: carga.get(p["nome"], 0))
+
+
+def definir_dono(quadro):
+    """Quem recebe o card novo, conforme o modo do quadro.
+
+    Devolve (pessoa, aguardando). `aguardando` True significa que
+    o card entra na fila de atribuição.
+    """
+    modo = config_do_quadro(quadro)
+    if modo == 'direto':
+        # Em Direto, o executor único é quem recebe. Se houver mais
+        # de um cadastrado, o primeiro responde: a tela impede esse
+        # estado, mas o backend não pode quebrar por causa dele.
+        pessoas = executores_do_quadro(quadro)
+        if pessoas:
+            return pessoas[0], False
+        # Sem executor, o direcionador assume em vez de virar órfão.
+        resp = responsavel_do_quadro(quadro, 'direciona')
+        return resp, resp is None
+    if modo == 'rodizio':
+        p = escolher_por_rodizio(quadro)
+        if p:
+            return p, False
+        resp = responsavel_do_quadro(quadro, 'direciona')
+        return resp, resp is None
+    # fila: o card espera alguém escolher
+    return None, True
+
+
 def _acao_abrir_quadros(acao, dados):
     """Cria os cards nos quadros escolhidos na janela de fechamento.
 
@@ -2960,7 +3045,10 @@ def _acao_abrir_quadros(acao, dados):
         if quadro == 'financeiro':
             criados.append(_acao_criar_cobranca({"etapa": "fechamento"}, dados))
             continue
-        resp = responsavel_do_quadro(quadro, 'direciona')
+        # Quem fica com o card depende do modo do quadro: em Direto e
+        # Rodízio ele já nasce com dono; em Fila, espera atribuição.
+        dono, aguardando = definir_dono(quadro)
+        direciona = responsavel_do_quadro(quadro, 'direciona')
         lote = str(uuid.uuid4()) if qtd > 1 else None
         for i in range(qtd):
             nome = dados.get("projeto_nome") or dados.get("cliente_nome") or "Novo projeto"
@@ -2978,12 +3066,20 @@ def _acao_abrir_quadros(acao, dados):
                 "lote_pos": (i + 1) if qtd > 1 else None,
                 "lote_total": qtd if qtd > 1 else None,
                 "valor": dados.get("valor") if i == 0 else None,
-                "aguardando_responsavel": True,
+                "responsavel": dono.get("nome") if dono else None,
+                "aguardando_responsavel": aguardando,
                 "data_status_atual": datetime.now(timezone.utc).isoformat(),
             }
             r = _inserir_projeto(novo)
-            criados.append({"projeto_id": (r.data or [{}])[0].get("id"),
-                            "quadro": quadro, "avisar": resp.get("nome") if resp else None})
+            criados.append({
+                "projeto_id": (r.data or [{}])[0].get("id"),
+                "quadro": quadro,
+                "responsavel": dono.get("nome") if dono else None,
+                # Em Direto e Rodízio avisa quem executa; em Fila, quem
+                # direciona. Card que nasce sem ninguém saber é o
+                # problema que estamos resolvendo.
+                "avisar": (dono or direciona or {}).get("nome"),
+            })
     return {"criados": len(criados), "itens": criados}
 
 
@@ -3053,6 +3149,246 @@ def fechar_lead(lead_id):
     except Exception as e:
         print("Erro em fechar_lead:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao fechar o contrato.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/quadros/fila', methods=['GET'])
+def fila_atribuicao():
+    """Cards esperando responsável, com quem pode recebê-los.
+
+    Filtra por quadro quando informado: a fila aparece dentro do
+    quadro, e mostrar card de outra área ali confundiria.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('projeto.atribuir') or session.get('nivel_acesso') in ('admin', 'gestor')):
+        return jsonify({"status": "sucesso", "projetos": [], "pessoas": []}), 200
+    try:
+        quadro = request.args.get('quadro')
+        q = (supabase.table("projetos").select("*")
+             .eq("aguardando_responsavel", True).is_("excluido_em", "null"))
+        if quadro and quadro in QUADRO_AREA:
+            q = q.eq("area", QUADRO_AREA[quadro])
+        r = q.order("criado_em").execute()
+        itens = filtrar_projetos_permitidos(r.data or [])
+
+        pessoas = []
+        if quadro:
+            pessoas = [{"id": str(p["id"]), "nome": p.get("nome")}
+                       for p in executores_do_quadro(quadro)]
+        return jsonify({"status": "sucesso", "projetos": itens,
+                        "pessoas": pessoas, "total": len(itens)}), 200
+    except Exception as e:
+        print("Erro em fila_atribuicao:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a fila.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/quadros/config', methods=['GET'])
+def listar_config_quadros():
+    """Como cada quadro distribui, quem direciona e quem executa."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        modos, resp, execs, carga = {}, {}, {}, {}
+        try:
+            for c in ((supabase.table("quadro_config").select("*").execute()).data or []):
+                modos[c["quadro"]] = c.get("modo") or 'fila'
+        except Exception as e:
+            print("Aviso: quadro_config:", e)
+        try:
+            for r in ((supabase.table("quadro_responsaveis").select("*").execute()).data or []):
+                resp.setdefault(r["quadro"], {})[r["papel"]] = str(r.get("usuario_id") or '')
+        except Exception as e:
+            print("Aviso: quadro_responsaveis:", e)
+        try:
+            for e_ in ((supabase.table("quadro_executores").select("*").execute()).data or []):
+                execs.setdefault(e_["quadro"], []).append(str(e_.get("usuario_id") or ''))
+        except Exception as e:
+            print("Aviso: quadro_executores:", e)
+
+        # Cards em aberto e esperando dono, por área.
+        try:
+            r = (supabase.table("projetos")
+                 .select("area, status, aguardando_responsavel")
+                 .is_("excluido_em", "null").execute())
+            for p in (r.data or []):
+                a = p.get("area")
+                if p.get("status") in ('Finalizado', 'Cancelado'):
+                    continue
+                d_ = carga.setdefault(a, {"abertos": 0, "esperando": 0})
+                d_["abertos"] += 1
+                if p.get("aguardando_responsavel"):
+                    d_["esperando"] += 1
+        except Exception as e:
+            print("Aviso: carga dos quadros:", e)
+
+        pessoas = (supabase.table("usuarios")
+                   .select("id, nome, quadros, ativo, tipo_usuario").execute()).data or []
+        internos = [p for p in pessoas
+                    if p.get("ativo") is not False
+                    and (p.get("tipo_usuario") or 'interno') == 'interno']
+
+        saida = []
+        for chave, area, produto, icone, subs in ARVORE_QUADROS:
+            c = carga.get(area, {})
+            # Só quem tem o quadro liberado pode receber card dele:
+            # atribuir a quem não consegue abrir o quadro é confusão
+            # silenciosa.
+            elegiveis = [{"id": str(p["id"]), "nome": p.get("nome")}
+                         for p in internos if chave in (p.get("quadros") or [])]
+            saida.append({
+                "chave": chave, "nome": area, "produto": produto, "icone": icone,
+                "modo": modos.get(chave, 'fila'),
+                "direciona": resp.get(chave, {}).get("direciona") or None,
+                "cobranca": resp.get(chave, {}).get("cobranca") or None,
+                "executores": execs.get(chave, []),
+                "elegiveis": elegiveis,
+                "abertos": c.get("abertos", 0),
+                "esperando": c.get("esperando", 0),
+            })
+        return jsonify({"status": "sucesso", "quadros": saida,
+                        "pessoas": [{"id": str(p["id"]), "nome": p.get("nome")}
+                                    for p in internos]}), 200
+    except Exception as e:
+        print("Erro em listar_config_quadros:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/quadros/config/<quadro>', methods=['PUT'])
+def salvar_config_quadro(quadro):
+    """Grava modo, direcionador, cobrança e executores de um quadro."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    if quadro not in QUADRO_AREA:
+        return jsonify({"status": "erro", "mensagem": "Quadro inválido."}), 400
+    try:
+        d = request.json or {}
+        modo = d.get("modo")
+        if modo not in MODOS_QUADRO:
+            return jsonify({"status": "erro", "mensagem": "Modo inválido."}), 400
+
+        executores = [str(x) for x in (d.get("executores") or []) if x]
+        # Direto com vários executores é ambíguo: quem receberia?
+        if modo == 'direto' and len(executores) > 1:
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Direto, escolha uma pessoa só."}), 400
+        if modo == 'direto' and not executores:
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Direto, escolha quem recebe os cards."}), 400
+        if modo == 'fila' and not d.get("direciona"):
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Fila, escolha quem direciona."}), 400
+        if modo == 'rodizio' and len(executores) < 2:
+            return jsonify({"status": "erro",
+                            "mensagem": "O rodízio precisa de pelo menos duas pessoas."}), 400
+
+        supabase.table("quadro_config").upsert({
+            "quadro": quadro, "modo": modo,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+            "atualizado_por": session.get('usuario_nome'),
+        }).execute()
+
+        for papel in ("direciona", "cobranca"):
+            if papel not in d:
+                continue
+            valor = d.get(papel) or None
+            supabase.table("quadro_responsaveis").upsert({
+                "quadro": quadro, "papel": papel, "usuario_id": valor,
+                "atualizado_em": datetime.now(timezone.utc).isoformat(),
+            }, on_conflict="quadro,papel").execute()
+
+        if "executores" in d:
+            supabase.table("quadro_executores").delete().eq("quadro", quadro).execute()
+            if executores:
+                supabase.table("quadro_executores").insert(
+                    [{"quadro": quadro, "usuario_id": u} for u in executores]).execute()
+
+        registrar_auditoria('quadro_configurado', 'quadro', quadro,
+                            {"modo": modo, "executores": len(executores)})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em salvar_config_quadro:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/modelos', methods=['GET'])
+def listar_modelos():
+    """Modelos de acesso e quantas pessoas usam cada um."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        modelos = (supabase.table("modelos_acesso").select("*")
+                   .order("nome").execute()).data or []
+        pessoas = (supabase.table("usuarios")
+                   .select("id, modelo_id, papel_id, quadros, areas").execute()).data or []
+        for m in modelos:
+            usam = [p for p in pessoas if str(p.get("modelo_id") or '') == str(m["id"])]
+            m["pessoas"] = len(usam)
+            # Divergência: quem veio do modelo mas já não bate com ele.
+            # Distinguir exceção deliberada de configuração esquecida.
+            divergentes = 0
+            for p in usam:
+                if (str(p.get("papel_id") or '') != str(m.get("papel_id") or '')
+                        or sorted(p.get("quadros") or []) != sorted(m.get("quadros") or [])
+                        or sorted(p.get("areas") or []) != sorted(m.get("areas") or [])):
+                    divergentes += 1
+            m["divergentes"] = divergentes
+        return jsonify({"status": "sucesso", "modelos": modelos}), 200
+    except Exception as e:
+        print("Erro em listar_modelos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar modelos.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/modelos/<modelo_id>/aplicar', methods=['POST'])
+def aplicar_modelo(modelo_id):
+    """Aplica um modelo a uma ou mais pessoas.
+
+    Substitui nível, quadros e áreas. Não mexe em ajustes
+    individuais: eles são exceções deliberadas.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        alvos = (request.json or {}).get("usuarios") or []
+        if not alvos:
+            return jsonify({"status": "erro", "mensagem": "Escolha ao menos uma pessoa."}), 400
+        r = (supabase.table("modelos_acesso").select("*")
+             .eq("id", modelo_id).limit(1).execute())
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Modelo não encontrado."}), 404
+        m = r.data[0]
+
+        upd = {
+            "papel_id": m.get("papel_id"),
+            "quadros": m.get("quadros") or [],
+            "areas": m.get("areas") or [],
+            "modelo_id": modelo_id,
+        }
+        feitos = 0
+        for uid in alvos:
+            try:
+                supabase.table("usuarios").update(upd).eq("id", uid).execute()
+                feitos += 1
+            except Exception as e:
+                print(f"Erro ao aplicar modelo em {uid}:", e)
+        registrar_auditoria('modelo_aplicado', 'modelo', modelo_id,
+                            {"nome": m.get("nome"), "pessoas": feitos})
+        return jsonify({"status": "sucesso", "feitos": feitos}), 200
+    except Exception as e:
+        print("Erro em aplicar_modelo:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao aplicar.",
                         "detalhe": str(e)[:300]}), 500
 
 
