@@ -323,7 +323,41 @@
             .modal-fundo{ padding:0; align-items:flex-end; }
             .modal{ max-width:none; border-radius:18px 18px 0 0; }
         }
-    </style>
+
+        .vazio code{ font-family:'IBM Plex Mono',monospace; font-size:12px;
+            background:var(--papel-2); padding:1px 6px; border-radius:5px; color:var(--tinta-2); }
+    
+        /* ===== QUADROS ===== */
+        .q-nome{ font-size:13px; font-weight:600; display:flex; align-items:center; gap:9px; min-width:0; }
+        .q-ico{ width:28px; height:28px; min-width:28px; border-radius:8px; display:flex;
+            align-items:center; justify-content:center; background:var(--papel-2); }
+        .q-ico .material-symbols-rounded{ font-size:16px; color:var(--tinta-3); }
+        .q-sub{ font-size:11px; color:var(--tinta-3); margin-top:1px; font-weight:400; display:block; }
+        .modo{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600;
+            padding:5px 11px; border-radius:99px; white-space:nowrap; }
+        .modo .material-symbols-rounded{ font-size:14px; }
+        .m-direto{ background:var(--ok-fraco); color:var(--ok); }
+        .m-fila{ background:var(--acao-fraco); color:var(--acao); }
+        .m-rodizio{ background:var(--azul-fraco); color:var(--azul); }
+        .m-vazio{ background:var(--at-fundo); color:var(--atencao); }
+        .avs{ display:flex; align-items:center; gap:-4px; }
+        .avs .av{ width:26px; height:26px; min-width:26px; font-size:9.5px;
+            box-shadow:0 0 0 2px var(--papel); margin-right:-6px; }
+        .mais{ font-size:11px; font-weight:600; color:var(--tinta-3); background:var(--papel-2);
+            padding:3px 8px; border-radius:99px; margin-left:11px; white-space:nowrap; }
+        .p-vazio{ font-size:12.5px; color:var(--atencao); font-style:italic; }
+        .tr-q{ display:grid; grid-template-columns:1.6fr 1.5fr 1.7fr 40px; gap:14px;
+            padding:0 16px; align-items:center; min-height:62px;
+            border-bottom:1px solid var(--papel-2); cursor:pointer; width:100%;
+            text-align:left; transition:background .12s; }
+        .tr-q:last-child{ border-bottom:none; }
+        .tr-q:hover{ background:var(--papel-2); }
+        .tr-q.alerta{ background:#FFFCF5; }
+        @media(max-width:900px){
+            .tr-q{ grid-template-columns:1fr auto; gap:9px; padding:13px 15px; }
+            .tr-q .cel-exec, .tr-q .tr-seta{ display:none; }
+        }
+</style>
 </head>
 <body>
     <div class="top-bar">
@@ -340,6 +374,8 @@
                     onclick="acessos.aba('pessoas')">Pessoas<span class="segm-n" id="nPessoas"></span></button>
             <button class="segm-btn" id="tab-niveis" role="tab" aria-selected="false"
                     onclick="acessos.aba('niveis')">Níveis</button>
+            <button class="segm-btn" id="tab-quadros" role="tab" aria-selected="false"
+                    onclick="acessos.aba('quadros')">Quadros<span class="segm-n" id="nQuadros"></span></button>
             <button class="segm-btn" id="tab-registro" role="tab" aria-selected="false"
                     onclick="acessos.aba('registro')">Registro</button>
         </div>
@@ -349,10 +385,11 @@
     <div class="wrap">
         <div class="painel-aba on" id="abaPessoas"></div>
         <div class="painel-aba" id="abaNiveis"></div>
+        <div class="painel-aba" id="abaQuadros"></div>
         <div class="painel-aba" id="abaRegistro"></div>
     </div>
 
-    <div class="painel-fundo" id="painelFundo" onclick="acessos.fecharPainel()"></div>
+    <div class="painel-fundo" id="painelFundo" onclick="acessos.fecharQualquer()"></div>
     <aside class="painel" id="painelPessoa" role="dialog" aria-modal="true" aria-labelledby="pnNome">
         <div class="pn-head">
             <span class="pn-av" id="pnAv"></span>
@@ -369,6 +406,24 @@
             <button class="btn btn-borda" id="pnEditar">
                 <span class="material-symbols-rounded">edit</span>Dados e senha</button>
             <button class="btn btn-perigo" id="pnAtivo"></button>
+        </div>
+    </aside>
+
+    <aside class="painel" id="painelQuadro" role="dialog" aria-modal="true" aria-labelledby="pqNome">
+        <div class="pn-head">
+            <span class="q-ico" id="pqIco"><span class="material-symbols-rounded">dashboard</span></span>
+            <div class="pn-id">
+                <div class="pn-nome" id="pqNome">—</div>
+                <div class="pn-mail" id="pqSub"></div>
+            </div>
+            <button class="pn-x" onclick="acessos.fecharQuadro()" aria-label="Fechar">
+                <span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div class="pn-corpo" id="pqCorpo"></div>
+        <div class="pn-pe">
+            <span class="pn-status" id="pqStatus">Vale para os próximos cards.</span>
+            <button class="btn btn-acao" id="pqSalvar" onclick="acessos.salvarQuadro()">
+                <span class="material-symbols-rounded">check</span>Salvar</button>
         </div>
     </aside>
 
@@ -470,7 +525,8 @@
             pessoas: [], niveis: [], equipes: [], quadros: [], areas: [], catalogo: [],
             busca: '', fNivel: '', fSit: '',
             aba: 'pessoas', aberta: null, salvo: null,
-            carregando: true, erro: null, semNiveis: false
+            carregando: true, erro: null, semNiveis: false,
+            quadros: [], pessoasQuadro: [], qEdit: null, erroQuadros: null
         };
 
         /* ---------- utilidades ---------- */
@@ -596,13 +652,14 @@
         /* ==================== DESENHO ==================== */
         function trocarAba(a){
             st.aba = a;
-            ['pessoas','niveis','registro'].forEach(function(x){
+            ['pessoas','niveis','quadros','registro'].forEach(function(x){
                 var t = el('tab-' + x);
                 if(t){ t.classList.toggle('on', x === a); t.setAttribute('aria-selected', x === a); }
                 el('aba' + x.charAt(0).toUpperCase() + x.slice(1)).classList.toggle('on', x === a);
             });
             desenhar();
             if(a === 'registro') carregarRegistro();
+            if(a === 'quadros' && !st.quadros.length) carregarQuadros();
         }
 
         function desenhar(){
@@ -718,7 +775,8 @@
             if(st.semNiveis){
                 h += faixa('critica','error','Os níveis não carregaram',
                     'A lista abaixo continua funcionando, mas o nome de cada nível não aparece. '
-                    + 'Confira se o SQL de acessos já rodou no banco.');
+                    + 'Se eles existem no banco, costuma ser Row Level Security bloqueando '
+                    + 'a leitura pela aplicação.');
             }
             var semSenha = st.pessoas.filter(function(p){ return p.tem_senha === false; }).length;
             if(semSenha){
@@ -1125,15 +1183,308 @@
             }).then(function(){ b.disabled = false; });
         }
 
+
+        /* ==================== QUADROS ====================
+           Como cada quadro distribui os cards que chegam. Sem isso,
+           o card nasce com "?" no responsável e fica esperando que
+           alguém repare. */
+        var MODOS = {
+            direto:  { nome:'Direto',  ico:'bolt',      cor:'var(--ok)',
+                       desc:'Uma pessoa recebe tudo. Sem espera.' },
+            fila:    { nome:'Fila',    ico:'alt_route', cor:'var(--acao)',
+                       desc:'Alguém escolhe quem executa cada card.' },
+            rodizio: { nome:'Rodízio', ico:'shuffle',   cor:'var(--azul)',
+                       desc:'Vai para quem tem menos cards em aberto.' }
+        };
+
+        function carregarQuadros(){
+            return fetch('/api/quadros/config').then(function(r){
+                if(!r.ok) return motivo(r, 'Não foi possível carregar os quadros.')
+                    .then(function(m){ st.erroQuadros = m; });
+                return r.json().then(function(d){
+                    st.quadros = d.quadros || [];
+                    st.pessoasQuadro = d.pessoas || [];
+                    st.erroQuadros = null;
+                });
+            })['catch'](function(){
+                st.erroQuadros = 'Sem conexão com o servidor.';
+            }).then(desenharQuadros);
+        }
+
+        function desenharQuadros(){
+            var alvo = el('abaQuadros');
+            el('nQuadros').innerText = st.quadros.length || '';
+
+            if(st.erroQuadros){
+                alvo.innerHTML = '<div class="vazio">'
+                    + '<span class="material-symbols-rounded">cloud_off</span>'
+                    + '<h3>Não foi possível carregar</h3><p>' + esc(st.erroQuadros) + '</p>'
+                    + '<button class="btn btn-acao" style="display:inline-flex" '
+                    + 'onclick="acessos.recarregarQuadros()">'
+                    + '<span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>';
+                return;
+            }
+            if(!st.quadros.length){ alvo.innerHTML = esqueletos(6); return; }
+
+            var esperando = st.quadros.reduce(function(s,q){ return s + (q.esperando||0); }, 0);
+            var semConfig = st.quadros.filter(function(q){ return !configurado(q); }).length;
+            var h = '';
+
+            if(esperando){
+                h += faixa('aviso','person_off',
+                    esperando + (esperando === 1 ? ' card esperando responsável'
+                                                 : ' cards esperando responsável'),
+                    'Enquanto ninguém assume, o trabalho não começa.');
+            }
+            if(semConfig){
+                h += faixa('info','tune',
+                    semConfig + (semConfig === 1 ? ' quadro sem configuração'
+                                                 : ' quadros sem configuração'),
+                    'Card que cai num quadro sem ninguém definido fica órfão. '
+                    + 'É o único estado que produz o "?" no responsável.');
+            }
+
+            h += '<div class="tabela">'
+              + '<div class="th" style="grid-template-columns:1.6fr 1.5fr 1.7fr 40px">'
+              + '<div>Quadro</div><div>Direcionamento</div><div>Quem executa</div><div></div></div>'
+              + st.quadros.map(linhaQuadro).join('') + '</div>';
+            alvo.innerHTML = h;
+        }
+
+        function configurado(q){
+            if(q.modo === 'direto')  return (q.executores || []).length === 1;
+            if(q.modo === 'rodizio') return (q.executores || []).length >= 2;
+            return !!q.direciona;
+        }
+
+        function nomeDe(id, quadro){
+            var i;
+            for(i = 0; i < st.pessoasQuadro.length; i++)
+                if(String(st.pessoasQuadro[i].id) === String(id)) return st.pessoasQuadro[i].nome;
+            // Pessoa desativada some da lista geral mas continua como
+            // executora. Sem este passo ela vira "ninguém definido", e
+            // o quadro pareceria configurado quando não está.
+            if(quadro){
+                var e = quadro.elegiveis || [];
+                for(i = 0; i < e.length; i++)
+                    if(String(e[i].id) === String(id)) return e[i].nome;
+            }
+            return null;
+        }
+
+        function linhaQuadro(q){
+            var m = MODOS[q.modo] || MODOS.fila;
+            var ok = configurado(q);
+            var rotulo;
+            if(!ok){
+                rotulo = '<span class="modo m-vazio">'
+                       + '<span class="material-symbols-rounded">warning</span>Sem configuração</span>';
+            } else {
+                rotulo = '<span class="modo m-' + q.modo + '">'
+                       + '<span class="material-symbols-rounded">' + m.ico + '</span>' + m.nome
+                       + (q.modo === 'fila' && q.direciona
+                            ? ' · ' + esc((nomeDe(q.direciona, q) || '').split(' ')[0]) : '')
+                       + '</span>';
+            }
+
+            var execs = (q.executores || []).map(function(id){
+                return nomeDe(id, q);
+            });
+            // Executor que não resolve significa pessoa removida: contar
+            // como pendência em vez de esconder.
+            var perdidos = execs.filter(function(n){ return !n; }).length;
+            execs = execs.filter(Boolean);
+            var quem;
+            if(!execs.length){
+                quem = '<span class="p-vazio">ninguém definido</span>';
+            } else if(execs.length === 1){
+                var c1 = cor(execs[0]);
+                quem = '<span class="pes"><span class="av" style="background:' + c1[0]
+                     + ';color:' + c1[1] + '">' + iniciais(execs[0]) + '</span>'
+                     + '<span class="pes-nome">' + esc(execs[0]) + '</span></span>';
+            } else {
+                quem = '<span class="avs">' + execs.slice(0,3).map(function(n){
+                        var c = cor(n);
+                        return '<span class="av" title="' + escA(n) + '" style="background:' + c[0]
+                             + ';color:' + c[1] + '">' + iniciais(n) + '</span>';
+                    }).join('')
+                     + '<span class="mais">' + execs.length + ' pessoas</span></span>';
+            }
+
+            var sub = [];
+            if(q.abertos) sub.push(q.abertos + (q.abertos === 1 ? ' card em aberto' : ' cards em aberto'));
+            if(q.esperando) sub.push(q.esperando + ' esperando');
+            if(perdidos) sub.push(perdidos + (perdidos === 1 ? ' pessoa removida' : ' pessoas removidas'));
+
+            return '<button class="tr-q' + (!ok && q.esperando ? ' alerta' : '') + '"'
+                + ' onclick="acessos.abrirQuadro(\'' + escA(q.chave) + '\')">'
+                + '<span class="q-nome"><span class="q-ico">'
+                + '<span class="material-symbols-rounded">' + esc(q.icone) + '</span></span>'
+                + '<span style="min-width:0">' + esc(q.nome)
+                + '<span class="q-sub">' + (q.produto ? 'produto' : 'interno')
+                + (sub.length ? ' · ' + sub.join(' · ') : '') + '</span></span></span>'
+                + '<span>' + rotulo + '</span>'
+                + '<span class="cel-exec">' + quem + '</span>'
+                + '<span class="tr-seta"><span class="material-symbols-rounded">chevron_right</span></span>'
+                + '</button>';
+        }
+
+        /* ---------- painel de configuração ---------- */
+        function abrirQuadro(chave){
+            var q = null, i;
+            for(i = 0; i < st.quadros.length; i++)
+                if(st.quadros[i].chave === chave) q = st.quadros[i];
+            if(!q) return;
+            // Cópia de trabalho: cancelar não pode deixar rastro na tela.
+            st.qEdit = {
+                chave: q.chave, modo: q.modo, direciona: q.direciona,
+                cobranca: q.cobranca, executores: (q.executores || []).slice(),
+                elegiveis: q.elegiveis || [], nome: q.nome, icone: q.icone,
+                abertos: q.abertos, esperando: q.esperando
+            };
+            el('pqIco').innerHTML = '<span class="material-symbols-rounded">' + esc(q.icone) + '</span>';
+            el('pqNome').innerText = q.nome;
+            var s = [];
+            if(q.abertos) s.push(q.abertos + ' em aberto');
+            if(q.esperando) s.push(q.esperando + ' esperando responsável');
+            el('pqSub').innerText = s.join(' · ') || 'nenhum card em aberto';
+            desenharPainelQuadro();
+            el('painelFundo').classList.add('show');
+            el('painelQuadro').classList.add('show');
+        }
+
+        function desenharPainelQuadro(){
+            var q = st.qEdit;
+            var eleg = q.elegiveis;
+            var h = '';
+
+            h += '<div class="bloco"><div class="bl-t">Quando cai um card novo</div>'
+              + '<div class="niveis">'
+              + ['direto','fila','rodizio'].map(function(k){
+                    var m = MODOS[k];
+                    return '<button class="nv' + (q.modo === k ? ' on' : '') + '"'
+                        + ' style="--cor:' + m.cor + '" onclick="acessos.modoQuadro(\'' + k + '\')">'
+                        + '<span class="nv-r"></span><span style="flex:1;min-width:0">'
+                        + '<span class="nv-t"><span class="material-symbols-rounded">' + m.ico
+                        + '</span>' + m.nome + '</span>'
+                        + '<span class="nv-d">' + m.desc + '</span></span></button>';
+                }).join('')
+              + '</div></div>';
+
+            if(!eleg.length){
+                h += '<div class="faixa aviso" style="margin:0">'
+                   + '<span class="material-symbols-rounded">person_off</span>'
+                   + '<div><div class="fx-t">Ninguém tem este quadro liberado</div>'
+                   + '<div class="fx-s">Libere o quadro para alguém na aba Pessoas. '
+                   + 'Só quem enxerga o quadro pode receber card dele.</div></div></div>';
+                el('pqCorpo').innerHTML = h;
+                return;
+            }
+
+            // Em Direto some "quem direciona" e a escolha vira única:
+            // campo que não vale some, em vez de ficar desabilitado.
+            if(q.modo === 'fila'){
+                h += '<div class="bloco"><div class="bl-t">Quem direciona</div>'
+                  + '<div class="campo"><select onchange="acessos.campoQuadro(\'direciona\',this.value)">'
+                  + '<option value="">Escolha uma pessoa</option>'
+                  + eleg.map(function(p){
+                        return '<option value="' + escA(p.id) + '"'
+                            + (String(p.id) === String(q.direciona) ? ' selected' : '') + '>'
+                            + esc(p.nome) + '</option>';
+                    }).join('')
+                  + '</select></div>'
+                  + '<div class="dica' + (q.direciona ? '' : ' alerta') + '">'
+                  + (q.direciona
+                        ? 'Recebe o aviso de card novo e escolhe quem executa.'
+                        : 'Sem direcionador, o card fica órfão. Escolha alguém.')
+                  + '</div></div>';
+            }
+
+            var rotuloExec = q.modo === 'direto' ? 'Quem recebe os cards'
+                           : q.modo === 'rodizio' ? 'Entre quem alternar'
+                           : 'Quem pode executar';
+            h += '<div class="bloco"><div class="bl-t">' + rotuloExec
+              + '<span class="bl-cnt">' + q.executores.length + ' de ' + eleg.length + '</span></div>'
+              + '<div class="chips">'
+              + eleg.map(function(p){
+                    var on = q.executores.indexOf(String(p.id)) >= 0;
+                    return '<button class="chip' + (on ? ' on' : '') + '"'
+                        + ' onclick="acessos.execQuadro(\'' + escA(p.id) + '\')">'
+                        + '<span class="material-symbols-rounded">check</span>'
+                        + esc(p.nome) + '</button>';
+                }).join('')
+              + '</div>' + dicaExec(q) + '</div>';
+
+            h += '<div class="bloco"><div class="bl-t">Cobrança</div>'
+              + '<div class="campo"><select onchange="acessos.campoQuadro(\'cobranca\',this.value)">'
+              + '<option value="">Ninguém definido</option>'
+              + st.pessoasQuadro.map(function(p){
+                    return '<option value="' + escA(p.id) + '"'
+                        + (String(p.id) === String(q.cobranca) ? ' selected' : '') + '>'
+                        + esc(p.nome) + '</option>';
+                }).join('')
+              + '</select></div>'
+              + '<div class="dica">Recebe o card de emissão quando a entrega termina.</div></div>';
+
+            el('pqCorpo').innerHTML = h;
+        }
+
+        function dicaExec(q){
+            var n = q.executores.length;
+            if(q.modo === 'direto'){
+                if(n === 0) return '<div class="dica alerta">Escolha uma pessoa: ela recebe todos os cards deste quadro.</div>';
+                if(n > 1)  return '<div class="dica alerta">No modo Direto, escolha uma pessoa só.</div>';
+                return '<div class="dica">Todo card novo nasce com o nome dela, e ela é avisada na hora.</div>';
+            }
+            if(q.modo === 'rodizio'){
+                if(n < 2) return '<div class="dica alerta">O rodízio precisa de pelo menos duas pessoas.</div>';
+                return '<div class="dica">Cada card vai para quem tiver menos cards em aberto no momento.</div>';
+            }
+            if(!n) return '<div class="dica alerta">Sem ninguém aqui, não há para quem atribuir.</div>';
+            return '<div class="dica">Aparecem como opção na hora de atribuir cada card.</div>';
+        }
+
+        function salvarQuadro(){
+            var q = st.qEdit;
+            var b = el('pqSalvar');
+            b.disabled = true;
+            fetch('/api/quadros/config/' + q.chave, {
+                method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    modo: q.modo, direciona: q.direciona || null,
+                    cobranca: q.cobranca || null, executores: q.executores
+                })
+            }).then(function(r){
+                if(!r.ok) return motivo(r, 'Não foi possível salvar.')
+                    .then(function(m){ throw new Error(m); });
+                toast('Configuração salva. Vale para os próximos cards.', 'success');
+                fecharQuadro();
+                return carregarQuadros();
+            })['catch'](function(e){
+                toast(e.message || 'Sem conexão com o servidor.', 'error');
+            }).then(function(){ b.disabled = false; });
+        }
+
+        function fecharQuadro(){
+            st.qEdit = null;
+            el('painelFundo').classList.remove('show');
+            el('painelQuadro').classList.remove('show');
+        }
+
         /* ==================== NÍVEIS ==================== */
         function desenharNiveis(){
             var alvo = el('abaNiveis');
             if(!st.niveis.length){
                 alvo.innerHTML = '<div class="vazio">'
                     + '<span class="material-symbols-rounded">shield_person</span>'
-                    + '<h3>Nenhum nível cadastrado</h3>'
-                    + '<p>Os cinco níveis são criados pelo SQL de acessos. '
-                    + 'Se esta lista está vazia, o script ainda não rodou no banco.</p></div>';
+                    + '<h3>Nenhum nível chegou do servidor</h3>'
+                    + '<p>Se os níveis existem no banco mas não aparecem aqui, '
+                    + 'normalmente é Row Level Security bloqueando a leitura: '
+                    + 'o editor do Supabase enxerga, a aplicação não. '
+                    + 'Rode <code>rls-acessos.sql</code> ou configure a chave de serviço.</p>'
+                    + '<button class="btn btn-borda" style="display:inline-flex" '
+                    + 'onclick="acessos.recarregar()">'
+                    + '<span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>';
                 return;
             }
             alvo.innerHTML = faixa('info','info','O que cada nível permite',
@@ -1220,6 +1571,7 @@
         document.addEventListener('keydown', function(e){
             if(e.key !== 'Escape') return;
             if(el('modalPessoa').classList.contains('show')) fecharModal();
+            else if(el('painelQuadro').classList.contains('show')) fecharQuadro();
             else if(el('painelPessoa').classList.contains('show')) fecharPainel();
         });
         document.addEventListener('DOMContentLoaded', iniciar);
@@ -1248,6 +1600,31 @@
                 st.busca = '';
                 desenharPessoas();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+            fecharQualquer: function(){
+                if(el('painelQuadro').classList.contains('show')) fecharQuadro();
+                else fecharPainel();
+            },
+            abrirQuadro: abrirQuadro,
+            fecharQuadro: fecharQuadro,
+            salvarQuadro: salvarQuadro,
+            recarregarQuadros: function(){ st.erroQuadros = null; st.quadros = []; carregarQuadros(); },
+            modoQuadro: function(m){
+                st.qEdit.modo = m;
+                // Direto só comporta uma pessoa: manter várias marcadas
+                // deixaria a tela dizendo uma coisa e o servidor outra.
+                if(m === 'direto' && st.qEdit.executores.length > 1)
+                    st.qEdit.executores = st.qEdit.executores.slice(0, 1);
+                desenharPainelQuadro();
+            },
+            campoQuadro: function(k, v){ st.qEdit[k] = v || null; desenharPainelQuadro(); },
+            execQuadro: function(id){
+                var i = st.qEdit.executores.indexOf(String(id));
+                if(i >= 0) st.qEdit.executores.splice(i, 1);
+                // Em Direto só cabe uma pessoa: escolher outra troca.
+                else if(st.qEdit.modo === 'direto') st.qEdit.executores = [String(id)];
+                else st.qEdit.executores.push(String(id));
+                desenharPainelQuadro();
             },
             _st: st
         };
