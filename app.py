@@ -2620,6 +2620,54 @@ def pode_ver_lixeira():
 # dissesse isso.
 CAPS_SO_ADMIN = ('usuario.gerir', 'papel.gerir', 'auditoria.ver', 'lixeira.purgar')
 
+# ============================================================
+# O QUE É BASE E O QUE É DECISÃO
+#
+# Oferecer as 28 capacidades como exceção transformava a tela numa
+# lista onde tudo parecia negociável, inclusive registrar tempo, que
+# é a razão de a plataforma existir.
+#
+# BASE: todo interno tem, sempre. Não aparece como exceção porque
+# não há decisão a tomar.
+#
+# OPCIONAIS: mudam de pessoa para pessoa e valem a pergunta.
+# ============================================================
+CAPS_BASE = (
+    'projeto.ver',        # ver o quadro em que atua
+    'projeto.solicitar',  # pedir card em outro quadro
+    'tempo.registrar',    # lançar o próprio tempo
+    'okr.ver',            # acompanhar os OKRs
+    'feed.publicar',      # postar no mural
+)
+
+# Estas não são "tem ou não tem": são "vê só o seu ou vê o do quadro
+# todo". O alcance é um seletor único que move todas de uma vez, em vez
+# de dez decisões independentes que ninguém quer tomar.
+CAPS_ALCANCE = (
+    'projeto.editar',
+    'tempo.ver',
+    'crm.lead.ver',
+    'crm.painel.ver',
+    'cliente.ver',
+)
+
+CAPS_OPCIONAIS = (
+    'crm.valor.ver',      # ver valor de contrato
+    'dashboard.ver',      # abrir o painel
+    'dados.exportar',     # exportar planilha
+    'projeto.atribuir',   # direcionar card para alguém
+    'projeto.excluir',    # mandar projeto para a lixeira
+    'cliente.gerir',      # cadastrar e editar cliente
+    'crm.lead.editar',    # trabalhar os funis
+    'okr.gerir',          # criar e editar OKR
+    'feed.comunicado',    # publicar comunicado geral
+    'feed.moderar',       # moderar o mural
+    'comentario.excluir', # apagar comentário de outro
+    'crm.lead.excluir',   # excluir lead
+    'cliente.portal.gerir', # liberar acesso do cliente ao portal
+    'lixeira.ver',        # ver a lixeira
+)
+
 
 def pode_gerir_acessos():
     """Durante a migração, aceita os dois modelos: quem já tem a
@@ -3935,9 +3983,13 @@ def catalogo_capacidades():
         itens.append({
             "chave": chave, "grupo": grupo, "rotulo": rotulo,
             "descricao": desc, "escopos": list(escopos), "sensivel": sensivel,
-            # A tela esconde estas na lista de exceções: administrar o
-            # sistema só pelo nível Administrador.
+            # A tela usa isto para separar o que é base (todo mundo tem),
+            # o que é opcional (decisão por pessoa) e o que é só do
+            # Administrador.
             "so_admin": chave in CAPS_SO_ADMIN,
+            "base": chave in CAPS_BASE,
+            "opcional": chave in CAPS_OPCIONAIS,
+            "alcance": chave in CAPS_ALCANCE,
         })
     return jsonify({
         "status": "sucesso",
@@ -4167,6 +4219,46 @@ def criar_pessoa_acessos():
                         "detalhe": str(e)[:300]}), 500
 
 
+@app.route('/api/acessos/pessoas/<usuario_id>/alcance', methods=['PUT'])
+def definir_alcance(usuario_id):
+    """Define se a pessoa enxerga só o que é dela ou o quadro inteiro.
+
+    Move as cinco capacidades de alcance de uma vez. Deixá-las como
+    exceções separadas obrigaria a marcar cinco chips para dizer uma
+    coisa só.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    alcance = (request.json or {}).get("alcance")
+    if alcance not in ('proprio', 'quadro', 'padrao'):
+        return jsonify({"status": "erro", "mensagem": "Alcance inválido."}), 400
+    try:
+        r = (supabase.table("usuarios").select("ajustes")
+             .eq("id", usuario_id).limit(1).execute())
+        ajs = dict((r.data or [{}])[0].get("ajustes") or {})
+        agora = datetime.now(timezone.utc).isoformat()
+        autor = session.get('usuario_nome')
+
+        for cap in CAPS_ALCANCE:
+            if alcance == 'padrao':
+                # Volta ao que o nível define.
+                ajs.pop(cap, None)
+                continue
+            permitidos = CATALOGO[cap][3]
+            valor = alcance if alcance in permitidos else 'tudo'
+            ajs[cap] = {"valor": valor, "por": autor, "em": agora}
+
+        supabase.table("usuarios").update({"ajustes": ajs}).eq("id", usuario_id).execute()
+        registrar_auditoria('alcance_alterado', 'usuario', usuario_id, {"alcance": alcance})
+        return jsonify({"status": "sucesso", "ajustes": ajs}), 200
+    except Exception as e:
+        print("Erro em definir_alcance:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
 @app.route('/api/acessos/pessoas/<usuario_id>/senha', methods=['PUT'])
 def redefinir_senha_acessos(usuario_id):
     """Define uma senha nova para alguém.
@@ -4206,6 +4298,21 @@ def atualizar_acesso_pessoa(usuario_id):
         upd = {}
         if "papel_id" in d:
             upd["papel_id"] = d["papel_id"] or None
+        # Perder o quadro tira a pessoa da lista de executores dele:
+        # senão ela continuaria recebendo card de um quadro que já não
+        # consegue abrir.
+        if "quadros" in d:
+            novos = set(d.get("quadros") or [])
+            try:
+                atuais = (supabase.table("quadro_executores").select("quadro")
+                          .eq("usuario_id", usuario_id).execute()).data or []
+                for r in atuais:
+                    if r.get("quadro") not in novos:
+                        (supabase.table("quadro_executores").delete()
+                         .eq("usuario_id", usuario_id).eq("quadro", r["quadro"]).execute())
+            except Exception as e:
+                print("Aviso: limpeza de executores:", e)
+
         for campo in ("cargo", "telefone"):
             if campo in d:
                 upd[campo] = (d[campo] or "").strip() or None
