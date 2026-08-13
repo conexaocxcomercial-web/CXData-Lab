@@ -50,33 +50,33 @@ supabase: Client = create_client(URL, KEY)
 
 CATALOGO = {
     # chave: (grupo, rótulo, descrição, escopos possíveis, sensível)
-    'projeto.ver':        ('Operação', 'Ver projetos', 'Abrir os quadros e ver os cards.', ('tudo','time','proprio'), False),
-    'projeto.editar':     ('Operação', 'Editar projetos', 'Criar, editar e mover cards entre fases.', ('tudo','time','proprio'), False),
-    'projeto.excluir':    ('Operação', 'Excluir projetos', 'Enviar projeto para a lixeira.', ('tudo','proprio'), False),
+    'projeto.ver':        ('Operação', 'Ver projetos', 'Abrir os quadros e ver os cards.', ('tudo','quadro','proprio'), False),
+    'projeto.editar':     ('Operação', 'Editar projetos', 'Criar, editar e mover cards entre fases.', ('tudo','quadro','proprio'), False),
+    'projeto.excluir':    ('Operação', 'Excluir projetos', 'Enviar projeto para a lixeira.', ('tudo','quadro','proprio'), False),
     'projeto.solicitar':  ('Operação', 'Solicitar em outro quadro', 'Abrir demanda para outra área.', (), False),
-    'projeto.atribuir':   ('Operação', 'Atribuir responsável', 'Definir quem fica com um projeto novo.', (), False),
+    'projeto.atribuir':   ('Operação', 'Atribuir responsável', 'Direcionar um card novo para quem executa.', ('tudo', 'quadro'), False),
     'tempo.registrar':    ('Operação', 'Registrar tempo', 'Usar o cronômetro e planejar a agenda.', (), False),
-    'tempo.ver':          ('Operação', 'Ver tempo lançado', 'Horas na agenda e no histórico dos projetos.', ('tudo','time','proprio'), False),
+    'tempo.ver':          ('Operação', 'Ver tempo lançado', 'Horas na agenda e no histórico dos projetos.', ('tudo','quadro','proprio'), False),
 
-    'crm.lead.ver':       ('Comercial', 'Ver leads', 'Abrir os três funis e ver os cards.', ('tudo','time','proprio'), False),
-    'crm.lead.editar':    ('Comercial', 'Editar leads', 'Criar, editar e mover no funil.', ('tudo','time','proprio'), False),
+    'crm.lead.ver':       ('Comercial', 'Ver leads', 'Abrir os três funis e ver os cards.', ('tudo','quadro','proprio'), False),
+    'crm.lead.editar':    ('Comercial', 'Editar leads', 'Criar, editar e mover no funil.', ('tudo','quadro','proprio'), False),
     'crm.lead.excluir':   ('Comercial', 'Excluir leads', 'Remover lead do funil.', ('tudo','proprio'), False),
     'crm.valor.ver':      ('Comercial', 'Ver valores', 'Valor estimado no card e projeção de receita. Sem esta permissão o funil funciona normalmente, só sem os números.', (), True),
-    'crm.painel.ver':     ('Comercial', 'Painel do funil', 'Indicadores de conversão e tempo por etapa.', ('tudo','time','proprio'), False),
+    'crm.painel.ver':     ('Comercial', 'Painel do funil', 'Indicadores de conversão e tempo por etapa.', ('tudo','quadro','proprio'), False),
 
     'cliente.ver':        ('Clientes', 'Ver clientes', 'Abrir a carteira de clientes.', ('tudo','proprio'), False),
     'cliente.gerir':      ('Clientes', 'Gerir clientes', 'Cadastrar e editar clientes.', (), False),
     'cliente.portal.gerir':('Clientes', 'Gerir portal do cliente', 'Liberar acesso externo e gerir usuários do cliente.', (), False),
 
-    'okr.ver':            ('OKR', 'Ver OKR', 'Ver a árvore de objetivos e o progresso.', ('tudo','time'), False),
-    'okr.gerir':          ('OKR', 'Gerir OKR', 'Criar e editar objetivos, resultados-chave e tarefas.', ('tudo','time'), False),
+    'okr.ver':            ('OKR', 'Ver OKR', 'Ver a árvore de objetivos e o progresso.', ('tudo','quadro'), False),
+    'okr.gerir':          ('OKR', 'Gerir OKR', 'Criar e editar objetivos, resultados-chave e tarefas.', ('tudo','quadro'), False),
 
     'feed.publicar':      ('Comunicação', 'Publicar no mural', 'Post, evento ou celebração.', (), False),
     'feed.comunicado':    ('Comunicação', 'Publicar comunicado', 'A voz institucional da empresa.', (), False),
     'feed.moderar':       ('Comunicação', 'Moderar o mural', 'Fixar, editar e excluir post de qualquer pessoa.', (), False),
     'comentario.excluir': ('Comunicação', 'Excluir comentários', 'Apagar comentário de outra pessoa.', (), False),
 
-    'dashboard.ver':      ('Análise', 'Ver dashboard', 'Painel geral de projetos e produtividade.', ('tudo','time','proprio'), False),
+    'dashboard.ver':      ('Análise', 'Ver dashboard', 'Painel geral de projetos e produtividade.', ('tudo','quadro','proprio'), False),
     'dados.exportar':     ('Análise', 'Exportar dados', 'Baixar listagens em planilha. Dado exportado sai do controle da plataforma.', (), True),
 
     'usuario.gerir':      ('Administração', 'Gerir pessoas', 'Criar e editar pessoas da equipe.', (), True),
@@ -120,11 +120,16 @@ def caps_da_sessao():
 
 
 def pode(capacidade, alvo=None):
-    """Verdadeiro se o usuário tem a capacidade — e, havendo alvo,
-    se o escopo dele alcança esse alvo.
+    """Verdadeiro se o usuário tem a capacidade e, havendo alvo, se o
+    escopo dele alcança esse alvo.
 
-    alvo é um dict do registro (projeto, lead, etc). O dono é
-    identificado por 'responsavel' e a equipe por 'equipe'.
+    Escopos:
+      tudo    registros de todo mundo
+      quadro  registros dos quadros em que a pessoa atua
+      proprio só onde ela é responsável
+
+    `alvo` é um dict do registro. O dono vem de 'responsavel',
+    'colaborador' ou 'autor'; o quadro vem de 'area' ou 'funil'.
     """
     esc = caps_da_sessao().get(capacidade)
     if esc is None:
@@ -135,14 +140,37 @@ def pode(capacidade, alvo=None):
         return True
 
     eu = (session.get('usuario_nome') or '').strip().lower()
-    dono = (alvo.get('responsavel') or alvo.get('colaborador') or alvo.get('autor') or '').strip().lower()
+    dono = (alvo.get('responsavel') or alvo.get('colaborador')
+            or alvo.get('autor') or '').strip().lower()
+
+    if esc == 'quadro':
+        # O líder responde pelo quadro inteiro: vê o trabalho de todos
+        # que atuam nele. Antes isso dependia de `usuarios.equipe`, um
+        # texto livre onde "R&S" e "RS" viravam times diferentes.
+        return dono == eu or alvo_no_meu_quadro(alvo)
 
     if esc == 'time':
-        minha = session.get('equipe')
-        if not minha:
-            return dono == eu          # sem equipe definida, "time" degrada para "próprio"
-        return alvo.get('equipe') == minha or dono == eu
+        # Escopo legado. Enquanto houver papel gravado com 'time',
+        # ele se comporta como 'quadro' em vez de falhar.
+        return dono == eu or alvo_no_meu_quadro(alvo)
+
     return dono == eu
+
+
+def alvo_no_meu_quadro(alvo):
+    """True se o registro pertence a um quadro em que a pessoa atua."""
+    meus = quadros_permitidos()
+    if not meus:
+        return False
+    area = alvo.get('area')
+    if area:
+        for q in meus:
+            if QUADRO_AREA.get(q) == area:
+                return True
+    # Leads não têm área: o funil comercial pertence ao quadro Comercial.
+    if alvo.get('funil') and 'comercial' in meus:
+        return True
+    return False
 
 
 def filtrar(registros, capacidade):
@@ -199,9 +227,14 @@ def carregar_permissoes(usuario):
         res = (supabase.table("papel_capacidades")
                .select("capacidade, escopo").eq("papel_id", papel_id).execute())
         caps = {r['capacidade']: r['escopo'] for r in (res.data or [])}
-        # Ajustes individuais sobrepõem o padrão do nível.
+        # Exceções da pessoa sobrepõem o padrão do nível.
         # Valor None significa "retirar esta capacidade desta pessoa".
-        for cap, esc in (usuario.get('ajustes') or {}).items():
+        #
+        # Aceita dois formatos: o antigo, em que o valor é o escopo
+        # direto, e o novo, um dict com valor, autor e data. Ler os
+        # dois evita que quem ainda não foi regravado perca a exceção.
+        for cap, ajuste in (usuario.get('ajustes') or {}).items():
+            esc = ajuste.get('valor') if isinstance(ajuste, dict) else ajuste
             if esc is None:
                 caps.pop(cap, None)
             else:
@@ -2585,6 +2618,13 @@ def pode_ver_lixeira():
     return pode('lixeira.ver') or is_admin()
 
 
+# Capacidades que só o nível Administrador concede. Permitir que
+# virassem exceção individual esvaziaria o sentido dos níveis: qualquer
+# pessoa poderia acabar com poder de administrar sem que o nível dela
+# dissesse isso.
+CAPS_SO_ADMIN = ('usuario.gerir', 'papel.gerir', 'auditoria.ver', 'lixeira.purgar')
+
+
 def pode_gerir_acessos():
     """Durante a migração, aceita os dois modelos: quem já tem a
     capacidade nova, ou quem é admin pelo modelo antigo. Sem isso a
@@ -3894,6 +3934,9 @@ def catalogo_capacidades():
         itens.append({
             "chave": chave, "grupo": grupo, "rotulo": rotulo,
             "descricao": desc, "escopos": list(escopos), "sensivel": sensivel,
+            # A tela esconde estas na lista de exceções: administrar o
+            # sistema só pelo nível Administrador.
+            "so_admin": chave in CAPS_SO_ADMIN,
         })
     return jsonify({
         "status": "sucesso",
@@ -4175,7 +4218,32 @@ def atualizar_acesso_pessoa(usuario_id):
             upd["areas"] = [a for a in (d["areas"] or []) if a in AREAS_VALIDAS]
         if "ajustes" in d:
             # Só aceita capacidade que existe no catálogo do código.
-            upd["ajustes"] = {k: v for k, v in (d["ajustes"] or {}).items() if k in CATALOGO}
+            # Exceção guarda quem deu e quando: "quem liberou valores
+            # para a Barbara?" precisa ter resposta.
+            # Capacidades de administração não viram exceção: se
+            # virassem, o nível deixaria de significar alguma coisa.
+            agora = datetime.now(timezone.utc).isoformat()
+            autor = session.get('usuario_nome')
+            antigos = {}
+            try:
+                r = (supabase.table("usuarios").select("ajustes")
+                     .eq("id", usuario_id).limit(1).execute())
+                if r.data:
+                    antigos = r.data[0].get("ajustes") or {}
+            except Exception as e:
+                print("Aviso: ajustes anteriores:", e)
+
+            limpos = {}
+            for k, v in (d["ajustes"] or {}).items():
+                if k not in CATALOGO or k in CAPS_SO_ADMIN:
+                    continue
+                antigo = antigos.get(k)
+                # Só carimba autor e data quando o valor muda de fato.
+                if isinstance(antigo, dict) and antigo.get("valor") == v:
+                    limpos[k] = antigo
+                else:
+                    limpos[k] = {"valor": v, "por": autor, "em": agora}
+            upd["ajustes"] = limpos
         if not upd:
             return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
 
