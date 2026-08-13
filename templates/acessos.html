@@ -357,6 +357,17 @@
             .tr-q{ grid-template-columns:1fr auto; gap:9px; padding:13px 15px; }
             .tr-q .cel-exec, .tr-q .tr-seta{ display:none; }
         }
+
+        .nv-pt{ width:8px; height:8px; min-width:8px; border-radius:50%; }
+        .nc-pt{ width:10px; height:10px; min-width:10px; border-radius:50%; margin-top:6px; }
+        .exc{ background:var(--at-fundo); border-radius:var(--r-ctrl);
+            box-shadow:0 0 0 1px var(--at-borda); padding:11px 13px; margin-bottom:10px; }
+        .exc-t{ font-size:11.5px; font-weight:650; color:#7A4A0C; margin-bottom:7px; }
+        .exc-l{ font-size:11.5px; color:#7A4A0C; line-height:1.8; }
+        .exc-l b{ font-weight:700; font-family:'IBM Plex Mono',monospace; }
+        .exc-q{ opacity:.72; font-size:10.5px; }
+        .selo-exc{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--at-fundo); color:var(--atencao); }
 </style>
 </head>
 <body>
@@ -499,15 +510,19 @@
         /* A cor do nível comunica alcance de poder: vermelho configura o
            sistema, roxo vê tudo, verde vê o time, cinza vê o próprio,
            rosa é externo. */
+        /* A cor comunica alcance de poder: vermelho configura o sistema,
+           roxo vê tudo, verde vê o quadro, cinza vê o próprio, rosa é
+           externo. Um ponto basta; ícone de diamante não diz nada. */
         var VISUAL = {
-            'Administrador': { cor:'#D42F2F', fundo:'#FBE3E3', ico:'shield_person' },
-            'Diretoria':     { cor:'#6C5CE7', fundo:'#F1EFFE', ico:'diamond' },
-            'Líder':         { cor:'#0E9F6E', fundo:'#E6F7F0', ico:'supervisor_account' },
-            'Colaborador':   { cor:'#56565F', fundo:'#F7F7F9', ico:'badge' },
-            'Cliente':       { cor:'#DB2777', fundo:'#FCE7F3', ico:'business' }
+            'Administrador': { cor:'#D42F2F', fundo:'#FBE3E3' },
+            'Diretoria':     { cor:'#6C5CE7', fundo:'#F1EFFE' },
+            'Líder':         { cor:'#0E9F6E', fundo:'#E6F7F0' },
+            'Colaborador':   { cor:'#56565F', fundo:'#F7F7F9' },
+            'Cliente':       { cor:'#DB2777', fundo:'#FCE7F3' }
         };
-        var VISUAL_PADRAO = { cor:'#7C7C88', fundo:'#F7F7F9', ico:'badge' };
-        var SEM_NIVEL = { cor:'#C2660B', fundo:'#FFF0D6', ico:'help' };
+        var VISUAL_PADRAO = { cor:'#7C7C88', fundo:'#F7F7F9' };
+        var SEM_NIVEL = { cor:'#C2660B', fundo:'#FFF0D6' };
+        var ROT_ESCOPO_CURTO = { tudo:'todos', quadro:'do quadro', proprio:'próprios', time:'do quadro' };
         var PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
             ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
         var ROT_ESCOPO = { tudo:'todos', time:'do time', proprio:'próprios' };
@@ -824,7 +839,10 @@
             var acesso = [];
             if(qs) acesso.push(qs + (qs === 1 ? ' quadro' : ' quadros'));
             if(as) acesso.push(as + (as === 1 ? ' área' : ' áreas'));
-            if(ajs) acesso.push(ajs + (ajs === 1 ? ' ajuste' : ' ajustes'));
+            // Exceção precisa ficar visível na lista: se some, com o
+            // tempo ninguém lembra que ela existe.
+            if(ajs) acesso.push('<span class="selo-exc">' + ajs
+                + (ajs === 1 ? ' exceção' : ' exceções') + '</span>');
 
             return '<button class="tr' + (p.ativo === false ? ' inativa' : '')
                 + (st.aberta === String(p.id) ? ' sel' : '') + '"'
@@ -893,8 +911,8 @@
                             + ' onclick="acessos.mudar(\'' + escA(p.id) + '\',\'papel_id\',\''
                             + escA(n.id) + '\')"><span class="nv-r"></span>'
                             + '<span style="flex:1;min-width:0">'
-                            + '<span class="nv-t"><span class="material-symbols-rounded">' + v.ico
-                            + '</span>' + esc(n.nome) + '</span>'
+                            + '<span class="nv-t"><span class="nv-pt" style="background:' + v.cor
+                            + '"></span>' + esc(n.nome) + '</span>'
                             + '<span class="nv-d">' + esc(n.descricao || '') + '</span></span></button>';
                     }).join('')
                   + '</div></div>';
@@ -942,6 +960,50 @@
                     }).join('')
                   + '</div></div>';
             }
+
+            /* Exceções: o personalizado do modelo antigo, agora como
+               ajuste sobre um nível. A pessoa continua sendo
+               "Colaborador com duas exceções", não um caso solto. */
+            var ajs = p.ajustes || {};
+            var chaves = Object.keys(ajs);
+            h += '<div class="bloco"><div class="bl-t">Exceções'
+              + (chaves.length ? '<span class="bl-cnt">' + chaves.length + '</span>' : '')
+              + '</div>';
+            if(chaves.length){
+                h += '<div class="exc"><div class="exc-t">Esta pessoa foge do nível em '
+                  + (chaves.length === 1 ? 'um ponto' : chaves.length + ' pontos') + '</div>'
+                  + '<div class="exc-l">'
+                  + chaves.map(function(k){
+                        var a = ajs[k];
+                        var val = (a && typeof a === 'object') ? a.valor : a;
+                        var info = st.catalogo.filter(function(c){ return c.chave === k; })[0];
+                        var rot = info ? info.rotulo : k;
+                        var quem = (a && typeof a === 'object' && a.por)
+                            ? ' <span class="exc-q">· ' + esc(a.por) + '</span>' : '';
+                        return '<b>' + (val === null ? '&minus;' : '+') + '</b> ' + esc(rot)
+                             + (val && val !== 'tudo' ? ' <span class="exc-q">('
+                                + esc(ROT_ESCOPO_CURTO[val] || val) + ')</span>' : '')
+                             + quem;
+                    }).join('<br>')
+                  + '</div></div>';
+            }
+            h += '<div class="chips">'
+              + st.catalogo.filter(function(c){ return !c.so_admin; }).map(function(c){
+                    var a = ajs[c.chave];
+                    var val = (a && typeof a === 'object') ? a.valor : a;
+                    var tem = c.chave in ajs;
+                    return '<button class="chip' + (tem ? ' on' : '') + '"'
+                        + ' title="' + escA(c.descricao || '') + '"'
+                        + ' onclick="acessos.excecao(\'' + escA(p.id) + '\',\''
+                        + escA(c.chave) + '\')">'
+                        + (tem ? '<span class="material-symbols-rounded">'
+                                 + (val === null ? 'remove' : 'add') + '</span>' : '')
+                        + esc(c.rotulo) + '</button>';
+                }).join('')
+              + '</div>'
+              + '<div class="dica">Clique para dar a capacidade a quem não tem; clique de novo '
+              + 'para tirar de quem o nível daria. Capacidades de administração não entram aqui.</div>'
+              + '</div>';
 
             h += '<div class="bloco"><div class="bl-t">Conta</div><div class="conta-l">'
               + 'Senha: <b>' + (p.tem_senha === false ? 'não definida' : 'definida') + '</b><br>'
@@ -1517,9 +1579,7 @@
                     var v = visualDe(n.nome);
                     var caps = Object.keys(n.capacidades || {});
                     return '<div class="nc"><div class="nc-cab">'
-                        + '<span class="nc-ico" style="background:' + v.fundo + '">'
-                        + '<span class="material-symbols-rounded" style="color:' + v.cor + '">'
-                        + v.ico + '</span></span>'
+                        + '<span class="nc-pt" style="background:' + v.cor + '"></span>'
                         + '<div style="flex:1;min-width:0"><div class="nc-t">' + esc(n.nome) + '</div>'
                         + '<div class="nc-d">' + esc(n.descricao || '') + '</div></div>'
                         + '<span class="nc-n">' + (n.pessoas || 0)
@@ -1641,6 +1701,19 @@
                 desenharPainelQuadro();
             },
             campoQuadro: function(k, v){ st.qEdit[k] = v || null; desenharPainelQuadro(); },
+            /* Três estados por capacidade: sem exceção, exceção que dá,
+               exceção que tira. Um clique passa para o próximo. */
+            excecao: function(pid, cap){
+                var p = achar(pid);
+                if(!p) return;
+                var ajs = Object.assign({}, p.ajustes || {});
+                var atual = ajs[cap];
+                var val = (atual && typeof atual === 'object') ? atual.valor : atual;
+                if(!(cap in ajs))      ajs[cap] = 'tudo';   // dá
+                else if(val !== null)  ajs[cap] = null;      // tira
+                else                   delete ajs[cap];      // volta ao nível
+                mudar(pid, 'ajustes', ajs);
+            },
             execQuadro: function(id){
                 var i = st.qEdit.executores.indexOf(String(id));
                 if(i >= 0) st.qEdit.executores.splice(i, 1);
