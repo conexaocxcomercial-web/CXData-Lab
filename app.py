@@ -2895,6 +2895,29 @@ def _acao_criar_cobranca(acao, dados):
     return {"projeto_id": (r.data or [{}])[0].get("id"), "responsavel": novo["responsavel"]}
 
 
+# Colunas que dependem de um SQL ter rodado. Se faltar alguma, o card
+# ainda precisa nascer: perder um contrato fechado por causa de coluna
+# ausente é pior que criar o card sem o dado extra.
+_COLUNAS_OPCIONAIS = ("subquadro", "origem_lead_id", "lote_id", "lote_pos",
+                      "lote_total", "aguardando_responsavel", "vinculado_a")
+
+
+def _inserir_projeto(novo):
+    """Insere o projeto e, se o banco recusar por coluna inexistente,
+    tenta de novo sem os campos opcionais, avisando no log."""
+    try:
+        return supabase.table("projetos").insert(novo).execute()
+    except Exception as e:
+        msg = str(e)
+        faltando = [c for c in _COLUNAS_OPCIONAIS if c in msg and c in novo]
+        if not faltando:
+            raise
+        print(f"Aviso: coluna(s) {faltando} nao existem em projetos. "
+              f"Rode quadros.sql e fluxo.sql. Criando o card sem elas.")
+        reduzido = {k: v for k, v in novo.items() if k not in faltando}
+        return supabase.table("projetos").insert(reduzido).execute()
+
+
 def _acao_abrir_quadros(acao, dados):
     """Cria os cards nos quadros escolhidos na janela de fechamento.
 
@@ -2906,7 +2929,10 @@ def _acao_abrir_quadros(acao, dados):
         quadro = pedido.get("quadro")
         if quadro not in QUADRO_AREA:
             continue
-        qtd = max(1, min(int(pedido.get("quantidade") or 1), 50))
+        # A quantidade vem no nível de cima do pedido, não dentro de cada
+        # quadro. Ler só de dentro fazia todo contrato virar 1 card,
+        # mesmo quando a janela pedia 5.
+        qtd = max(1, min(int(pedido.get("quantidade") or dados.get("quantidade") or 1), 50))
         # Subdivisão escolhida na janela; se vier inválida ou vazia,
         # cai na padrão da família em vez de ficar sem lugar.
         sub = pedido.get("sub")
@@ -2938,7 +2964,7 @@ def _acao_abrir_quadros(acao, dados):
                 "aguardando_responsavel": True,
                 "data_status_atual": datetime.now(timezone.utc).isoformat(),
             }
-            r = supabase.table("projetos").insert(novo).execute()
+            r = _inserir_projeto(novo)
             criados.append({"projeto_id": (r.data or [{}])[0].get("id"),
                             "quadro": quadro, "avisar": resp.get("nome") if resp else None})
     return {"criados": len(criados), "itens": criados}
