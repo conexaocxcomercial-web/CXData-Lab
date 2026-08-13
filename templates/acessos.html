@@ -970,9 +970,42 @@
 
             /* Exceções: o personalizado do modelo antigo, agora como
                ajuste sobre um nível. A pessoa continua sendo
-               "Colaborador com duas exceções", não um caso solto. */
+               "Colaborador com duas exceções", não um caso solto.
+
+               Administrador já tem tudo: oferecer exceção ali é uma lista
+               de coisas que não mudam nada, e tirar capacidade de quem
+               administra o sistema cria um estado ambíguo. */
             var ajs = p.ajustes || {};
             var chaves = Object.keys(ajs);
+            var ehAdmin = nome === 'Administrador';
+
+            if(ehAdmin){
+                h += '<div class="bloco"><div class="bl-t">Exceções</div>'
+                  + '<div class="dica">O nível Administrador já concede todas as '
+                  + 'capacidades. Para restringir alguém, use um nível abaixo.</div>'
+                  + (chaves.length
+                        ? '<div class="exc" style="margin-top:10px">'
+                          + '<div class="exc-t">' + chaves.length
+                          + (chaves.length === 1 ? ' exceção antiga sem efeito'
+                                                 : ' exceções antigas sem efeito') + '</div>'
+                          + '<div class="exc-l">Ficaram de um nível anterior. '
+                          + 'Voltam a valer se a pessoa mudar de nível.</div></div>'
+                        : '')
+                  + '</div>';
+                h += '<div class="bloco"><div class="bl-t">Conta</div><div class="conta-l">'
+                  + 'Senha: <b>' + (p.tem_senha === false ? 'não definida' : 'definida') + '</b><br>'
+                  + 'Último acesso: <b>' + (quando(p.ultimo_acesso) || 'nunca entrou') + '</b><br>'
+                  + 'Situação: <b>' + (p.ativo === false ? 'inativa' : 'ativa') + '</b>'
+                  + '</div></div>';
+                el('pnCorpo').innerHTML = h;
+                var sa = el('pnStatus');
+                sa.className = 'pn-status' + (st.salvo === String(p.id) ? ' salvo' : '');
+                sa.innerHTML = st.salvo === String(p.id)
+                    ? '<span class="material-symbols-rounded">check_circle</span>Alterações salvas'
+                    : 'Vale no próximo login desta pessoa.';
+                return;
+            }
+
             h += '<div class="bloco"><div class="bl-t">Exceções'
               + (chaves.length ? '<span class="bl-cnt">' + chaves.length + '</span>' : '')
               + '</div>';
