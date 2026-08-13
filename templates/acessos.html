@@ -371,6 +371,22 @@
 
         .selo-alc{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px;
             background:var(--ok-fraco); color:var(--ok); }
+
+        /* O chip diz de onde a capacidade vem, não só se está marcada. */
+        .chip-nivel{ background:var(--papel-2); color:var(--tinta-2);
+            box-shadow:inset 0 0 0 1px var(--linha); }
+        .chip-nivel .material-symbols-rounded{ display:block; color:var(--ok); }
+        .chip-nivel:hover{ background:var(--cr-fundo); color:var(--critico);
+            box-shadow:inset 0 0 0 1px var(--cr-borda); }
+        .chip-add{ background:var(--acao-fraco); color:var(--acao); font-weight:600;
+            box-shadow:inset 0 0 0 1px var(--acao); }
+        .chip-add .material-symbols-rounded{ display:block; }
+        .chip-remove{ background:var(--cr-fundo); color:var(--critico); font-weight:600;
+            box-shadow:inset 0 0 0 1px var(--cr-borda); text-decoration:line-through; }
+        .chip-remove .material-symbols-rounded{ display:block; text-decoration:none; }
+        .chip-fora{ background:var(--papel); color:var(--tinta-3);
+            box-shadow:inset 0 0 0 1px var(--linha); }
+        .chip-fora:hover{ background:var(--acao-fraco); color:var(--acao); }
 </style>
 </head>
 <body>
@@ -584,6 +600,22 @@
         }
         /* Lê o alcance a partir das capacidades: se todas as de alcance
            apontam para o mesmo lugar, é aquele; senão, segue o nível. */
+        /* Qual escopo o nível da pessoa dá nas capacidades de alcance.
+           'tudo' significa que a pergunta de alcance não faz sentido. */
+        function nivelCapsAlcance(p){
+            var n = nivelDe(p);
+            if(!n) return null;
+            var caps = n.capacidades || {}, i, vals = [];
+            for(i = 0; i < st.catalogo.length; i++){
+                var c = st.catalogo[i];
+                if(c.alcance && (c.chave in caps)) vals.push(caps[c.chave]);
+            }
+            if(!vals.length) return null;
+            // Se todas são 'tudo', o nível não limita nada.
+            for(i = 0; i < vals.length; i++) if(vals[i] !== 'tudo') return vals[i];
+            return 'tudo';
+        }
+
         function alcanceDe(p){
             var ajs = p.ajustes || {};
             var vals = [], i;
@@ -872,10 +904,12 @@
             if(as) acesso.push(as + (as === 1 ? ' área' : ' áreas'));
             // Exceção precisa ficar visível na lista: se some, com o
             // tempo ninguém lembra que ela existe.
-            // Conta só os extras: o alcance aparece como rótulo próprio,
-            // e somar os dois faria "vê só o dela" parecer 5 exceções.
+            // Conta só o que é ajuste de verdade. O alcance vira rótulo
+            // próprio: somar os dois faria "vê só o dela" parecer cinco
+            // exceções separadas.
             var extras = 0, alcMarcado = false, kk;
-            for(kk in (p.ajustes || {})){
+            var ajustesP = p.ajustes || {};
+            for(kk in ajustesP){
                 var info = null, ii;
                 for(ii = 0; ii < st.catalogo.length; ii++)
                     if(st.catalogo[ii].chave === kk) info = st.catalogo[ii];
@@ -883,12 +917,12 @@
                 else extras++;
             }
             if(alcMarcado){
-                var a2 = alcanceDe(p);
+                var alcP = alcanceDe(p);
                 acesso.push('<span class="selo-alc">'
-                    + (a2 === 'proprio' ? 'só o dela' : 'todo o quadro') + '</span>');
+                    + (alcP === 'proprio' ? 'só o dela' : 'todo o quadro') + '</span>');
             }
             if(extras) acesso.push('<span class="selo-exc">' + extras
-                + (extras === 1 ? ' extra' : ' extras') + '</span>');
+                + (extras === 1 ? ' ajuste' : ' ajustes') + '</span>');
 
             return '<button class="tr' + (p.ativo === false ? ' inativa' : '')
                 + (st.aberta === String(p.id) ? ' sel' : '') + '"'
@@ -964,7 +998,7 @@
                   + '</div></div>';
             }
 
-            h += '<div class="bloco"><div class="bl-t">Equipe</div><div class="campo">'
+            if(!externo) h += '<div class="bloco"><div class="bl-t">Equipe</div><div class="campo">'
               + '<input value="' + escA(p.equipe || '') + '" list="equipesLista" placeholder="Ex.: R&amp;S"'
               + ' onchange="acessos.mudar(\'' + escA(p.id) + '\',\'equipe\',this.value)"></div>'
               + '<div class="dica' + (semEquipe ? ' alerta' : '') + '">'
@@ -973,7 +1007,7 @@
                     : 'Define quem o nível Líder enxerga.')
               + '</div></div>';
 
-            if(st.quadros.length){
+            if(st.quadros.length && !externo){
                 h += '<div class="bloco"><div class="bl-t">Quadros de trabalho'
                   + '<span class="bl-cnt">' + qs.length + ' de ' + st.quadros.length + '</span>'
                   + '<button class="bl-acao" onclick="acessos.tudo(\'' + escA(p.id) + '\',\'quadros\')">'
@@ -991,7 +1025,7 @@
                   + '</div>';
             }
 
-            if(st.areas.length){
+            if(st.areas.length && !externo){
                 h += '<div class="bloco"><div class="bl-t">Áreas da plataforma'
                   + '<span class="bl-cnt">' + as.length + ' de ' + st.areas.length + '</span>'
                   + '<button class="bl-acao" onclick="acessos.tudo(\'' + escA(p.id) + '\',\'areas\')">'
@@ -1045,12 +1079,43 @@
                 return;
             }
 
+            /* Cliente acessa o portal e só lê os projetos liberados.
+               Alcance e permissões extras não se aplicam: o que ele vê
+               é definido projeto a projeto, na tela de Clientes. */
+            if(externo){
+                h += '<div class="bloco"><div class="bl-t">Acesso ao portal</div>'
+                  + '<div class="dica" style="margin-top:0">O cliente vê apenas os projetos '
+                  + 'marcados como visíveis para ele, e só em leitura. '
+                  + 'Isso se define na tela de Clientes, projeto a projeto.</div></div>';
+                h += '<div class="bloco"><div class="bl-t">Conta</div><div class="conta-l">'
+                  + 'Senha: <b>' + (p.tem_senha === false ? 'não definida' : 'definida') + '</b><br>'
+                  + 'Último acesso: <b>' + (quando(p.ultimo_acesso) || 'nunca entrou') + '</b><br>'
+                  + 'Situação: <b>' + (p.ativo === false ? 'inativa' : 'ativa') + '</b>'
+                  + '</div></div>';
+                el('pnCorpo').innerHTML = h;
+                var sc = el('pnStatus');
+                sc.className = 'pn-status' + (st.salvo === String(p.id) ? ' salvo' : '');
+                sc.innerHTML = st.salvo === String(p.id)
+                    ? '<span class="material-symbols-rounded">check_circle</span>Alterações salvas'
+                    : 'Vale no próximo login desta pessoa.';
+                return;
+            }
+
             /* Alcance: uma pergunta só, em vez de cinco chips.
                "Vê só o dela ou o quadro inteiro?" é a decisão real; as
                capacidades por trás disso se movem juntas. */
             var alc = alcanceDe(p);
+            // Quem já vê tudo pelo nível não precisa da pergunta: as três
+            // opções levariam ao mesmo lugar ou a uma restrição que a
+            // tela não deixa clara.
+            var vêTudo = (nivelCapsAlcance(p) === 'tudo');
             h += '<div class="bloco"><div class="bl-t">Dentro dos quadros dela</div>'
-              + '<div class="niveis">'
+              + (vêTudo
+                  ? '<div class="dica" style="margin-top:0">O nível ' + esc(nome || '')
+                    + ' já vê e edita tudo, em qualquer quadro. Para limitar o alcance, '
+                    + 'use um nível abaixo.</div>'
+                  : '')
+              + (vêTudo ? '' : '<div class="niveis">'
               + [['padrao','O que o nível define',
                   'Segue ' + esc(nome || 'o nível') + ' sem ajuste.', 'var(--tinta-3)'],
                  ['proprio','Só o que é dela',
@@ -1066,32 +1131,67 @@
                         + '"></span>' + o[1] + '</span>'
                         + '<span class="nv-d">' + o[2] + '</span></span></button>';
                 }).join('')
-              + '</div></div>';
+              + '</div>')
+              + '</div>';
 
-            /* Extras: só o que é decisão de verdade. Registrar tempo e
-               solicitar em outro quadro saíram da lista porque todo
-               interno precisa deles: oferecer como exceção fazia parecer
-               que eram negociáveis. */
+            /* Permissões: o chip mostra de onde a capacidade vem.
+               Antes tudo aparecia igual, então "Ver dashboard" para
+               alguém da Diretoria parecia algo a conceder, quando o
+               nível já concedia. Agora quatro estados distintos:
+                 nivel   já vem do nível, clique remove
+                 add     dada por exceção, clique volta ao nível
+                 remove  tirada por exceção, clique devolve
+                 fora    o nível não dá, clique concede             */
+            var nivelCaps = (nivelDe(p) || {}).capacidades || {};
             var opcionais = st.catalogo.filter(function(c){ return c.opcional; });
-            var extras = opcionais.filter(function(c){ return c.chave in ajs; }).length;
-            h += '<div class="bloco"><div class="bl-t">Permissões extras'
-              + (extras ? '<span class="bl-cnt">' + extras + '</span>' : '')
-              + '</div><div class="chips">'
-              + opcionais.map(function(c){
-                    var a = ajs[c.chave];
-                    var val = (a && typeof a === 'object') ? a.valor : a;
-                    var tem = c.chave in ajs;
-                    return '<button class="chip' + (tem ? ' on' : '') + '"'
-                        + ' title="' + escA(c.descricao || '') + '"'
-                        + ' onclick="acessos.excecao(\'' + escA(p.id) + '\',\''
-                        + escA(c.chave) + '\')">'
-                        + (tem ? '<span class="material-symbols-rounded">'
-                                 + (val === null ? 'remove' : 'add') + '</span>' : '')
-                        + esc(c.rotulo) + '</button>';
-                }).join('')
-              + '</div>'
-              + '<div class="dica">Um clique dá a permissão; outro tira de quem o nível daria; '
-              + 'o terceiro volta ao padrão do nível.</div></div>';
+
+            function estadoDe(c){
+                var temAjuste = c.chave in ajs;
+                var a = ajs[c.chave];
+                var val = (a && typeof a === 'object') ? a.valor : a;
+                var doNivel = c.chave in nivelCaps;
+                if(temAjuste && val === null) return 'remove';
+                if(temAjuste) return doNivel ? 'nivel' : 'add';
+                return doNivel ? 'nivel' : 'fora';
+            }
+
+            var porEstado = { nivel:[], add:[], remove:[], fora:[] };
+            opcionais.forEach(function(c){ porEstado[estadoDe(c)].push(c); });
+            var mexidas = porEstado.add.length + porEstado.remove.length;
+
+            function chip(c){
+                var e = estadoDe(c);
+                var ico = e === 'add' ? 'add' : e === 'remove' ? 'remove'
+                        : e === 'nivel' ? 'check' : '';
+                return '<button class="chip chip-' + e + '"'
+                    + ' title="' + escA(c.descricao || '') + '"'
+                    + ' onclick="acessos.excecao(\'' + escA(p.id) + '\',\''
+                    + escA(c.chave) + '\')">'
+                    + (ico ? '<span class="material-symbols-rounded">' + ico + '</span>' : '')
+                    + esc(c.rotulo) + '</button>';
+            }
+
+            h += '<div class="bloco"><div class="bl-t">Permissões'
+              + (mexidas ? '<span class="bl-cnt">' + mexidas
+                  + (mexidas === 1 ? ' ajuste' : ' ajustes') + '</span>' : '')
+              + '</div>';
+
+            var vemDoNivel = porEstado.nivel.concat(porEstado.remove);
+            if(vemDoNivel.length){
+                h += '<div class="dica" style="margin:0 0 8px">'
+                  + 'Vem do nível ' + esc(nome || '') + '. Clique para tirar de '
+                  + (p.nome || 'esta pessoa').split(' ')[0] + '.</div>'
+                  + '<div class="chips">' + vemDoNivel.map(chip).join('') + '</div>';
+            }
+
+            var naoTem = porEstado.fora.concat(porEstado.add);
+            if(naoTem.length){
+                h += '<div class="dica" style="margin:14px 0 8px">'
+                  + 'O nível não concede. Clique para dar só a '
+                  + (p.nome || 'esta pessoa').split(' ')[0] + '.</div>'
+                  + '<div class="chips">' + naoTem.map(chip).join('') + '</div>';
+            }
+            h += '</div>';
 
             /* O que todo mundo tem, listado para ninguém procurar em
                vão por "registrar tempo" na lista de extras. */
@@ -1826,15 +1926,23 @@
                     toast(e.message || 'Sem conexão com o servidor.', 'error');
                 });
             },
+            /* O clique faz a única coisa que muda algo:
+               quem tem pelo nível, perde; quem não tem, ganha.
+               Clicar de novo desfaz. Não existe "dar o que já tem". */
             excecao: function(pid, cap){
                 var p = achar(pid);
                 if(!p) return;
                 var ajs = Object.assign({}, p.ajustes || {});
-                var atual = ajs[cap];
-                var val = (atual && typeof atual === 'object') ? atual.valor : atual;
-                if(!(cap in ajs))      ajs[cap] = 'tudo';   // dá
-                else if(val !== null)  ajs[cap] = null;      // tira
-                else                   delete ajs[cap];      // volta ao nível
+                var nivelCaps = (nivelDe(p) || {}).capacidades || {};
+                var doNivel = cap in nivelCaps;
+                var temAjuste = cap in ajs;
+                var a = ajs[cap];
+                var val = (a && typeof a === 'object') ? a.valor : a;
+
+                if(temAjuste) delete ajs[cap];        // desfaz o ajuste
+                else if(doNivel) ajs[cap] = null;     // tira o que o nível dá
+                else ajs[cap] = 'tudo';               // dá o que o nível não dá
+
                 mudar(pid, 'ajustes', ajs);
             },
             execQuadro: function(id){
