@@ -766,9 +766,62 @@
             .segm{ overflow-x:auto; max-width:100%; }
             .segm::-webkit-scrollbar{ display:none; }
         }
+
+        /* ===== FILA DE ATRIBUIÇÃO =====
+           Card que nasce sem dono precisa ser visto por quem direciona,
+           senão o trabalho fica esperando alguém reparar. */
+        .fila-faixa{ background:var(--at-fundo); border-bottom:1px solid var(--at-borda);
+            padding:11px 22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .ff-ico{ color:var(--atencao); display:flex; }
+        .ff-ico .material-symbols-rounded{ font-size:19px; }
+        .ff-txt{ font-size:12.5px; color:#7A4A0C; font-weight:550; }
+        .ff-txt b{ font-weight:700; }
+        .ff-dir{ margin-left:auto; display:flex; gap:8px; }
+        .btn-ambar{ background:var(--atencao); color:#fff; font-size:12px; font-weight:600;
+            padding:7px 12px; border-radius:9px; display:inline-flex; align-items:center;
+            gap:6px; cursor:pointer; }
+        .btn-ambar:hover{ background:#a85809; }
+        .btn-ambar .material-symbols-rounded{ font-size:16px; }
+
+        .fila-item{ background:var(--papel); border-radius:12px; padding:14px 16px;
+            display:flex; gap:13px; align-items:center; margin-bottom:8px;
+            box-shadow:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha); }
+        .fi-id{ flex:1; min-width:0; }
+        .fi-emp{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.4px; color:var(--tinta-3); }
+        .fi-nome{ font-size:13.5px; font-weight:650; letter-spacing:-.2px; margin-top:2px; }
+        .fi-meta{ font-size:11.5px; color:var(--tinta-3); margin-top:4px; display:flex;
+            gap:7px; align-items:center; flex-wrap:wrap; }
+        .fi-pil{ font-size:9.5px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--papel-2); color:var(--tinta-3); }
+        .fi-pil.lote{ background:#E9F2FB; color:#1A5FA0; }
+        .fi-pil.espera{ background:var(--at-fundo); color:var(--atencao); }
+        .fi-dir{ display:flex; gap:7px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+        .fi-sel{ font-size:12px; font-weight:550; padding:7px 10px; border-radius:9px;
+            background:var(--papel-2); color:var(--tinta-2); cursor:pointer; outline:none; }
+        .fi-sel:focus{ box-shadow:0 0 0 2px var(--acao-fraco); }
+        @media(max-width:760px){
+            .fila-faixa{ padding:11px 16px; }
+            .fila-item{ flex-direction:column; align-items:stretch; }
+            .fi-dir{ justify-content:flex-end; }
+        }
 </style>
 </head>
 <body class="{% if tipo_usuario == 'externo' and papel_externo == 'visualizador' %}modo-cliente{% endif %}">
+
+    <div class="modal-overlay" id="modalFila" onclick="fecharModalFundo(event, 'modalFila')">
+        <div class="modal-content" style="max-width:640px">
+            <div class="md-head">
+                <div class="md-head-txt">
+                    <span class="md-eyebrow">Atribuição</span>
+                    <div class="md-titulo" id="mfTitulo">Cards esperando</div>
+                    <div class="md-sub">Escolha quem executa cada um. A pessoa é avisada na hora.</div>
+                </div>
+                <button class="close-btn" onclick="fecharModal('modalFila')" aria-label="Fechar"></button>
+            </div>
+            <div class="md-corpo" id="mfLista" style="background:var(--mesa)"></div>
+        </div>
+    </div>
 
     <div id="toastContainer" class="toast-container"></div>
 
@@ -794,6 +847,8 @@
         </div>
         <div class="notifications-body" id="listaNotificacoesDropdown"></div>
     </div>
+
+    <div class="fila-faixa" id="filaFaixa" style="display:none"></div>
 
     <div class="cmd">
         <span class="cmd-titulo" id="tituloWorkspace">Carregando...</span>
@@ -1643,6 +1698,115 @@
         // Retorna as atividades disponíveis para um projeto, considerando a fase (RH) ou a lista padrão
         const cfg = WORKSPACES[QUADRO_ATUAL] || WORKSPACES['geral'];
 
+
+        /* ==================== FILA DE ATRIBUIÇÃO ====================
+           Cards que nasceram sem dono, esperando alguém escolher quem
+           executa. Aparece só para quem tem essa permissão. */
+        let filaEspera = [], filaPessoas = [], filaEscolha = {};
+
+        async function carregarFila(){
+            try{
+                const r = await fetch('/api/quadros/fila?quadro=' + encodeURIComponent(QUADRO_ATUAL));
+                if(!r.ok){ document.getElementById('filaFaixa').style.display = 'none'; return; }
+                const d = await r.json();
+                filaEspera = d.projetos || [];
+                filaPessoas = d.pessoas || [];
+                desenharFaixaFila();
+            }catch(e){
+                document.getElementById('filaFaixa').style.display = 'none';
+            }
+        }
+
+        function desenharFaixaFila(){
+            const f = document.getElementById('filaFaixa');
+            if(!filaEspera.length){ f.style.display = 'none'; return; }
+            const n = filaEspera.length;
+            const antigo = filaEspera.reduce((m, p) => Math.max(m, diasDe(p.criado_em)), 0);
+            f.style.display = 'flex';
+            f.innerHTML = '<span class="ff-ico"><span class="material-symbols-rounded">person_off</span></span>'
+                + '<span class="ff-txt"><b>' + n + (n === 1 ? ' card espera' : ' cards esperam')
+                + ' responsável</b>'
+                + (antigo >= 2 ? ' · o mais antigo há ' + antigo + ' dias' : '')
+                + '. Enquanto ninguém assume, o trabalho não começa.</span>'
+                + '<span class="ff-dir"><button class="btn-ambar" onclick="abrirFila()">'
+                + '<span class="material-symbols-rounded">how_to_reg</span>Atribuir agora</button></span>';
+        }
+
+        function diasDe(iso){
+            if(!iso) return 0;
+            const d = new Date(iso);
+            if(isNaN(d.getTime())) return 0;
+            return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+        }
+
+        function abrirFila(){
+            filaEscolha = {};
+            document.getElementById('mfLista').innerHTML = filaEspera.map(itemFila).join('');
+            document.getElementById('mfTitulo').innerText = filaEspera.length
+                + (filaEspera.length === 1 ? ' card esperando' : ' cards esperando');
+            document.getElementById('modalFila').classList.add('show');
+        }
+
+        function itemFila(p){
+            const dias = diasDe(p.criado_em);
+            const meta = [];
+            if(p.lote_total > 1)
+                meta.push('<span class="fi-pil lote">' + p.lote_pos + ' de ' + p.lote_total + ' do contrato</span>');
+            meta.push('<span class="fi-pil espera">' + (dias === 0 ? 'hoje' : 'há ' + dias + (dias === 1 ? ' dia' : ' dias')) + '</span>');
+            if(p.subquadro) meta.push(escH(p.subquadro));
+
+            if(!filaPessoas.length){
+                return '<div class="fila-item"><div class="fi-id">'
+                    + '<div class="fi-emp">' + escH(p.empresa || 'sem cliente') + '</div>'
+                    + '<div class="fi-nome">' + escH(p.nome_projeto) + '</div>'
+                    + '<div class="fi-meta">' + meta.join('')
+                    + '<span style="color:var(--atencao);font-weight:600">'
+                    + 'ninguém configurado para executar neste quadro</span></div></div>'
+                    + '<div class="fi-dir"><a class="btn btn-borda" href="/acessos">'
+                    + 'Configurar quadro</a></div></div>';
+            }
+
+            return '<div class="fila-item"><div class="fi-id">'
+                + '<div class="fi-emp">' + escH(p.empresa || 'sem cliente') + '</div>'
+                + '<div class="fi-nome">' + escH(p.nome_projeto) + '</div>'
+                + '<div class="fi-meta">' + meta.join('') + '</div></div>'
+                + '<div class="fi-dir">'
+                + '<select class="fi-sel" onchange="escolherFila(\'' + escAttr(p.id) + '\', this.value)">'
+                + '<option value="">Escolher pessoa</option>'
+                + filaPessoas.map(x => '<option value="' + escAttr(x.nome) + '">' + escH(x.nome) + '</option>').join('')
+                + '</select>'
+                + '<button class="btn btn-acao" onclick="atribuirDaFila(\'' + escAttr(p.id) + '\', false)">'
+                + '<span class="material-symbols-rounded">check</span>Atribuir</button>'
+                + (p.lote_total > 1
+                    ? '<button class="btn btn-borda" title="Atribuir os ' + p.lote_total
+                      + ' cards do contrato à mesma pessoa" onclick="atribuirDaFila(\''
+                      + escAttr(p.id) + '\', true)">Todos os ' + p.lote_total + '</button>'
+                    : '')
+                + '</div></div>';
+        }
+
+        function escolherFila(id, nome){ filaEscolha[id] = nome; }
+
+        async function atribuirDaFila(id, lote){
+            const nome = filaEscolha[id];
+            if(!nome){ showToast('Escolha quem vai executar.', 'error'); return; }
+            try{
+                const r = await fetch('/api/projetos/' + id + '/atribuir', {
+                    method:'PUT', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ responsavel: nome, lote: !!lote })
+                });
+                if(!r.ok){ showToast(await motivoErro(r, 'Não foi possível atribuir.'), 'error'); return; }
+                const d = await r.json();
+                showToast(d.total > 1
+                    ? d.total + ' cards atribuídos a ' + nome
+                    : 'Card atribuído a ' + nome, 'success');
+                await carregarFila();
+                if(!filaEspera.length) document.getElementById('modalFila').classList.remove('show');
+                else abrirFila();
+                carregarProjetos();
+            }catch(e){ showToast('Sem conexão com o servidor.', 'error'); }
+        }
+
         function atividadesDisponiveis(projeto) {
             if (QUADRO_ATUAL === 'rhestrategico' && projeto && ATIVIDADES_POR_FASE_RH[projeto.status]) {
                 return ATIVIDADES_POR_FASE_RH[projeto.status];
@@ -2072,6 +2236,7 @@
                     renderizarProjetos();
                 }
             } catch(e) { console.error("Erro ao puxar dados", e); }
+            carregarFila();
         }
 
         async function carregarNotificacoes() {
