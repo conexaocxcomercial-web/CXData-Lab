@@ -368,6 +368,9 @@
         .exc-q{ opacity:.72; font-size:10.5px; }
         .selo-exc{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px;
             background:var(--at-fundo); color:var(--atencao); }
+
+        .selo-alc{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--ok-fraco); color:var(--ok); }
 </style>
 </head>
 <body>
@@ -579,6 +582,24 @@
             if(n) return n.nome;
             return p.papel_id ? 'Nível definido' : null;
         }
+        /* Lê o alcance a partir das capacidades: se todas as de alcance
+           apontam para o mesmo lugar, é aquele; senão, segue o nível. */
+        function alcanceDe(p){
+            var ajs = p.ajustes || {};
+            var vals = [], i;
+            for(i = 0; i < st.catalogo.length; i++){
+                var c = st.catalogo[i];
+                if(!c.alcance) continue;
+                var a = ajs[c.chave];
+                if(!(c.chave in ajs)) continue;
+                vals.push((a && typeof a === 'object') ? a.valor : a);
+            }
+            if(!vals.length) return 'padrao';
+            if(vals.indexOf('proprio') >= 0 && vals.indexOf('quadro') < 0) return 'proprio';
+            if(vals.indexOf('quadro') >= 0 || vals.indexOf('tudo') >= 0) return 'quadro';
+            return 'padrao';
+        }
+
         function achar(id){
             for(var i = 0; i < st.pessoas.length; i++)
                 if(String(st.pessoas[i].id) === String(id)) return st.pessoas[i];
@@ -679,7 +700,10 @@
             });
             desenhar();
             if(a === 'registro') carregarRegistro();
-            if(a === 'quadros' && !st.quadrosConfig.length) carregarQuadros();
+            // Sempre recarrega: mudar os quadros de uma pessoa muda quem
+            // pode executar em cada quadro, e cache aqui mostra uma
+            // lista que já não corresponde ao que foi salvo.
+            if(a === 'quadros') carregarQuadros();
         }
 
         function desenhar(){
@@ -848,8 +872,23 @@
             if(as) acesso.push(as + (as === 1 ? ' área' : ' áreas'));
             // Exceção precisa ficar visível na lista: se some, com o
             // tempo ninguém lembra que ela existe.
-            if(ajs) acesso.push('<span class="selo-exc">' + ajs
-                + (ajs === 1 ? ' exceção' : ' exceções') + '</span>');
+            // Conta só os extras: o alcance aparece como rótulo próprio,
+            // e somar os dois faria "vê só o dela" parecer 5 exceções.
+            var extras = 0, alcMarcado = false, kk;
+            for(kk in (p.ajustes || {})){
+                var info = null, ii;
+                for(ii = 0; ii < st.catalogo.length; ii++)
+                    if(st.catalogo[ii].chave === kk) info = st.catalogo[ii];
+                if(info && info.alcance) alcMarcado = true;
+                else extras++;
+            }
+            if(alcMarcado){
+                var a2 = alcanceDe(p);
+                acesso.push('<span class="selo-alc">'
+                    + (a2 === 'proprio' ? 'só o dela' : 'todo o quadro') + '</span>');
+            }
+            if(extras) acesso.push('<span class="selo-exc">' + extras
+                + (extras === 1 ? ' extra' : ' extras') + '</span>');
 
             return '<button class="tr' + (p.ativo === false ? ' inativa' : '')
                 + (st.aberta === String(p.id) ? ' sel' : '') + '"'
@@ -1006,29 +1045,39 @@
                 return;
             }
 
-            h += '<div class="bloco"><div class="bl-t">Exceções'
-              + (chaves.length ? '<span class="bl-cnt">' + chaves.length + '</span>' : '')
-              + '</div>';
-            if(chaves.length){
-                h += '<div class="exc"><div class="exc-t">Esta pessoa foge do nível em '
-                  + (chaves.length === 1 ? 'um ponto' : chaves.length + ' pontos') + '</div>'
-                  + '<div class="exc-l">'
-                  + chaves.map(function(k){
-                        var a = ajs[k];
-                        var val = (a && typeof a === 'object') ? a.valor : a;
-                        var info = st.catalogo.filter(function(c){ return c.chave === k; })[0];
-                        var rot = info ? info.rotulo : k;
-                        var quem = (a && typeof a === 'object' && a.por)
-                            ? ' <span class="exc-q">· ' + esc(a.por) + '</span>' : '';
-                        return '<b>' + (val === null ? '&minus;' : '+') + '</b> ' + esc(rot)
-                             + (val && val !== 'tudo' ? ' <span class="exc-q">('
-                                + esc(ROT_ESCOPO_CURTO[val] || val) + ')</span>' : '')
-                             + quem;
-                    }).join('<br>')
-                  + '</div></div>';
-            }
-            h += '<div class="chips">'
-              + st.catalogo.filter(function(c){ return !c.so_admin; }).map(function(c){
+            /* Alcance: uma pergunta só, em vez de cinco chips.
+               "Vê só o dela ou o quadro inteiro?" é a decisão real; as
+               capacidades por trás disso se movem juntas. */
+            var alc = alcanceDe(p);
+            h += '<div class="bloco"><div class="bl-t">Dentro dos quadros dela</div>'
+              + '<div class="niveis">'
+              + [['padrao','O que o nível define',
+                  'Segue ' + esc(nome || 'o nível') + ' sem ajuste.', 'var(--tinta-3)'],
+                 ['proprio','Só o que é dela',
+                  'Vê e edita apenas onde é responsável.', 'var(--atencao)'],
+                 ['quadro','Tudo do quadro',
+                  'Vê e edita o trabalho de todos os quadros em que atua.', 'var(--ok)']]
+                .map(function(o){
+                    return '<button class="nv' + (alc === o[0] ? ' on' : '') + '"'
+                        + ' style="--cor:' + o[3] + '"'
+                        + ' onclick="acessos.alcance(\'' + escA(p.id) + '\',\'' + o[0] + '\')">'
+                        + '<span class="nv-r"></span><span style="flex:1;min-width:0">'
+                        + '<span class="nv-t"><span class="nv-pt" style="background:' + o[3]
+                        + '"></span>' + o[1] + '</span>'
+                        + '<span class="nv-d">' + o[2] + '</span></span></button>';
+                }).join('')
+              + '</div></div>';
+
+            /* Extras: só o que é decisão de verdade. Registrar tempo e
+               solicitar em outro quadro saíram da lista porque todo
+               interno precisa deles: oferecer como exceção fazia parecer
+               que eram negociáveis. */
+            var opcionais = st.catalogo.filter(function(c){ return c.opcional; });
+            var extras = opcionais.filter(function(c){ return c.chave in ajs; }).length;
+            h += '<div class="bloco"><div class="bl-t">Permissões extras'
+              + (extras ? '<span class="bl-cnt">' + extras + '</span>' : '')
+              + '</div><div class="chips">'
+              + opcionais.map(function(c){
                     var a = ajs[c.chave];
                     var val = (a && typeof a === 'object') ? a.valor : a;
                     var tem = c.chave in ajs;
@@ -1041,9 +1090,18 @@
                         + esc(c.rotulo) + '</button>';
                 }).join('')
               + '</div>'
-              + '<div class="dica">Clique para dar a capacidade a quem não tem; clique de novo '
-              + 'para tirar de quem o nível daria. Capacidades de administração não entram aqui.</div>'
-              + '</div>';
+              + '<div class="dica">Um clique dá a permissão; outro tira de quem o nível daria; '
+              + 'o terceiro volta ao padrão do nível.</div></div>';
+
+            /* O que todo mundo tem, listado para ninguém procurar em
+               vão por "registrar tempo" na lista de extras. */
+            var base = st.catalogo.filter(function(c){ return c.base; });
+            if(base.length){
+                h += '<div class="bloco"><div class="bl-t">Sempre liberado</div>'
+                  + '<div class="dica" style="margin-top:0">'
+                  + base.map(function(c){ return esc(c.rotulo); }).join(' · ')
+                  + '. Todo mundo tem, em qualquer nível.</div></div>';
+            }
 
             h += '<div class="bloco"><div class="bl-t">Conta</div><div class="conta-l">'
               + 'Senha: <b>' + (p.tem_senha === false ? 'não definida' : 'definida') + '</b><br>'
@@ -1743,6 +1801,31 @@
             campoQuadro: function(k, v){ st.qEdit[k] = v || null; desenharPainelQuadro(); },
             /* Três estados por capacidade: sem exceção, exceção que dá,
                exceção que tira. Um clique passa para o próximo. */
+            alcance: function(pid, valor){
+                var p = achar(pid);
+                if(!p) return;
+                fetch('/api/acessos/pessoas/' + pid + '/alcance', {
+                    method:'PUT', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ alcance: valor })
+                }).then(function(r){
+                    if(!r.ok) return motivo(r, 'Não foi possível salvar.')
+                        .then(function(m){ throw new Error(m); });
+                    return r.json();
+                }).then(function(d){
+                    p.ajustes = d.ajustes || {};
+                    st.salvo = String(pid);
+                    desenharPainel(p);
+                    desenharPessoas();
+                    setTimeout(function(){
+                        if(st.salvo === String(pid)){
+                            st.salvo = null;
+                            if(st.aberta === String(pid)) desenharPainel(p);
+                        }
+                    }, 2600);
+                })['catch'](function(e){
+                    toast(e.message || 'Sem conexão com o servidor.', 'error');
+                });
+            },
             excecao: function(pid, cap){
                 var p = achar(pid);
                 if(!p) return;
