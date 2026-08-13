@@ -2711,7 +2711,9 @@ ARVORE_QUADROS = [
 
     ('comercial',     'Comercial',               False, 'handshake', []),
     ('marketing',     'Marketing',               False, 'campaign', []),
-    ('financeiro',    'Financeiro',              False, 'payments', []),
+    # 'Adm/Fin' é o valor que os cards já existentes usam. Gravar
+    # 'Financeiro' criava card invisível: nasce certo, some da tela.
+    ('financeiro',    'Adm/Fin',                 False, 'payments', []),
     ('tecnologia',    'Tecnologia',              False, 'terminal', []),
     ('rhinterno',     'RH Interno',              False, 'badge', [
         ('endomarketing', 'Endomarketing', 'Comunicação e engajamento'),
