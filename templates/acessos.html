@@ -536,12 +536,16 @@
             ativo:'situação', ajustes:'ajustes', cargo:'cargo', telefone:'telefone', nome:'nome',
             email:'e-mail' };
 
+        /* `quadros` guarda a lista do catálogo, usada nos chips do painel
+           de pessoa. A configuração de direcionamento é outra coisa e mora
+           em `quadrosConfig`: as duas dividiam a mesma chave, o catálogo
+           preenchia primeiro e a aba Quadros nunca carregava. */
         var st = {
             pessoas: [], niveis: [], equipes: [], quadros: [], areas: [], catalogo: [],
             busca: '', fNivel: '', fSit: '',
             aba: 'pessoas', aberta: null, salvo: null,
             carregando: true, erro: null, semNiveis: false,
-            quadros: [], pessoasQuadro: [], qEdit: null, erroQuadros: null,
+            quadrosConfig: [], pessoasQuadro: [], qEdit: null, erroQuadros: null,
             carregandoQuadros: false
         };
 
@@ -675,7 +679,7 @@
             });
             desenhar();
             if(a === 'registro') carregarRegistro();
-            if(a === 'quadros' && !st.quadros.length) carregarQuadros();
+            if(a === 'quadros' && !st.quadrosConfig.length) carregarQuadros();
         }
 
         function desenhar(){
@@ -686,6 +690,9 @@
                 : '';
             if(st.aba === 'pessoas') desenharPessoas();
             if(st.aba === 'niveis') desenharNiveis();
+            // Sem esta linha, entrar na aba com a lista já carregada
+            // deixaria o painel vazio: nada redesenharia.
+            if(st.aba === 'quadros') desenharQuadros();
         }
 
         function filtrar(){
@@ -1267,7 +1274,7 @@
                 if(!r.ok) return motivo(r, 'Não foi possível carregar os quadros.')
                     .then(function(m){ st.erroQuadros = m; });
                 return r.json().then(function(d){
-                    st.quadros = d.quadros || [];
+                    st.quadrosConfig = d.quadros || [];
                     st.pessoasQuadro = d.pessoas || [];
                     st.erroQuadros = null;
                 });
@@ -1281,7 +1288,7 @@
 
         function desenharQuadros(){
             var alvo = el('abaQuadros');
-            el('nQuadros').innerText = st.quadros.length || '';
+            el('nQuadros').innerText = st.quadrosConfig.length || '';
 
             if(st.carregandoQuadros){ alvo.innerHTML = esqueletos(6); return; }
 
@@ -1297,7 +1304,7 @@
             // Lista vazia com a rota respondendo 200 significa que o
             // servidor não enxergou as tabelas. Esqueleto eterno aqui
             // deixa a tela em branco sem dizer por quê.
-            if(!st.quadros.length){
+            if(!st.quadrosConfig.length){
                 alvo.innerHTML = '<div class="vazio">'
                     + '<span class="material-symbols-rounded">dashboard</span>'
                     + '<h3>Nenhum quadro chegou do servidor</h3>'
@@ -1311,8 +1318,8 @@
                 return;
             }
 
-            var esperando = st.quadros.reduce(function(s,q){ return s + (q.esperando||0); }, 0);
-            var semConfig = st.quadros.filter(function(q){ return !configurado(q); }).length;
+            var esperando = st.quadrosConfig.reduce(function(s,q){ return s + (q.esperando||0); }, 0);
+            var semConfig = st.quadrosConfig.filter(function(q){ return !configurado(q); }).length;
             var h = '';
 
             if(esperando){
@@ -1332,7 +1339,7 @@
             h += '<div class="tabela">'
               + '<div class="th" style="grid-template-columns:1.6fr 1.5fr 1.7fr 40px">'
               + '<div>Quadro</div><div>Direcionamento</div><div>Quem executa</div><div></div></div>'
-              + st.quadros.map(linhaQuadro).join('') + '</div>';
+              + st.quadrosConfig.map(linhaQuadro).join('') + '</div>';
             alvo.innerHTML = h;
         }
 
@@ -1417,8 +1424,8 @@
         /* ---------- painel de configuração ---------- */
         function abrirQuadro(chave){
             var q = null, i;
-            for(i = 0; i < st.quadros.length; i++)
-                if(st.quadros[i].chave === chave) q = st.quadros[i];
+            for(i = 0; i < st.quadrosConfig.length; i++)
+                if(st.quadrosConfig[i].chave === chave) q = st.quadrosConfig[i];
             if(!q) return;
             // Cópia de trabalho: cancelar não pode deixar rastro na tela.
             st.qEdit = {
@@ -1691,7 +1698,7 @@
             abrirQuadro: abrirQuadro,
             fecharQuadro: fecharQuadro,
             salvarQuadro: salvarQuadro,
-            recarregarQuadros: function(){ st.erroQuadros = null; st.quadros = []; carregarQuadros(); },
+            recarregarQuadros: function(){ st.erroQuadros = null; st.quadrosConfig = []; carregarQuadros(); },
             modoQuadro: function(m){
                 st.qEdit.modo = m;
                 // Direto só comporta uma pessoa: manter várias marcadas
