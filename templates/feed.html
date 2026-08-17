@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mural | CXProjetos</title>
+    <title>Feed | CXProjetos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -298,7 +298,7 @@
     {% include '_sidebar.html' %}
 
     <div class="cmd">
-        <span class="cmd-tit">Mural</span>
+        <span class="cmd-tit">Feed</span>
         <div class="cmd-sep"></div>
         <div class="abas" id="abas"></div>
         <div class="cmd-dir">
@@ -327,7 +327,7 @@
         <div class="modal">
             <div class="md-head">
                 <div style="min-width:0">
-                    <div class="md-eyebrow" id="pEyebrow">Mural</div>
+                    <div class="md-eyebrow" id="pEyebrow">Feed</div>
                     <div class="md-tit" id="pTitulo">Publicar</div>
                 </div>
                 <button class="md-x" onclick="fechar('modalPost')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
@@ -739,7 +739,7 @@
         // ===================== COMPOR =====================
         function abrirCompor(){
             document.getElementById('pId').value = '';
-            document.getElementById('pEyebrow').innerText = 'Mural';
+            document.getElementById('pEyebrow').innerText = 'Feed';
             document.getElementById('pTitulo').innerText = 'Publicar';
             document.getElementById('pTit').value = '';
             document.getElementById('pCorpo').value = '';
@@ -756,7 +756,7 @@
             fecharMenu();
             const p = posts.find(x=>String(x.id)===String(id)); if(!p) return;
             document.getElementById('pId').value = p.id;
-            document.getElementById('pEyebrow').innerText = 'Mural';
+            document.getElementById('pEyebrow').innerText = 'Feed';
             document.getElementById('pTitulo').innerText = 'Editar publicação';
             document.getElementById('pTit').value = p.titulo || '';
             document.getElementById('pCorpo').value = p.corpo || '';
