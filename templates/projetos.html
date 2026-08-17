@@ -1869,6 +1869,20 @@
             document.getElementById('mfLista').innerHTML = filaEspera.map(itemFila).join('');
         }
 
+        /* Extrai do servidor o motivo real da recusa.
+           Sem esta funcao, `motivoErro` era um ReferenceError dentro do
+           try/catch: qualquer resposta de erro virava "Sem conexao com o
+           servidor", inclusive um 403 de permissao ou um 405 de verbo
+           errado. O erro que mascara o erro. */
+        async function motivoErro(resp, padrao){
+            try{
+                const d = await resp.json();
+                if(d && d.detalhe) return (d.mensagem || padrao) + ' ' + d.detalhe;
+                if(d && d.mensagem) return d.mensagem;
+            }catch(e){}
+            return padrao + ' (HTTP ' + resp.status + ')';
+        }
+
         async function atribuirDaFila(id, lote){
             const nome = filaEscolha[id];
             if(!nome){ showToast('Escolha quem vai executar.', 'error'); return; }
@@ -1886,7 +1900,15 @@
                 if(!filaEspera.length) fecharModal('modalFila');
                 else abrirFila();
                 carregarProjetos();
-            }catch(e){ showToast('Sem conexão com o servidor.', 'error'); }
+            }catch(e){
+                // Distingue queda de rede de erro no proprio codigo: dizer
+                // "sem conexao" quando o problema e outro manda a pessoa
+                // conferir o wi-fi por nada.
+                console.error('atribuirDaFila:', e);
+                showToast(e instanceof TypeError
+                    ? 'Sem conexão com o servidor.'
+                    : 'Erro ao atribuir: ' + e.message, 'error');
+            }
         }
 
         function atividadesDisponiveis(projeto) {
