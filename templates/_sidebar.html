@@ -19,17 +19,13 @@
 :root{
   --cx-rail:60px;
   --cx-aberta:248px;
-  --cx-sb-w:248px;   /* largura corrente — o JS troca este valor */
+  --cx-sb-w:248px;
 }
 
-/* Empurra o conteúdo em vez de cobrir. Vence o body{padding-left:68px}
-   das telas por especificidade, sem !important. */
 html body{
   padding-left:var(--cx-sb-w);
   transition:padding-left .22s cubic-bezier(.4,0,.2,1);
 }
-/* Só a sidebar FIXA empurra o conteúdo. No hover ela sobrepõe,
-   senão a página inteira saltaria a cada passada de mouse. */
 
 .cxsidebar{
   position:fixed; left:0; top:0; bottom:0;
@@ -47,8 +43,18 @@ html body{
   display:flex; align-items:center; padding:0 16px; gap:11px;
   border-bottom:1px solid #E4E4EA;
 }
-.cxsb-logo{ width:26px; height:26px; min-width:26px; object-fit:contain; flex-shrink:0; }
-.cxsb-marca{ width:138px; height:auto; display:block; flex:1 1 auto; min-width:0; }
+
+.cxsb-marca{
+  width:112px;
+  height:auto;
+  max-height:22px;
+  object-fit:contain;
+  object-position:left center;
+  display:block;
+  flex:0 0 auto;
+  min-width:0;
+}
+
 .cxsb-toggle{
   margin-left:auto; width:28px; height:28px; min-width:28px;
   border:none; background:transparent; border-radius:7px; cursor:pointer;
@@ -58,24 +64,8 @@ html body{
 .cxsb-toggle .material-symbols-rounded{ font-size:19px; }
 
 /* ===== CORPO ===== */
-/* ============================================================
-   POR QUE flex-shrink:0 EM TUDO AQUI DENTRO
-
-   `.cxsb-body` e um flex column COM scroll. Filho de flex column
-   tem flex-shrink:1 por padrao: quando o conteudo passa da altura
-   disponivel, o navegador ENCOLHE os filhos em vez de deixar rolar.
-
-   `.cxsb-item` resistia porque tem min-height. `.cxsb-lista` nao
-   tinha piso nenhum e ainda por cima usa overflow:hidden -- entao
-   colapsava e cortava os proprios itens. Era por isso que os
-   grupos perdiam os ultimos links (CX Data, Projetos, Tecnologia,
-   RH Interno sumiam) e o efeito piorava a cada grupo aberto.
-
-   Travar o encolhimento devolve a responsabilidade a quem e dela:
-   o container rola, o conteudo mantem o tamanho.
-   ============================================================ */
 .cxsb-body{
-  flex:1 1 auto; min-height:0;          /* min-height:0 permite o scroll de fato */
+  flex:1 1 auto; min-height:0;
   overflow-y:auto; overflow-x:hidden;
   padding:8px; display:flex; flex-direction:column; gap:1px;
 }
@@ -100,11 +90,10 @@ html body{
 .cxsb-grupo-caret{ font-size:15px !important; min-width:15px; margin-left:auto; transition:transform .2s; }
 .cxsb-grupo.fechado .cxsb-grupo-caret{ transform:rotate(-90deg); }
 
-/* Aberta nasce sem teto: altura fixa (o antigo max-height:900px)
-   corta em silêncio assim que um grupo cresce. O JS abaixo cuida da
-   animação e devolve `none` ao terminar. */
-.cxsb-lista{ display:flex; flex-direction:column; gap:1px; overflow:hidden;
-  transition:max-height .24s ease; max-height:none; }
+.cxsb-lista{
+  display:flex; flex-direction:column; gap:1px; overflow:hidden;
+  transition:max-height .24s ease; max-height:none;
+}
 .cxsb-lista.fechada{ max-height:0; }
 
 /* ===== ITEM ===== */
@@ -122,12 +111,13 @@ html body{
 .cxsb-item-txt{ font-size:13px; font-weight:500; }
 .cxsb-item.ativo .cxsb-item-txt{ font-weight:600; }
 
-/* ===== SUBITEM (OKR / Clima / Desempenho) ===== */
+/* ===== SUBITEM ===== */
 .cxsb-caret{ font-size:17px !important; min-width:17px; margin-left:auto; color:#7C7C88; transition:transform .22s; }
 .cxsb-item.ativo .cxsb-caret{ color:#fff; }
 .cxsb-pai.aberto .cxsb-caret{ transform:rotate(180deg); }
 .cxsb-sub{ max-height:0; overflow:hidden; transition:max-height .22s ease; }
 .cxsb-pai.aberto + .cxsb-sub{ max-height:90px; }
+
 .cxsb-subitem{
   display:flex; align-items:center; gap:10px; padding:0 10px 0 34px;
   height:34px; border-radius:8px; cursor:pointer; color:#7C7C88;
@@ -141,22 +131,6 @@ html body{
 
 .cxsb-sep{ height:1px; background:#E4E4EA; margin:7px 4px; flex-shrink:0; display:none; }
 
-/* ============================================================
-   MODO ESTREITO
-   Escrito como exceção dentro de min-width:901px, para que o
-   celular não herde nada disso. Passar o mouse anula todas as
-   regras abaixo de uma vez — é o que faz o painel abrir sozinho.
-   ============================================================ */
-/* ============================================================
-   ÍCONES
-   Com a sidebar aberta, só o Início mostra ícone — o texto basta
-   e a lista fica mais calma. No modo estreito eles reaparecem,
-   porque ali o ícone é a única coisa que resta para navegar.
-   ============================================================ */
-/* Expandida, NENHUM item mostra icone -- inclusive o Inicio, que
-   era a unica excecao e por isso quebrava o alinhamento da coluna
-   de texto. O icone volta so no modo estreito, onde e a unica
-   coisa que resta para navegar. */
 .cxsidebar .cxsb-item > .material-symbols-rounded,
 .cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:none; }
 
@@ -166,9 +140,9 @@ html body{
 @media (min-width:901px){
   .cxsidebar:not(:hover):not(.fixa){ width:var(--cx-rail); }
 
-  /* de volta os ícones: no rail não há texto para ler */
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item > .material-symbols-rounded,
   .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem > .material-symbols-rounded{ display:block; }
+
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item{ padding-left:0; }
 
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item-txt,
@@ -184,12 +158,10 @@ html body{
   .cxsidebar:not(:hover):not(.fixa) .cxsb-head{ padding:0; justify-content:center; }
   .cxsidebar:not(:hover):not(.fixa) .cxsb-pai.aberto + .cxsb-sub{ max-height:0; }
 
-  /* Sombra só quando sobrepõe. Fixa não sobrepõe, então não projeta. */
   .cxsidebar:hover:not(.fixa){
     box-shadow:14px 0 44px rgba(23,23,26,.13), inset -1px 0 0 #E4E4EA;
   }
 
-  /* balão de ajuda, só no estreito */
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item[data-tip]:hover::after{
     content:attr(data-tip); position:absolute; left:calc(100% + 8px); top:50%;
     transform:translateY(-50%); background:#17171A; color:#fff;
@@ -198,14 +170,9 @@ html body{
   }
 }
 
-/* CONSISTÊNCIA: grupo recolhido fica recolhido nos dois estados.
-   Isso é seguro porque o hover expande e devolve os títulos —
-   sempre há como reabrir. */
 .cxsb-lista.fechada{ max-height:0; }
 
-/* ============================================================
-   MOBILE — vira gaveta
-   ============================================================ */
+/* ===== MOBILE ===== */
 .cxsb-ham{
   display:none; position:fixed; top:11px; left:12px; z-index:190;
   width:38px; height:38px; border-radius:10px; border:none;
@@ -221,23 +188,21 @@ html body{
   .cxsb-ham{ display:flex; }
   .cxsb-veu.on{ display:block; }
 
-  /* Não existe modo estreito no toque: as regras do rail vivem em
-     min-width:901px, então aqui a sidebar já nasce inteira. */
   .cxsidebar{
     width:var(--cx-aberta);
     transform:translateX(-100%);
     transition:transform .24s cubic-bezier(.4,0,.2,1);
     box-shadow:none;
   }
-  .cxsidebar.gaveta{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.2); }
-  .cxsb-toggle{ display:none; }
 
+  .cxsidebar.gaveta{
+    transform:translateX(0);
+    box-shadow:14px 0 44px rgba(23,23,26,.2);
+  }
+
+  .cxsb-toggle{ display:none; }
   .cxsb-item{ height:46px; min-height:46px; }
   .cxsb-subitem{ height:42px; }
-
-  /* Sem animação de altura no toque: a gaveta já entra deslizando, e
-     duas animações ao mesmo tempo é o que deixava um item cortado
-     pela metade quando o menu abria. */
   .cxsb-lista{ transition:none; }
 }
 
@@ -245,21 +210,24 @@ html body{
   .cxsidebar, html body, .cxsb-lista, .cxsb-sub{ transition:none !important; }
 }
 
-.cxsb-conta{ margin-left:auto; font-size:9.5px; font-weight:600; padding:1px 7px;
+.cxsb-conta{
+  margin-left:auto; font-size:9.5px; font-weight:600; padding:1px 7px;
   border-radius:99px; background:#F7F7F9; color:#7C7C88;
-  font-family:'IBM Plex Mono',monospace; }
+  font-family:'IBM Plex Mono',monospace;
+}
 .cxsidebar:not(:hover):not(.fixa) .cxsb-conta{ display:none; }
 </style>
 
 <button class="cxsb-ham" onclick="cxsbGaveta(true)" aria-label="Abrir menu">
   <span class="material-symbols-rounded">menu</span>
 </button>
+
 <div class="cxsb-veu" id="cxsbVeu" onclick="cxsbGaveta(false)"></div>
 
 <nav class="cxsidebar" id="cxSidebar" aria-label="Navegação principal">
   <div class="cxsb-head">
-    <img src="{{ url_for('static', filename='core-cx-icon.png') }}" alt="core.cx" class="cxsb-logo">
     <img src="{{ url_for('static', filename='core-cx-logo.png') }}" alt="core.cx" class="cxsb-marca">
+
     <button class="cxsb-toggle" id="cxsbToggle" onclick="cxsbAlternar(event)" aria-label="Fixar menu aberto" title="Fixar menu aberto">
       <span class="material-symbols-rounded">keep</span>
     </button>
@@ -280,6 +248,7 @@ html body{
       <span class="material-symbols-rounded">home</span>
       <span class="cxsb-item-txt">Início</span>
     </div>
+
     {% if not eh_person or 'feed' in perm_modulos %}
     <div class="cxsb-item" data-path="/feed" data-tip="Feed" onclick="location.href='/feed'">
       <span class="material-symbols-rounded">campaign</span>
@@ -287,37 +256,40 @@ html body{
     </div>
     {% endif %}
 
-    {# ===== CRM ===== #}
     {% if not eh_person or 'crm' in perm_modulos %}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="crm" onclick="cxsbGrupo(this)">
       CRM<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
+
     <div class="cxsb-lista" id="gr-crm">
       <div class="cxsb-item" data-path="/crm" data-tip="Pipeline" onclick="location.href='/crm'">
-        <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">Pipeline</span>
+        <span class="material-symbols-rounded">filter_alt</span>
+        <span class="cxsb-item-txt">Pipeline</span>
       </div>
+
       <div class="cxsb-item" data-path="/dashboard?aba=comercial" data-tip="Dashboard comercial"
            onclick="location.href='/dashboard?aba=comercial'">
-        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-txt">Dashboard</span>
+        <span class="material-symbols-rounded">monitoring</span>
+        <span class="cxsb-item-txt">Dashboard</span>
       </div>
     </div>
     {% endif %}
 
-    {# ===== FERRAMENTAS ===== #}
     {% if not eh_person or 'okr' in perm_modulos %}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="ferramentas" onclick="cxsbGrupo(this)">
       Ferramentas<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
+
     <div class="cxsb-lista" id="gr-ferramentas">
       <div class="cxsb-item" data-path="/okr" data-tip="OKR" onclick="location.href='/okr'">
-        <span class="material-symbols-rounded">target</span><span class="cxsb-item-txt">OKR</span>
+        <span class="material-symbols-rounded">target</span>
+        <span class="cxsb-item-txt">OKR</span>
       </div>
     </div>
     {% endif %}
 
-    {# ===== PRODUTOS ===== #}
     {% if not eh_person or 'recrutamento' in perm_modulos or 'rhestrategico' in perm_modulos
           or 'educacao' in perm_modulos or 'cxdata' in perm_modulos or 'projetos' in perm_modulos %}
     <div class="cxsb-sep"></div>
@@ -325,36 +297,48 @@ html body{
       Produtos
       <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
+
     <div class="cxsb-lista" id="gr-produtos">
       {% if not eh_person or 'recrutamento' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/recrutamento" data-tip="R&S" onclick="location.href='/board/recrutamento'">
-        <span class="material-symbols-rounded">group_add</span><span class="cxsb-item-txt">R&amp;S</span>
+        <span class="material-symbols-rounded">group_add</span>
+        <span class="cxsb-item-txt">R&amp;S</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'rhestrategico' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/rhestrategico" data-tip="RH Estratégico" onclick="location.href='/board/rhestrategico'">
-        <span class="material-symbols-rounded">insights</span><span class="cxsb-item-txt">RH Estratégico</span><span class="cxsb-conta">4</span>
+        <span class="material-symbols-rounded">insights</span>
+        <span class="cxsb-item-txt">RH Estratégico</span>
+        <span class="cxsb-conta">4</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'educacao' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/educacao" data-tip="Educação" onclick="location.href='/board/educacao'">
-        <span class="material-symbols-rounded">school</span><span class="cxsb-item-txt">Educação</span><span class="cxsb-conta">3</span>
+        <span class="material-symbols-rounded">school</span>
+        <span class="cxsb-item-txt">Educação</span>
+        <span class="cxsb-conta">3</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'cxdata' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/cxdata" data-tip="CX Data" onclick="location.href='/board/cxdata'">
-        <span class="material-symbols-rounded">database</span><span class="cxsb-item-txt">CX Data</span><span class="cxsb-conta">2</span>
+        <span class="material-symbols-rounded">database</span>
+        <span class="cxsb-item-txt">CX Data</span>
+        <span class="cxsb-conta">2</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'projetos' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/projetos" data-tip="Projetos" onclick="location.href='/board/projetos'">
-        <span class="material-symbols-rounded">folder</span><span class="cxsb-item-txt">Projetos</span>
+        <span class="material-symbols-rounded">folder</span>
+        <span class="cxsb-item-txt">Projetos</span>
       </div>
       {% endif %}
     </div>
     {% endif %}
 
-    {# ===== INTERNO ===== #}
     {% if not eh_person or 'comercial' in perm_modulos or 'marketing' in perm_modulos
           or 'financeiro' in perm_modulos or 'tecnologia' in perm_modulos
           or 'rhinterno' in perm_modulos %}
@@ -363,71 +347,89 @@ html body{
       Interno
       <span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
+
     <div class="cxsb-lista" id="gr-interno">
       {% if not eh_person or 'comercial' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/comercial" data-tip="Comercial" onclick="location.href='/board/comercial'">
-        <span class="material-symbols-rounded">handshake</span><span class="cxsb-item-txt">Comercial</span>
+        <span class="material-symbols-rounded">handshake</span>
+        <span class="cxsb-item-txt">Comercial</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'marketing' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/marketing" data-tip="Marketing" onclick="location.href='/board/marketing'">
-        <span class="material-symbols-rounded">campaign</span><span class="cxsb-item-txt">Marketing</span>
+        <span class="material-symbols-rounded">campaign</span>
+        <span class="cxsb-item-txt">Marketing</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'financeiro' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/financeiro" data-tip="Adm/Financeiro" onclick="location.href='/board/financeiro'">
-        <span class="material-symbols-rounded">payments</span><span class="cxsb-item-txt">Adm/Financeiro</span>
+        <span class="material-symbols-rounded">payments</span>
+        <span class="cxsb-item-txt">Adm/Financeiro</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'tecnologia' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/tecnologia" data-tip="Tecnologia" onclick="location.href='/board/tecnologia'">
-        <span class="material-symbols-rounded">terminal</span><span class="cxsb-item-txt">Tecnologia</span>
+        <span class="material-symbols-rounded">terminal</span>
+        <span class="cxsb-item-txt">Tecnologia</span>
       </div>
       {% endif %}
+
       {% if not eh_person or 'rhinterno' in perm_modulos %}
       <div class="cxsb-item" data-path="/board/rhinterno" data-tip="RH Interno" onclick="location.href='/board/rhinterno'">
-        <span class="material-symbols-rounded">badge</span><span class="cxsb-item-txt">RH Interno</span><span class="cxsb-conta">3</span>
+        <span class="material-symbols-rounded">badge</span>
+        <span class="cxsb-item-txt">RH Interno</span>
+        <span class="cxsb-conta">3</span>
       </div>
       {% endif %}
     </div>
     {% endif %}
 
-    {# ===== GESTÃO ===== #}
     <div class="cxsb-sep"></div>
     <div class="cxsb-grupo" data-g="gestao" onclick="cxsbGrupo(this)">
       Gestão<span class="material-symbols-rounded cxsb-grupo-caret">expand_more</span>
     </div>
+
     <div class="cxsb-lista" id="gr-gestao">
       {% if not eh_person or 'agenda' in perm_modulos %}
       <div class="cxsb-item" data-path="/agenda" data-tip="Agenda" onclick="location.href='/agenda'">
-        <span class="material-symbols-rounded">calendar_month</span><span class="cxsb-item-txt">Agenda</span>
+        <span class="material-symbols-rounded">calendar_month</span>
+        <span class="cxsb-item-txt">Agenda</span>
       </div>
       {% endif %}
+
       {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'dashboard' in perm_modulos) %}
       <div class="cxsb-item" data-path="/dashboard" data-tip="Dashboard" onclick="location.href='/dashboard'">
-        <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-txt">Dashboard</span>
+        <span class="material-symbols-rounded">monitoring</span>
+        <span class="cxsb-item-txt">Dashboard</span>
       </div>
       {% endif %}
+
       {% if nivel_acesso in ['admin','gestor'] or (eh_person and 'clientes' in perm_modulos) %}
       <div class="cxsb-item" data-path="/clientes" data-tip="Clientes" onclick="location.href='/clientes'">
-        <span class="material-symbols-rounded">business</span><span class="cxsb-item-txt">Clientes</span>
+        <span class="material-symbols-rounded">business</span>
+        <span class="cxsb-item-txt">Clientes</span>
       </div>
       {% endif %}
-      {% if not eh_person or 'agenda' in perm_modulos %}
-      {% endif %}
-      {# Lixeira segue a tela liberada em Acessos; Acessos e Configurações
-         são só de administrador. #}
+
       {% if nivel_acesso == 'admin' or 'lixeira' in perm_modulos %}
       <div class="cxsb-item" data-path="/lixeira" data-tip="Lixeira" onclick="location.href='/lixeira'">
-        <span class="material-symbols-rounded">delete</span><span class="cxsb-item-txt">Lixeira</span>
+        <span class="material-symbols-rounded">delete</span>
+        <span class="cxsb-item-txt">Lixeira</span>
       </div>
       {% endif %}
+
       {% if nivel_acesso == 'admin' %}
       <div class="cxsb-item" data-path="/acessos" data-tip="Acessos" onclick="location.href='/acessos'">
-        <span class="material-symbols-rounded">key</span><span class="cxsb-item-txt">Acessos</span>
+        <span class="material-symbols-rounded">key</span>
+        <span class="cxsb-item-txt">Acessos</span>
       </div>
+
       <div class="cxsb-item" data-path="/configuracoes" data-tip="Configurações" onclick="location.href='/configuracoes'">
-        <span class="material-symbols-rounded">settings</span><span class="cxsb-item-txt">Configurações</span>
+        <span class="material-symbols-rounded">settings</span>
+        <span class="cxsb-item-txt">Configurações</span>
       </div>
       {% endif %}
     </div>
@@ -440,8 +442,6 @@ html body{
   var sb   = document.getElementById('cxSidebar');
   var raiz = document.documentElement;
 
-  /* Só a sidebar FIXA reserva espaço. No hover ela sobrepõe, então
-     o padding do body continua o do rail e a página não salta. */
   function aplicarLargura(){
     raiz.style.setProperty('--cx-sb-w', sb.classList.contains('fixa') ? '248px' : '60px');
   }
@@ -449,6 +449,7 @@ html body{
   var fixa = null;
   try { fixa = localStorage.getItem('cx_sb_fixa'); } catch(e){}
   if (fixa === null) fixa = (window.innerWidth >= 1600) ? '1' : '0';
+
   sb.classList.toggle('fixa', fixa === '1');
   aplicarLargura();
   atualizarBotao();
@@ -456,6 +457,7 @@ html body{
   function atualizarBotao(){
     var b = document.getElementById('cxsbToggle');
     if (!b) return;
+
     var f = sb.classList.contains('fixa');
     b.title = f ? 'Soltar menu' : 'Fixar menu aberto';
     b.setAttribute('aria-label', b.title);
@@ -465,9 +467,11 @@ html body{
 
   window.cxsbAlternar = function(e){
     if (e) e.stopPropagation();
+
     var f = sb.classList.toggle('fixa');
     aplicarLargura();
     atualizarBotao();
+
     try { localStorage.setItem('cx_sb_fixa', f ? '1' : '0'); } catch(err){}
   };
 
@@ -476,52 +480,60 @@ html body{
     document.getElementById('cxsbVeu').classList.toggle('on', abrir);
   };
 
-  /* ---- item ativo ---- */
   var caminho = window.location.pathname;
   var busca   = window.location.search;
+
   if (caminho === '/planejamento') caminho = '/agenda';
   if (caminho === '/board/geral')  caminho = '/board/cxdata';
 
-  // /dashboard e /dashboard?aba=comercial são a mesma tela em abas
-  // diferentes: sem olhar a query, os dois itens acenderiam juntos.
   var aba = new URLSearchParams(busca).get('aba');
   var atual = (caminho === '/dashboard' && aba) ? caminho + '?aba=' + aba : caminho;
 
   var listaAtiva = null;
+
   document.querySelectorAll('.cxsb-item[data-path]').forEach(function(it){
     var p = it.getAttribute('data-path');
     var bate;
+
     if (p.indexOf('?') >= 0)      bate = (atual === p);
     else if (p === '/dashboard')  bate = (caminho === '/dashboard' && !aba);
     else if (p === '/')           bate = (caminho === '/');
     else                          bate = (caminho === p || caminho.indexOf(p + '/') === 0);
+
     if (bate) {
       it.classList.add('ativo');
+
       var l = it.closest('.cxsb-lista');
       if (l) listaAtiva = l.id;
     }
   });
+
   document.querySelectorAll('.cxsb-subitem[data-path]').forEach(function(s){
     if (caminho === s.getAttribute('data-path')) {
       s.classList.add('ativo');
+
       var pai = s.closest('.cxsb-sub').previousElementSibling;
       if (pai && pai.classList.contains('cxsb-pai')) pai.classList.add('aberto');
+
       var l = s.closest('.cxsb-lista');
       if (l) listaAtiva = l.id;
     }
   });
 
-  /* ---- grupos: abertos por padrão, e o estado vale nos dois modos ---- */
   var pref = {};
-  try { pref = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {}; } catch(e){}
-  // Grupo sem nenhum item visível não deve aparecer: um cabeçalho
-  // solto sugere que algo quebrou, quando na verdade é só permissão.
+  try {
+    pref = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {};
+  } catch(e){}
+
   document.querySelectorAll('.cxsb-lista[id^="gr-"]').forEach(function(lista){
     if(!lista.querySelector('.cxsb-item')){
       lista.style.display = 'none';
+
       var g = document.querySelector('.cxsb-grupo[data-g="' + lista.id.slice(3) + '"]');
+
       if(g){
         g.style.display = 'none';
+
         var sep = g.previousElementSibling;
         if(sep && sep.classList.contains('cxsb-sep')) sep.style.display = 'none';
       }
@@ -531,36 +543,43 @@ html body{
   document.querySelectorAll('.cxsb-grupo[data-g]').forEach(function(g){
     var k = g.getAttribute('data-g');
     var lista = document.getElementById('gr-' + k);
+
     if (!lista) return;
+
     var aberto = pref.hasOwnProperty(k) ? (pref[k] === true) : true;
     if (lista.id === listaAtiva) aberto = true;
+
     g.classList.toggle('fechado', !aberto);
     lista.classList.toggle('fechada', !aberto);
   });
 
-  /* Anima entre 0 e a altura real, e ao terminar solta o teto.
-     Deixar um max-height fixo no estado aberto corta o último item
-     quando o grupo cresce — foi o que aconteceu com Ferramentas. */
   function animar(lista, fechou){
     var alvo = lista.scrollHeight;
+
     lista.style.maxHeight = (fechou ? alvo : 0) + 'px';
-    void lista.offsetHeight;                 // força o navegador a aplicar
+    void lista.offsetHeight;
     lista.style.maxHeight = (fechou ? 0 : alvo) + 'px';
+
     if (fechou) return;
+
     var solta = function(){
-      lista.style.maxHeight = '';            // volta ao 'none' do CSS
+      lista.style.maxHeight = '';
       lista.removeEventListener('transitionend', solta);
     };
+
     lista.addEventListener('transitionend', solta);
   }
 
   window.cxsbGrupo = function(el){
     var k = el.getAttribute('data-g');
     var lista = document.getElementById('gr-' + k);
+
     if (!lista) return;
+
     var fechou = el.classList.toggle('fechado');
     lista.classList.toggle('fechada', fechou);
     animar(lista, fechou);
+
     try {
       var p = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {};
       p[k] = !fechou;
@@ -568,9 +587,12 @@ html body{
     } catch(e){}
   };
 
-  /* No estreito o item pai navega; expandido, abre o submenu. */
   window.cxsbModulo = function(e, rota){
-    if (sb.offsetWidth < 100) { location.href = rota; return; }
+    if (sb.offsetWidth < 100) {
+      location.href = rota;
+      return;
+    }
+
     e.stopPropagation();
     e.currentTarget.classList.toggle('aberto');
   };
