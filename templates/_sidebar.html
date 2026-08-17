@@ -58,10 +58,31 @@ html body{
 .cxsb-toggle .material-symbols-rounded{ font-size:19px; }
 
 /* ===== CORPO ===== */
+/* ============================================================
+   POR QUE flex-shrink:0 EM TUDO AQUI DENTRO
+
+   `.cxsb-body` e um flex column COM scroll. Filho de flex column
+   tem flex-shrink:1 por padrao: quando o conteudo passa da altura
+   disponivel, o navegador ENCOLHE os filhos em vez de deixar rolar.
+
+   `.cxsb-item` resistia porque tem min-height. `.cxsb-lista` nao
+   tinha piso nenhum e ainda por cima usa overflow:hidden -- entao
+   colapsava e cortava os proprios itens. Era por isso que os
+   grupos perdiam os ultimos links (CX Data, Projetos, Tecnologia,
+   RH Interno sumiam) e o efeito piorava a cada grupo aberto.
+
+   Travar o encolhimento devolve a responsabilidade a quem e dela:
+   o container rola, o conteudo mantem o tamanho.
+   ============================================================ */
 .cxsb-body{
-  flex:1; overflow-y:auto; overflow-x:hidden;
+  flex:1 1 auto; min-height:0;          /* min-height:0 permite o scroll de fato */
+  overflow-y:auto; overflow-x:hidden;
   padding:8px; display:flex; flex-direction:column; gap:1px;
 }
+.cxsb-body > *,
+.cxsb-lista > *,
+.cxsb-sub > *{ flex-shrink:0; }
+.cxsb-lista, .cxsb-sub, .cxsb-item, .cxsb-subitem, .cxsb-grupo{ flex-shrink:0; }
 .cxsb-body::-webkit-scrollbar{ width:6px; }
 .cxsb-body::-webkit-scrollbar-track{ background:transparent; }
 .cxsb-body::-webkit-scrollbar-thumb{ background:#D3D3DC; border-radius:99px; }
@@ -132,10 +153,14 @@ html body{
    e a lista fica mais calma. No modo estreito eles reaparecem,
    porque ali o ícone é a única coisa que resta para navegar.
    ============================================================ */
-.cxsidebar .cxsb-item:not([data-path="/"]) > .material-symbols-rounded,
+/* Expandida, NENHUM item mostra icone -- inclusive o Inicio, que
+   era a unica excecao e por isso quebrava o alinhamento da coluna
+   de texto. O icone volta so no modo estreito, onde e a unica
+   coisa que resta para navegar. */
+.cxsidebar .cxsb-item > .material-symbols-rounded,
 .cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:none; }
 
-.cxsidebar .cxsb-item:not([data-path="/"]){ padding-left:14px; }
+.cxsidebar .cxsb-item{ padding-left:14px; }
 .cxsidebar .cxsb-subitem{ padding-left:26px; }
 
 @media (min-width:901px){
@@ -144,7 +169,7 @@ html body{
   /* de volta os ícones: no rail não há texto para ler */
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item > .material-symbols-rounded,
   .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem > .material-symbols-rounded{ display:block; }
-  .cxsidebar:not(:hover):not(.fixa) .cxsb-item:not([data-path="/"]){ padding-left:0; }
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-item{ padding-left:0; }
 
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item-txt,
   .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem-txt,
@@ -210,16 +235,6 @@ html body{
   .cxsb-item{ height:46px; min-height:46px; }
   .cxsb-subitem{ height:42px; }
 
-  /* ÍCONES DE VOLTA NO TOQUE.
-     A regra que os esconde vale para a sidebar aberta, onde o texto
-     basta e a lista fica mais calma. No celular a gaveta É sempre a
-     aberta, então a lista virava texto puro — difícil de varrer com o
-     polegar e sem nenhuma âncora visual. */
-  .cxsidebar .cxsb-item > .material-symbols-rounded,
-  .cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:block; }
-  .cxsidebar .cxsb-item:not([data-path="/"]){ padding-left:10px; }
-  .cxsidebar .cxsb-subitem{ padding-left:32px; }
-
   /* Sem animação de altura no toque: a gaveta já entra deslizando, e
      duas animações ao mesmo tempo é o que deixava um item cortado
      pela metade quando o menu abria. */
@@ -266,9 +281,9 @@ html body{
       <span class="cxsb-item-txt">Início</span>
     </div>
     {% if not eh_person or 'feed' in perm_modulos %}
-    <div class="cxsb-item" data-path="/feed" data-tip="Mural" onclick="location.href='/feed'">
+    <div class="cxsb-item" data-path="/feed" data-tip="Feed" onclick="location.href='/feed'">
       <span class="material-symbols-rounded">campaign</span>
-      <span class="cxsb-item-txt">Mural</span>
+      <span class="cxsb-item-txt">Feed</span>
     </div>
     {% endif %}
 
