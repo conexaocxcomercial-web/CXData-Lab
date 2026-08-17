@@ -143,10 +143,17 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .tr:hover .tr-seta{ color:var(--tinta-3); }
 
 @media(max-width:1040px){
+    /* Antes quadros e responsabilidade eram escondidos no celular, e
+       sobrava uma lista de nomes que não respondia nada — justamente
+       as duas colunas que a tela existe para mostrar. Agora tudo
+       empilha numa coluna só. */
     .th{ display:none; }
-    .tr{ grid-template-columns:1fr auto; gap:9px; padding:13px 15px; }
-    .cel-quadros,.cel-resp,.tr-seta{ display:none; }
-    .pes{ grid-column:1/-1; }
+    .tr{ grid-template-columns:1fr; gap:7px; padding:14px 15px; }
+    .tr-seta{ display:none; }
+    .cel-quadros,.cel-resp{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .cel-quadros .cel,.cel-resp .cel{ white-space:normal; }
+    .cel-sub{ display:inline; margin:0; }
+    .cel-resp:empty{ display:none; }
 }
 
 /* ===== PAINEL LATERAL ===== */
@@ -287,8 +294,18 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     .cmd-tit,.cmd-sep{ display:none; }
     .segm{ width:100%; }
     .segm-btn{ flex:1; justify-content:center; }
-    .cmd-dir{ width:100%; margin-left:0; }
-    .busca{ flex:1; width:auto; min-width:140px; }
+
+    /* A BARRA DE AÇÕES QUEBRA EM DUAS LINHAS.
+       Busca, filtro e botão somam cerca de 400px de largura mínima.
+       Numa tela de 360px eles não cabiam lado a lado e o excesso
+       empurrava o documento inteiro para o lado — era o que deixava
+       uma faixa cinza na direita e cortava o botão. Busca ocupa a
+       primeira linha; filtro e botão dividem a segunda. */
+    .cmd-dir{ width:100%; margin-left:0; flex-wrap:wrap; }
+    .busca{ flex:1 1 100%; width:auto; min-width:0; order:-1; }
+    .filtro{ flex:1 1 40%; min-width:0; }
+    .cmd-dir .btn{ flex:1 1 40%; justify-content:center; }
+
     .wrap{ padding:16px 16px 80px; }
     .painel{ max-width:none; }
     .modal-fundo{ padding:0; align-items:flex-end; }
@@ -534,7 +551,7 @@ const Acessos = (function(){
       ? `<span class="tag t-adm"><span class="material-symbols-rounded">shield</span>Administrador</span>`
       : (p.alcance === 'quadro'
           ? `<span class="tag t-quadro">Vê tudo do quadro</span>`
-          : `<span class="tag t-proprio">Só o que é dele</span>`);
+          : `<span class="tag t-proprio">Só os próprios cards</span>`);
 
     const quadros = p.admin
       ? `<span class="cel">todos os quadros</span>`
