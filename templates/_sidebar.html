@@ -1,6 +1,6 @@
 <style>
 /* ============================================================
-   SIDEBAR CXProjetos — reescrita a partir da proposta v3
+   SIDEBAR core.cx — reescrita a partir da proposta v3
 
    DUAS REGRAS SUSTENTAM TUDO:
 
@@ -48,7 +48,7 @@ html body{
   border-bottom:1px solid #E4E4EA;
 }
 .cxsb-logo{ width:26px; height:26px; min-width:26px; object-fit:contain; flex-shrink:0; }
-.cxsb-marca{ font-size:14px; font-weight:700; letter-spacing:-.3px; white-space:nowrap; color:#17171A; }
+.cxsb-marca{ width:138px; height:auto; display:block; flex:1 1 auto; min-width:0; }
 .cxsb-toggle{
   margin-left:auto; width:28px; height:28px; min-width:28px;
   border:none; background:transparent; border-radius:7px; cursor:pointer;
@@ -258,8 +258,8 @@ html body{
 
 <nav class="cxsidebar" id="cxSidebar" aria-label="Navegação principal">
   <div class="cxsb-head">
-    <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="CXProjetos" class="cxsb-logo">
-    <span class="cxsb-marca">CXProjetos</span>
+    <img src="{{ url_for('static', filename='core-cx-icon.png') }}" alt="core.cx" class="cxsb-logo">
+    <img src="{{ url_for('static', filename='core-cx-logo.png') }}" alt="core.cx" class="cxsb-marca">
     <button class="cxsb-toggle" id="cxsbToggle" onclick="cxsbAlternar(event)" aria-label="Fixar menu aberto" title="Fixar menu aberto">
       <span class="material-symbols-rounded">keep</span>
     </button>
