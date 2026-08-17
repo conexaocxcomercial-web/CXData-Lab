@@ -114,7 +114,7 @@ AREAS = [
     ('crm',       'CRM',       'filter_alt',     'Funis de qualificação, fechamento e nutrição'),
     ('clientes',  'Clientes',  'business',       'Carteira de clientes'),
     ('okr',       'OKR',       'target',         'Objetivos e resultados-chave'),
-    ('feed',      'Mural',     'campaign',       'Comunicados, eventos e celebrações'),
+    ('feed',      'Feed',      'campaign',       'Comunicados, eventos e celebrações'),
     ('dashboard', 'Painel',    'insights',       'Indicadores de projetos e produtividade'),
     ('lixeira',   'Lixeira',   'delete',         'Itens excluídos e restauração'),
 ]
