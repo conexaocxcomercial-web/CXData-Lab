@@ -2213,10 +2213,20 @@
         }
 
         // Devolve true se abriu a janela (e o chamador deve parar).
+        //
+        // Envolvida em try/catch de proposito. Quem chama faz
+        // `if(pedirEncerramento(...)) return`, entao uma excecao aqui
+        // interrompia o salvamento E nao mostrava a janela: o card
+        // parecia mover e voltava sozinho no refresh seguinte, sem
+        // nenhuma explicacao. Falhando, devolve false e a finalizacao
+        // segue pelo caminho simples.
         function pedirEncerramento(projetoId, novoStatus){
+          try{
             if(novoStatus !== 'Finalizado') return false;
             const p = projetosGlobais.find(x => x.id === projetoId);
             if(!p) return false;
+            const janela = document.getElementById('modalEncerrar');
+            if(!janela){ console.warn('modalEncerrar ausente no DOM'); return false; }
             encPendente = { id: projetoId, status: novoStatus };
             const sugereRel = AREAS_RELACIONAMENTO.includes(p.area);
             document.getElementById('encNome').innerText = p.nome_projeto || 'este projeto';
@@ -2228,8 +2238,13 @@
                 ? 'Sugerido: projetos desta área costumam render nova proposta.'
                 : 'Não sugerido para esta área — marque se quiser mesmo assim.';
             document.getElementById('encLinhaValor').style.display = 'none';
-            document.getElementById('modalEncerrar').classList.add('show');
+            janela.classList.add('ativo');
             return true;
+          }catch(err){
+            console.error('Janela de encerramento falhou:', err);
+            encPendente = null;
+            return false;
+          }
         }
 
         function marcarEnc(id, valor){
@@ -2251,9 +2266,10 @@
             const valorTxt = document.getElementById('encValor').value.replace(/[^\d,.-]/g,'').replace(',','.');
             const { id, status } = encPendente;
             encPendente = null;
-            document.getElementById('modalEncerrar').classList.remove('show');
+            document.getElementById('modalEncerrar').classList.remove('ativo');
 
             const proj = projetosGlobais.find(p => p.id === id);
+            const anteriorEnc = proj ? proj.status : null;
             if(proj) proj.status = status;
             renderizarProjetos();
             try{
@@ -2266,13 +2282,17 @@
                 if(cob) partes.push('cobrança criada');
                 showToast(partes.length ? 'Finalizado · ' + partes.join(' · ') : 'Projeto finalizado', 'success');
             }catch(e){
-                showToast('Erro ao finalizar no servidor', 'error');
+                // O card ja foi movido na tela; sem devolver, a pessoa
+                // acredita que finalizou e o servidor nao registrou nada.
+                if(proj) proj.status = anteriorEnc;
+                renderizarProjetos();
+                showToast('Nao foi possivel finalizar. Tente de novo.', 'error');
             }
         }
 
         function cancelarEncerrar(){
             encPendente = null;
-            document.getElementById('modalEncerrar').classList.remove('show');
+            document.getElementById('modalEncerrar').classList.remove('ativo');
             renderizarProjetos();   // devolve o card para onde estava
         }
 
