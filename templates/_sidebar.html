@@ -55,15 +55,16 @@ html body{
   flex:0 0 42px;
 }
 .cxsb-marca{
-  width:112px;
+  width:104px;
   height:auto;
-  max-height:22px;
+  max-height:20px;
   object-fit:contain;
   object-position:left center;
   display:block;
   flex:0 0 auto;
   min-width:0;
 }
+.top-bar-logo{ transition:opacity .16s ease; }
 .cxsb-toggle{
   margin-left:auto; width:28px; height:28px; min-width:28px;
   border:none; background:transparent; border-radius:7px; cursor:pointer;
@@ -180,6 +181,12 @@ html body{
 
 @media (min-width:901px){
   .cxsidebar:not(:hover):not(.fixa){ width:var(--cx-rail); }
+
+  body:has(.cxsidebar:hover:not(.fixa)) .top-bar-logo,
+  body:has(.cxsidebar.fixa) .top-bar-logo{
+    opacity:0;
+    pointer-events:none;
+  }
 
   .cxsidebar:not(:hover):not(.fixa) .cxsb-logo{ display:block; }
 
