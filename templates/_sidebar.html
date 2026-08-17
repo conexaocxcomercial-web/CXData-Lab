@@ -79,7 +79,11 @@ html body{
 .cxsb-grupo-caret{ font-size:15px !important; min-width:15px; margin-left:auto; transition:transform .2s; }
 .cxsb-grupo.fechado .cxsb-grupo-caret{ transform:rotate(-90deg); }
 
-.cxsb-lista{ display:flex; flex-direction:column; gap:1px; overflow:hidden; transition:max-height .24s ease; max-height:900px; }
+/* Aberta nasce sem teto: altura fixa (o antigo max-height:900px)
+   corta em silêncio assim que um grupo cresce. O JS abaixo cuida da
+   animação e devolve `none` ao terminar. */
+.cxsb-lista{ display:flex; flex-direction:column; gap:1px; overflow:hidden;
+  transition:max-height .24s ease; max-height:none; }
 .cxsb-lista.fechada{ max-height:0; }
 
 /* ===== ITEM ===== */
@@ -203,8 +207,23 @@ html body{
   .cxsidebar.gaveta{ transform:translateX(0); box-shadow:14px 0 44px rgba(23,23,26,.2); }
   .cxsb-toggle{ display:none; }
 
-  .cxsb-item{ height:44px; min-height:44px; }
-  .cxsb-subitem{ height:40px; }
+  .cxsb-item{ height:46px; min-height:46px; }
+  .cxsb-subitem{ height:42px; }
+
+  /* ÍCONES DE VOLTA NO TOQUE.
+     A regra que os esconde vale para a sidebar aberta, onde o texto
+     basta e a lista fica mais calma. No celular a gaveta É sempre a
+     aberta, então a lista virava texto puro — difícil de varrer com o
+     polegar e sem nenhuma âncora visual. */
+  .cxsidebar .cxsb-item > .material-symbols-rounded,
+  .cxsidebar .cxsb-subitem > .material-symbols-rounded{ display:block; }
+  .cxsidebar .cxsb-item:not([data-path="/"]){ padding-left:10px; }
+  .cxsidebar .cxsb-subitem{ padding-left:32px; }
+
+  /* Sem animação de altura no toque: a gaveta já entra deslizando, e
+     duas animações ao mesmo tempo é o que deixava um item cortado
+     pela metade quando o menu abria. */
+  .cxsb-lista{ transition:none; }
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -504,12 +523,29 @@ html body{
     lista.classList.toggle('fechada', !aberto);
   });
 
+  /* Anima entre 0 e a altura real, e ao terminar solta o teto.
+     Deixar um max-height fixo no estado aberto corta o último item
+     quando o grupo cresce — foi o que aconteceu com Ferramentas. */
+  function animar(lista, fechou){
+    var alvo = lista.scrollHeight;
+    lista.style.maxHeight = (fechou ? alvo : 0) + 'px';
+    void lista.offsetHeight;                 // força o navegador a aplicar
+    lista.style.maxHeight = (fechou ? 0 : alvo) + 'px';
+    if (fechou) return;
+    var solta = function(){
+      lista.style.maxHeight = '';            // volta ao 'none' do CSS
+      lista.removeEventListener('transitionend', solta);
+    };
+    lista.addEventListener('transitionend', solta);
+  }
+
   window.cxsbGrupo = function(el){
     var k = el.getAttribute('data-g');
     var lista = document.getElementById('gr-' + k);
     if (!lista) return;
     var fechou = el.classList.toggle('fechado');
     lista.classList.toggle('fechada', fechou);
+    animar(lista, fechou);
     try {
       var p = JSON.parse(localStorage.getItem('cx_sb_grupos_v3') || '{}') || {};
       p[k] = !fechou;
