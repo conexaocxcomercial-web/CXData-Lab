@@ -698,7 +698,12 @@ def atualizar_projeto(projeto_id):
                         # entra em relacionamento. A tela pergunta, e o que vier
                         # marcado chega aqui em `encerramento`.
                         p = res_atual.data[0] if res_atual.data else {}
-                        enc = d.get("encerramento") or {}
+                        # Era `d.get(...)`, e `d` nunca existiu nesta funcao:
+                        # o corpo da requisicao chama-se `dados`. O NameError
+                        # caia no except abaixo e o fluxo inteiro de
+                        # finalizacao era engolido em silencio -- nem
+                        # relacionamento, nem cobranca.
+                        enc = dados.get("encerramento") or {}
                         disparar('projeto.finalizado', {
                             "projeto_id": projeto_id,
                             "projeto_nome": p.get("nome_projeto"),
@@ -713,7 +718,13 @@ def atualizar_projeto(projeto_id):
                             "valor": enc.get("valor"),
                         })
                 except Exception as e_fluxo:
+                    # `print` sozinho nao deixa rastro consultavel: em
+                    # producao ninguem le o log do Vercel para descobrir
+                    # que a cobranca de um contrato nunca foi criada.
                     print("Aviso: fluxo de finalizacao nao rodou:", e_fluxo)
+                    _registrar_execucao(None, 'projeto.finalizado',
+                                        {"projeto_id": projeto_id}, None,
+                                        f"falha antes de disparar: {str(e_fluxo)[:300]}")
 
                 try:
                     supabase.table("projeto_movimentos").insert({
@@ -2904,8 +2915,12 @@ def _acao_criar_lead(acao, dados):
     if acao.get("funil") == "relacionamento" and not dados.get("com_relacionamento"):
         return {"pulado": "relacionamento nao marcado por quem finalizou"}
     novo = {
-        "lead": dados.get("cliente_nome") or dados.get("lead_nome"),
+        # A tabela `leads` nao tem coluna `lead`: o CRM mostra `empresa` no
+        # card e `contato` no detalhe. Gravar uma coluna inexistente fazia o
+        # insert inteiro falhar no Postgres, e o lead de relacionamento
+        # simplesmente nunca nascia.
         "empresa": dados.get("cliente_nome") or dados.get("empresa"),
+        "contato": dados.get("contato") or dados.get("lead_nome"),
         "funil": acao.get("funil", "relacionamento"),
         "coluna": acao.get("coluna", FASE_ENTRADA),
         "origem": "Cliente da casa",
@@ -3204,7 +3219,7 @@ def fechar_lead(lead_id):
         lead = r.data[0]
 
         cliente_id = d.get("cliente_id") or lead.get("cliente_id")
-        cliente_nome = d.get("cliente_nome") or lead.get("empresa") or lead.get("lead")
+        cliente_nome = d.get("cliente_nome") or lead.get("empresa") or lead.get("contato")
 
         # Cliente novo criado na hora, já ligado ao lead de origem.
         if not cliente_id and d.get("criar_cliente"):
