@@ -198,7 +198,7 @@
             align-items:center;
             justify-content:center;
             min-height:100vh;
-            padding:48px clamp(34px,6vw,96px);
+            padding:clamp(20px,3vh,48px) clamp(34px,6vw,96px);
             background:
                 radial-gradient(circle at 100% 0, rgba(108,92,231,.055), transparent 24%),
                 var(--papel);
@@ -266,6 +266,7 @@
             color:var(--texto-suave);
             font-size:19px;
             pointer-events:none;
+            z-index:1;
         }
 
         .campo input{
