@@ -325,12 +325,12 @@ def catalogo():
         "telas": [{"chave": c, "nome": n, "icone": i, "descricao": d}
                   for c, n, i, d in _areas_lista()],
         "alcances": [
-            {"chave": "proprio", "nome": "Só o que é dela",
+            {"chave": "proprio", "nome": "Só os próprios cards",
              "descricao": "Vê o quadro inteiro, mas os detalhes e o tempo lançado "
-                          "só dos próprios cards."},
+                          "só dos cards em que é responsável."},
             {"chave": "quadro", "nome": "Tudo do quadro",
              "descricao": "Vê os detalhes e o tempo lançado por todos que atuam "
-                          "nos quadros dela."},
+                          "nos mesmos quadros."},
         ],
         "modos": [
             {"chave": "direto", "nome": "Direto", "icone": "bolt",
