@@ -381,12 +381,19 @@ html body{
       {% endif %}
       {% if not eh_person or 'agenda' in perm_modulos %}
       {% endif %}
+      {# Lixeira segue a tela liberada em Acessos; Acessos e Configurações
+         são só de administrador. #}
+      {% if nivel_acesso == 'admin' or 'lixeira' in perm_modulos %}
+      <div class="cxsb-item" data-path="/lixeira" data-tip="Lixeira" onclick="location.href='/lixeira'">
+        <span class="material-symbols-rounded">delete</span><span class="cxsb-item-txt">Lixeira</span>
+      </div>
+      {% endif %}
       {% if nivel_acesso == 'admin' %}
       <div class="cxsb-item" data-path="/acessos" data-tip="Acessos" onclick="location.href='/acessos'">
         <span class="material-symbols-rounded">key</span><span class="cxsb-item-txt">Acessos</span>
       </div>
-      <div class="cxsb-item" data-path="/lixeira" data-tip="Lixeira" onclick="location.href='/lixeira'">
-        <span class="material-symbols-rounded">delete</span><span class="cxsb-item-txt">Lixeira</span>
+      <div class="cxsb-item" data-path="/configuracoes" data-tip="Configurações" onclick="location.href='/configuracoes'">
+        <span class="material-symbols-rounded">settings</span><span class="cxsb-item-txt">Configurações</span>
       </div>
       {% endif %}
     </div>
