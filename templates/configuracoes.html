@@ -1,54 +1,728 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Configurações | CXProjetos</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
-  <style>
-    :root{--mesa:#efeff3;--papel:#fff;--papel-2:#f7f7f9;--linha:#e4e4ea;--linha-2:#d3d3dc;--tinta:#17171a;--tinta-2:#56565f;--tinta-3:#7c7c88;--acao:#6c5ce7;--acao-fraco:#f1effe;--ok:#0e9f6e;--ok-fraco:#e6f7f0;--azul:#1a5fa0;--azul-fraco:#e9f2fb;--atencao:#c2660b;--at-fraco:#fff0d6;--critico:#d42f2f;--cr-fraco:#fbe3e3;--r:12px;--rc:9px;--s1:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--linha);--s2:0 12px 34px rgba(23,23,26,.11),0 0 0 1px var(--linha)}
-    *{box-sizing:border-box}body{margin:0;background:var(--mesa);color:var(--tinta);font-family:Inter,system-ui,sans-serif;font-size:14px;min-height:100vh}button,input,select{font:inherit}button{border:0}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(108,92,231,.28);outline-offset:2px}@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
-    .topbar{height:56px;background:var(--papel);border-bottom:1px solid var(--linha);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:30}.topbar-logo{font-size:16px;font-weight:700;letter-spacing:-.45px;cursor:pointer}.topbar-logo span{color:var(--acao)}.app{max-width:1440px;margin:0 auto;padding:30px 32px 64px}.cabecalho{display:flex;gap:22px;justify-content:space-between;align-items:flex-end;margin-bottom:24px}.sobretitulo{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;font-weight:700;color:var(--acao);display:flex;align-items:center;gap:8px}.sobretitulo:before{content:"";width:20px;height:2px;background:var(--acao);border-radius:99px}.cabecalho h1{margin:8px 0 6px;font-size:28px;line-height:1.08;letter-spacing:-1px}.cabecalho p{margin:0;color:var(--tinta-2);line-height:1.55;max-width:650px}.link-acao{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:var(--rc);padding:10px 13px;background:var(--acao);color:#fff;font-size:12.5px;font-weight:650;text-decoration:none;box-shadow:0 2px 5px rgba(108,92,231,.2)}.link-acao:hover{background:#5747d5}.link-acao .material-symbols-rounded{font-size:18px}
-    .resumo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.metric{background:var(--papel);box-shadow:var(--s1);border-radius:var(--r);padding:14px 16px;min-height:83px}.metric-label{font-size:11px;color:var(--tinta-3);font-weight:600}.metric-valor{font-size:24px;line-height:1;font-weight:700;letter-spacing:-.8px;margin-top:9px}.metric-desc{font-size:10.5px;color:var(--tinta-3);margin-top:5px}.metric:nth-child(2) .metric-valor{color:var(--ok)}.metric:nth-child(3) .metric-valor{color:var(--acao)}.metric:nth-child(4) .metric-valor{color:var(--atencao)}
-    .barra{display:flex;align-items:center;gap:10px;margin-bottom:12px}.busca{height:39px;max-width:360px;flex:1;display:flex;align-items:center;gap:8px;padding:0 11px;background:var(--papel);box-shadow:var(--s1);border-radius:var(--rc)}.busca .material-symbols-rounded{font-size:19px;color:var(--tinta-3)}.busca input{border:0;outline:0;background:transparent;width:100%;font-size:12.5px}.filtros{display:flex;gap:7px;flex-wrap:wrap}.filtro{border:1px solid var(--linha);background:var(--papel);color:var(--tinta-2);padding:7px 10px;border-radius:99px;font-size:11.5px;font-weight:600;cursor:pointer}.filtro.on{background:var(--acao-fraco);border-color:#c7bef8;color:var(--acao)}
-    .tabela{background:var(--papel);box-shadow:var(--s1);border-radius:var(--r);overflow:hidden}.thead,.linha{display:grid;grid-template-columns:minmax(250px,1.65fr) minmax(170px,1.08fr) minmax(210px,1.35fr) 36px;align-items:center;gap:14px;padding:0 17px}.thead{height:38px;background:var(--papel-2);border-bottom:1px solid var(--linha);font-size:10px;color:var(--tinta-3);font-weight:700;letter-spacing:.62px;text-transform:uppercase}.linha{width:100%;min-height:70px;text-align:left;border:0;border-bottom:1px solid var(--papel-2);background:var(--papel);cursor:pointer;transition:.14s}.linha:last-child{border-bottom:0}.linha:hover{background:#fbfbfd}.quadro{display:flex;align-items:center;gap:11px;min-width:0}.icone{width:32px;height:32px;min-width:32px;border-radius:9px;background:var(--papel-2);display:grid;place-items:center;color:var(--tinta-3)}.icone .material-symbols-rounded{font-size:18px}.qnome{font-size:13px;font-weight:650}.qsub{font-size:10.5px;color:var(--tinta-3);margin-top:3px}.modo{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:5px 10px;font-size:11px;font-weight:650;white-space:nowrap}.modo .material-symbols-rounded{font-size:15px}.direto{background:var(--ok-fraco);color:var(--ok)}.fila{background:var(--acao-fraco);color:var(--acao)}.rodizio{background:var(--azul-fraco);color:var(--azul)}.vazio{background:var(--at-fraco);color:var(--atencao)}.cel{font-size:12px;color:var(--tinta-2)}.cel strong{font-weight:650;color:var(--tinta)}.cel-sub{display:block;font-size:10.5px;color:var(--tinta-3);margin-top:3px}.avatares{display:flex;align-items:center}.avatar{height:27px;width:27px;min-width:27px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-weight:700;box-shadow:0 0 0 2px var(--papel);margin-right:-5px}.mais{font-size:10.5px;font-weight:650;color:var(--tinta-3);padding:4px 8px;background:var(--papel-2);border-radius:99px;margin-left:12px}.seta{justify-self:end;color:var(--linha-2)}.seta .material-symbols-rounded{font-size:21px}.estado-vazio{padding:70px 24px;text-align:center;color:var(--tinta-3)}.estado-vazio .material-symbols-rounded{font-size:44px;opacity:.45;display:block;margin-bottom:10px}.estado-vazio h2{font-size:15px;color:var(--tinta);margin:0 0 5px}.estado-vazio p{margin:0;font-size:12.5px}.skeleton{height:70px;border-bottom:1px solid var(--papel-2);background:linear-gradient(90deg,var(--papel),var(--papel-2),var(--papel));background-size:200% 100%;animation:brilho 1.1s infinite}@keyframes brilho{to{background-position:-200% 0}}
-    .fundo{position:fixed;inset:0;background:rgba(23,23,26,.34);backdrop-filter:blur(2px);z-index:80;opacity:0;visibility:hidden;transition:.2s}.fundo.on{opacity:1;visibility:visible}.drawer{position:fixed;top:0;right:0;bottom:0;width:min(530px,100vw);background:var(--papel);z-index:81;transform:translateX(102%);transition:transform .24s cubic-bezier(.2,.8,.2,1);box-shadow:-16px 0 46px rgba(23,23,26,.16);display:flex;flex-direction:column}.drawer.on{transform:translateX(0)}.drawer-top{padding:18px 20px 15px;border-bottom:1px solid var(--linha);display:flex;gap:12px;align-items:flex-start}.drawer-titulo{font-size:16px;font-weight:700;letter-spacing:-.35px}.drawer-sub{font-size:11.5px;color:var(--tinta-3);margin-top:3px}.fechar{margin-left:auto;width:32px;height:32px;border-radius:8px;background:var(--papel-2);color:var(--tinta-2);cursor:pointer;display:grid;place-items:center}.fechar:hover{background:var(--linha);color:var(--tinta)}.fechar .material-symbols-rounded{font-size:19px}.drawer-body{overflow:auto;padding:18px 20px 32px}.bloco{margin-bottom:23px}.bloco:last-child{margin:0}.bloco-titulo{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--tinta-3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}.contador{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;padding:2px 6px;border-radius:99px;background:var(--papel-2);color:var(--tinta-2);letter-spacing:0;text-transform:none}.dica{font-size:11.5px;line-height:1.5;color:var(--tinta-3);margin:8px 0 0}.dica strong{color:var(--tinta-2)}.alerta{display:flex;gap:9px;border-radius:var(--rc);padding:11px 12px;background:var(--at-fraco);color:#84500d;font-size:11.5px;line-height:1.45}.alerta .material-symbols-rounded{font-size:17px;color:var(--atencao);flex:none}.modos{display:grid;gap:7px}.modo-btn{display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;background:var(--papel-2);border:1px solid transparent;border-radius:var(--rc);cursor:pointer}.modo-btn:hover{background:#f0eff8}.modo-btn.on{background:var(--papel);border-color:#bdb2fa;box-shadow:0 1px 3px rgba(108,92,231,.1)}.modo-ico{width:28px;height:28px;border-radius:8px;background:var(--papel);display:grid;place-items:center;color:var(--tinta-3)}.modo-btn.on .modo-ico{background:var(--acao-fraco);color:var(--acao)}.modo-ico .material-symbols-rounded{font-size:17px}.modo-info{flex:1}.modo-info strong{font-size:12px;display:block}.modo-info span{font-size:10.8px;color:var(--tinta-3);display:block;margin-top:2px;line-height:1.35}.radio{width:17px;height:17px;border:1px solid var(--linha-2);border-radius:50%;position:relative}.modo-btn.on .radio{border:5px solid var(--acao)}.pessoa-lista{display:flex;flex-wrap:wrap;gap:7px}.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #a7e5cd;border-radius:99px;background:var(--ok-fraco);color:var(--ok);font-size:11.5px;font-weight:650;padding:7px 10px}.chip .material-symbols-rounded{font-size:14px}.campo{display:grid;gap:6px}.campo label{font-size:10px;font-weight:700;color:var(--tinta-3);text-transform:uppercase;letter-spacing:.55px}.campo select{width:100%;border:1px solid var(--linha);background:var(--papel);border-radius:8px;padding:10px;color:var(--tinta);font-size:12px}.drawer-rodape{padding:13px 20px;border-top:1px solid var(--linha);background:var(--papel);display:flex;gap:9px;align-items:center}.estado{flex:1;font-size:11px;color:var(--tinta-3)}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:var(--rc);font-size:12.5px;font-weight:650;padding:10px 13px;cursor:pointer}.btn .material-symbols-rounded{font-size:18px}.btn-primario{background:var(--acao);color:#fff}.btn-primario:hover{background:#5747d5}.btn-sec{background:var(--papel);color:var(--tinta-2);box-shadow:inset 0 0 0 1px var(--linha)}.btn:disabled{opacity:.52;cursor:not-allowed}.toast-area{position:fixed;right:20px;bottom:20px;z-index:150;display:flex;flex-direction:column;gap:8px;pointer-events:none}.toast{max-width:360px;background:#232329;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:11px 13px;border-radius:10px;font-size:12px;line-height:1.4;display:flex;gap:8px;align-items:flex-start;animation:entra .2s ease}.toast.erro{background:#9e2929}.toast .material-symbols-rounded{font-size:17px}@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    @media(max-width:900px){.resumo{grid-template-columns:repeat(2,1fr)}.thead{display:none}.linha{grid-template-columns:1fr auto;gap:8px;padding:13px 16px}.linha>.cel,.linha>.modo{display:none}.linha .seta{grid-column:2;grid-row:1}.quadro{grid-column:1}.app{padding:24px 18px 48px}.topbar{padding:0 18px}.cabecalho{align-items:flex-start;flex-direction:column}.barra{align-items:stretch;flex-direction:column}.busca{max-width:none}.filtros{overflow:auto;flex-wrap:nowrap;padding-bottom:2px}.filtro{white-space:nowrap}}@media(max-width:560px){.resumo{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:12px}.metric-valor{font-size:21px}.drawer-top,.drawer-body,.drawer-rodape{padding-left:16px;padding-right:16px}.cabecalho h1{font-size:25px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurações | CXProjetos</title>
+<link rel="icon" href="{{ url_for('static', filename='cx-icon.png') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+:root{
+    --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+    --linha:#E4E4EA; --linha-2:#D3D3DC;
+    --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+    --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+    --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+    --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+    --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+    --azul:#1A5FA0; --azul-fraco:#E9F2FB;
+    --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+    --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+    --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+button,input,select,textarea{ font-family:inherit; border:none; background:none; color:inherit; }
+body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+      min-height:100vh; -webkit-font-smoothing:antialiased; }
+.num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+:focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
+@media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
+
+.top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+    justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+    position:sticky; top:0; z-index:20; }
+.top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+.top-bar-logo span{ color:var(--acao); }
+
+.cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; height:56px;
+    background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap;
+    position:sticky; top:56px; z-index:15; }
+.cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+.cmd-sep{ width:1px; height:22px; background:var(--linha); }
+.segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+.segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); cursor:pointer;
+    padding:6px 13px; border-radius:6px; white-space:nowrap; transition:.15s;
+    display:flex; align-items:center; gap:6px; }
+.segm-btn:hover{ color:var(--tinta); }
+.segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600;
+    box-shadow:0 1px 2px rgba(0,0,0,.07); }
+.segm-n{ font-size:10.5px; font-weight:600; opacity:.6; font-family:'IBM Plex Mono',monospace; }
+.segm-btn.on .segm-n{ opacity:1; color:var(--acao); }
+.cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+
+.btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+    gap:6px; padding:8px 13px; border-radius:var(--r-ctrl); white-space:nowrap; transition:.14s; }
+.btn .material-symbols-rounded{ font-size:17px; }
+.btn-acao{ background:var(--acao); color:#fff; }
+.btn-acao:hover{ background:#5a4bd4; }
+.btn-acao:disabled{ opacity:.55; cursor:default; }
+.btn-borda{ background:var(--papel); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha); }
+.btn-borda:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); color:var(--tinta); }
+.btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+.btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+
+.wrap{ max-width:1240px; margin:0 auto; padding:20px 22px 90px; }
+.painel-aba{ display:none; }
+.painel-aba.on{ display:block; }
+
+.esqueleto{ height:64px; background:var(--papel); border-radius:10px; margin-bottom:7px;
+    box-shadow:var(--e1); position:relative; overflow:hidden; }
+.esqueleto::after{ content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
+    animation:brilho 1.4s infinite; }
+@keyframes brilho{ from{ transform:translateX(-100%); } to{ transform:translateX(100%); } }
+.vazio{ text-align:center; padding:56px 24px; background:var(--papel);
+    border-radius:var(--r-card); box-shadow:var(--e1); }
+.vazio .material-symbols-rounded{ font-size:40px; color:var(--linha-2); display:block; margin-bottom:13px; }
+.vazio h3{ font-size:15px; font-weight:650; margin-bottom:6px; }
+.vazio p{ font-size:13px; line-height:1.6; max-width:420px; margin:0 auto 18px; color:var(--tinta-3); }
+
+.faixa{ border-radius:var(--r-card); padding:14px 16px; display:flex; gap:12px;
+    align-items:flex-start; margin-bottom:12px; }
+.faixa .material-symbols-rounded{ font-size:19px; flex-shrink:0; margin-top:1px; }
+.fx-t{ font-size:13px; font-weight:650; margin-bottom:3px; }
+.fx-s{ font-size:12.5px; line-height:1.55; }
+.fx-acao{ margin-left:auto; flex-shrink:0; }
+.faixa.aviso{ background:var(--at-fundo); box-shadow:0 0 0 1px var(--at-borda); }
+.faixa.aviso .material-symbols-rounded,.faixa.aviso .fx-t,.faixa.aviso .fx-s{ color:#7A4A0C; }
+.faixa.info{ background:var(--acao-fraco); box-shadow:0 0 0 1px #D6CEFB; }
+.faixa.info .material-symbols-rounded,.faixa.info .fx-t,.faixa.info .fx-s{ color:#3C3489; }
+
+/* ===== SEÇÃO ===== */
+.sec-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--tinta-3); margin:0 0 10px 2px; }
+
+/* ===== TABELA DE QUADROS ===== */
+.tabela{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); overflow:hidden; }
+.th,.qr{ display:grid; grid-template-columns:1.5fr 1.35fr 1.7fr 34px;
+    gap:14px; padding:0 16px; align-items:center; }
+.th{ height:38px; background:var(--papel-2); border-bottom:1px solid var(--linha); }
+.th div{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+.qr{ min-height:66px; border-bottom:1px solid var(--papel-2); cursor:pointer;
+    transition:background .12s; width:100%; text-align:left; }
+.qr:last-child{ border-bottom:none; }
+.qr:hover{ background:var(--papel-2); }
+
+.q-nome{ font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; min-width:0; }
+.q-ico{ width:30px; height:30px; min-width:30px; border-radius:9px; background:var(--papel-2);
+    display:flex; align-items:center; justify-content:center; }
+.q-ico .material-symbols-rounded{ font-size:17px; color:var(--tinta-3); }
+.q-txt{ min-width:0; }
+.q-sub{ font-size:11px; color:var(--tinta-3); font-weight:400; display:block; margin-top:1px; }
+
+.modo{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600;
+    padding:5px 11px; border-radius:99px; white-space:nowrap; }
+.modo .material-symbols-rounded{ font-size:14px; }
+.m-direto{ background:var(--ok-fraco); color:var(--ok); }
+.m-fila{ background:var(--acao-fraco); color:var(--acao); }
+.m-rodizio{ background:var(--azul-fraco); color:var(--azul); }
+.m-vazio{ background:var(--at-fundo); color:var(--atencao); }
+
+.avs{ display:flex; align-items:center; }
+.avs .av{ width:26px; height:26px; min-width:26px; font-size:9px; box-shadow:0 0 0 2px var(--papel);
+    margin-right:-6px; }
+.av{ border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:650; }
+.mais{ font-size:11px; font-weight:600; color:var(--tinta-3); background:var(--papel-2);
+    padding:3px 9px; border-radius:99px; margin-left:13px; white-space:nowrap; }
+.cel{ font-size:12.5px; color:var(--tinta-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cel.fraca{ color:var(--atencao); font-style:italic; }
+.qr-seta{ color:var(--linha-2); display:flex; justify-content:flex-end; }
+.qr-seta .material-symbols-rounded{ font-size:19px; }
+.qr:hover .qr-seta{ color:var(--tinta-3); }
+.um-nome{ display:flex; align-items:center; gap:9px; min-width:0; }
+.um-nome .av{ width:26px; height:26px; min-width:26px; font-size:9px; }
+
+@media(max-width:1000px){
+    .th{ display:none; }
+    .qr{ grid-template-columns:1fr auto; gap:9px; padding:13px 15px; }
+    .col-quem,.qr-seta{ display:none; }
+    .q-nome{ grid-column:1; }
+}
+
+/* ===== PAINEL ===== */
+.painel-fundo{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.32); z-index:900; }
+.painel-fundo.show{ display:block; }
+.painel{ position:fixed; top:0; right:0; bottom:0; width:100%; max-width:452px;
+    background:var(--papel); z-index:901; display:none; flex-direction:column;
+    box-shadow:-8px 0 40px rgba(23,23,26,.14); }
+.painel.show{ display:flex; }
+.pn-head{ padding:18px 20px 16px; border-bottom:1px solid var(--linha); display:flex;
+    gap:13px; align-items:flex-start; flex-shrink:0; }
+.pn-ico{ width:40px; height:40px; min-width:40px; border-radius:11px; background:var(--acao-fraco);
+    display:flex; align-items:center; justify-content:center; }
+.pn-ico .material-symbols-rounded{ font-size:20px; color:var(--acao); }
+.pn-id{ flex:1; min-width:0; }
+.pn-nome{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+.pn-sub{ font-size:12px; color:var(--tinta-3); margin-top:2px; }
+.pn-x{ width:30px; height:30px; border-radius:8px; background:var(--papel-2); color:var(--tinta-3);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+.pn-x:hover{ background:var(--linha); color:var(--tinta); }
+.pn-x .material-symbols-rounded{ font-size:18px; }
+.pn-corpo{ padding:18px 20px 24px; overflow-y:auto; flex:1; }
+.pn-pe{ padding:12px 20px; border-top:1px solid var(--linha); background:var(--papel-2);
+    display:flex; gap:9px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+.pn-status{ font-size:11.5px; color:var(--tinta-3); font-weight:500; flex:1; min-width:110px;
+    display:flex; align-items:center; gap:6px; }
+.pn-status.salvo{ color:var(--ok); }
+.pn-status.erro{ color:var(--critico); }
+.pn-status .material-symbols-rounded{ font-size:14px; }
+
+.bloco{ margin-bottom:22px; }
+.bloco:last-child{ margin-bottom:0; }
+.bl-t{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--tinta-3); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.bl-cnt{ font-weight:600; color:var(--tinta-2); background:var(--papel-2); padding:1px 7px;
+    border-radius:99px; letter-spacing:0; font-family:'IBM Plex Mono',monospace; }
+.dica{ font-size:11.5px; color:var(--tinta-3); line-height:1.5; margin-top:9px; }
+.dica.alerta{ color:var(--atencao); }
+.dica b{ font-weight:650; color:var(--tinta-2); }
+
+/* opções de modo */
+.opcoes{ display:flex; flex-direction:column; gap:5px; }
+.op{ display:flex; align-items:flex-start; gap:11px; padding:12px 13px; border-radius:var(--r-ctrl);
+    background:var(--papel-2); cursor:pointer; transition:.14s; width:100%; text-align:left;
+    box-shadow:inset 0 0 0 1px transparent; border:none; }
+.op:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); }
+.op.on{ background:var(--papel); box-shadow:inset 0 0 0 1.5px var(--cor,var(--acao)); }
+.op-r{ width:16px; height:16px; min-width:16px; border-radius:50%; margin-top:1px;
+    box-shadow:inset 0 0 0 1.5px var(--linha-2); transition:.14s; }
+.op.on .op-r{ box-shadow:inset 0 0 0 5px var(--cor,var(--acao)); }
+.op-t{ font-size:12.5px; font-weight:650; display:flex; align-items:center; gap:7px; }
+.op-t .material-symbols-rounded{ font-size:15px; color:var(--cor,var(--tinta-3)); }
+.op-d{ font-size:11px; color:var(--tinta-3); line-height:1.45; margin-top:2px; display:block; }
+
+/* pílulas */
+.chips{ display:flex; gap:6px; flex-wrap:wrap; }
+.chip{ font-size:12px; font-weight:500; padding:7px 12px; border-radius:var(--r-pill);
+    background:var(--papel-2); color:var(--tinta-2); cursor:pointer; display:inline-flex;
+    align-items:center; gap:6px; transition:.14s; border:none; }
+.chip:hover{ background:var(--linha); }
+.chip .material-symbols-rounded{ font-size:14px; display:none; }
+.chip.on{ background:var(--ok-fraco); color:var(--ok); font-weight:600;
+    box-shadow:inset 0 0 0 1px var(--ok); }
+.chip.on .material-symbols-rounded{ display:block; }
+.chip.leitura{ cursor:default; background:var(--acao-fraco); color:var(--acao);
+    box-shadow:inset 0 0 0 1px #D6CEFB; }
+.chip.leitura:hover{ background:var(--acao-fraco); }
+
+.sel{ width:100%; font-size:13px; padding:11px 12px; background:var(--papel-2);
+    border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta);
+    outline:none; cursor:pointer; transition:.14s; appearance:none;
+    background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237C7C88'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 9px center; background-size:19px;
+    padding-right:34px; }
+.sel:focus{ background-color:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+
+.caixa-vazia{ background:var(--at-fundo); border-radius:var(--r-ctrl);
+    box-shadow:0 0 0 1px var(--at-borda); padding:13px 15px; display:flex; gap:10px;
+    align-items:flex-start; }
+.caixa-vazia .material-symbols-rounded{ font-size:18px; color:var(--atencao);
+    flex-shrink:0; margin-top:1px; }
+.caixa-vazia .cv-txt{ font-size:12px; line-height:1.55; color:#7A4A0C; }
+.cv-link{ color:var(--atencao); font-weight:650; text-decoration:underline; cursor:pointer; }
+
+.em-breve{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    padding:20px; display:flex; gap:13px; align-items:flex-start; margin-bottom:9px; }
+.eb-ico{ width:36px; height:36px; min-width:36px; border-radius:10px; background:var(--papel-2);
+    display:flex; align-items:center; justify-content:center; }
+.eb-ico .material-symbols-rounded{ font-size:19px; color:var(--tinta-3); }
+.eb-t{ font-size:13.5px; font-weight:650; }
+.eb-d{ font-size:12.5px; color:var(--tinta-3); line-height:1.55; margin-top:3px; }
+.eb-tag{ margin-left:auto; font-size:10.5px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--tinta-3); background:var(--papel-2);
+    padding:4px 10px; border-radius:99px; white-space:nowrap; }
+
+.toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10002;
+    display:flex; flex-direction:column; gap:9px; }
+.toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+    font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
+    display:flex; align-items:center; gap:9px; max-width:88vw; }
+.toast .material-symbols-rounded{ font-size:17px; }
+.toast.erro{ background:var(--critico); }
+
+@media (max-width:900px){
+    .top-bar{ padding:0 16px 0 60px; }
+    .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+    .cmd-tit,.cmd-sep{ display:none; }
+    .segm{ width:100%; }
+    .segm-btn{ flex:1; justify-content:center; }
+    .wrap{ padding:16px 16px 80px; }
+    .painel{ max-width:none; }
+}
+</style>
 </head>
 <body>
-  <header class="topbar"><div class="topbar-logo" onclick="location.href='/'">CX<span>Projetos</span></div>{% include '_usermenu.html' %}</header>
-  {% include '_sidebar.html' %}
-  <main class="app">
-    <header class="cabecalho"><div><div class="sobretitulo">Administração da plataforma</div><h1>Configurações</h1><p>Defina como cada quadro recebe novos cards. As pessoas elegíveis são configuradas em Acessos, uma única vez.</p></div><a class="link-acao" href="/acessos"><span class="material-symbols-rounded">key</span>Gerenciar acessos</a></header>
-    <section class="resumo" aria-label="Resumo dos quadros"><article class="metric"><div class="metric-label">Quadros</div><div class="metric-valor" id="mQuadros">—</div><div class="metric-desc">famílias de trabalho configuráveis</div></article><article class="metric"><div class="metric-label">Direto</div><div class="metric-valor" id="mDireto">—</div><div class="metric-desc">cards com responsável automático</div></article><article class="metric"><div class="metric-label">Fila e rodízio</div><div class="metric-valor" id="mDistribuidos">—</div><div class="metric-desc">distribuição assistida ou equilibrada</div></article><article class="metric"><div class="metric-label">Aguardando responsável</div><div class="metric-valor" id="mAguardando">—</div><div class="metric-desc">cards que precisam de atenção</div></article></section>
-    <section class="barra"><label class="busca"><span class="material-symbols-rounded">search</span><input id="busca" type="search" placeholder="Buscar quadro" autocomplete="off"></label><div class="filtros"><button class="filtro on" type="button" data-filtro="todos">Todos</button><button class="filtro" type="button" data-filtro="produto">Produtos</button><button class="filtro" type="button" data-filtro="interno">Internos</button><button class="filtro" type="button" data-filtro="pendente">Precisam de atenção</button></div></section>
-    <section class="tabela" aria-live="polite"><div class="thead"><div>Quadro</div><div>Quando cai um card</div><div>Quem pode receber</div><div></div></div><div id="lista"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></section>
-  </main>
-  <div class="fundo" id="fundo" onclick="configQuadros.fechar()"></div><aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerNome"><div id="drawerConteudo"></div></aside><div class="toast-area" id="toasts" aria-live="assertive"></div>
-  <script>
-  window.configQuadros=(function(){
-    'use strict';
-    const st={quadros:[],atual:null,filtro:'todos'};const $=id=>document.getElementById(id);const paleta=[['#eeedfe','#3c3489'],['#e1f5ee','#0f6e56'],['#faece7','#993c1d'],['#fbeaf0','#993556'],['#e6f1fb','#185fa5'],['#eaf3de','#3b6d11']];
-    const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));const clone=o=>JSON.parse(JSON.stringify(o));
-    function iniciais(nome){const p=(nome||'?').trim().split(/\s+/);return p.length>1?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0].slice(0,2).toUpperCase()}function cor(nome){let n=0;for(const c of(nome||''))n=c.charCodeAt(0)+((n<<5)-n);return paleta[Math.abs(n)%paleta.length]}
-    async function req(url,opt={}){const r=await fetch(url,opt);let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw new Error(d.mensagem||'Não foi possível concluir a operação.');return d}function toast(msg,tipo='ok'){const el=document.createElement('div');el.className='toast'+(tipo==='erro'?' erro':'');el.innerHTML='<span class="material-symbols-rounded">'+(tipo==='erro'?'error':'check_circle')+'</span><span>'+esc(msg)+'</span>';$('toasts').appendChild(el);setTimeout(()=>el.remove(),3800)}
-    function modoInfo(modo){return{direto:{nome:'Direto',ico:'bolt',classe:'direto',desc:'Uma pessoa recebe tudo.'},fila:{nome:'Fila',ico:'alt_route',classe:'fila',desc:'Uma pessoa direciona.'},rodizio:{nome:'Rodízio',ico:'shuffle',classe:'rodizio',desc:'Distribui entre elegíveis.'}}[modo]||{nome:'Sem configuração',ico:'warning',classe:'vazio',desc:'Configure o quadro.'}}
-    function nome(id,q){return[...(q.elegiveis||[]),...(q.pessoas_com_acesso||[])].find(p=>String(p.id)===String(id))?.nome||null}function precisaAtencao(q){if(q.modo==='direto')return!q.direto;if(q.modo==='fila')return!q.direciona||!(q.elegiveis||[]).length;return(q.elegiveis||[]).length<2}
-    function filtra(q){const t=$('busca').value.trim().toLocaleLowerCase('pt-BR');if(st.filtro==='produto'&&!q.produto)return false;if(st.filtro==='interno'&&q.produto)return false;if(st.filtro==='pendente'&&!precisaAtencao(q)&&!q.esperando)return false;return!t||q.nome.toLocaleLowerCase('pt-BR').includes(t)}
-    function avatares(q){const p=q.elegiveis||[];if(!p.length)return'<span class="cel" style="color:var(--atencao)">Ninguém elegível</span>';return'<span class="avatares">'+p.slice(0,3).map(x=>{const[bg,fg]=cor(x.nome);return'<span class="avatar" title="'+esc(x.nome)+'" style="background:'+bg+';color:'+fg+'">'+iniciais(x.nome)+'</span>'}).join('')+(p.length>3?'<span class="mais">'+p.length+' pessoas</span>':'<span class="cel" style="margin-left:11px">'+esc(p[0].nome)+(p.length>1?' e mais':'')+'</span>')+'</span>'}
-    function metricas(){const qs=st.quadros;$('mQuadros').textContent=qs.length;$('mDireto').textContent=qs.filter(q=>q.modo==='direto').length;$('mDistribuidos').textContent=qs.filter(q=>q.modo==='fila'||q.modo==='rodizio').length;$('mAguardando').textContent=qs.reduce((n,q)=>n+(Number(q.esperando)||0),0)}
-    function render(){metricas();const qs=st.quadros.filter(filtra),lista=$('lista');if(!qs.length){lista.innerHTML='<div class="estado-vazio"><span class="material-symbols-rounded">tune</span><h2>Nenhum quadro encontrado</h2><p>Ajuste a busca ou os filtros.</p></div>';return}lista.innerHTML=qs.map(q=>{const m=modoInfo(q.modo),responsavel=q.modo==='direto'?nome(q.direto,q):q.modo==='fila'?nome(q.direciona,q):null,sub=[q.abertos?q.abertos+' em aberto':'nenhum card',q.esperando?q.esperando+' esperando':''].filter(Boolean).join(' · ');return'<button class="linha" type="button" onclick="configQuadros.abrir(\''+esc(q.chave)+'\')"><div class="quadro"><span class="icone"><span class="material-symbols-rounded">'+esc(q.icone)+'</span></span><span><span class="qnome">'+esc(q.nome)+'</span><span class="qsub">'+(q.produto?'Produto':'Interno')+(sub?' · '+esc(sub):'')+'</span></span></div><div><span class="modo '+m.classe+'"><span class="material-symbols-rounded">'+m.ico+'</span>'+m.nome+(responsavel?' · '+esc(responsavel.split(' ')[0]):'')+'</span></div><div class="cel">'+avatares(q)+'<span class="cel-sub">'+(precisaAtencao(q)?'Configure em Acessos ou escolha o responsável.':m.desc)+'</span></div><span class="seta"><span class="material-symbols-rounded">chevron_right</span></span></button>'}).join('')}
-    async function carregar(){try{const d=await req('/api/quadros/config');st.quadros=d.quadros||[];render()}catch(e){$('lista').innerHTML='<div class="estado-vazio"><span class="material-symbols-rounded">cloud_off</span><h2>Não foi possível carregar os quadros</h2><p>'+esc(e.message)+'</p></div>';toast(e.message,'erro')}}
-    function opcao(id,nome,selecionado,texto='Escolha uma pessoa'){return'<option value="">'+texto+'</option>'+id.map(p=>'<option value="'+esc(p.id)+'" '+(String(p.id)===String(selecionado)?'selected':'')+'>'+esc(p.nome)+'</option>').join('')}
-    function modoBotao(chave,ico,nome,desc){const on=st.atual.modo===chave;return'<button class="modo-btn '+(on?'on':'')+'" type="button" role="radio" aria-checked="'+on+'" onclick="configQuadros.definirModo(\''+chave+'\')"><span class="modo-ico"><span class="material-symbols-rounded">'+ico+'</span></span><span class="modo-info"><strong>'+nome+'</strong><span>'+desc+'</span></span><span class="radio"></span></button>'}
-    function pessoasChips(pessoas){return pessoas.length?'<div class="pessoa-lista">'+pessoas.map(p=>{const[bg,fg]=cor(p.nome);return'<span class="chip"><span class="avatar" style="background:'+bg+';color:'+fg+';width:17px;height:17px;min-width:17px;margin:0;box-shadow:none;font-size:7px">'+iniciais(p.nome)+'</span>'+esc(p.nome)+'</span>'}).join('')+'</div>':'<div class="alerta"><span class="material-symbols-rounded">person_off</span><span>Ninguém está elegível. Abra <strong>Acessos</strong>, conceda o quadro e marque quem pode receber cards.</span></div>'}
-    function renderDrawer(){const q=st.atual;if(!q)return;const elegiveis=q.elegiveis||[],comAcesso=q.pessoas_com_acesso||[],m=q.modo;let decisao='';if(m==='direto'){decisao='<div class="campo"><label for="direto">Quem recebe os cards</label><select id="direto">'+opcao(elegiveis,q.direto,'Selecione o responsável direto')+'</select></div><p class="dica">Todo card novo deste quadro já nasce com esta pessoa como responsável e ela é avisada na hora.</p>'}else if(m==='fila'){decisao='<div class="campo"><label for="direciona">Quem direciona os cards</label><select id="direciona">'+opcao(elegiveis,q.direciona,'Selecione quem direciona')+'</select></div><p class="dica">A pessoa recebe os cards na fila e escolhe entre as elegíveis quem irá executá-los.</p>'}else{decisao='<div class="bloco-titulo">Pessoas no rodízio <span class="contador">'+elegiveis.length+'</span></div>'+pessoasChips(elegiveis)+'<p class="dica">O sistema entrega o próximo card a quem tiver menos cards em aberto. São necessárias ao menos duas pessoas.</p>'}$('drawerConteudo').innerHTML='<div class="drawer-top"><span class="icone" style="width:40px;height:40px;min-width:40px;background:var(--acao-fraco);color:var(--acao)"><span class="material-symbols-rounded">'+esc(q.icone)+'</span></span><div><div class="drawer-titulo" id="drawerNome">'+esc(q.nome)+'</div><div class="drawer-sub">'+(q.produto?'Quadro de produto':'Quadro interno')+' · '+(q.abertos||0)+' cards em aberto</div></div><button class="fechar" type="button" aria-label="Fechar" onclick="configQuadros.fechar()"><span class="material-symbols-rounded">close</span></button></div><div class="drawer-body"><section class="bloco"><div class="bloco-titulo">Quando cai um card novo</div><div class="modos">'+modoBotao('direto','bolt','Direto','Uma pessoa recebe tudo, sem espera.')+modoBotao('fila','alt_route','Fila','Alguém direciona cada novo card.')+modoBotao('rodizio','shuffle','Rodízio','Distribui para quem tem menos cards.')+'</div></section><section class="bloco">'+decisao+'</section><section class="bloco"><div class="bloco-titulo">Elegíveis neste quadro <span class="contador">'+elegiveis.length+'</span></div>'+pessoasChips(elegiveis)+'<p class="dica">Essa lista vem de <strong>Acessos</strong>. Ela não pode ser alterada aqui para que ninguém passe a receber card sem ter permissão de abrir o quadro.</p></section><section class="bloco"><div class="bloco-titulo">Cobrança <span class="contador">opcional</span></div><div class="campo"><label for="cobranca">Quem recebe o card de faturamento</label><select id="cobranca">'+opcao(comAcesso,q.cobranca,'Ninguém definido')+'</select></div><p class="dica">A pessoa precisa ter acesso ao quadro. Use para os cartões de emissão criados pelos fluxos.</p></section></div><div class="drawer-rodape"><span class="estado">Vale para os próximos cards criados.</span><button class="btn btn-sec" type="button" onclick="configQuadros.fechar()">Cancelar</button><button class="btn btn-primario" id="salvarQuadro" type="button" onclick="configQuadros.salvar()"><span class="material-symbols-rounded">check</span>Salvar</button></div>';$('drawer').classList.add('on');$('fundo').classList.add('on')}
-    function abrir(chave){const q=st.quadros.find(x=>x.chave===chave);if(!q)return;st.atual=clone(q);renderDrawer()}function fechar(){$('drawer').classList.remove('on');$('fundo').classList.remove('on');st.atual=null}function definirModo(modo){st.atual.modo=modo;renderDrawer()}
-    async function salvar(){const q=st.atual,b=$('salvarQuadro');if(!q)return;const payload={modo:q.modo,direto:q.modo==='direto'?$('direto').value:null,direciona:q.modo==='fila'?$('direciona').value:null,cobranca:$('cobranca').value||null};if(q.modo==='direto'&&!payload.direto){toast('Escolha quem recebe os cards no modo Direto.','erro');return}if(q.modo==='fila'&&!payload.direciona){toast('Escolha quem direciona os cards na Fila.','erro');return}if(q.modo==='rodizio'&&(q.elegiveis||[]).length<2){toast('O rodízio precisa de pelo menos duas pessoas elegíveis.','erro');return}b.disabled=true;try{await req('/api/quadros/config/'+encodeURIComponent(q.chave),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});toast('Configuração salva.');fechar();await carregar()}catch(e){toast(e.message,'erro')}finally{b.disabled=false}}
-    function iniciar(){$('busca').addEventListener('input',render);document.querySelectorAll('.filtro').forEach(b=>b.addEventListener('click',()=>{st.filtro=b.dataset.filtro;document.querySelectorAll('.filtro').forEach(x=>x.classList.toggle('on',x===b));render()}));document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});carregar()}document.addEventListener('DOMContentLoaded',iniciar);return{abrir,fechar,definirModo,salvar};
-  })();
-  </script>
+<div class="top-bar">
+    <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
+    {% include '_usermenu.html' %}
+</div>
+{% include '_sidebar.html' %}
+
+<div class="cmd">
+    <span class="cmd-tit">Configurações</span>
+    <div class="cmd-sep"></div>
+    <div class="segm" role="tablist">
+        <button class="segm-btn on" id="tab-quadros" role="tab" aria-selected="true"
+                onclick="Config.aba('quadros')">Quadros<span class="segm-n" id="nQuadros"></span></button>
+        <button class="segm-btn" id="tab-plataforma" role="tab" aria-selected="false"
+                onclick="Config.aba('plataforma')">Plataforma</button>
+    </div>
+    <div class="cmd-dir">
+        <button class="btn btn-borda" onclick="window.location.href='/acessos'">
+            <span class="material-symbols-rounded">key</span>Acessos</button>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="painel-aba on" id="abaQuadros"></div>
+    <div class="painel-aba" id="abaPlataforma"></div>
+</div>
+
+<div class="painel-fundo" id="painelFundo" onclick="Config.fechar()"></div>
+<aside class="painel" id="painelQuadro" role="dialog" aria-modal="true" aria-labelledby="pnNome">
+    <div class="pn-head">
+        <span class="pn-ico"><span class="material-symbols-rounded" id="pnIco">dashboard</span></span>
+        <div class="pn-id">
+            <div class="pn-nome" id="pnNome">—</div>
+            <div class="pn-sub" id="pnSub"></div>
+        </div>
+        <button class="pn-x" onclick="Config.fechar()" aria-label="Fechar">
+            <span class="material-symbols-rounded">close</span></button>
+    </div>
+    <div class="pn-corpo" id="pnCorpo"></div>
+    <div class="pn-pe">
+        <span class="pn-status" id="pnStatus">Vale para os próximos cards.</span>
+        <button class="btn btn-fant" onclick="Config.fechar()">Fechar</button>
+        <button class="btn btn-acao" id="pnSalvar" onclick="Config.salvar()">
+            <span class="material-symbols-rounded">check</span>Salvar</button>
+    </div>
+</aside>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   CONFIGURAÇÕES · como a plataforma trabalha
+   ---------------------------------------------------------------------------
+   Uma decisão por quadro: para onde vai o card que chega. As pessoas que
+   aparecem como opção não são escolhidas aqui — vêm de quem foi marcado
+   como responsável em Acessos. Uma decisão, um lugar.
+
+   Diferente de Acessos, aqui existe botão Salvar: mudar o modo é uma
+   decisão composta (modo + quem recebe + quem direciona) que só faz
+   sentido validada em conjunto.
+   =========================================================================== */
+const Config = (function(){
+
+  const st = {
+    quadros: [], catalogo: null,
+    aberto: null,        // quadro aberto
+    edicao: null,        // rascunho editável
+    salvando: false,
+  };
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const iniciais = n => {
+    const p = String(n||'').trim().split(/\s+/);
+    if(!p[0]) return '?';
+    return (p.length>1 ? p[0][0]+p[p.length-1][0] : p[0].slice(0,2)).toUpperCase();
+  };
+
+  const PALETA = [
+    ['#EEEDFE','#3C3489'], ['#E1F5EE','#0F6E56'], ['#FAECE7','#993C1D'],
+    ['#E6F1FB','#185FA5'], ['#FBEAF0','#993556'], ['#EAF3DE','#3B6D11'],
+    ['#FFF0D6','#8A5A0B'], ['#E8F0FE','#2B4E8C'],
+  ];
+  const cor = n => {
+    let h = 0;
+    for(const ch of String(n||'')) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+    return PALETA[h % PALETA.length];
+  };
+  const av = nome => {
+    const [bg,fg] = cor(nome);
+    return `<span class="av" style="background:${bg};color:${fg}">${esc(iniciais(nome))}</span>`;
+  };
+
+  function toast(msg, tipo){
+    const c = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = 'toast' + (tipo === 'erro' ? ' erro' : '');
+    t.innerHTML = `<span class="material-symbols-rounded">${
+      tipo === 'erro' ? 'error' : 'check_circle'}</span><span>${esc(msg)}</span>`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3600);
+  }
+
+  async function api(url, opts){
+    const r = await fetch(url, Object.assign({
+      headers: {'Content-Type':'application/json'}}, opts || {}));
+    let corpo = {};
+    try{ corpo = await r.json(); }catch(e){}
+    if(r.status === 401){ window.location.href = '/login?proximo=/configuracoes'; throw new Error('401'); }
+    if(!r.ok) throw new Error(corpo.mensagem || 'Não foi possível concluir.');
+    return corpo;
+  }
+
+  /* ---------- carga ---------- */
+  async function carregar(){
+    document.getElementById('abaQuadros').innerHTML =
+      '<div class="tabela">' + '<div class="esqueleto"></div>'.repeat(6) + '</div>';
+    try{
+      const [cat, qs] = await Promise.all([
+        api('/api/v2/catalogo'),
+        api('/api/v2/config/quadros'),
+      ]);
+      st.catalogo = cat;
+      st.quadros = qs.quadros || [];
+      document.getElementById('nQuadros').textContent = st.quadros.length;
+      pintarQuadros();
+      pintarPlataforma();
+    }catch(e){
+      document.getElementById('abaQuadros').innerHTML = `
+        <div class="vazio"><span class="material-symbols-rounded">cloud_off</span>
+          <h3>Não foi possível carregar</h3><p>${esc(e.message)}</p>
+          <button class="btn btn-acao" onclick="Config.carregar()" style="margin:0 auto">
+            <span class="material-symbols-rounded">refresh</span>Tentar de novo</button></div>`;
+    }
+  }
+
+  const modoInfo = chave =>
+    (st.catalogo?.modos || []).find(m => m.chave === chave) || {nome:chave, icone:'help'};
+
+  function pintarQuadros(){
+    // Quadro sem ninguém marcado não consegue receber card nenhum: é o
+    // problema mais caro desta tela, então aparece antes da lista.
+    const orfaos = st.quadros.filter(q => !q.candidatos.length);
+    const aviso = orfaos.length ? `
+      <div class="faixa aviso">
+        <span class="material-symbols-rounded">warning</span>
+        <span><div class="fx-t">${orfaos.length} quadro${orfaos.length>1?'s':''} sem ninguém para receber card</div>
+        <div class="fx-s">${esc(orfaos.map(q=>q.nome).join(', '))} — marque alguém como
+        responsável na página da pessoa, em Acessos.</div></span>
+        <span class="fx-acao"><button class="btn btn-borda"
+          onclick="window.location.href='/acessos'">Abrir Acessos</button></span>
+      </div>` : '';
+
+    document.getElementById('abaQuadros').innerHTML = aviso + `
+      <div class="sec-rot">Para onde vai o card que chega</div>
+      <div class="tabela">
+        <div class="th"><div>Quadro</div><div>Quando cai um card</div>
+          <div>Quem recebe</div><div></div></div>
+        ${st.quadros.map(linhaQuadro).join('')}
+      </div>
+      <div class="faixa info" style="margin-top:14px">
+        <span class="material-symbols-rounded">link</span>
+        <span><div class="fx-t">Acessar o quadro e receber card dele são coisas diferentes</div>
+        <div class="fx-s">Uma sócia acompanha todos os quadros sem que todo card caia no
+        colo dela. Quem pode receber se decide na página da pessoa, em Acessos; o que
+        acontece com o card se decide aqui.</div></span>
+      </div>`;
+  }
+
+  function linhaQuadro(q){
+    const info = modoInfo(q.modo);
+    const semGente = !q.candidatos.length;
+
+    const modo = semGente
+      ? `<span class="modo m-vazio"><span class="material-symbols-rounded">warning</span>Ninguém pode receber</span>`
+      : `<span class="modo m-${q.modo}"><span class="material-symbols-rounded">${info.icone}</span>${
+          esc(info.nome)}${q.modo === 'fila' && q.direciona ? ' · ' + esc(primeiroNome(q, q.direciona)) : ''}</span>`;
+
+    let quem;
+    if(semGente){
+      quem = `<span class="cel fraca">marque alguém em Acessos</span>`;
+    }else if(q.modo === 'direto'){
+      const nome = q.executor_padrao ? nomeDe(q, q.executor_padrao) : null;
+      quem = nome
+        ? `<span class="um-nome">${av(nome)}<span class="cel">${esc(nome)}</span></span>`
+        : `<span class="cel fraca">falta escolher quem recebe</span>`;
+    }else{
+      quem = `<span class="avs">${q.candidatos.slice(0,3).map(c => av(c.nome)).join('')}
+        <span class="mais">${q.candidatos.length} pessoa${q.candidatos.length>1?'s':''}</span></span>`;
+    }
+
+    const sub = q.abertos
+      ? `${q.abertos} em aberto${q.esperando ? ' · ' + q.esperando + ' esperando' : ''}`
+      : 'nenhum card';
+
+    return `<button class="qr" onclick="Config.abrir('${q.chave}')">
+      <span class="q-nome">
+        <span class="q-ico"><span class="material-symbols-rounded">${esc(q.icone)}</span></span>
+        <span class="q-txt">${esc(q.nome)}<span class="q-sub">${esc(sub)}</span></span>
+      </span>
+      <span>${modo}</span>
+      <span class="col-quem">${quem}</span>
+      <span class="qr-seta"><span class="material-symbols-rounded">chevron_right</span></span>
+    </button>`;
+  }
+
+  const nomeDe = (q, id) => {
+    const p = (q.com_acesso || []).find(x => x.id === String(id))
+           || (q.candidatos || []).find(x => x.id === String(id));
+    return p ? p.nome : '';
+  };
+  const primeiroNome = (q, id) => (nomeDe(q, id) || '').split(/\s+/)[0];
+
+  /* ---------- painel ---------- */
+  function abrir(chave){
+    const q = st.quadros.find(x => x.chave === chave);
+    if(!q) return;
+    st.aberto = q;
+    st.edicao = {
+      modo: q.modo,
+      executor_padrao: q.executor_padrao || '',
+      direciona: q.direciona || '',
+      cobranca: q.cobranca || '',
+    };
+    document.getElementById('pnIco').textContent = q.icone;
+    document.getElementById('pnNome').textContent = q.nome;
+    document.getElementById('pnSub').textContent = q.abertos
+      ? `${q.abertos} card${q.abertos>1?'s':''} em aberto` : 'nenhum card em aberto';
+    pintarPainel();
+    estado('Vale para os próximos cards.');
+    document.getElementById('painelFundo').classList.add('show');
+    document.getElementById('painelQuadro').classList.add('show');
+  }
+
+  function fechar(){
+    document.getElementById('painelFundo').classList.remove('show');
+    document.getElementById('painelQuadro').classList.remove('show');
+    st.aberto = null; st.edicao = null;
+  }
+
+  function estado(txt, tipo){
+    const el = document.getElementById('pnStatus');
+    el.className = 'pn-status' + (tipo ? ' ' + tipo : '');
+    const ico = tipo === 'salvo' ? 'check_circle' : tipo === 'erro' ? 'error' : '';
+    el.innerHTML = (ico ? `<span class="material-symbols-rounded">${ico}</span>` : '') + esc(txt);
+  }
+
+  const CORES_MODO = {direto:'var(--ok)', fila:'var(--acao)', rodizio:'var(--azul)'};
+
+  function pintarPainel(){
+    const q = st.aberto, e = st.edicao, cat = st.catalogo;
+    const corpo = document.getElementById('pnCorpo');
+
+    // Sem ninguém marcado não há configuração possível. Mostrar os modos
+    // desabilitados seria oferecer uma escolha que não leva a lugar nenhum.
+    if(!q.candidatos.length){
+      corpo.innerHTML = `
+        <div class="bloco">
+          <div class="caixa-vazia">
+            <span class="material-symbols-rounded">person_off</span>
+            <span class="cv-txt"><b>Ninguém pode receber card deste quadro.</b><br>
+            A lista de quem recebe vem da página da pessoa, em Acessos: abra alguém
+            que já acessa <b>${esc(q.nome)}</b> e marque o quadro em
+            "Pode ser responsável em".<br><br>
+            <span class="cv-link" onclick="window.location.href='/acessos'">Abrir Acessos →</span>
+            </span>
+          </div>
+        </div>
+        <div class="bloco">
+          <div class="bl-t">Enquanto isso</div>
+          <div class="dica" style="margin-top:0">Card que chegar aqui fica esperando
+          na fila de atribuição, sem dono. Ninguém é avisado.</div>
+        </div>`;
+      document.getElementById('pnSalvar').style.display = 'none';
+      return;
+    }
+    document.getElementById('pnSalvar').style.display = '';
+
+    const podeRodizio = q.candidatos.length >= 2;
+
+    corpo.innerHTML = `
+      <div class="bloco">
+        <div class="bl-t">Quando cai um card novo</div>
+        <div class="opcoes">
+          ${cat.modos.map(m => {
+            const bloqueado = m.chave === 'rodizio' && !podeRodizio;
+            return `<button class="op${e.modo===m.chave?' on':''}"
+              style="--cor:${CORES_MODO[m.chave]}"
+              ${bloqueado?'disabled title="Precisa de pelo menos duas pessoas marcadas"':''}
+              onclick="Config.definirModo('${m.chave}')">
+              <span class="op-r"></span>
+              <span style="flex:1;min-width:0">
+                <span class="op-t"><span class="material-symbols-rounded">${m.icone}</span>${esc(m.nome)}</span>
+                <span class="op-d">${esc(m.descricao)}${
+                  bloqueado ? ' Precisa de duas pessoas marcadas — hoje há uma.' : ''}</span>
+              </span></button>`;
+          }).join('')}
+        </div>
+      </div>
+
+      ${blocoQuemRecebe(q, e)}
+
+      <div class="bloco">
+        <div class="bl-t">Quem cobra o faturamento</div>
+        <select class="sel" onchange="Config.definirCampo('cobranca', this.value)">
+          <option value="">Ninguém definido</option>
+          ${q.com_acesso.map(p => `<option value="${p.id}"${
+            e.cobranca === p.id ? ' selected' : ''}>${esc(p.nome)}</option>`).join('')}
+        </select>
+        <div class="dica">Recebe o card de emissão quando a entrega termina.
+        Não precisa estar marcado como responsável — basta acessar o quadro.</div>
+      </div>
+
+      ${q.atualizado_em ? `<div class="bloco">
+        <div class="dica" style="margin-top:0">Última alteração por
+        <b>${esc(q.atualizado_por || 'alguém')}</b> em
+        ${esc(new Date(q.atualizado_em).toLocaleDateString('pt-BR'))}.</div></div>` : ''}`;
+  }
+
+  function blocoQuemRecebe(q, e){
+    if(e.modo === 'direto'){
+      return `<div class="bloco">
+        <div class="bl-t">Quem recebe os cards
+          <span class="bl-cnt">1 de ${q.candidatos.length}</span></div>
+        <div class="chips">
+          ${q.candidatos.map(c => `
+            <button class="chip${e.executor_padrao===c.id?' on':''}"
+                    onclick="Config.definirExecutor('${c.id}')">
+              <span class="material-symbols-rounded">check</span>${esc(c.nome)}</button>`).join('')}
+        </div>
+        <div class="dica">Só quem foi marcado como responsável neste quadro, em Acessos.
+        Todo card novo <b>já nasce com o nome dela</b> e ela é avisada na hora.</div>
+      </div>`;
+    }
+
+    if(e.modo === 'rodizio'){
+      return `<div class="bloco">
+        <div class="bl-t">Entram no rodízio
+          <span class="bl-cnt">${q.candidatos.length}</span></div>
+        <div class="chips">
+          ${q.candidatos.map(c => `<span class="chip leitura">${esc(c.nome)}</span>`).join('')}
+        </div>
+        <div class="dica">Cada card vai para quem tiver <b>menos cards em aberto</b>
+        no quadro. Para tirar ou incluir alguém, marque na página da pessoa, em Acessos.</div>
+      </div>`;
+    }
+
+    // fila
+    return `<div class="bloco">
+        <div class="bl-t">Quem direciona os cards</div>
+        <select class="sel" onchange="Config.definirCampo('direciona', this.value)">
+          <option value="">Escolha quem direciona</option>
+          ${q.com_acesso.map(p => `<option value="${p.id}"${
+            e.direciona === p.id ? ' selected' : ''}>${esc(p.nome)}</option>`).join('')}
+        </select>
+        <div class="dica">Recebe o aviso do card novo e escolhe quem executa.</div>
+      </div>
+      <div class="bloco">
+        <div class="bl-t">Pode ficar com o card
+          <span class="bl-cnt">${q.candidatos.length}</span></div>
+        <div class="chips">
+          ${q.candidatos.map(c => `<span class="chip leitura">${esc(c.nome)}</span>`).join('')}
+        </div>
+        <div class="dica">São as opções que aparecem na hora de direcionar.
+        Vêm de quem foi marcado como responsável neste quadro, em Acessos.</div>
+      </div>`;
+  }
+
+  /* ---------- alterações ---------- */
+  function definirModo(m){
+    if(st.edicao.modo === m) return;
+    st.edicao.modo = m;
+    // Cada modo usa campos diferentes: limpar o que não vale evita salvar
+    // um executor padrão num quadro que virou fila.
+    if(m !== 'direto') st.edicao.executor_padrao = '';
+    if(m === 'direto' && st.aberto.candidatos.length === 1){
+      st.edicao.executor_padrao = st.aberto.candidatos[0].id;
+    }
+    pintarPainel();
+    estado('Alteração não salva.');
+  }
+
+  function definirExecutor(id){
+    st.edicao.executor_padrao = st.edicao.executor_padrao === id ? '' : id;
+    pintarPainel();
+    estado('Alteração não salva.');
+  }
+
+  function definirCampo(campo, valor){
+    st.edicao[campo] = valor;
+    estado('Alteração não salva.');
+  }
+
+  async function salvar(){
+    if(!st.aberto || st.salvando) return;
+    const btn = document.getElementById('pnSalvar');
+    st.salvando = true; btn.disabled = true;
+    estado('Salvando…');
+    try{
+      await api(`/api/v2/config/quadros/${st.aberto.chave}`, {
+        method:'PUT', body: JSON.stringify(st.edicao)});
+      estado('Salvo. Vale para os próximos cards.', 'salvo');
+      toast(`${st.aberto.nome} configurado.`);
+      const chave = st.aberto.chave;
+      await recarregar();
+      const atualizado = st.quadros.find(x => x.chave === chave);
+      if(atualizado){ st.aberto = atualizado; pintarPainel(); }
+    }catch(e){
+      estado(e.message, 'erro');
+      toast(e.message, 'erro');
+    }finally{
+      st.salvando = false; btn.disabled = false;
+    }
+  }
+
+  async function recarregar(){
+    const qs = await api('/api/v2/config/quadros');
+    st.quadros = qs.quadros || [];
+    pintarQuadros();
+  }
+
+  /* ---------- aba plataforma ---------- */
+  function pintarPlataforma(){
+    document.getElementById('abaPlataforma').innerHTML = `
+      <div class="faixa info">
+        <span class="material-symbols-rounded">info</span>
+        <span><div class="fx-t">Esta tela é sobre a plataforma, não sobre pessoas</div>
+        <div class="fx-s">Quem acessa o quê fica em <b>Acessos</b>. Aqui ficam as regras
+        que valem para todo mundo. Por enquanto só o direcionamento dos quadros;
+        os itens abaixo entram em seguida.</div></span>
+      </div>
+      ${[
+        ['alt_route','Fluxos automáticos',
+         'O que acontece quando um contrato fecha: quais quadros abrem, quem é avisado, quando nasce a cobrança.'],
+        ['sell','Produtos do CRM',
+         'A lista de produtos vendáveis e para qual quadro cada um manda o trabalho.'],
+        ['view_column','Fases dos quadros',
+         'As colunas de cada quadro e quais delas contam como entrega concluída.'],
+        ['gpp_maybe','Objeções do funil',
+         'Os motivos de perda que aparecem quando um lead sai do funil.'],
+      ].map(([ico,t,d]) => `
+        <div class="em-breve">
+          <span class="eb-ico"><span class="material-symbols-rounded">${ico}</span></span>
+          <span><div class="eb-t">${t}</div><div class="eb-d">${d}</div></span>
+          <span class="eb-tag">Em breve</span>
+        </div>`).join('')}`;
+  }
+
+  function aba(nome){
+    ['quadros','plataforma'].forEach(n => {
+      const b = document.getElementById('tab-'+n);
+      const p = document.getElementById('aba' + n[0].toUpperCase() + n.slice(1));
+      b.classList.toggle('on', n === nome);
+      b.setAttribute('aria-selected', n === nome);
+      p.classList.toggle('on', n === nome);
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' &&
+       document.getElementById('painelQuadro').classList.contains('show')) fechar();
+  });
+  document.addEventListener('DOMContentLoaded', carregar);
+
+  return { aba, abrir, fechar, salvar, carregar,
+           definirModo, definirExecutor, definirCampo };
+})();
+</script>
 </body>
 </html>
