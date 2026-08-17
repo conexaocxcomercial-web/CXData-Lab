@@ -9,499 +9,320 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
     <style>
         :root{
-            --fundo:#f4f4f8;
+            --fundo:#f5f4fa;
             --papel:#ffffff;
-            --papel-suave:#f8f8fb;
-            --linha:#e7e7ef;
-            --linha-forte:#d6d4e8;
-            --texto:#17171d;
-            --texto-secundario:#696976;
-            --texto-suave:#8d8d99;
-            --roxo:#6c5ce7;
-            --roxo-escuro:#5a49d7;
-            --roxo-suave:#f0eeff;
-            --erro:#b4232b;
-            --erro-fundo:#fff1f2;
-            --erro-borda:#fecdd3;
-            --raio-grande:22px;
-            --raio-medio:12px;
+            --papel-suave:#f9f8fc;
+            --linha:#e7e4ef;
+            --linha-forte:#d8d2ea;
+            --texto:#1d1928;
+            --texto-secundario:#706a7e;
+            --texto-suave:#9993a5;
+            --roxo:#6c63f6;
+            --roxo-escuro:#5a50e2;
+            --roxo-suave:#efedff;
+            --erro:#bb3045;
+            --erro-fundo:#fff1f3;
+            --erro-linha:#f7c9d1;
+            --raio:16px;
         }
 
-        *{ box-sizing:border-box; margin:0; padding:0; }
-        html,body{ min-height:100%; }
+        *{box-sizing:border-box}
+        html,body{min-height:100%}
         body{
-            font-family:'Inter',system-ui,sans-serif;
+            margin:0;
+            overflow-x:hidden;
             background:var(--fundo);
             color:var(--texto);
+            font-family:'Inter',system-ui,sans-serif;
             -webkit-font-smoothing:antialiased;
         }
 
-        button,input{ font:inherit; }
-        button{ border:0; }
-        :focus-visible{ outline:3px solid rgba(108,92,231,.28); outline-offset:3px; }
+        button,input{font:inherit}
+        button{border:0}
+        :focus-visible{outline:3px solid rgba(108,99,246,.24);outline-offset:3px}
 
-        .tela{
-            min-height:100vh;
-            display:grid;
-            grid-template-columns:minmax(0,1.08fr) minmax(460px,.92fr);
-            background:var(--papel);
-        }
-
-        .arte{
+        .pagina-login{
             position:relative;
-            isolation:isolate;
-            overflow:hidden;
-            display:flex;
-            flex-direction:column;
-            justify-content:space-between;
-            min-height:100vh;
-            padding:clamp(20px,3vh,64px) clamp(34px,4.1vw,64px);
-            color:#fff;
-            background:
-                radial-gradient(circle at 82% 70%, rgba(110,93,255,.40) 0, rgba(110,93,255,.17) 18%, transparent 39%),
-                radial-gradient(circle at 15% 8%, rgba(165,255,87,.12), transparent 21%),
-                linear-gradient(142deg,#111217 0%,#18181e 51%,#111218 100%);
-        }
-
-        .arte::before,
-        .arte::after{
-            content:'';
-            position:absolute;
-            pointer-events:none;
-            z-index:-1;
-            border-radius:50%;
-        }
-
-        .arte::before{
-            width:560px;
-            height:560px;
-            right:-262px;
-            bottom:-196px;
-            border:1px solid rgba(255,255,255,.10);
-            box-shadow:
-                0 0 0 42px rgba(255,255,255,.025),
-                0 0 0 84px rgba(255,255,255,.018);
-        }
-
-        .arte::after{
-            width:390px;
-            height:390px;
-            left:-246px;
-            top:26%;
-            border:1px solid rgba(255,255,255,.065);
-        }
-
-        .marca-escura{
-            position:relative;
-            display:inline-flex;
-            align-items:baseline;
-            width:max-content;
-            color:#fff;
-            font-size:24px;
-            line-height:1;
-            font-weight:700;
-            letter-spacing:-1.1px;
-        }
-
-        .marca-escura span{ color:#8d7cff; }
-
-        .conteudo-arte{
-            width:min(100%,510px);
-            position:relative;
-            margin:auto 0;
-            padding:64px 0;
-        }
-
-        .sinal{
-            display:flex;
-            align-items:center;
-            gap:9px;
-            margin-bottom:24px;
-            color:rgba(255,255,255,.62);
-            font-size:11px;
-            font-weight:600;
-            letter-spacing:.11em;
-            text-transform:uppercase;
-        }
-
-        .sinal::before{
-            content:'';
-            width:7px;
-            height:7px;
-            border-radius:50%;
-            background:#9cff4d;
-            box-shadow:0 0 0 5px rgba(156,255,77,.11);
-        }
-
-        .conteudo-arte h1{
-            max-width:500px;
-            font-size:clamp(36px,4vw,57px);
-            font-weight:700;
-            line-height:1.06;
-            letter-spacing:-.06em;
-        }
-
-        .conteudo-arte p{
-            max-width:430px;
-            margin-top:22px;
-            font-size:16px;
-            line-height:1.7;
-            color:rgba(255,255,255,.64);
-        }
-
-        .pontos{
-            display:flex;
-            flex-wrap:wrap;
-            gap:12px 16px;
-            margin-top:33px;
-        }
-
-        .ponto{
-            display:flex;
-            align-items:center;
-            gap:7px;
-            color:rgba(255,255,255,.79);
-            font-size:12px;
-            font-weight:500;
-        }
-
-        .ponto .material-symbols-rounded{
-            width:19px;
-            height:19px;
             display:grid;
             place-items:center;
-            border-radius:50%;
-            background:rgba(255,255,255,.1);
-            color:#b5aaff;
-            font-size:14px;
-            font-variation-settings:'FILL' 1;
+            min-height:100vh;
+            padding:36px 24px;
+            overflow:hidden;
+            background:
+                radial-gradient(circle at 15% 13%,rgba(119,99,248,.10),transparent 25%),
+                radial-gradient(circle at 88% 88%,rgba(108,99,246,.10),transparent 27%),
+                var(--fundo);
         }
 
-        .rodape-arte{
+        .grafismo{
+            position:absolute;
+            width:510px;
+            height:510px;
+            border:1px solid rgba(108,99,246,.09);
+            border-radius:50%;
+            pointer-events:none;
+        }
+
+        .grafismo.um{left:-310px;bottom:-245px;box-shadow:0 0 0 55px rgba(108,99,246,.022),0 0 0 110px rgba(108,99,246,.015)}
+        .grafismo.dois{right:-330px;top:-285px;box-shadow:0 0 0 50px rgba(108,99,246,.022)}
+
+        .marca-fundo{
+            position:absolute;
+            right:clamp(22px,7vw,120px);
+            bottom:clamp(18px,5vh,66px);
+            color:transparent;
+            font-size:clamp(120px,18vw,270px);
+            font-weight:700;
+            letter-spacing:-.17em;
+            line-height:.75;
+            pointer-events:none;
+            transform:rotate(-9deg);
+            -webkit-text-stroke:1px rgba(108,99,246,.10);
+        }
+
+        .cartao-login{
+            position:relative;
+            z-index:1;
+            width:min(100%,426px);
+            padding:39px;
+            border:1px solid rgba(77,58,142,.10);
+            border-radius:20px;
+            background:rgba(255,255,255,.96);
+            box-shadow:0 20px 52px rgba(45,34,82,.10);
+        }
+
+        .marcas-login{
             display:flex;
             align-items:center;
             gap:10px;
-            color:rgba(255,255,255,.38);
-            font-size:11px;
-            font-weight:500;
+            height:26px;
+            margin-bottom:31px;
+            white-space:nowrap;
         }
 
-        .rodape-arte::before{
-            content:'';
-            width:22px;
-            height:1px;
-            background:rgba(255,255,255,.30);
+        .marca-core{
+            color:#1d1928;
+            font-size:21px;
+            font-weight:700;
+            letter-spacing:-1.1px;
+            line-height:1;
         }
 
-        .lado{
+        .marca-core span{color:var(--roxo)}
+        .divisor-marca{width:1px;height:18px;background:#ded9ea}
+
+        .marca-conexao{
             display:flex;
             align-items:center;
-            justify-content:center;
-            min-height:100vh;
-            padding:clamp(20px,3vh,48px) clamp(34px,6vw,96px);
-            background:
-                radial-gradient(circle at 100% 0, rgba(108,92,231,.055), transparent 24%),
-                var(--papel);
-        }
-
-        .formulario{ width:min(100%,390px); }
-
-        .marca-form{
-            display:block;
-            width:142px;
-            height:auto;
-            margin-bottom:56px;
-        }
-
-        .cabecalho-formulario{ margin-bottom:30px; }
-
-        .cabecalho-formulario h2{
-            font-size:31px;
+            color:var(--roxo);
+            font-size:13px;
             font-weight:700;
-            letter-spacing:-1.35px;
-            line-height:1.1;
+            letter-spacing:-.5px;
+            line-height:1;
+        }
+
+        .marca-conexao-imagem{display:block;width:88px;height:24px;overflow:hidden}
+        .marca-conexao-imagem img{display:block;width:auto;height:24px;max-width:none}
+
+        .cabecalho-formulario h1{
+            margin:0;
+            font-size:28px;
+            font-weight:700;
+            letter-spacing:-1.15px;
+            line-height:1.12;
         }
 
         .cabecalho-formulario p{
-            margin-top:10px;
+            margin:9px 0 27px;
             color:var(--texto-secundario);
-            font-size:14px;
+            font-size:13px;
             line-height:1.6;
         }
 
         .aviso{
             display:none;
             align-items:flex-start;
-            gap:10px;
-            padding:13px 14px;
-            margin-bottom:19px;
+            gap:9px;
+            margin:0 0 20px;
+            padding:11px 12px;
             border:1px solid transparent;
-            border-radius:var(--raio-medio);
-            font-size:12.5px;
+            border-radius:10px;
+            font-size:12px;
             line-height:1.5;
         }
 
-        .aviso.on{ display:flex; }
-        .aviso .material-symbols-rounded{ flex:0 0 auto; margin-top:1px; font-size:18px; }
-        .aviso.erro{ color:#8f1d28; background:var(--erro-fundo); border-color:var(--erro-borda); }
-        .aviso.info{ color:#4338a8; background:var(--roxo-suave); border-color:#dcd7ff; }
+        .aviso.on{display:flex}
+        .aviso .material-symbols-rounded{flex:0 0 auto;margin-top:1px;font-size:17px}
+        .aviso.erro{border-color:var(--erro-linha);background:var(--erro-fundo);color:#a7273b}
+        .aviso.info{border-color:#dcd7fb;background:#f7f6ff;color:#4d43b1}
 
-        .campo{ margin-bottom:19px; }
-
-        .campo label{
-            display:block;
-            margin-bottom:8px;
-            color:var(--texto);
-            font-size:12px;
-            font-weight:600;
-        }
-
-        .caixa{ position:relative; }
+        .campo{margin-top:18px}
+        .campo label{display:block;margin-bottom:8px;color:#4c4658;font-size:11px;font-weight:700}
+        .caixa{position:relative}
 
         .caixa > .material-symbols-rounded{
             position:absolute;
-            top:50%;
-            left:15px;
-            transform:translateY(-50%);
-            color:var(--texto-suave);
-            font-size:19px;
-            pointer-events:none;
             z-index:1;
+            top:50%;
+            left:14px;
+            transform:translateY(-50%);
+            color:#928b9e;
+            font-size:18px;
+            pointer-events:none;
         }
 
         .campo input{
             width:100%;
-            height:52px;
+            height:48px;
+            padding:0 45px 0 43px;
             border:1px solid var(--linha);
-            border-radius:var(--raio-medio);
+            border-radius:11px;
             outline:0;
             background:var(--papel-suave);
             color:var(--texto);
-            padding:0 46px 0 45px;
-            font-size:14px;
-            transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+            font-size:13px;
+            transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
         }
 
-        .campo input::placeholder{ color:#a8a8b3; }
-
-        .campo input:hover{ border-color:var(--linha-forte); }
-
-        .campo input:focus{
-            background:var(--papel);
-            border-color:var(--roxo);
-            box-shadow:0 0 0 4px rgba(108,92,231,.12);
-        }
-
-        .campo input:disabled{ cursor:wait; opacity:.65; }
+        .campo input::placeholder{color:#aaa4b2}
+        .campo input:hover{border-color:var(--linha-forte)}
+        .campo input:focus{border-color:var(--roxo);background:#fff;box-shadow:0 0 0 3px rgba(108,99,246,.12)}
+        .campo input:disabled{cursor:wait;opacity:.65}
 
         .olho{
             position:absolute;
+            z-index:2;
             top:50%;
-            right:8px;
+            right:7px;
             display:grid;
             place-items:center;
-            width:36px;
-            height:36px;
+            width:34px;
+            height:34px;
             transform:translateY(-50%);
-            border-radius:9px;
+            border-radius:8px;
             background:transparent;
-            color:var(--texto-suave);
+            color:#928b9e;
             cursor:pointer;
             transition:background .16s ease,color .16s ease;
         }
 
-        .olho:hover{ color:var(--texto); background:#efeff5; }
-        .olho .material-symbols-rounded{ font-size:19px; }
+        .olho:hover{background:#eeecf4;color:var(--texto)}
+        .olho .material-symbols-rounded{font-size:18px}
 
-        .linha{
+        .linha-login{
             display:flex;
             align-items:center;
             justify-content:space-between;
-            gap:16px;
-            margin:3px 0 25px;
+            gap:14px;
+            margin:20px 0 21px;
         }
 
-        .lembrar,
-        .esqueci{
+        .lembrar,.esqueci{
             border:0;
             background:transparent;
             cursor:pointer;
-            color:var(--texto-secundario);
-            font-size:12.5px;
-            font-weight:500;
+            font-size:11.5px;
+            font-weight:600;
         }
 
-        .lembrar{
-            display:inline-flex;
-            align-items:center;
-            gap:9px;
-            white-space:nowrap;
-        }
-
-        .caixa-lembrete{
-            display:grid;
-            place-items:center;
-            width:17px;
-            height:17px;
-            border:1.5px solid var(--linha-forte);
-            border-radius:5px;
-            transition:background .16s ease,border-color .16s ease;
-        }
-
-        .caixa-lembrete.on{ background:var(--roxo); border-color:var(--roxo); }
-
-        .caixa-lembrete.on::after{
-            content:'';
-            width:4px;
-            height:8px;
-            border:solid #fff;
-            border-width:0 2px 2px 0;
-            transform:rotate(45deg) translate(-1px,-1px);
-        }
-
-        .esqueci{ color:var(--roxo); font-weight:600; }
-        .esqueci:hover{ color:var(--roxo-escuro); text-decoration:underline; }
+        .lembrar{display:inline-flex;align-items:center;gap:8px;color:var(--texto-secundario);white-space:nowrap}
+        .checkbox{display:grid;place-items:center;width:16px;height:16px;border:1.5px solid #d6d0e2;border-radius:4px;transition:background .16s ease,border-color .16s ease}
+        .checkbox.on{border-color:var(--roxo);background:var(--roxo)}
+        .checkbox.on::after{content:'';width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+        .esqueci{color:var(--roxo)}
+        .esqueci:hover{color:var(--roxo-escuro);text-decoration:underline}
 
         .entrar{
             display:flex;
             align-items:center;
             justify-content:center;
-            gap:9px;
+            gap:8px;
             width:100%;
-            height:53px;
-            border-radius:var(--raio-medio);
-            background:linear-gradient(135deg,#7967f4 0%,#6250df 100%);
+            height:49px;
+            border-radius:11px;
+            background:var(--roxo);
             color:#fff;
-            box-shadow:0 10px 20px rgba(95,76,218,.21);
+            box-shadow:0 10px 17px rgba(86,70,220,.20);
             cursor:pointer;
-            font-size:14px;
-            font-weight:600;
-            transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+            font-size:13px;
+            font-weight:700;
+            transition:background .16s ease,box-shadow .16s ease,transform .16s ease;
         }
 
-        .entrar:hover{
-            transform:translateY(-1px);
-            box-shadow:0 13px 25px rgba(95,76,218,.27);
-            filter:saturate(1.05);
+        .entrar:hover{background:var(--roxo-escuro);box-shadow:0 13px 22px rgba(86,70,220,.25);transform:translateY(-1px)}
+        .entrar:active{transform:translateY(0)}
+        .entrar:disabled{cursor:wait;opacity:.7;box-shadow:none;transform:none}
+        .entrar .material-symbols-rounded{font-size:18px}
+        .girando{animation:girar .8s linear infinite}
+        @keyframes girar{to{transform:rotate(360deg)}}
+
+        .ajuda{margin:23px 0 0;text-align:center;color:var(--texto-suave);font-size:11px;line-height:1.65}
+        .ajuda b{color:var(--texto-secundario);font-weight:600}
+
+        @media(max-width:520px){
+            .pagina-login{place-items:start center;padding:29px 18px}
+            .cartao-login{padding:30px 24px;border-radius:18px}
+            .marca-fundo{right:-12px;bottom:8px;font-size:138px}
+            .marcas-login{gap:8px;margin-bottom:29px}
+            .marca-core{font-size:19px}
+            .marca-conexao-imagem{width:76px;height:21px}
+            .marca-conexao-imagem img{height:21px}
+            .marca-conexao{font-size:12px}
+            .cabecalho-formulario h1{font-size:26px}
+            .linha-login{align-items:flex-start;flex-direction:column;gap:14px}
         }
 
-        .entrar:active{ transform:translateY(0); }
-        .entrar:disabled{ cursor:wait; opacity:.7; transform:none; box-shadow:none; }
-        .entrar .material-symbols-rounded{ font-size:19px; }
-
-        .girando{ animation:girar .8s linear infinite; }
-
-        @keyframes girar{ to{ transform:rotate(360deg); } }
-
-        .ajuda{
-            margin-top:30px;
-            text-align:center;
-            color:var(--texto-suave);
-            font-size:12px;
-            line-height:1.65;
-        }
-
-        .ajuda strong{ color:var(--texto-secundario); font-weight:600; }
-
-        @media(max-width:920px){
-            .tela{ grid-template-columns:minmax(0,1fr) minmax(400px,.9fr); }
-            .arte{ padding:36px; }
-            .conteudo-arte h1{ font-size:42px; }
-        }
-
-        @media(max-width:780px){
-            .tela{ display:block; }
-            .arte{ display:none; }
-            .lado{
-                min-height:100vh;
-                padding:36px 24px;
-                align-items:flex-start;
-            }
-            .formulario{ margin:0 auto; padding-top:18px; }
-            .marca-form{ width:135px; margin-bottom:52px; }
-        }
-
-        @media(max-width:420px){
-            .lado{ padding:28px 20px; }
-            .marca-form{ margin-bottom:42px; }
-            .cabecalho-formulario h2{ font-size:28px; }
-            .linha{ align-items:flex-start; flex-direction:column; gap:14px; }
-            .esqueci{ margin-left:1px; }
-        }
-
-        @media(prefers-reduced-motion:reduce){
-            *,*::before,*::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
-        }
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
 </head>
 <body>
-    <main class="tela">
-        <section class="arte" aria-label="Apresentação core.cx">
-            <div class="marca-escura" aria-label="core.cx">core<span>.cx</span></div>
+    <main class="pagina-login">
+        <span class="grafismo um"></span>
+        <span class="grafismo dois"></span>
+        <span class="marca-fundo" aria-hidden="true">cx</span>
 
-            <div class="conteudo-arte">
-                <div class="sinal">Trabalho conectado</div>
-                <h1>O essencial do seu negócio em movimento.</h1>
-                <p>Equipe, clientes, processos e indicadores conectados em um só lugar.</p>
+        <form class="cartao-login" onsubmit="entrar(); return false;" aria-labelledby="titulo-login">
+            <div class="marcas-login" aria-label="core.cx e conexão.cx">
+                <span class="marca-core">core<span>.cx</span></span>
+                <span class="divisor-marca"></span>
+                <span class="marca-conexao"><span class="marca-conexao-imagem"><img src="{{ url_for('static', filename='cx_logos-05.png') }}" alt="conexão"></span><span>.cx</span></span>
+            </div>
 
-                <div class="pontos" aria-label="Benefícios da plataforma">
-                    <span class="ponto"><span class="material-symbols-rounded">check</span>Visão compartilhada</span>
-                    <span class="ponto"><span class="material-symbols-rounded">check</span>Decisões mais claras</span>
+            <header class="cabecalho-formulario">
+                <h1 id="titulo-login">Acesse sua conta</h1>
+                <p>Informe seus dados para continuar.</p>
+            </header>
+
+            <div class="aviso" id="aviso" role="alert" aria-live="polite">
+                <span class="material-symbols-rounded" id="avisoIcone">error</span>
+                <span id="avisoTexto"></span>
+            </div>
+
+            <div class="campo">
+                <label for="email">Email</label>
+                <div class="caixa">
+                    <span class="material-symbols-rounded">mail</span>
+                    <input type="email" id="email" placeholder="nome@empresa.com" autocomplete="username" autocapitalize="none" spellcheck="false">
                 </div>
             </div>
 
-            <div class="rodape-arte">core.cx</div>
-        </section>
-
-        <section class="lado" aria-labelledby="titulo-login">
-            <form class="formulario" onsubmit="entrar(); return false;">
-                <img class="marca-form" src="{{ url_for('static', filename='core-cx-logo.png') }}" alt="core.cx">
-
-                <header class="cabecalho-formulario">
-                    <h2 id="titulo-login">Boas vindas</h2>
-                    <p>Acesse seu espaço de trabalho.</p>
-                </header>
-
-                <div class="aviso" id="aviso" role="alert" aria-live="polite">
-                    <span class="material-symbols-rounded" id="avisoIcone">error</span>
-                    <span id="avisoTexto"></span>
+            <div class="campo">
+                <label for="senha">Senha</label>
+                <div class="caixa">
+                    <span class="material-symbols-rounded">lock</span>
+                    <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
+                    <button type="button" class="olho" id="olho" onclick="verSenha()" aria-label="Mostrar senha" title="Mostrar senha"><span class="material-symbols-rounded">visibility</span></button>
                 </div>
+            </div>
 
-                <div class="campo">
-                    <label for="email">Email</label>
-                    <div class="caixa">
-                        <span class="material-symbols-rounded">mail</span>
-                        <input type="email" id="email" placeholder="nome@empresa.com" autocomplete="username" autocapitalize="none" spellcheck="false">
-                    </div>
-                </div>
+            <div class="linha-login">
+                <button type="button" class="lembrar" onclick="alternarLembrar()" aria-pressed="true"><span class="checkbox on" id="cx" aria-hidden="true"></span>Manter conectado</button>
+                <button type="button" class="esqueci" onclick="esqueci()">Esqueci minha senha</button>
+            </div>
 
-                <div class="campo">
-                    <label for="senha">Senha</label>
-                    <div class="caixa">
-                        <span class="material-symbols-rounded">lock</span>
-                        <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
-                        <button type="button" class="olho" id="olho" onclick="verSenha()" aria-label="Mostrar senha" title="Mostrar senha">
-                            <span class="material-symbols-rounded">visibility</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="linha">
-                    <button type="button" class="lembrar" onclick="alternarLembrar()" aria-pressed="true">
-                        <span class="caixa-lembrete on" id="cx" aria-hidden="true"></span>
-                        Manter conectado
-                    </button>
-                    <button type="button" class="esqueci" onclick="esqueci()">Esqueci minha senha</button>
-                </div>
-
-                <button class="entrar" id="btnEntrar" type="submit">
-                    <span class="material-symbols-rounded" id="btnIcone">login</span>
-                    <span id="btnTexto">Entrar</span>
-                </button>
-
-                <p class="ajuda"><strong>Precisa de ajuda?</strong><br>Fale com quem administra a plataforma.</p>
-            </form>
-        </section>
+            <button class="entrar" id="btnEntrar" type="submit"><span class="material-symbols-rounded" id="btnIcone">login</span><span id="btnTexto">Entrar</span></button>
+            <p class="ajuda"><b>Precisa de ajuda?</b><br>Fale com quem administra a plataforma.</p>
+        </form>
     </main>
 
     <script>
@@ -559,7 +380,6 @@
 
         async function entrar(){
             if(enviando) return;
-
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value;
 
@@ -590,7 +410,7 @@
                     return;
                 }
 
-                let mensagem = 'Email ou senha incorretos. Confira e tente novamente.';
+                let mensagem = 'Não foi possível entrar. Confira seu email e sua senha.';
                 try{
                     const dados = await resposta.json();
                     if(dados && dados.mensagem) mensagem = dados.mensagem;
