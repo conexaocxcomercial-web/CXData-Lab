@@ -4550,7 +4550,7 @@ def excluir_post(post_id):
             return jsonify({"status": "erro", "mensagem": "Você só exclui os seus posts."}), 403
         supabase.table("posts").update(
             {"excluido_em": datetime.now(timezone.utc).isoformat(),
-             "excluido_por": session.get('usuario_nome')}
+             }
         ).eq("id", post_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
