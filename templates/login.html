@@ -46,7 +46,7 @@
             display:grid;
             place-items:center;
             min-height:100vh;
-            padding:36px 24px;
+            padding:clamp(20px,3vh,36px) 24px;
             overflow:hidden;
             background:
                 radial-gradient(circle at 15% 13%,rgba(119,99,248,.10),transparent 25%),
@@ -84,7 +84,7 @@
             position:relative;
             z-index:1;
             width:min(100%,426px);
-            padding:39px;
+            padding:32px 39px;
             border:1px solid rgba(77,58,142,.10);
             border-radius:20px;
             background:rgba(255,255,255,.96);
@@ -96,7 +96,7 @@
             align-items:center;
             gap:10px;
             height:26px;
-            margin-bottom:31px;
+            margin-bottom:25px;
             white-space:nowrap;
         }
 
@@ -133,7 +133,7 @@
         }
 
         .cabecalho-formulario p{
-            margin:9px 0 27px;
+            margin:8px 0 22px;
             color:var(--texto-secundario);
             font-size:13px;
             line-height:1.6;
@@ -156,7 +156,7 @@
         .aviso.erro{border-color:var(--erro-linha);background:var(--erro-fundo);color:#a7273b}
         .aviso.info{border-color:#dcd7fb;background:#f7f6ff;color:#4d43b1}
 
-        .campo{margin-top:18px}
+        .campo{margin-top:15px}
         .campo label{display:block;margin-bottom:8px;color:#4c4658;font-size:11px;font-weight:700}
         .caixa{position:relative}
 
@@ -214,7 +214,7 @@
             align-items:center;
             justify-content:space-between;
             gap:14px;
-            margin:20px 0 21px;
+            margin:17px 0 18px;
         }
 
         .lembrar,.esqueci{
@@ -256,7 +256,7 @@
         .girando{animation:girar .8s linear infinite}
         @keyframes girar{to{transform:rotate(360deg)}}
 
-        .ajuda{margin:23px 0 0;text-align:center;color:var(--texto-suave);font-size:11px;line-height:1.65}
+        .ajuda{margin:18px 0 0;text-align:center;color:var(--texto-suave);font-size:11px;line-height:1.65}
         .ajuda b{color:var(--texto-secundario);font-weight:600}
 
         @media(max-width:520px){
