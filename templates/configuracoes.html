@@ -136,10 +136,14 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .um-nome .av{ width:26px; height:26px; min-width:26px; font-size:9px; }
 
 @media(max-width:1000px){
+    /* Empilha em vez de esconder: "quem recebe" é a informação que a
+       tela existe para dar, e escondê-la no celular deixava só o nome
+       do quadro e a etiqueta de modo. */
     .th{ display:none; }
-    .qr{ grid-template-columns:1fr auto; gap:9px; padding:13px 15px; }
-    .col-quem,.qr-seta{ display:none; }
-    .q-nome{ grid-column:1; }
+    .qr{ grid-template-columns:1fr; gap:8px; padding:14px 15px; }
+    .qr-seta{ display:none; }
+    .col-quem{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .col-quem .cel{ white-space:normal; }
 }
 
 /* ===== PAINEL ===== */
@@ -249,8 +253,17 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     .cmd-tit,.cmd-sep{ display:none; }
     .segm{ width:100%; }
     .segm-btn{ flex:1; justify-content:center; }
+    /* Mesma regra da tela de Acessos: a barra quebra em vez de
+       estourar a largura e empurrar o documento para o lado. */
+    .cmd-dir{ width:100%; margin-left:0; flex-wrap:wrap; }
+    .cmd-dir .btn{ flex:1 1 40%; justify-content:center; }
     .wrap{ padding:16px 16px 80px; }
     .painel{ max-width:none; }
+    /* A faixa de aviso tem um botão à direita que não cabe ao lado
+       do texto em tela estreita. */
+    .faixa{ flex-wrap:wrap; }
+    .fx-acao{ margin-left:0; width:100%; }
+    .fx-acao .btn{ width:100%; justify-content:center; }
 }
 </style>
 </head>
