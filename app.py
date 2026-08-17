@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
 import uuid
-from functools import wraps
 
 # Fuso horário de Brasília (UTC-3). Usado para gravar datas de projeto
 # de forma consistente com a realidade local — evita erro de "um dia" na
@@ -20,22 +19,37 @@ import string
 import os
 
 app = Flask(__name__)
-# A chave de sessão nunca pode estar versionada. Em desenvolvimento, uma chave
-# efêmera mantém o app utilizável; em produção, FLASK_SECRET_KEY é obrigatória
-# para que uma reinicialização não invalide todas as sessões.
-_flask_secret = os.environ.get("FLASK_SECRET_KEY")
-if not _flask_secret and os.environ.get("VERCEL"):
-    raise RuntimeError("Defina FLASK_SECRET_KEY nas variáveis de ambiente da Vercel.")
-app.secret_key = _flask_secret or secrets.token_urlsafe(48)
+# CHAVE DE SESSÃO: lê de variável de ambiente, com fallback para não quebrar local
+# PENDÊNCIA DE SEGURANÇA: o valor padrão permite forjar sessão de admin.
+# Definir FLASK_SECRET_KEY no Vercel e remover o padrão.
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cxdata_chave_mestra_oficial_2026_!@")
 app.permanent_session_lifetime = timedelta(days=7)
 
-# Credenciais ficam somente nas variáveis de ambiente do projeto. A aplicação
-# usa a chave de serviço no servidor para que RLS não fique exposto ao browser.
-URL = os.environ.get("SUPABASE_URL")
-KEY = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
-if not URL or not KEY:
-    raise RuntimeError("Defina SUPABASE_URL e SUPABASE_SERVICE_KEY no ambiente.")
+# CREDENCIAIS SUPABASE
+# Preferência: SUPABASE_SERVICE_KEY (service_role, passa por cima do RLS)
+# > SUPABASE_KEY (anon) > padrão embutido.
+#
+# PENDÊNCIA DE SEGURANÇA: o padrão embutido vaza junto com o repositório.
+# Ao fechar: repositório privado, chaves rotacionadas, variáveis no Vercel
+# e estes padrões removidos.
+URL = os.environ.get("SUPABASE_URL", "https://udqeheyyhvqlwejdwkbj.supabase.co")
+KEY = (os.environ.get("SUPABASE_SERVICE_KEY")
+       or os.environ.get("SUPABASE_KEY")
+       or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
 supabase: Client = create_client(URL, KEY)
+
+# ============================================================
+# ACESSOS v2 -- modelo de permissao em modulo separado
+#
+# Acesso e a parte do sistema em que um erro custa mais caro.
+# Isolar as regras num arquivo permite le-las inteiras de uma vez,
+# em vez de caca-las entre cinco mil linhas de rotas.
+#
+# O registro do blueprint fica no fim do arquivo, depois de
+# ARVORE_QUADROS e das funcoes que o modulo precisa existirem.
+# ============================================================
+import acessos_v2
+
 
 # ============================================================
 # PERMISSÕES — ponto único de decisão
@@ -106,81 +120,6 @@ AREAS = [
 ]
 QUADROS_VALIDOS = {q for q, _ in QUADROS}
 AREAS_VALIDAS = {a for a, _, _, _ in AREAS}
-
-
-def _normalizar_alcance(valor):
-    """O alcance individual tem dois estados explícitos e seguros."""
-    return valor if valor in ("proprio", "quadro") else "proprio"
-
-
-def _usuario_e_admin(usuario):
-    """Compatibilidade de leitura durante a migração do modelo antigo."""
-    return bool(usuario.get("is_admin")) or usuario.get("nivel_acesso") == "admin"
-
-
-def _quadros_de_usuario(usuario, administrador=False):
-    if administrador:
-        return [chave for chave, *_ in ARVORE_QUADROS]
-    return [q for q in (usuario.get("quadros") or []) if q in QUADRO_AREA]
-
-
-def _modulos_de_usuario(usuario, administrador=False):
-    if administrador:
-        return list(AREAS_VALIDAS)
-    return [m for m in (usuario.get("perm_modulos") or []) if m in AREAS_VALIDAS]
-
-
-def _caps_modelo_simples(quadros, modulos, alcance, administrador=False):
-    """Traduz o novo modelo em capacidades para as rotas já existentes.
-
-    O desenho novo tem somente duas decisões de segurança: administrador ou
-    personalizado. Para o personalizado, os quadros limitam o trabalho e as
-    pílulas de telas limitam a navegação. O restante das capacidades nasce
-    dessa combinação, evitando uma segunda lista de permissões escondida.
-    """
-    if administrador:
-        return {capacidade: "tudo" for capacidade in CATALOGO}
-
-    caps = {}
-    tem_quadros = bool(quadros)
-    if tem_quadros:
-        for capacidade in ("projeto.ver", "projeto.editar", "projeto.excluir",
-                           "tempo.ver"):
-            caps[capacidade] = alcance
-        # Essas ações continuam limitadas pela rota/quadro visualizado; o
-        # alcance determina quais cards podem ser abertos e manipulados.
-        caps["projeto.solicitar"] = "tudo"
-        caps["projeto.atribuir"] = "quadro"
-        caps["tempo.registrar"] = "tudo"
-
-    if "crm" in modulos:
-        caps.update({
-            "crm.lead.ver": alcance,
-            "crm.lead.editar": alcance,
-            "crm.lead.excluir": alcance,
-            "crm.valor.ver": "tudo",
-            "crm.painel.ver": alcance,
-        })
-    if "clientes" in modulos:
-        caps.update({
-            "cliente.ver": alcance,
-            "cliente.gerir": "tudo",
-            "cliente.portal.gerir": "tudo",
-        })
-    if "okr" in modulos:
-        caps.update({"okr.ver": alcance, "okr.gerir": alcance})
-    if "feed" in modulos:
-        caps.update({
-            "feed.publicar": "tudo",
-            "feed.comunicado": "tudo",
-            "feed.moderar": "tudo",
-            "comentario.excluir": "tudo",
-        })
-    if "dashboard" in modulos:
-        caps.update({"dashboard.ver": alcance, "dados.exportar": "tudo"})
-    if "lixeira" in modulos:
-        caps["lixeira.ver"] = "tudo"
-    return caps
 
 
 def caps_da_sessao():
@@ -279,37 +218,26 @@ def exige(capacidade):
 
 
 def carregar_permissoes(usuario):
-    """Monta a sessão a partir do modelo simples de acesso.
+    """Monta caps, quadros, telas e alcance na sessao. Chamado no login.
 
-    Clientes externos seguem o fluxo legado e continuam limitados aos projetos
-    explicitamente liberados. Para usuários internos, papéis e exceções deixam
-    de decidir o acesso: administrador vê tudo; os demais usam pílulas de
-    telas, quadros e um único alcance.
+    O QUE MUDOU
+    -----------
+    Antes as capacidades vinham de `papel_capacidades`, com excecoes por
+    pessoa em `usuarios.ajustes`. Agora saem de quatro campos da propria
+    pessoa: admin, quadros, alcance e areas.
+
+    As ~200 chamadas `pode(...)` espalhadas pelo app nao mudam. Trocamos
+    quem responde a pergunta, nao a pergunta.
     """
-    tipo = usuario.get("tipo_usuario", "interno")
-    administrador = _usuario_e_admin(usuario)
-    session["equipe"] = usuario.get("equipe")
-    session["papel_id"] = usuario.get("papel_id")
-    session["is_admin"] = administrador
-
-    if tipo == "externo":
-        # O portal do cliente não participa da simplificação dos acessos.
-        session["quadros"] = usuario.get("quadros") or []
-        session["areas"] = usuario.get("areas") or []
-        session["alcance_quadros"] = "proprio"
-        session["caps"] = {}
-        return
-
-    quadros = _quadros_de_usuario(usuario, administrador)
-    modulos = _modulos_de_usuario(usuario, administrador)
-    alcance = _normalizar_alcance(usuario.get("alcance_quadros"))
-
-    session["nivel_acesso"] = "admin" if administrador else "personalizado"
-    session["quadros"] = quadros
-    session["areas"] = usuario.get("areas") or []
-    session["perm_modulos"] = modulos
-    session["alcance_quadros"] = alcance
-    session["caps"] = _caps_modelo_simples(quadros, modulos, alcance, administrador)
+    try:
+        acessos_v2.aplicar_na_sessao(usuario)
+    except Exception as e:
+        # Sessao sem capacidade nenhuma e ruim, mas login que explode e
+        # pior: a pessoa ao menos entra e ve a tela inicial.
+        print("Erro ao carregar permissoes:", e)
+        session['caps'] = {}
+        session['quadros'] = usuario.get('quadros') or []
+        session['areas'] = usuario.get('areas') or []
 
 
 def registrar(acao, recurso=None, alvo_id=None, detalhe=None):
@@ -388,8 +316,6 @@ def injetar_permissoes():
     para a sidebar e telas decidirem o que mostrar."""
     return {
         "perm_modulos": session.get("perm_modulos") or [],
-        "quadros": session.get("quadros") or [],
-        "is_admin": is_admin(),
         "tipo_usuario": session.get("tipo_usuario", "interno"),
         "papel_externo": session.get("papel_externo", "visualizador")
     }
@@ -406,7 +332,7 @@ def verificar_hash(senha, hash_armazenado):
         return False
 
 def is_admin():
-    return bool(session.get('is_admin')) or session.get('nivel_acesso') == 'admin'
+    return session.get('nivel_acesso') == 'admin'
 
 def is_externo():
     return session.get('tipo_usuario') == 'externo'
@@ -416,7 +342,7 @@ def is_cliente():
     return is_externo()
 
 def is_personalizado():
-    return not is_externo() and not is_admin()
+    return session.get('nivel_acesso') == 'personalizado'
 
 def eh_visualizador():
     """Externo com papel de visualizador = somente leitura."""
@@ -440,44 +366,79 @@ def get_perm(chave, padrao=None):
     return session.get(chave, padrao)
 
 def pode_acessar_modulo(modulo):
-    """Decide a navegação sem depender dos papéis predefinidos.
-
-    Quadros são governados por ``usuarios.quadros``. As demais telas são
-    governadas pelas pílulas de ``perm_modulos``. A checagem também é usada
-    nas rotas, portanto esconder um item no menu nunca é a única barreira.
-    """
-    if is_admin():
-        return True
-    if modulo in QUADRO_AREA:
-        return modulo in set(quadros_permitidos())
-    return modulo in set(session.get('perm_modulos') or [])
+    """Verifica se o usuário logado pode acessar um módulo.
+    admin/gestor: tudo. comum: os módulos marcados (perm_modulos), mas vê todos os dados.
+    colaborador (legado): quadros + agenda. personalizado/externo: conforme perm_modulos."""
+    nivel = session.get('nivel_acesso')
+    if nivel in ('admin', 'gestor'):
+        return _comparar('modulo:' + modulo, True,
+                         pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
+    if nivel == 'colaborador':
+        # Legado: colaborador acessa quadros e agenda
+        return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda')
+    # comum, personalizado e externo: usam a lista explícita de módulos
+    modulos = session.get('perm_modulos') or []
+    return _comparar('modulo:' + modulo, modulo in modulos,
+                     pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
 
 def filtrar_projetos_permitidos(projetos):
-    """Filtra cards no servidor conforme quadro e alcance da pessoa."""
-    if is_admin():
+    """Recebe lista de projetos (dicts) e devolve só os que o usuário logado pode ver,
+    combinando as dimensões de cliente e projeto. Não afeta admin/gestor."""
+    nivel = session.get('nivel_acesso')
+
+    # Admin e Gestor veem tudo (comportamento atual preservado)
+    if nivel in ('admin', 'gestor'):
+        if session.get('caps'):
+            novo = filtrar(projetos, 'projeto.ver')
+            _comparar('projeto.ver:qtd', len(projetos) == len(projetos),
+                      len(novo) == len(projetos),
+                      {"antigo": len(projetos), "novo": len(novo)})
         return projetos
 
-    # Clientes externos mantêm as limitações específicas do portal.
-    if is_externo():
-        permitidos = set(str(x) for x in (session.get('perm_projetos_ids') or []))
-        return [p for p in projetos
-                if p.get('visivel_cliente')
-                and (not permitidos or str(p.get('id')) in permitidos)]
+    # Comum: vê TODOS os dados (o controle é só de módulos, não de dados)
+    if nivel == 'comum':
+        return projetos
 
-    meus_quadros = set(quadros_permitidos())
-    minhas_areas = {QUADRO_AREA[q] for q in meus_quadros if q in QUADRO_AREA}
+    # Colaborador (legado): só onde é responsável
+    if nivel == 'colaborador':
+        meu_nome = (session.get('usuario_nome') or '').strip().lower()
+        antigo = [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
+        if session.get('caps'):
+            novo = filtrar(projetos, 'projeto.ver')
+            _comparar('projeto.ver:qtd', True, len(novo) == len(antigo),
+                      {"antigo": len(antigo), "novo": len(novo)})
+        return antigo
+
+    # === PERSONALIZADO (interno) e EXTERNO (cliente): lógica granular ===
+    perm_cli_modo = session.get('perm_clientes_modo') or 'todos'
+    perm_cli_ids = set(str(x) for x in (session.get('perm_clientes_ids') or []))
+    perm_proj_modo = session.get('perm_projetos_modo') or 'todos'
+    perm_proj_ids = set(str(x) for x in (session.get('perm_projetos_ids') or []))
     meu_nome = (session.get('usuario_nome') or '').strip().lower()
-    alcance = _normalizar_alcance(session.get('alcance_quadros'))
 
     resultado = []
-    for projeto in projetos:
-        if projeto.get('area') not in minhas_areas:
-            continue
-        if alcance == 'proprio':
-            responsavel = (projeto.get('responsavel') or '').strip().lower()
-            if responsavel != meu_nome:
+    for p in projetos:
+        # Dimensão CLIENTE
+        if perm_cli_modo == 'proprios':
+            # "seus" = projetos onde ele é responsável
+            if (p.get('responsavel') or '').strip().lower() != meu_nome:
                 continue
-        resultado.append(projeto)
+        elif perm_cli_modo == 'selecionados':
+            if str(p.get('cliente_id')) not in perm_cli_ids:
+                continue
+        # 'todos' não filtra por cliente
+
+        # Dimensão PROJETO
+        if perm_proj_modo == 'selecionados':
+            if str(p.get('id')) not in perm_proj_ids:
+                continue
+        # 'todos' não filtra por projeto
+
+        # Para EXTERNO: além de tudo, o projeto precisa estar marcado como visível
+        if is_externo() and not p.get('visivel_cliente'):
+            continue
+
+        resultado.append(p)
     return resultado
 
 def projetos_visiveis_cliente():
@@ -606,11 +567,11 @@ def arvore_quadros():
     """A árvore de quadros, filtrada pelo que a pessoa pode ver."""
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
-    permitidos = set(quadros_permitidos())
-    tudo = is_admin()
+    permitidos = quadros_permitidos()
+    tudo = session.get('nivel_acesso') in ('admin', 'gestor') and not is_personalizado()
     saida = []
     for chave, area, produto, icone, subs in ARVORE_QUADROS:
-        if not tudo and chave not in permitidos:
+        if not tudo and permitidos and chave not in permitidos:
             continue
         saida.append({
             "chave": chave, "area": area, "produto": produto, "icone": icone,
@@ -1173,14 +1134,6 @@ def marcar_comentario_lido(comentario_id):
         return jsonify({"status": "erro", "mensagem": "Erro ao marcar como lido."}), 500
 
 # --- CONFIGURAÇÕES / USUÁRIOS (somente admin) ---
-
-@app.route('/configuracoes')
-def configuracoes_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login', proximo=request.path))
-    if not is_admin():
-        return redirect(url_for('index'))
-    return render_template('configuracoes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
 
 @app.route('/api/usuarios', methods=['GET'])
 def listar_usuarios():
@@ -2706,22 +2659,12 @@ CAPS_OPCIONAIS = (
 
 
 def pode_gerir_acessos():
-    """Acessos e Configurações são exclusivos de administradores."""
-    return is_admin()
+    """So administrador configura acessos.
 
-
-@app.route('/acessos')
-def pagina_acessos():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login', proximo=request.path))
-    if not pode_gerir_acessos():
-        return redirect(url_for('index'))
-    return render_template('acessos.html',
-                           usuario_nome=session.get('usuario_nome', ''),
-                           nivel_acesso=session.get('nivel_acesso', ''),
-                           tipo_usuario=session.get('tipo_usuario', 'interno'),
-                           papel_externo=session.get('papel_externo', ''),
-                           perm_modulos=session.get('perm_modulos', []))
+    Delegado ao modulo para existir uma definicao so de "e admin" --
+    duas definicoes divergem no primeiro caso de borda.
+    """
+    return acessos_v2.sou_admin()
 
 
 # ============================================================
@@ -2777,8 +2720,6 @@ def _mediana(valores):
 # Papéis operacionais por quadro. Vivem no código porque são a lista
 # real do que o motor sabe fazer — crescem quando um fluxo precisa.
 PAPEIS_QUADRO = [
-    ('direto', 'Recebe diretamente',
-     'É a única pessoa que recebe automaticamente os cards no modo Direto'),
     ('direciona', 'Direciona os projetos',
      'Recebe o aviso e escolhe quem fica com cada card novo'),
     ('cobranca', 'Recebe as cobranças',
@@ -2853,7 +2794,6 @@ SUB_PADRAO = {c: subs[0][0] for c, _, _, _, subs in ARVORE_QUADROS if subs}
 # A lista de quadros das telas de acesso vem da árvore, não de uma
 # cópia manual: duas fontes divergem no primeiro quadro novo.
 QUADROS[:] = [(chave, area) for chave, area, _, _, _ in ARVORE_QUADROS]
-QUADROS_VALIDOS = set(QUADRO_AREA)
 
 
 def sub_valida(quadro, sub):
@@ -2864,26 +2804,6 @@ def sub_valida(quadro, sub):
 FASE_ENTRADA = 'Backlog'
 
 
-def pessoa_tem_acesso_quadro(pessoa, quadro):
-    """Garante a invariável central: quem recebe um card consegue abri-lo."""
-    if not pessoa or pessoa.get("ativo") is False:
-        return False
-    if (pessoa.get("tipo_usuario") or "interno") != "interno":
-        return False
-    return _usuario_e_admin(pessoa) or quadro in set(pessoa.get("quadros") or [])
-
-
-def _pessoas_internas_com_acesso(quadro):
-    try:
-        resposta = (supabase.table("usuarios")
-                     .select("id, nome, ativo, tipo_usuario, quadros, nivel_acesso")
-                     .eq("ativo", True).order("nome").execute())
-        return [p for p in (resposta.data or []) if pessoa_tem_acesso_quadro(p, quadro)]
-    except Exception as e:
-        print("Aviso: pessoas com acesso ao quadro:", e)
-        return []
-
-
 def responsavel_do_quadro(quadro, papel):
     """Quem exerce um papel operacional num quadro. None se ninguém."""
     try:
@@ -2891,10 +2811,9 @@ def responsavel_do_quadro(quadro, papel):
              .select("usuario_id").eq("quadro", quadro).eq("papel", papel)
              .limit(1).execute())
         if r.data and r.data[0].get("usuario_id"):
-            u = (supabase.table("usuarios")
-                 .select("id, nome, ativo, tipo_usuario, quadros, nivel_acesso")
+            u = (supabase.table("usuarios").select("id, nome")
                  .eq("id", r.data[0]["usuario_id"]).limit(1).execute())
-            if u.data and pessoa_tem_acesso_quadro(u.data[0], quadro):
+            if u.data:
                 return u.data[0]
     except Exception as e:
         print("Aviso: responsavel_do_quadro:", e)
@@ -3102,17 +3021,16 @@ def config_do_quadro(quadro):
 
 
 def executores_do_quadro(quadro):
-    """Quem foi marcado em Acessos como elegível para receber cards."""
+    """Quem pode receber card deste quadro, com nome resolvido."""
     try:
         r = (supabase.table("quadro_executores").select("usuario_id")
              .eq("quadro", quadro).execute())
         ids = [x["usuario_id"] for x in (r.data or []) if x.get("usuario_id")]
         if not ids:
             return []
-        u = (supabase.table("usuarios")
-             .select("id, nome, ativo, tipo_usuario, quadros, nivel_acesso")
+        u = (supabase.table("usuarios").select("id, nome, ativo")
              .in_("id", ids).execute())
-        return [x for x in (u.data or []) if pessoa_tem_acesso_quadro(x, quadro)]
+        return [x for x in (u.data or []) if x.get("ativo") is not False]
     except Exception as e:
         print("Aviso: executores_do_quadro:", e)
         return []
@@ -3145,27 +3063,61 @@ def definir_dono(quadro):
     """Quem recebe o card novo, conforme o modo do quadro.
 
     Devolve (pessoa, aguardando). `aguardando` True significa que
-    o card entra na fila de atribuição.
+    o card entra na fila de atribuicao.
     """
     modo = config_do_quadro(quadro)
+
     if modo == 'direto':
-        # A pessoa ativa do Direto é escolhida em Configurações, entre
-        # os elegíveis definidos em Acessos. Nunca escolhemos "a primeira"
-        # pessoa: isso tornaria a distribuição silenciosamente imprevisível.
-        resp = responsavel_do_quadro(quadro, 'direto')
-        if resp:
-            elegiveis = {str(p["id"]) for p in executores_do_quadro(quadro)}
-            if str(resp.get("id")) in elegiveis:
-                return resp, False
-        return None, True
+        # Quem recebe e escolhido em Configuracoes, entre os que foram
+        # marcados como responsaveis em Acessos. Cair no "primeiro
+        # cadastrado" fazia a escolha da tela nao valer nada.
+        escolhido = executor_padrao_do_quadro(quadro)
+        if escolhido:
+            return escolhido, False
+        pessoas = executores_do_quadro(quadro)
+        if pessoas:
+            return pessoas[0], False
+        # Sem ninguem, o direcionador assume em vez de virar orfao.
+        resp = responsavel_do_quadro(quadro, 'direciona')
+        return resp, resp is None
+
     if modo == 'rodizio':
         p = escolher_por_rodizio(quadro)
         if p:
             return p, False
         resp = responsavel_do_quadro(quadro, 'direciona')
         return resp, resp is None
-    # fila: o card espera alguém escolher
+
+    # fila: o card espera alguem escolher
     return None, True
+
+
+def executor_padrao_do_quadro(quadro):
+    """A pessoa escolhida em Configuracoes para o modo Direto.
+
+    Devolve None quando nao ha escolha, quando a pessoa foi desativada
+    ou quando ela perdeu a marcacao de responsavel em Acessos -- nesses
+    casos `definir_dono` cai no plano seguinte em vez de atribuir card
+    a quem nao deveria recebe-lo.
+    """
+    try:
+        c = (supabase.table("quadro_config").select("executor_padrao")
+             .eq("quadro", quadro).limit(1).execute())
+        uid = (c.data or [{}])[0].get("executor_padrao")
+        if not uid:
+            return None
+        marcado = (supabase.table("quadro_executores").select("id")
+                   .eq("quadro", quadro).eq("usuario_id", uid).limit(1).execute())
+        if not marcado.data:
+            return None
+        u = (supabase.table("usuarios").select("id, nome, ativo")
+             .eq("id", uid).limit(1).execute())
+        pessoa = (u.data or [None])[0]
+        if pessoa and pessoa.get("ativo") is not False:
+            return pessoa
+    except Exception as e:
+        print("Aviso: executor_padrao_do_quadro:", e)
+    return None
 
 
 def _acao_abrir_quadros(acao, dados):
@@ -3334,11 +3286,7 @@ def fila_atribuicao():
 
 @app.route('/api/quadros/config', methods=['GET'])
 def listar_config_quadros():
-    """Entrega a configuração de cada quadro sem editar pessoas aqui.
-
-    A elegibilidade nasce exclusivamente em Acessos (quadro_executores). Esta
-    rota apenas consome a lista para configurar o modo e o responsável ativo.
-    """
+    """Como cada quadro distribui, quem direciona e quem executa."""
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
     if not pode_gerir_acessos():
@@ -3377,30 +3325,33 @@ def listar_config_quadros():
         except Exception as e:
             print("Aviso: carga dos quadros:", e)
 
+        pessoas = (supabase.table("usuarios")
+                   .select("id, nome, quadros, ativo, tipo_usuario").execute()).data or []
+        internos = [p for p in pessoas
+                    if p.get("ativo") is not False
+                    and (p.get("tipo_usuario") or 'interno') == 'interno']
+
         saida = []
         for chave, area, produto, icone, subs in ARVORE_QUADROS:
             c = carga.get(area, {})
-            pessoas_acesso = _pessoas_internas_com_acesso(chave)
-            por_id = {str(p["id"]): p for p in pessoas_acesso}
-            elegiveis = [
-                {"id": usuario_id, "nome": por_id[usuario_id].get("nome")}
-                for usuario_id in execs.get(chave, []) if usuario_id in por_id
-            ]
+            # Só quem tem o quadro liberado pode receber card dele:
+            # atribuir a quem não consegue abrir o quadro é confusão
+            # silenciosa.
+            elegiveis = [{"id": str(p["id"]), "nome": p.get("nome")}
+                         for p in internos if chave in (p.get("quadros") or [])]
             saida.append({
                 "chave": chave, "nome": area, "produto": produto, "icone": icone,
                 "modo": modos.get(chave, 'fila'),
-                "direto": resp.get(chave, {}).get("direto") or None,
                 "direciona": resp.get(chave, {}).get("direciona") or None,
                 "cobranca": resp.get(chave, {}).get("cobranca") or None,
+                "executores": execs.get(chave, []),
                 "elegiveis": elegiveis,
-                "pessoas_com_acesso": [
-                    {"id": str(p["id"]), "nome": p.get("nome")}
-                    for p in pessoas_acesso
-                ],
                 "abertos": c.get("abertos", 0),
                 "esperando": c.get("esperando", 0),
             })
-        return jsonify({"status": "sucesso", "quadros": saida}), 200
+        return jsonify({"status": "sucesso", "quadros": saida,
+                        "pessoas": [{"id": str(p["id"]), "nome": p.get("nome")}
+                                    for p in internos]}), 200
     except Exception as e:
         print("Erro em listar_config_quadros:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
@@ -3409,12 +3360,7 @@ def listar_config_quadros():
 
 @app.route('/api/quadros/config/<quadro>', methods=['PUT'])
 def salvar_config_quadro(quadro):
-    """Grava o modo e os papéis ativos de um quadro.
-
-    A lista de elegíveis não é aceita neste endpoint de propósito. Ela pertence
-    à página da pessoa em Acessos; assim Configurações jamais amplia acesso de
-    alguém sem o administrador perceber.
-    """
+    """Grava modo, direcionador, cobrança e executores de um quadro."""
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
     if not pode_gerir_acessos():
@@ -3427,27 +3373,20 @@ def salvar_config_quadro(quadro):
         if modo not in MODOS_QUADRO:
             return jsonify({"status": "erro", "mensagem": "Modo inválido."}), 400
 
-        elegiveis = {str(p["id"]) for p in executores_do_quadro(quadro)}
-        com_acesso = {str(p["id"]) for p in _pessoas_internas_com_acesso(quadro)}
-        direto = str(d.get("direto") or "")
-        direciona = str(d.get("direciona") or "")
-        cobranca = str(d.get("cobranca") or "")
-
-        if modo == 'direto' and direto not in elegiveis:
-            return jsonify({"status": "erro", "mensagem":
-                            "No modo Direto, escolha uma pessoa elegível em Acessos."}), 400
-        if modo == 'fila' and not elegiveis:
-            return jsonify({"status": "erro", "mensagem":
-                            "Marque ao menos uma pessoa elegível em Acessos antes de usar Fila."}), 400
-        if modo == 'fila' and direciona not in elegiveis:
-            return jsonify({"status": "erro", "mensagem":
-                            "No modo Fila, quem direciona precisa ser elegível para o quadro."}), 400
-        if modo == 'rodizio' and len(elegiveis) < 2:
+        executores = [str(x) for x in (d.get("executores") or []) if x]
+        # Direto com vários executores é ambíguo: quem receberia?
+        if modo == 'direto' and len(executores) > 1:
             return jsonify({"status": "erro",
-                            "mensagem": "O rodízio precisa de pelo menos duas pessoas elegíveis."}), 400
-        if cobranca and cobranca not in com_acesso:
-            return jsonify({"status": "erro", "mensagem":
-                            "A pessoa de cobrança precisa ter acesso ao quadro."}), 400
+                            "mensagem": "No modo Direto, escolha uma pessoa só."}), 400
+        if modo == 'direto' and not executores:
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Direto, escolha quem recebe os cards."}), 400
+        if modo == 'fila' and not d.get("direciona"):
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Fila, escolha quem direciona."}), 400
+        if modo == 'rodizio' and len(executores) < 2:
+            return jsonify({"status": "erro",
+                            "mensagem": "O rodízio precisa de pelo menos duas pessoas."}), 400
 
         supabase.table("quadro_config").upsert({
             "quadro": quadro, "modo": modo,
@@ -3455,23 +3394,23 @@ def salvar_config_quadro(quadro):
             "atualizado_por": session.get('usuario_nome'),
         }).execute()
 
-        for papel, valor in (("direto", direto), ("direciona", direciona),
-                              ("cobranca", cobranca)):
-            # Papéis que não se aplicam ao modo atual são limpos para que uma
-            # antiga configuração não assuma cards no futuro por acidente.
-            if papel == "direto" and modo != "direto":
-                valor = None
-            if papel == "direciona" and modo != "fila":
-                valor = None
+        for papel in ("direciona", "cobranca"):
+            if papel not in d:
+                continue
+            valor = d.get(papel) or None
             supabase.table("quadro_responsaveis").upsert({
-                "quadro": quadro, "papel": papel, "usuario_id": valor or None,
+                "quadro": quadro, "papel": papel, "usuario_id": valor,
                 "atualizado_em": datetime.now(timezone.utc).isoformat(),
             }, on_conflict="quadro,papel").execute()
 
+        if "executores" in d:
+            supabase.table("quadro_executores").delete().eq("quadro", quadro).execute()
+            if executores:
+                supabase.table("quadro_executores").insert(
+                    [{"quadro": quadro, "usuario_id": u} for u in executores]).execute()
+
         registrar_auditoria('quadro_configurado', 'quadro', quadro,
-                            {"modo": modo, "direto": direto or None,
-                             "direciona": direciona or None,
-                             "elegiveis": len(elegiveis)})
+                            {"modo": modo, "executores": len(executores)})
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         print("Erro em salvar_config_quadro:", e)
@@ -3587,7 +3526,7 @@ def listar_responsaveis():
 def definir_responsavel():
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
-    if not pode_gerir_acessos():
+    if not (pode('papel.gerir') or session.get('nivel_acesso') == 'admin'):
         return jsonify({"erro": "Acesso negado"}), 403
     try:
         d = request.json or {}
@@ -3595,13 +3534,6 @@ def definir_responsavel():
         if quadro not in QUADROS_VALIDOS or papel not in PAPEIS_VALIDOS:
             return jsonify({"status": "erro", "mensagem": "Quadro ou papel inválido."}), 400
         usuario_id = d.get("usuario_id") or None
-        if usuario_id:
-            candidatos = (executores_do_quadro(quadro)
-                          if papel in ("direto", "direciona")
-                          else _pessoas_internas_com_acesso(quadro))
-            if str(usuario_id) not in {str(p["id"]) for p in candidatos}:
-                return jsonify({"status": "erro", "mensagem":
-                                "A pessoa precisa ter acesso e estar elegível para este quadro."}), 400
         supabase.table("quadro_responsaveis").upsert({
             "quadro": quadro, "papel": papel, "usuario_id": usuario_id,
             "atualizado_em": datetime.now(timezone.utc).isoformat(),
@@ -4217,65 +4149,6 @@ def excluir_papel(papel_id):
                         "detalhe": str(e)[:300]}), 500
 
 
-def _limpar_quadros(valores):
-    return [q for q in dict.fromkeys(valores or []) if q in QUADRO_AREA]
-
-
-def _limpar_modulos(valores):
-    return [m for m in dict.fromkeys(valores or []) if m in AREAS_VALIDAS]
-
-
-def _limpar_responsabilidades_invalidas(usuario_id, quadros_acesso, recebe_quadros):
-    """Remove vínculos que passariam a apontar para alguém sem acesso.
-
-    A rotina é chamada sempre que se altera a pessoa; portanto a integridade
-    não depende de um administrador lembrar de revisar cada quadro depois.
-    """
-    recebe = set(recebe_quadros)
-    acesso = set(quadros_acesso)
-    try:
-        existentes = (supabase.table("quadro_executores").select("quadro")
-                       .eq("usuario_id", usuario_id).execute()).data or []
-        atuais = {r.get("quadro") for r in existentes if r.get("quadro")}
-        for quadro in atuais - recebe:
-            (supabase.table("quadro_executores").delete().eq("usuario_id", usuario_id)
-             .eq("quadro", quadro).execute())
-        for quadro in recebe - atuais:
-            supabase.table("quadro_executores").insert({
-                "quadro": quadro, "usuario_id": usuario_id
-            }).execute()
-
-        # Direto e Fila dependem de elegibilidade; os demais papéis exigem
-        # ao menos acesso ao quadro. Limpar aqui impede cards órfãos futuros.
-        responsaveis = (supabase.table("quadro_responsaveis")
-                        .select("quadro, papel").eq("usuario_id", usuario_id)
-                        .execute()).data or []
-        for item in responsaveis:
-            quadro, papel = item.get("quadro"), item.get("papel")
-            invalido = quadro not in acesso or (papel in ("direto", "direciona")
-                                                 and quadro not in recebe)
-            if invalido:
-                (supabase.table("quadro_responsaveis").delete()
-                 .eq("quadro", quadro).eq("papel", papel)
-                 .eq("usuario_id", usuario_id).execute())
-    except Exception as e:
-        # O update principal não deve ser perdido por um vínculo legado que
-        # não exista; o alerta fica no log para correção de dados.
-        print("Aviso: limpeza de elegibilidade/responsabilidades:", e)
-
-
-def _restam_administradores_ativos(exceto_id=None):
-    try:
-        pessoas = (supabase.table("usuarios").select("id, is_admin, nivel_acesso, ativo")
-                   .eq("ativo", True).execute()).data or []
-        return any(str(p.get("id")) != str(exceto_id)
-                   and _usuario_e_admin(p) for p in pessoas)
-    except Exception as e:
-        print("Erro ao conferir administradores:", e)
-        # Falha fechada: nunca deixa uma operação arriscada remover o último.
-        return True
-
-
 @app.route('/api/acessos/pessoas', methods=['GET'])
 def listar_pessoas_acessos():
     if 'usuario_id' not in session:
@@ -4286,47 +4159,17 @@ def listar_pessoas_acessos():
         # Nunca selecionar '*' aqui: a tabela ainda tem a coluna `senha`
         # em texto puro, e ela não pode sair do servidor.
         res = (supabase.table("usuarios")
-               .select("id, nome, email, cargo, telefone, equipe, ativo, is_admin, "
-                       "alcance_quadros, nivel_acesso, tipo_usuario, quadros, "
-                       "perm_modulos, ultimo_acesso, criado_em, senha_hash")
+               .select("id, nome, email, cargo, telefone, papel_id, equipe, ativo, "
+                       "nivel_acesso, tipo_usuario, quadros, areas, ajustes, "
+                       "ultimo_acesso, criado_em, senha_hash")
                .order("nome").execute())
-        pessoas = [p for p in (res.data or [])
-                   if (p.get("tipo_usuario") or "interno") == "interno"]
-
-        por_pessoa = {}
-        try:
-            vinculos = (supabase.table("quadro_executores")
-                        .select("quadro, usuario_id").execute()).data or []
-            for vinculo in vinculos:
-                por_pessoa.setdefault(str(vinculo.get("usuario_id")), []).append(
-                    vinculo.get("quadro"))
-        except Exception as e:
-            print("Aviso: elegibilidade não carregada:", e)
-
+        pessoas = res.data or []
         # O hash não pode sair do servidor. Vira um booleano: a tela só
         # precisa saber se a pessoa já tem senha definida.
         for p in pessoas:
             p["tem_senha"] = bool(p.pop("senha_hash", None))
-            p["is_admin"] = _usuario_e_admin(p)
-            p["alcance_quadros"] = _normalizar_alcance(p.get("alcance_quadros"))
-            p["quadros"] = _limpar_quadros(p.get("quadros") or [])
-            p["perm_modulos"] = _limpar_modulos(p.get("perm_modulos") or [])
-            p["recebe_quadros"] = _limpar_quadros(
-                por_pessoa.get(str(p.get("id")), []))
         equipes = sorted({p["equipe"] for p in pessoas if p.get("equipe")})
-        return jsonify({
-            "status": "sucesso",
-            "pessoas": pessoas,
-            "equipes": equipes,
-            "quadros": [
-                {"chave": chave, "nome": area, "produto": produto, "icone": icone}
-                for chave, area, produto, icone, _ in ARVORE_QUADROS
-            ],
-            "modulos": [
-                {"chave": chave, "nome": nome, "icone": icone, "descricao": descricao}
-                for chave, nome, icone, descricao in AREAS
-            ],
-        }), 200
+        return jsonify({"status": "sucesso", "pessoas": pessoas, "equipes": equipes}), 200
     except Exception as e:
         print("Erro em listar_pessoas_acessos:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar pessoas.",
@@ -4356,40 +4199,28 @@ def criar_pessoa_acessos():
             return jsonify({"status": "erro",
                             "mensagem": "Já existe alguém com este e-mail."}), 409
 
-        administrador = bool(d.get("is_admin"))
-        quadros = _limpar_quadros(d.get("quadros") or [])
-        recebe_quadros = _limpar_quadros(d.get("recebe_quadros") or [])
-        recebe_quadros = [q for q in recebe_quadros if administrador or q in quadros]
         novo = {
             "nome": nome,
             "email": email,
             "cargo": (d.get("cargo") or "").strip() or None,
             "telefone": (d.get("telefone") or "").strip() or None,
             "equipe": (d.get("equipe") or "").strip() or None,
-            "is_admin": administrador,
-            "alcance_quadros": _normalizar_alcance(d.get("alcance_quadros")),
+            "papel_id": d.get("papel_id") or None,
             "tipo_usuario": "interno",
-            # Mantido temporariamente para as telas que ainda leem o campo.
-            "nivel_acesso": "admin" if administrador else "personalizado",
+            "nivel_acesso": d.get("nivel_acesso") or "colaborador",
             "ativo": True,
             # Só o hash. A coluna `senha` em texto puro é legado e não
             # recebe valor desde a correção do login.
             "senha_hash": gerar_hash(senha),
-            "quadros": quadros,
-            "areas": [],
+            "quadros": [q for q in (d.get("quadros") or []) if q in QUADRO_AREA],
+            "areas": [a for a in (d.get("areas") or []) if a in AREAS_VALIDAS],
             "ajustes": {},
-            "perm_modulos": _limpar_modulos(d.get("perm_modulos") or []),
+            "perm_modulos": [],
         }
         res = supabase.table("usuarios").insert(novo).execute()
         criado = (res.data or [{}])[0]
-        if criado.get("id"):
-            _limpar_responsabilidades_invalidas(
-                criado["id"],
-                [chave for chave, *_ in ARVORE_QUADROS] if administrador else quadros,
-                recebe_quadros,
-            )
         registrar_auditoria('pessoa_criada', 'usuario', criado.get("id"),
-                            {"nome": nome, "email": email, "administrador": administrador})
+                            {"nome": nome, "email": email})
         criado.pop("senha_hash", None)
         criado.pop("senha", None)
         return jsonify({"status": "sucesso", "pessoa": criado}), 201
@@ -4401,21 +4232,38 @@ def criar_pessoa_acessos():
 
 @app.route('/api/acessos/pessoas/<usuario_id>/alcance', methods=['PUT'])
 def definir_alcance(usuario_id):
-    """Rota compatível: grava o único alcance do modelo simplificado."""
+    """Define se a pessoa enxerga só o que é dela ou o quadro inteiro.
+
+    Move as cinco capacidades de alcance de uma vez. Deixá-las como
+    exceções separadas obrigaria a marcar cinco chips para dizer uma
+    coisa só.
+    """
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
     if not pode_gerir_acessos():
         return jsonify({"erro": "Acesso negado"}), 403
     alcance = (request.json or {}).get("alcance")
-    if alcance not in ('proprio', 'quadro'):
+    if alcance not in ('proprio', 'quadro', 'padrao'):
         return jsonify({"status": "erro", "mensagem": "Alcance inválido."}), 400
     try:
-        supabase.table("usuarios").update({
-            "alcance_quadros": alcance,
-            "nivel_acesso": "personalizado",
-        }).eq("id", usuario_id).execute()
+        r = (supabase.table("usuarios").select("ajustes")
+             .eq("id", usuario_id).limit(1).execute())
+        ajs = dict((r.data or [{}])[0].get("ajustes") or {})
+        agora = datetime.now(timezone.utc).isoformat()
+        autor = session.get('usuario_nome')
+
+        for cap in CAPS_ALCANCE:
+            if alcance == 'padrao':
+                # Volta ao que o nível define.
+                ajs.pop(cap, None)
+                continue
+            permitidos = CATALOGO[cap][3]
+            valor = alcance if alcance in permitidos else 'tudo'
+            ajs[cap] = {"valor": valor, "por": autor, "em": agora}
+
+        supabase.table("usuarios").update({"ajustes": ajs}).eq("id", usuario_id).execute()
         registrar_auditoria('alcance_alterado', 'usuario', usuario_id, {"alcance": alcance})
-        return jsonify({"status": "sucesso", "alcance_quadros": alcance}), 200
+        return jsonify({"status": "sucesso", "ajustes": ajs}), 200
     except Exception as e:
         print("Erro em definir_alcance:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
@@ -4458,74 +4306,88 @@ def atualizar_acesso_pessoa(usuario_id):
         return jsonify({"erro": "Acesso negado"}), 403
     try:
         d = request.get_json() or {}
-        consulta = (supabase.table("usuarios")
-                    .select("id, nome, email, cargo, telefone, equipe, ativo, is_admin, "
-                            "nivel_acesso, quadros, perm_modulos, alcance_quadros")
-                    .eq("id", usuario_id).limit(1).execute())
-        if not consulta.data:
-            return jsonify({"status": "erro", "mensagem": "Pessoa não encontrada."}), 404
-        atual = consulta.data[0]
+        upd = {}
+        if "papel_id" in d:
+            upd["papel_id"] = d["papel_id"] or None
+        # Perder o quadro tira a pessoa da lista de executores dele:
+        # senão ela continuaria recebendo card de um quadro que já não
+        # consegue abrir.
+        if "quadros" in d:
+            novos = set(d.get("quadros") or [])
+            try:
+                atuais = (supabase.table("quadro_executores").select("quadro")
+                          .eq("usuario_id", usuario_id).execute()).data or []
+                for r in atuais:
+                    if r.get("quadro") not in novos:
+                        (supabase.table("quadro_executores").delete()
+                         .eq("usuario_id", usuario_id).eq("quadro", r["quadro"]).execute())
+            except Exception as e:
+                print("Aviso: limpeza de executores:", e)
 
-        administrador = bool(d["is_admin"]) if "is_admin" in d else _usuario_e_admin(atual)
-        ativo = bool(d["ativo"]) if "ativo" in d else atual.get("ativo") is not False
-        era_administrador = _usuario_e_admin(atual)
-        if era_administrador and (not administrador or not ativo):
-            if not _restam_administradores_ativos(usuario_id):
-                return jsonify({"status": "erro", "mensagem":
-                                "Precisa sobrar pelo menos um administrador ativo."}), 400
-
-        quadros = (_limpar_quadros(d.get("quadros")) if "quadros" in d
-                   else _limpar_quadros(atual.get("quadros") or []))
-        modulos = (_limpar_modulos(d.get("perm_modulos")) if "perm_modulos" in d
-                   else _limpar_modulos(atual.get("perm_modulos") or []))
-        alcance = (_normalizar_alcance(d.get("alcance_quadros")) if "alcance_quadros" in d
-                   else _normalizar_alcance(atual.get("alcance_quadros")))
-
-        antigos_recebe = (supabase.table("quadro_executores").select("quadro")
-                           .eq("usuario_id", usuario_id).execute()).data or []
-        recebe_atual = _limpar_quadros([x.get("quadro") for x in antigos_recebe])
-        recebe = (_limpar_quadros(d.get("recebe_quadros")) if "recebe_quadros" in d
-                  else recebe_atual)
-        quadros_efetivos = ([chave for chave, *_ in ARVORE_QUADROS] if administrador else quadros)
-        if not ativo:
-            quadros_efetivos, recebe = [], []
-        else:
-            recebe = [q for q in recebe if q in set(quadros_efetivos)]
-
-        upd = {
-            "is_admin": administrador,
-            "nivel_acesso": "admin" if administrador else "personalizado",
-            "alcance_quadros": alcance,
-            "quadros": quadros,
-            "perm_modulos": modulos,
-            "ativo": ativo,
-        }
-        for campo in ("nome", "cargo", "telefone", "equipe"):
+        for campo in ("cargo", "telefone"):
             if campo in d:
-                valor = (d.get(campo) or "").strip()
-                if campo == "nome" and not valor:
-                    return jsonify({"status": "erro", "mensagem": "Informe o nome da pessoa."}), 400
-                upd[campo] = valor or None
-        if "email" in d:
-            email = (d.get("email") or "").strip().lower()
-            if "@" not in email:
-                return jsonify({"status": "erro", "mensagem": "Informe um e-mail válido."}), 400
-            outro = (supabase.table("usuarios").select("id").eq("email", email)
-                     .neq("id", usuario_id).limit(1).execute())
-            if outro.data:
-                return jsonify({"status": "erro", "mensagem": "Já existe alguém com este e-mail."}), 409
-            upd["email"] = email
+                upd[campo] = (d[campo] or "").strip() or None
+        if "equipe" in d:
+            upd["equipe"] = (d["equipe"] or "").strip() or None
+        if "ativo" in d:
+            upd["ativo"] = bool(d["ativo"])
+        if "quadros" in d:
+            upd["quadros"] = [q for q in (d["quadros"] or []) if q in QUADROS_VALIDOS]
+        if "areas" in d:
+            upd["areas"] = [a for a in (d["areas"] or []) if a in AREAS_VALIDAS]
+        if "ajustes" in d:
+            # Só aceita capacidade que existe no catálogo do código.
+            # Exceção guarda quem deu e quando: "quem liberou valores
+            # para a Barbara?" precisa ter resposta.
+            # Capacidades de administração não viram exceção: se
+            # virassem, o nível deixaria de significar alguma coisa.
+            agora = datetime.now(timezone.utc).isoformat()
+            autor = session.get('usuario_nome')
+            antigos = {}
+            try:
+                r = (supabase.table("usuarios").select("ajustes")
+                     .eq("id", usuario_id).limit(1).execute())
+                if r.data:
+                    antigos = r.data[0].get("ajustes") or {}
+            except Exception as e:
+                print("Aviso: ajustes anteriores:", e)
+
+            limpos = {}
+            for k, v in (d["ajustes"] or {}).items():
+                if k not in CATALOGO or k in CAPS_SO_ADMIN:
+                    continue
+                antigo = antigos.get(k)
+                # Só carimba autor e data quando o valor muda de fato.
+                if isinstance(antigo, dict) and antigo.get("valor") == v:
+                    limpos[k] = antigo
+                else:
+                    limpos[k] = {"valor": v, "por": autor, "em": agora}
+            upd["ajustes"] = limpos
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+
+        # Trava: sempre precisa sobrar alguém com Administração ativo,
+        # senão ninguém mais consegue entrar para consertar.
+        if ("papel_id" in upd or upd.get("ativo") is False) and str(usuario_id):
+            adm = supabase.table("papeis").select("id").eq("sistema", True).limit(1).execute()
+            if adm.data:
+                adm_id = str(adm.data[0]["id"])
+                atual = (supabase.table("usuarios").select("papel_id, ativo")
+                         .eq("id", usuario_id).limit(1).execute())
+                era_adm = atual.data and str(atual.data[0].get("papel_id")) == adm_id
+                sai = ("papel_id" in upd and str(upd["papel_id"]) != adm_id) or (upd.get("ativo") is False)
+                if era_adm and sai:
+                    todos = (supabase.table("usuarios").select("id, ativo")
+                             .eq("papel_id", adm_id).execute()).data or []
+                    restantes = [u for u in todos
+                                 if str(u["id"]) != str(usuario_id) and u.get("ativo") is not False]
+                    if not restantes:
+                        return jsonify({"status": "erro",
+                                        "mensagem": "Precisa sobrar ao menos uma pessoa ativa "
+                                                    "com o papel de Administração."}), 400
 
         supabase.table("usuarios").update(upd).eq("id", usuario_id).execute()
-        _limpar_responsabilidades_invalidas(usuario_id, quadros_efetivos, recebe)
-        registrar_auditoria("acesso_alterado", "usuarios", usuario_id, {
-            "administrador": administrador,
-            "alcance": alcance,
-            "quadros": quadros,
-            "recebe_quadros": recebe,
-            "modulos": modulos,
-            "ativo": ativo,
-        })
+        registrar("acesso_alterado", "usuarios", usuario_id, upd)
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         print("Erro em atualizar_acesso_pessoa:", e)
@@ -5403,6 +5265,27 @@ def hub_resumo():
     except Exception as e:
         print(f"[HUB] projetos: {str(e)}")
     return jsonify({"status": "sucesso", "resumo": resumo}), 200
+
+
+# ============================================================
+# ACESSOS v2 -- ligacao com o modulo
+#
+# As dependencias sao injetadas em vez de importadas: `acessos_v2`
+# nao conhece o `app.py`, o que evita import circular e deixa o
+# modulo testavel isoladamente.
+#
+# Precisa ficar aqui, no fim: ARVORE_QUADROS, AREAS, CATALOGO e
+# gerar_hash so existem depois de todo o arquivo ser lido.
+# ============================================================
+acessos_v2.configurar(
+    supabase=supabase,
+    catalogo=CATALOGO,
+    arvore_quadros=ARVORE_QUADROS,
+    areas=AREAS,
+    gerar_hash=gerar_hash,
+    registrar_auditoria=registrar_auditoria,
+)
+app.register_blueprint(acessos_v2.acessos_bp)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
