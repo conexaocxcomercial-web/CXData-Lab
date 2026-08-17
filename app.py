@@ -3579,7 +3579,11 @@ def projetos_aguardando():
                         "detalhe": str(e)[:300]}), 500
 
 
-@app.route('/api/projetos/<projeto_id>/atribuir', methods=['POST'])
+# Aceita os dois verbos: a tela de projetos envia PUT (atribuir e
+# atualizar um card existente), e havia chamada antiga em POST.
+# Recusar um deles devolvia 405 com pagina HTML, que a tela
+# interpretava como queda de conexao.
+@app.route('/api/projetos/<projeto_id>/atribuir', methods=['POST', 'PUT'])
 def atribuir_projeto(projeto_id):
     """Define o responsável. Com `lote`, vale para todos os cards do contrato."""
     if 'usuario_id' not in session:
