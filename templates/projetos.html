@@ -745,6 +745,30 @@
             border-width:0 2px 2px 0; transform:rotate(45deg) translate(-1px,-1px); }
         .enc-t{ font-size:13px; font-weight:600; display:block; }
         .enc-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.45; display:block; margin-top:3px; }
+        /* Marcado precisa se ler de relance: so o quadradinho azul num
+           fundo cinza obriga a procurar o que esta ligado. */
+        .enc-op.on{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1px var(--acao); }
+        .enc-op.on .enc-t{ color:var(--acao); }
+        .enc-sugerido{ font-size:10px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.4px; color:var(--acao); background:var(--papel);
+            padding:2px 7px; border-radius:var(--r-pill); margin-left:7px;
+            vertical-align:middle; }
+
+        /* Previa: mesmo bloco da janela de fechamento do CRM, para quem
+           navega entre as duas telas nao aprender dois padroes. */
+        .enc-previa{ background:var(--acao-fraco); border-radius:var(--r-ctrl);
+            padding:13px 15px; }
+        .enc-previa-t{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; color:var(--acao); display:flex; align-items:center;
+            gap:7px; margin-bottom:9px; }
+        .enc-previa-t .material-symbols-rounded{ font-size:15px; }
+        .enc-pv{ display:flex; align-items:flex-start; gap:9px; padding:4px 0;
+            font-size:12.5px; color:#3C3489; line-height:1.5; }
+        .enc-pv .material-symbols-rounded{ font-size:15px; color:var(--acao);
+            flex-shrink:0; margin-top:1px; }
+        .enc-pv b{ font-weight:650; }
+        .enc-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; color:var(--tinta-3); }
 
         /* ===== ABAS DE SUBDIVISÃO ===== */
         /* Subdivisões: mesmo segmented dos funis do CRM, para quem
@@ -2253,13 +2277,13 @@
             const sugereRel = AREAS_RELACIONAMENTO.includes(p.area);
             document.getElementById('encNome').innerText = p.nome_projeto || 'este projeto';
             document.getElementById('encEmpresa').innerText = p.empresa || 'sem cliente';
-            marcarEnc('encRel', sugereRel);
-            marcarEnc('encCob', false);
             document.getElementById('encValor').value = '';
             document.getElementById('encDicaRel').innerText = sugereRel
-                ? 'Sugerido: projetos desta área costumam render nova proposta.'
-                : 'Não sugerido para esta área — marque se quiser mesmo assim.';
-            document.getElementById('encLinhaValor').style.display = 'none';
+                ? 'Abre um lead para a pesquisa de satisfação depois da entrega.'
+                : 'Quadros internos não costumam gerar pesquisa — marque se quiser mesmo assim.';
+            document.getElementById('encSelo').style.display = sugereRel ? '' : 'none';
+            marcarEnc('encRel', sugereRel);
+            marcarEnc('encCob', false);
             janela.classList.add('ativo');
             return true;
           }catch(err){
@@ -2273,16 +2297,60 @@
             const el = document.getElementById(id);
             el.classList.toggle('on', valor);
             el.setAttribute('aria-checked', valor ? 'true' : 'false');
-            if(id === 'encCob')
-                document.getElementById('encLinhaValor').style.display = valor ? 'block' : 'none';
+            // A opcao inteira muda de estado, nao so o quadradinho: o alvo
+            // de clique e a linha toda, entao o destaque tem que ser dela.
+            const linha = document.getElementById(id === 'encRel' ? 'encOpRel' : 'encOpCob');
+            if(linha) linha.classList.toggle('on', valor);
+            if(id === 'encCob'){
+                document.getElementById('encLinhaValor').style.display = valor ? 'flex' : 'none';
+                if(valor) setTimeout(() => document.getElementById('encValor').focus(), 60);
+            }
+            atualizarPreviaEnc();
         }
         function alternarEnc(id){
             const el = document.getElementById(id);
             marcarEnc(id, !el.classList.contains('on'));
         }
 
+        /* Diz, em portugues, o que o botao Finalizar vai provocar.
+           Automacao invisivel assusta: quem finaliza precisa saber que
+           um lead e um card de cobranca vao nascer antes de confirmar. */
+        function atualizarPreviaEnc(){
+            const rel = document.getElementById('encRel').classList.contains('on');
+            const cob = document.getElementById('encCob').classList.contains('on');
+            const valor = document.getElementById('encValor').value;
+            const linhas = [];
+
+            if(rel) linhas.push(item('sentiment_satisfied',
+                '<b>1 lead</b> no funil de Relacionamento, no Backlog, para a pesquisa de satisfação'));
+            if(cob) linhas.push(item('receipt_long',
+                '<b>1 card</b> em Adm/Financeiro para cobrança' + (moedaEnc(valor) ? ' de ' + moedaEnc(valor) : '')));
+
+            if(!linhas.length){
+                linhas.push(item('check_circle',
+                    'O card vai para Finalizado. <b>Nada mais é criado.</b>'));
+            }else{
+                linhas.push(item('person_alert',
+                    'Quem responde por cada destino é avisado na hora'));
+            }
+            document.getElementById('encPrevia').innerHTML = linhas.join('');
+
+            function item(ico, txt){
+                return `<div class="enc-pv"><span class="material-symbols-rounded">${ico}</span>
+                    <span>${txt}</span></div>`;
+            }
+        }
+
+        function moedaEnc(v){
+            const n = parseFloat(String(v).replace(/[^\d,.-]/g,'').replace(',','.'));
+            if(isNaN(n) || n <= 0) return '';
+            return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:2});
+        }
+
         async function confirmarEncerrar(){
             if(!encPendente) return;
+            const btn = document.getElementById('encSalvar');
+            if(btn) btn.disabled = true;   // duplo clique criaria dois leads
             const rel = document.getElementById('encRel').classList.contains('on');
             const cob = document.getElementById('encCob').classList.contains('on');
             const valorTxt = document.getElementById('encValor').value.replace(/[^\d,.-]/g,'').replace(',','.');
@@ -2308,7 +2376,9 @@
                 // acredita que finalizou e o servidor nao registrou nada.
                 if(proj) proj.status = anteriorEnc;
                 renderizarProjetos();
-                showToast('Nao foi possivel finalizar. Tente de novo.', 'error');
+                showToast('Não foi possível finalizar. Tente de novo.', 'error');
+            }finally{
+                if(btn) btn.disabled = false;
             }
         }
 
@@ -3638,31 +3708,30 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modalEncerrar" onclick="if(event.target.id==='modalEncerrar')cancelarEncerrar()">
-        <div class="modal" style="max-width:440px">
+        <div class="modal-overlay" id="modalEncerrar" onclick="if(event.target.id==='modalEncerrar')cancelarEncerrar()">
+        <div class="modal-content" style="max-width:480px">
             <div class="md-head">
-                <div style="min-width:0">
-                    <div class="md-eyebrow">Finalizar projeto</div>
-                    <div class="md-tit" id="encNome">—</div>
-                    <div style="font-size:12px;color:var(--tinta-3);margin-top:3px" id="encEmpresa"></div>
+                <div class="md-head-txt">
+                    <span class="md-eyebrow" id="encEmpresa">Cliente</span>
+                    <div class="md-titulo">Finalizar entrega</div>
+                    <div class="md-sub" id="encNome">este projeto</div>
                 </div>
-                <button class="md-x" onclick="cancelarEncerrar()" aria-label="Fechar">
-                    <span class="material-symbols-rounded">close</span></button>
+                <button class="close-btn" onclick="cancelarEncerrar()" aria-label="Fechar"></button>
             </div>
-            <div class="md-corpo">
-                <div style="font-size:12.5px;color:var(--tinta-2);line-height:1.55">
-                    O que deve acontecer com este cliente agora?
-                </div>
 
-                <button class="enc-op" onclick="alternarEnc('encRel')">
+            <div class="md-corpo">
+                <div class="enc-secao">O que deve acontecer com este cliente agora</div>
+
+                <button class="enc-op" id="encOpRel" onclick="alternarEnc('encRel')">
                     <span class="enc-cx" id="encRel" role="checkbox" aria-checked="false"></span>
                     <span style="flex:1;min-width:0;text-align:left">
-                        <span class="enc-t">Entrar no Relacionamento</span>
+                        <span class="enc-t">Entrar no Relacionamento<span class="enc-sugerido"
+                            id="encSelo" style="display:none">sugerido</span></span>
                         <span class="enc-d" id="encDicaRel"></span>
                     </span>
                 </button>
 
-                <button class="enc-op" onclick="alternarEnc('encCob')">
+                <button class="enc-op" id="encOpCob" onclick="alternarEnc('encCob')">
                     <span class="enc-cx" id="encCob" role="checkbox" aria-checked="false"></span>
                     <span style="flex:1;min-width:0;text-align:left">
                         <span class="enc-t">Gerar cobrança no Financeiro</span>
@@ -3670,17 +3739,23 @@
                     </span>
                 </button>
 
-                <div id="encLinhaValor" style="display:none">
-                    <div class="ig">
-                        <label for="encValor">Valor a faturar</label>
-                        <input type="text" id="encValor" placeholder="R$ 0,00">
-                    </div>
+                <div class="input-group" id="encLinhaValor" style="display:none">
+                    <label for="encValor">Valor a faturar</label>
+                    <input type="text" id="encValor" class="input-item" placeholder="R$ 0,00"
+                           inputmode="decimal" autocomplete="off" oninput="atualizarPreviaEnc()">
+                </div>
+
+                <div class="enc-previa">
+                    <div class="enc-previa-t">
+                        <span class="material-symbols-rounded">bolt</span>O que vai acontecer</div>
+                    <div id="encPrevia"></div>
                 </div>
             </div>
+
             <div class="md-pe">
-                <button class="btn btn-fant" style="margin-left:auto" onclick="cancelarEncerrar()">Cancelar</button>
-                <button class="btn btn-acao" onclick="confirmarEncerrar()">
-                    <span class="material-symbols-rounded">check</span>Finalizar</button>
+                <button class="btn-md btn-md-fantasma" onclick="cancelarEncerrar()">Cancelar</button>
+                <button class="btn-md btn-md-primario" id="encSalvar" onclick="confirmarEncerrar()">
+                    <span class="material-symbols-rounded">check</span>Finalizar entrega</button>
             </div>
         </div>
     </div>
