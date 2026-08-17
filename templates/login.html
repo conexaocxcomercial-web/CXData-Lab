@@ -111,18 +111,9 @@
         .marca-core span{color:var(--roxo)}
         .divisor-marca{width:1px;height:18px;background:#ded9ea}
 
-        .marca-conexao{
-            display:flex;
-            align-items:center;
-            color:var(--roxo);
-            font-size:13px;
-            font-weight:700;
-            letter-spacing:-.5px;
-            line-height:1;
-        }
-
-        .marca-conexao-imagem{display:block;width:88px;height:24px;overflow:hidden}
-        .marca-conexao-imagem img{display:block;width:auto;height:24px;max-width:none}
+        .marca-conexao{display:block}
+        .marca-conexao-imagem{display:block;width:116px;height:18px;overflow:hidden}
+        .marca-conexao-imagem img{display:block;width:126px;height:auto;max-width:none;transform:translate(-6px,-11px)}
 
         .cabecalho-formulario h1{
             margin:0;
@@ -265,9 +256,8 @@
             .marca-fundo{right:-12px;bottom:8px;font-size:138px}
             .marcas-login{gap:8px;margin-bottom:29px}
             .marca-core{font-size:19px}
-            .marca-conexao-imagem{width:76px;height:21px}
-            .marca-conexao-imagem img{height:21px}
-            .marca-conexao{font-size:12px}
+            .marca-conexao-imagem{width:106px;height:17px}
+            .marca-conexao-imagem img{width:116px;transform:translate(-5px,-10px)}
             .cabecalho-formulario h1{font-size:26px}
             .linha-login{align-items:flex-start;flex-direction:column;gap:14px}
         }
@@ -285,7 +275,7 @@
             <div class="marcas-login" aria-label="core.cx e conexão.cx">
                 <span class="marca-core">core<span>.cx</span></span>
                 <span class="divisor-marca"></span>
-                <span class="marca-conexao"><span class="marca-conexao-imagem"><img src="{{ url_for('static', filename='cx_logos-05.png') }}" alt="conexão"></span><span>.cx</span></span>
+                <span class="marca-conexao"><span class="marca-conexao-imagem"><img src="{{ url_for('static', filename='conexao-cx-wordmark.png') }}" alt="conexão.cx"></span></span>
             </div>
 
             <header class="cabecalho-formulario">
