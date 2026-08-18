@@ -1736,6 +1736,31 @@ def dashboard_page():
                            papel_externo=session.get('papel_externo', ''),
                            perm_modulos=session.get('perm_modulos', []))
 
+@app.route('/dashboard/comercial')
+def dashboard_comercial_page():
+    """Tela própria, não aba.
+
+    Operacional e comercial respondem a perguntas diferentes, para
+    públicos diferentes, com recortes de tempo diferentes -- o ciclo de
+    venda é de semanas, o de entrega é de dias. Compartilhar uma tela
+    obrigava as duas a caber no mesmo cabeçalho e no mesmo filtro, e
+    nenhuma das duas cabia direito.
+    """
+    if 'usuario_id' not in session:
+        return redirect(url_for('login', proximo=request.path))
+    liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
+                or pode_acessar_modulo('dashboard')
+                or pode('crm.painel.ver'))
+    if not liberado:
+        return redirect(url_for('index'))
+    return render_template('comercial.html',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso'),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+
 @app.route('/api/dashboard', methods=['GET'])
 def dados_dashboard():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
@@ -4087,6 +4112,311 @@ def painel_operacao():
         print("Erro em painel_operacao:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
                         "detalhe": str(e)[:300]}), 500
+
+
+# ============================================================================
+# PAINEL COMERCIAL
+#
+# Duas óticas, porque são duas perguntas diferentes:
+#
+#   TRABALHO   O funil andou? Quantos leads entraram, quantos avançaram
+#              em cada etapa, quanto se perde entre uma e outra, e quanto
+#              tempo leva. Serve para corrigir processo.
+#
+#   RESULTADO  Quanto entrou de dinheiro, de onde e de quem. Serve para
+#              decidir onde investir.
+#
+# UMA DISTINÇÃO QUE MUDA TODOS OS NÚMEROS
+# ---------------------------------------
+# "Ganho" existe nos dois funis e significa coisas opostas:
+#
+#   qualificacao/Ganho  o lead foi qualificado e passou para o closer
+#   fechamento/Ganho    o contrato foi assinado
+#
+# Somar os dois como "ganhos" -- que é o que o painel antigo faz -- infla
+# a receita com leads que ainda nem receberam proposta. Aqui, venda é
+# só `funil='fechamento' AND coluna='Ganho'`.
+# ============================================================================
+
+# Etapas do funil comercial, na ordem em que o lead atravessa. A cascata
+# de conversão sai daqui, e não de uma lista repetida na tela.
+ETAPAS_COMERCIAL = [
+    ('leads',        None,             None,           'Leads gerados'),
+    ('contatos',     'qualificacao',   'Contato',      'Contatos'),
+    ('agendamentos', 'fechamento',     'Agendamento',  'Agendamentos'),
+    ('propostas',    'fechamento',     'Proposta',     'Propostas'),
+    ('negociacoes',  'fechamento',     'Negociação',   'Negociações'),
+    ('fechamentos',  'fechamento',     'Ganho',        'Fechamentos'),
+]
+
+
+def _periodo_comercial():
+    """Recorte do painel. Aceita ?de=&ate= ou ?dias=.
+
+    Devolve (de, ate, granularidade). A granularidade decide se a série
+    temporal é diária ou mensal: mais de 90 dias em barras diárias vira
+    um borrão ilegível.
+    """
+    from datetime import date, timedelta
+    hoje = date.today()
+    de_txt = (request.args.get('de') or '').strip()[:10]
+    ate_txt = (request.args.get('ate') or '').strip()[:10]
+
+    if len(de_txt) == 10 and len(ate_txt) == 10:
+        de, ate = de_txt, ate_txt
+    else:
+        try:
+            dias = max(1, min(int(request.args.get('dias') or 90), 1095))
+        except ValueError:
+            dias = 90
+        de = (hoje - timedelta(days=dias)).isoformat()
+        ate = hoje.isoformat()
+
+    if de > ate:
+        de, ate = ate, de
+    span = (date.fromisoformat(ate) - date.fromisoformat(de)).days
+    return de, ate, ('dia' if span <= 92 else 'mes')
+
+
+def _num(v):
+    try:
+        return float(v or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _dias_entre(inicio, fim):
+    """Dias inteiros entre dois ISO. None quando falta um dos lados."""
+    if not inicio or not fim:
+        return None
+    try:
+        a = datetime.fromisoformat(str(inicio).replace('Z', '+00:00'))
+        b = datetime.fromisoformat(str(fim).replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    d = (b - a).total_seconds() / 86400
+    return round(d, 1) if d >= 0 else None
+
+
+def _mediana(vals):
+    """Mediana, não média: um lead parado há 400 dias distorce a média do
+    ciclo inteiro e faz o time desconfiar do número."""
+    v = sorted(x for x in vals if x is not None)
+    if not v:
+        return None
+    n = len(v)
+    return round(v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2, 1)
+
+
+@app.route('/api/comercial/painel', methods=['GET'])
+def api_comercial_painel():
+    """Alimenta as duas óticas do painel comercial numa chamada só."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    try:
+        de, ate, granul = _periodo_comercial()
+        ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
+
+        leads = (supabase.table("leads").select("*")
+                 .is_("excluido_em", "null").execute()).data or []
+        movs = (supabase.table("lead_movimentos").select("*").execute()).data or []
+
+        # Escopo: quem só enxerga os próprios leads também só vê os
+        # próprios números. O painel não pode ser porta dos fundos.
+        if caps_da_sessao().get('crm.lead.ver') == 'proprio':
+            eu = (session.get('usuario_nome') or '').strip().lower()
+            leads = [l for l in leads
+                     if (l.get('responsavel') or '').strip().lower() == eu]
+
+        # --- filtros da tela ---
+        f_prod = request.args.get('produto') or ''
+        f_orig = request.args.get('origem') or ''
+        f_resp = request.args.get('responsavel') or ''
+        f_uf = (request.args.get('estado') or '').upper()[:2]
+        if f_prod:
+            leads = [l for l in leads if (l.get('produto') or '') == f_prod]
+        if f_orig:
+            leads = [l for l in leads if (l.get('origem') or '') == f_orig]
+        if f_resp:
+            leads = [l for l in leads if (l.get('responsavel') or '') == f_resp]
+        if f_uf:
+            leads = [l for l in leads if (l.get('estado') or '').upper() == f_uf]
+
+        por_id = {str(l['id']): l for l in leads}
+        movs = [m for m in movs if str(m.get('lead_id')) in por_id]
+
+        dentro = lambda iso: bool(iso) and de <= str(iso)[:10] <= ate
+
+        # ============================================================
+        # ÓTICA 1 · TRABALHO
+        # ============================================================
+
+        # Quem passou por cada etapa DENTRO do recorte. Conta lead único,
+        # não movimento: quem voltou e avançou de novo conta uma vez.
+        passou = {}
+        primeira_vez = {}          # (etapa, lead) -> quando chegou lá
+        for m in sorted(movs, key=lambda x: str(x.get('criado_em') or '')):
+            if not dentro(m.get('criado_em')):
+                continue
+            ch = (m.get('para_funil'), m.get('para_coluna'))
+            lid = str(m.get('lead_id'))
+            passou.setdefault(ch, set()).add(lid)
+            primeira_vez.setdefault((ch, lid), m.get('criado_em'))
+
+        gerados = [l for l in leads if dentro(l.get('criado_em'))]
+
+        funil, anterior = [], None
+        for chave, fnl, col, rotulo in ETAPAS_COMERCIAL:
+            if chave == 'leads':
+                ids = {str(l['id']) for l in gerados}
+            else:
+                ids = set(passou.get((fnl, col), set()))
+                # Quem já está parado na etapa hoje conta, mesmo sem
+                # movimento no recorte -- senão um lead que entrou antes
+                # e não saiu sumiria da cascata.
+                ids |= {str(l['id']) for l in leads
+                        if l.get('funil') == fnl and l.get('coluna') == col
+                        and dentro(l.get('movido_em'))}
+            n = len(ids)
+            funil.append({
+                "chave": chave, "rotulo": rotulo, "qtd": n,
+                # Conversão da etapa anterior: é onde o funil vaza.
+                "conv": round(n / anterior * 100, 1) if anterior else None,
+                "valor": round(sum(_num(por_id[i].get('valor_estimado'))
+                                   for i in ids if i in por_id), 2) if ver_valor else None,
+            })
+            anterior = n if n else None
+
+        perdidos = [l for l in leads if l.get('coluna') == 'Perdido'
+                    and dentro(l.get('movido_em'))]
+        nutricao = [l for l in leads if l.get('funil') == 'nutricao']
+
+        # --- tempo de ciclo ---
+        # Do nascimento do lead até chegar na etapa. Mediana por etapa.
+        def tempos_ate(fnl, col):
+            fora = []
+            for lid, l in por_id.items():
+                quando = primeira_vez.get(((fnl, col), lid))
+                if quando:
+                    fora.append(_dias_entre(l.get('criado_em'), quando))
+            return _mediana(fora)
+
+        ciclo = {
+            "ate_agendamento": tempos_ate('fechamento', 'Agendamento'),
+            "ate_proposta":    tempos_ate('fechamento', 'Proposta'),
+            "ate_fechamento":  tempos_ate('fechamento', 'Ganho'),
+        }
+
+        # --- recortes do trabalho ---
+        def quebra(campo, universo, rotulo_vazio='Sem informação'):
+            """Agrupa por um campo do lead, com conversão e valor."""
+            g = {}
+            for l in universo:
+                k = (l.get(campo) or '').strip() or rotulo_vazio
+                it = g.setdefault(k, {"chave": k, "leads": 0, "ganhos": 0, "valor": 0.0})
+                it["leads"] += 1
+                if _venceu(l):
+                    it["ganhos"] += 1
+                    it["valor"] += _num(l.get('valor_estimado'))
+            saida = []
+            for it in g.values():
+                it["conv"] = round(it["ganhos"] / it["leads"] * 100, 1) if it["leads"] else 0
+                it["valor"] = round(it["valor"], 2) if ver_valor else None
+                saida.append(it)
+            return sorted(saida, key=lambda x: -x["leads"])
+
+        trabalho = {
+            "funil": funil,
+            "perdidos": len(perdidos),
+            "nutricao": len(nutricao),
+            "ciclo": ciclo,
+            "por_produto": quebra('produto', gerados, 'Sem produto'),
+            "por_origem": quebra('origem', gerados, 'Sem origem'),
+            "objecoes": _objecoes_no_periodo(movs, de, ate),
+        }
+
+        # ============================================================
+        # ÓTICA 2 · RESULTADO
+        # ============================================================
+        fechados = [l for l in leads if _venceu(l) and dentro(l.get('movido_em'))]
+        total = round(sum(_num(l.get('valor_estimado')) for l in fechados), 2)
+
+        # Série temporal: diária num mês, mensal num ano.
+        serie = {}
+        for l in fechados:
+            k = str(l.get('movido_em'))[:10] if granul == 'dia' else str(l.get('movido_em'))[:7]
+            it = serie.setdefault(k, {"quando": k, "qtd": 0, "valor": 0.0})
+            it["qtd"] += 1
+            it["valor"] += _num(l.get('valor_estimado'))
+        serie = sorted(({**v, "valor": round(v["valor"], 2)} for v in serie.values()),
+                       key=lambda x: x["quando"])
+
+        def receita_por(campo, vazio):
+            g = {}
+            for l in fechados:
+                k = (l.get(campo) or '').strip() or vazio
+                it = g.setdefault(k, {"chave": k, "qtd": 0, "valor": 0.0})
+                it["qtd"] += 1
+                it["valor"] += _num(l.get('valor_estimado'))
+            for it in g.values():
+                it["ticket"] = round(it["valor"] / it["qtd"], 2) if it["qtd"] else 0
+                it["valor"] = round(it["valor"], 2)
+                it["fatia"] = round(it["valor"] / total * 100, 1) if total else 0
+            return sorted(g.values(), key=lambda x: -x["valor"])
+
+        resultado = {
+            "total": total if ver_valor else None,
+            "qtd": len(fechados),
+            "ticket_medio": round(total / len(fechados), 2) if fechados and ver_valor else None,
+            "granularidade": granul,
+            "serie": serie if ver_valor else [],
+            "por_produto": receita_por('produto', 'Sem produto') if ver_valor else [],
+            "por_origem": receita_por('origem', 'Sem origem') if ver_valor else [],
+            "por_estado": receita_por('estado', 'Sem UF') if ver_valor else [],
+            "por_responsavel": receita_por('responsavel', 'Sem responsável') if ver_valor else [],
+        }
+
+        return jsonify({
+            "status": "sucesso",
+            "periodo": {"de": de, "ate": ate, "granularidade": granul},
+            "ver_valor": ver_valor,
+            "trabalho": trabalho,
+            "resultado": resultado,
+            # Alimenta os seletores de filtro com o que existe de fato,
+            # em vez de uma lista fixa que envelhece.
+            "opcoes": {
+                "produtos": sorted({(l.get('produto') or '').strip() for l in leads} - {''}),
+                "origens": sorted({(l.get('origem') or '').strip() for l in leads} - {''}),
+                "responsaveis": sorted({(l.get('responsavel') or '').strip() for l in leads} - {''}),
+                "estados": sorted({(l.get('estado') or '').strip().upper() for l in leads} - {''}),
+            },
+        }), 200
+
+    except Exception as e:
+        print("Erro em api_comercial_painel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+def _venceu(lead):
+    """Contrato assinado. Ganho na qualificação é só passagem de bastão."""
+    return lead.get('funil') == 'fechamento' and lead.get('coluna') == 'Ganho'
+
+
+def _objecoes_no_periodo(movs, de, ate):
+    """Por que os leads foram perdidos. Sai de lead_movimentos, onde o
+    portão de Perdido grava o motivo."""
+    g = {}
+    for m in movs:
+        if m.get('para_coluna') != 'Perdido' or not m.get('objecao'):
+            continue
+        if not (de <= str(m.get('criado_em') or '')[:10] <= ate):
+            continue
+        g[m['objecao']] = g.get(m['objecao'], 0) + 1
+    return sorted(({"chave": k, "qtd": v} for k, v in g.items()), key=lambda x: -x["qtd"])
 
 
 @app.route('/api/painel/comercial', methods=['GET'])
