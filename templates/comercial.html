@@ -171,21 +171,29 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     white-space:nowrap; opacity:0; pointer-events:none; transition:.14s; margin-bottom:5px; z-index:5; }
 .sb:hover .sb-dica{ opacity:1; }
 
-/* ===== PARETO DE ORIGEM =====
-   Duas perguntas numa figura: de onde vem o VOLUME (barras, ordenadas)
-   e onde ele se ACUMULA (linha). O corte de 80% mostra quantos canais
-   sustentam o funil -- normalmente poucos. E a cor da barra carrega a
-   conversão, que é o contraponto: o canal que mais traz nem sempre é o
-   que mais fecha, e essa tensão é a decisão de investimento. */
-.par{ display:block; width:100%; }
-.par-leg{ display:flex; gap:16px; flex-wrap:wrap; margin-top:13px;
-    padding-top:13px; border-top:1px solid var(--papel-2); }
-.par-li{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--tinta-3); }
-.par-pt{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
-.par-ln{ width:16px; height:2px; background:var(--atencao); flex-shrink:0; }
-.par-caixa{ background:var(--acao-fraco); border-radius:var(--r-ctrl);
-    padding:11px 14px; margin-top:13px; font-size:12.5px; color:#3C3489; line-height:1.55; }
-.par-caixa b{ font-weight:650; }
+/* ===== EXPLICADOR DAS DUAS LEITURAS =====
+   A diferença entre contar por data do evento e contar por data de
+   entrada do lead é abstrata em palavras e óbvia num exemplo. Então o
+   exemplo fica na tela, com a leitura em uso destacada -- em vez de um
+   parágrafo que ninguém lê duas vezes. */
+.exp{ background:var(--papel-2); border-radius:var(--r-ctrl); padding:14px 16px;
+    margin-top:15px; }
+.exp-caso{ font-size:12.5px; color:var(--tinta-2); line-height:1.55; margin-bottom:11px; }
+.exp-caso b{ font-weight:650; color:var(--tinta); }
+.exp-l{ display:flex; gap:11px; align-items:flex-start; padding:9px 11px;
+    border-radius:8px; font-size:12.5px; line-height:1.5; color:var(--tinta-3); }
+.exp-l + .exp-l{ margin-top:4px; }
+.exp-l.on{ background:var(--papel); color:var(--tinta-2);
+    box-shadow:0 0 0 1px var(--acao); }
+.exp-l .material-symbols-rounded{ font-size:17px; flex-shrink:0; margin-top:1px;
+    color:var(--linha-2); }
+.exp-l.on .material-symbols-rounded{ color:var(--acao); }
+.exp-n{ font-weight:650; color:var(--tinta-3); }
+.exp-l.on .exp-n{ color:var(--acao); }
+.exp-l b{ font-weight:650; color:var(--tinta); }
+.exp-alerta{ margin-top:11px; font-size:12px; line-height:1.55; color:#7A4A0C;
+    background:var(--at-fundo); border-radius:8px; padding:10px 12px; }
+.exp-alerta b{ font-weight:650; }
 
 /* ===== TABELA ===== */
 .tb{ border:1px solid var(--linha); border-radius:var(--r-ctrl); overflow:hidden; }
@@ -302,8 +310,8 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
         </span>
         <select class="sel" id="visao" onchange="Painel.visao(this.value)"
                 title="Como as etapas do funil são contadas">
-            <option value="periodo" selected>Contar o que aconteceu no período</option>
-            <option value="entrada">Seguir os leads que entraram</option>
+            <option value="periodo" selected>Tudo que andou no período</option>
+            <option value="entrada">Só os leads que entraram</option>
         </select>
         <button class="btn btn-fant" id="btnFiltros" onclick="Painel.toggleFiltros()">
             <span class="material-symbols-rounded">tune</span>Filtros<span
@@ -499,10 +507,10 @@ const Painel = (function(){
       </div>
 
       <div class="sec">
-        <div class="sec-cab"><span class="sec-tit">De onde vêm os leads</span>
+        <div class="sec-cab"><span class="sec-tit">Por origem</span>
           <span class="sec-linha"></span>
-          <span class="sec-nota">volume, acúmulo e conversão</span></div>
-        <div class="cartao">${pareto(t.por_origem)}</div>
+          <span class="sec-nota">de onde vêm os leads e quais convertem</span></div>
+        <div class="cartao">${tabelaTrabalho(t.por_origem, 'Origem', vv)}</div>
       </div>
 
       <div class="duas">
@@ -542,117 +550,47 @@ const Painel = (function(){
       </div>`;
   }
 
-  /* A pergunta que todo CRM esconde: um lead entrou em julho e fechou em
-     agosto -- ele conta em qual mês? Depende do que se quer saber, e a
-     tela diz qual leitura está no ar em vez de deixar a dúvida. */
+  /* A pergunta que todo CRM esconde, respondida com um caso concreto:
+     um lead entra num mês e fecha no outro. Ele conta em qual?
+     Explicar isso em palavras abstratas não funciona -- o exemplo com
+     números resolve em cinco segundos. */
   function notaVisao(){
     const t = st.dados.trabalho;
     const cresceu = t.funil.some(e => e.conv != null && e.conv > 100);
-    if(st.vis === 'entrada'){
-      return `<div class="faixa info" style="margin:15px 0 0">
-        <span class="material-symbols-rounded">groups</span>
-        <span><b>Seguindo os leads que entraram.</b> Só os leads que
-        chegaram dentro do recorte, acompanhados até onde foram — mesmo
-        que tenham fechado depois. É a leitura em que a conversão faz
-        sentido. Em compensação, períodos recentes parecem piores: quem
-        entrou agora ainda não teve tempo de fechar.</span>
-      </div>`;
-    }
-    return `<div class="faixa ${cresceu ? 'alerta' : 'info'}" style="margin:15px 0 0">
-      <span class="material-symbols-rounded">${cresceu ? 'warning' : 'info'}</span>
-      <span><b>Contando o que aconteceu no período.</b> Cada etapa registra
-      o que ocorreu dentro do recorte, venha o lead de quando vier.
-      ${cresceu ? `Por isso uma etapa aparece <b>acima de 100%</b>: houve
-      propostas e fechamentos de leads que entraram antes. Para medir
-      conversão, troque para <b>Seguir os leads que entraram</b>.`
-      : 'Serve para ver quanto o funil andou no mês.'}</span>
-    </div>`;
-  }
+    const ent = st.vis === 'entrada';
 
-  /* Pareto: barras de volume ordenadas + linha de acúmulo + corte de 80%.
-     A cor da barra é a conversão, para a figura responder as duas
-     perguntas de uma vez: quem traz mais, e quem traz melhor. */
-  function pareto(lista){
-    const dados = (lista || []).filter(x => x.leads > 0).slice(0, 9);
-    if(!dados.length) return semDados('Nenhum lead com origem registrada no período.');
-
-    const total = dados.reduce((a,b) => a + b.leads, 0);
-    const maxL = Math.max(...dados.map(x => x.leads));
-    const L = 44, R = 46, T = 14, B = 58;          // margens do desenho
-    const larg = 640, alt = 236;
-    const pw = larg - L - R, ph = alt - T - B;
-    const passo = pw / dados.length;
-
-    // Conversão vira cor: verde forte converte bem, cinza converte pouco.
-    const corBarra = c => c >= 40 ? '#0E9F6E' : c >= 20 ? '#6C5CE7'
-                        : c >= 8 ? '#8B7BF0' : '#C7C7D1';
-
-    let acum = 0;
-    const pontos = [], barras = [], rotulos = [];
-    dados.forEach((x, i) => {
-      const h = maxL ? (x.leads / maxL) * ph : 0;
-      const cx = L + passo * i + passo * 0.5;
-      const bw = Math.min(46, passo * 0.62);
-      barras.push(`<rect x="${(cx - bw/2).toFixed(1)}" y="${(T + ph - h).toFixed(1)}"
-        width="${bw.toFixed(1)}" height="${Math.max(1,h).toFixed(1)}" rx="4"
-        fill="${corBarra(x.conv)}"><title>${esc(x.chave)} · ${x.leads} leads · ${pct(x.conv)} de conversão</title></rect>`);
-      barras.push(`<text x="${cx.toFixed(1)}" y="${(T + ph - h - 6).toFixed(1)}"
-        text-anchor="middle" font-size="11" font-weight="600" fill="#56565F">${x.leads}</text>`);
-      acum += x.leads;
-      pontos.push([cx, T + ph - (acum / total) * ph]);
-      const nome = x.chave.length > 13 ? x.chave.slice(0,12) + '…' : x.chave;
-      rotulos.push(`<text x="${cx.toFixed(1)}" y="${alt - B + 18}" text-anchor="end"
-        font-size="10.5" fill="#7C7C88"
-        transform="rotate(-32 ${cx.toFixed(1)} ${alt - B + 18})">${esc(nome)}</text>`);
-      rotulos.push(`<text x="${cx.toFixed(1)}" y="${alt - 8}" text-anchor="middle"
-        font-size="10" font-weight="600" fill="${corBarra(x.conv)}">${pct(x.conv)}</text>`);
-    });
-
-    const linha = pontos.map((p,i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-    const y80 = T + ph - 0.8 * ph;
-
-    // Quantas origens bastam para 80% dos leads.
-    let soma = 0, corte = 0;
-    for(const x of dados){ soma += x.leads; corte++; if(soma / total >= 0.8) break; }
-    const melhor = [...dados].filter(x => x.leads >= 2)
-                             .sort((a,b) => b.conv - a.conv)[0];
-
-    return `
-      <svg class="par" viewBox="0 0 ${larg} ${alt}" role="img"
-           aria-label="Volume de leads por origem, acúmulo e conversão">
-        ${[0,.25,.5,.75,1].map(f => `<line x1="${L}" x2="${larg-R}"
-          y1="${(T+ph-f*ph).toFixed(1)}" y2="${(T+ph-f*ph).toFixed(1)}"
-          stroke="#EFEFF3" stroke-width="1"/>`).join('')}
-        <line x1="${L}" x2="${larg-R}" y1="${y80.toFixed(1)}" y2="${y80.toFixed(1)}"
-              stroke="#E5BE7F" stroke-width="1" stroke-dasharray="4 4"/>
-        <text x="${larg-R+5}" y="${(y80+4).toFixed(1)}" font-size="10" fill="#C2660B">80%</text>
-        <text x="${L-8}" y="${T+6}" text-anchor="end" font-size="10" fill="#7C7C88">${maxL}</text>
-        <text x="${L-8}" y="${T+ph+4}" text-anchor="end" font-size="10" fill="#7C7C88">0</text>
-        ${barras.join('')}
-        <path d="${linha}" fill="none" stroke="#C2660B" stroke-width="2"
-              stroke-linejoin="round" stroke-linecap="round"/>
-        ${pontos.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}"
-          r="3" fill="#fff" stroke="#C2660B" stroke-width="2"/>`).join('')}
-        ${rotulos.join('')}
-      </svg>
-
-      <div class="par-leg">
-        <span class="par-li"><span class="par-pt" style="background:#0E9F6E"></span>converte 40%+</span>
-        <span class="par-li"><span class="par-pt" style="background:#6C5CE7"></span>20 a 40%</span>
-        <span class="par-li"><span class="par-pt" style="background:#8B7BF0"></span>8 a 20%</span>
-        <span class="par-li"><span class="par-pt" style="background:#C7C7D1"></span>abaixo de 8%</span>
-        <span class="par-li"><span class="par-ln"></span>acúmulo do volume</span>
+    return `<div class="exp">
+      <div class="exp-caso">
+        <b>Um lead entrou em 20 de julho e fechou em 15 de agosto.</b>
+        Se você está olhando <b>agosto</b>, ele aparece onde?
       </div>
 
-      <div class="par-caixa">
-        <b>${corte} ${corte === 1 ? 'origem traz' : 'origens trazem'} 80% dos leads</b>
-        de ${dados.length} ${dados.length === 1 ? 'canal ativo' : 'canais ativos'}.
-        ${melhor ? `A que mais converte é <b>${esc(melhor.chave)}</b>, com ${pct(melhor.conv)}
-        — ${melhor.leads === dados[0].leads
-            ? 'e também é a de maior volume.'
-            : `contra ${pct(dados[0].conv)} de <b>${esc(dados[0].chave)}</b>, que traz mais gente.`}`
-        : ''}
-      </div>`;
+      <div class="exp-l ${ent ? '' : 'on'}">
+        <span class="material-symbols-rounded">${ent ? 'radio_button_unchecked' : 'radio_button_checked'}</span>
+        <span><span class="exp-n">Tudo que andou no período —</span>
+        o fechamento dele <b>conta em agosto</b>, porque foi quando aconteceu.
+        Mas ele não entra nos leads gerados de agosto, já que entrou em julho.
+        Bom para saber <b>quanto o time produziu</b> no mês.</span>
+      </div>
+
+      <div class="exp-l ${ent ? 'on' : ''}">
+        <span class="material-symbols-rounded">${ent ? 'radio_button_checked' : 'radio_button_unchecked'}</span>
+        <span><span class="exp-n">Só os leads que entraram —</span>
+        ele <b>não aparece em agosto</b>, porque entrou em julho.
+        Ficam só os leads de agosto, acompanhados até onde chegarem.
+        Bom para saber <b>se os leads de agosto foram bons</b>.</span>
+      </div>
+
+      ${cresceu && !ent ? `<div class="exp-alerta">
+        <b>É por isso que uma etapa passou de 100% aí em cima.</b>
+        Houve propostas e fechamentos de leads que entraram antes de agosto.
+        Para medir conversão, troque para <b>Só os leads que entraram</b>.
+      </div>` : ''}
+      ${ent ? `<div class="exp-alerta">
+        <b>Atenção ao comparar meses.</b> O mês atual sempre parece pior:
+        quem entrou nos últimos dias ainda não teve tempo de fechar.
+      </div>` : ''}
+    </div>`;
   }
 
   function tabelaTrabalho(lista, rotulo, vv){
