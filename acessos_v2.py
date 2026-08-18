@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-CXProjetos · Acessos e Configurações (v2)
-=========================================
+core.cx · Acessos e Configurações (v2)
+======================================
 
 Módulo único e fechado que substitui o modelo de níveis e papéis por
 quatro decisões guardadas na própria pessoa:

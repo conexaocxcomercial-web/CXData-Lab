@@ -47,12 +47,18 @@ html body{
   display:flex; align-items:center; padding:0 16px; gap:11px;
   border-bottom:1px solid #E4E4EA;
 }
+/* Simbolo do rail. A marca e 1.75:1 (deitada), entao a largura manda e
+   a altura acompanha -- fixar as duas em 42px espremia o desenho.
+
+   E 42px nao cabia: o rail tem 60px e o cabecalho reserva 16px de cada
+   lado, sobrando 28px. O simbolo transbordava 14px e encostava na borda,
+   o que deixava a marca visivelmente torta na versao recolhida. */
 .cxsb-logo{
   display:none;
-  width:42px;
-  height:42px;
+  width:30px;
+  height:auto;
   object-fit:contain;
-  flex:0 0 42px;
+  flex:0 0 30px;
 }
 .cxsb-marca{
   width:104px;
@@ -190,6 +196,13 @@ html body{
 
   .cxsidebar:not(:hover):not(.fixa) .cxsb-logo{ display:block; }
 
+  /* Sem texto ao lado, o padding lateral do cabecalho so empurra o
+     simbolo para a esquerda. Zerar e centralizar alinha a marca ao
+     mesmo eixo dos icones do menu logo abaixo. */
+  .cxsidebar:not(:hover):not(.fixa) .cxsb-head{
+    padding:0; justify-content:center;
+  }
+
   /* de volta os ícones: no rail não há texto para ler */
   .cxsidebar:not(:hover):not(.fixa) .cxsb-item > .material-symbols-rounded,
   .cxsidebar:not(:hover):not(.fixa) .cxsb-subitem > .material-symbols-rounded{ display:block; }
@@ -282,7 +295,7 @@ html body{
 
 <nav class="cxsidebar" id="cxSidebar" aria-label="Navegação principal">
   <div class="cxsb-head">
-    <img src="{{ url_for('static', filename='core-cx-icon.png') }}" alt="core.cx" class="cxsb-logo">
+    <img src="{{ url_for('static', filename='core-cx-mark.png') }}" alt="core.cx" class="cxsb-logo">
     <img src="{{ url_for('static', filename='core-cx-logo.png') }}" alt="core.cx" class="cxsb-marca">
     <button class="cxsb-toggle" id="cxsbToggle" onclick="cxsbAlternar(event)" aria-label="Fixar menu aberto" title="Fixar menu aberto">
       <span class="material-symbols-rounded">keep</span>
