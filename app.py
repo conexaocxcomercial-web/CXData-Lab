@@ -670,6 +670,59 @@ def criar_projeto():
         print(f"[CRITICAL] Erro no POST Projetos: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao criar o projeto."}), 500
 
+# ============================================================================
+# LEAD TIME E CYCLE TIME
+#
+#   Lead time  = entrada no Backlog  -> Finalizado
+#   Cycle time = saida do Backlog    -> Finalizado
+#
+# Pausado congela os dois. Na Conexao a pausa parte sempre do cliente --
+# ele pede, ou some com o material -- entao nao e justo cobrar do time.
+# Os dias parados nao somem: viram `tempo_parado_segundos`, medido a
+# parte, para responder "a entrega levou 15 dias nossos, mas o cliente
+# esperou 30".
+#
+# Cancelado fica fora dos indicadores. Entra no painel so para dizer por
+# que morreu e quem encerrou.
+# ============================================================================
+
+# Estados em que o card nao esta sendo trabalhado.
+PARADOS = ('Backlog', 'Não Iniciado', 'Pausado', 'Finalizado', 'Cancelado', 'Onboarding')
+
+# Listas fechadas. Texto livre em campo de motivo vira dezoito grafias da
+# mesma coisa e nenhum agrupamento possivel no painel.
+MOTIVOS_PAUSA = (
+    'Cliente pediu para pausar',
+    'Aguardando material do cliente',
+    'Aguardando aprovação do cliente',
+    'Cliente sem disponibilidade de agenda',
+    'Mudança de prioridade do cliente',
+    'Pendência financeira',
+    'Outro',
+)
+MOTIVOS_CANCELAMENTO = (
+    'Cliente desistiu',
+    'Cliente sem verba',
+    'Mudança de prioridade do cliente',
+    'Contratou concorrente',
+    'Vaga/demanda deixou de existir',
+    'Escopo inviável',
+    'Aberto por engano ou duplicado',
+    'Outro',
+)
+
+
+@app.route('/api/motivos', methods=['GET'])
+def listar_motivos():
+    """As listas vivem no servidor para a tela nunca divergir do que a
+    validação aceita."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    return jsonify({"status": "sucesso",
+                    "pausa": list(MOTIVOS_PAUSA),
+                    "cancelamento": list(MOTIVOS_CANCELAMENTO)}), 200
+
+
 @app.route('/api/projetos/<projeto_id>', methods=['PUT'])
 def atualizar_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
@@ -685,10 +738,30 @@ def atualizar_projeto(projeto_id):
         
         if "status" in dados:
             novo_status = dados.get("status")
+
+            # Motivo exigido antes de qualquer gravação: aceitar a mudança
+            # e cobrar o motivo depois deixaria o card parado sem
+            # explicação, que é exatamente o buraco que o painel precisa
+            # tapar.
+            motivo = (dados.get("motivo") or "").strip()
+            motivo_detalhe = (dados.get("motivo_detalhe") or "").strip()
+            if novo_status in ('Pausado', 'Cancelado') and status_anterior != novo_status:
+                validos = MOTIVOS_PAUSA if novo_status == 'Pausado' else MOTIVOS_CANCELAMENTO
+                if motivo not in validos:
+                    return jsonify({
+                        "status": "erro",
+                        "mensagem": ("Escolha o motivo da pausa." if novo_status == 'Pausado'
+                                     else "Escolha o motivo do cancelamento."),
+                        "motivos": list(validos),
+                    }), 400
+                if motivo == 'Outro' and len(motivo_detalhe) < 3:
+                    return jsonify({"status": "erro",
+                                    "mensagem": "Descreva o motivo em poucas palavras."}), 400
+
             atualizacao["status"] = novo_status
             atualizacao["data_status_atual"] = agora_br()
 
-            status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding", "Cancelado"]
+            status_pausa = list(PARADOS)
             # data_conclusao só deve marcar finalização REAL (Finalizado/Cancelado),
             # não pausas — senão a data do comissionamento fica incorreta.
             if novo_status in ["Finalizado", "Cancelado"]:
@@ -699,47 +772,57 @@ def atualizar_projeto(projeto_id):
                 # voltou a um status ativo → limpa a conclusão
                 atualizacao["data_conclusao"] = None
 
-            if res_atual.data and not res_atual.data[0].get("data_inicio"):
+            atual = res_atual.data[0] if res_atual.data else {}
+
+            if not atual.get("data_inicio"):
                 atualizacao["data_inicio"] = agora_br()
 
-            # Trilha de fases: alimenta o gráfico de gargalo do painel.
-            # Falha aqui não pode impedir o card de mover.
-            if novo_status and novo_status != status_anterior:
-                try:
-                    if novo_status == 'Finalizado':
-                        # O que acontece ao finalizar é escolha de quem finaliza:
-                        # nem toda entrega gera cobrança, e nem todo produto
-                        # entra em relacionamento. A tela pergunta, e o que vier
-                        # marcado chega aqui em `encerramento`.
-                        p = res_atual.data[0] if res_atual.data else {}
-                        # Era `d.get(...)`, e `d` nunca existiu nesta funcao:
-                        # o corpo da requisicao chama-se `dados`. O NameError
-                        # caia no except abaixo e o fluxo inteiro de
-                        # finalizacao era engolido em silencio -- nem
-                        # relacionamento, nem cobranca.
-                        enc = dados.get("encerramento") or {}
-                        disparar('projeto.finalizado', {
-                            "projeto_id": projeto_id,
-                            "projeto_nome": p.get("nome_projeto"),
-                            "area": p.get("area"),
-                            "cliente_id": p.get("cliente_id"),
-                            "cliente_nome": p.get("empresa"),
-                            "lead_id": p.get("origem_lead_id"),
-                            "quadro": next((q for q, a2 in QUADRO_AREA.items()
-                                            if a2 == p.get("area")), None),
-                            "com_relacionamento": bool(enc.get("relacionamento")),
-                            "com_cobranca": bool(enc.get("cobranca")),
-                            "valor": enc.get("valor"),
-                        })
-                except Exception as e_fluxo:
-                    # `print` sozinho nao deixa rastro consultavel: em
-                    # producao ninguem le o log do Vercel para descobrir
-                    # que a cobranca de um contrato nunca foi criada.
-                    print("Aviso: fluxo de finalizacao nao rodou:", e_fluxo)
-                    _registrar_execucao(None, 'projeto.finalizado',
-                                        {"projeto_id": projeto_id}, None,
-                                        f"falha antes de disparar: {str(e_fluxo)[:300]}")
+            # ---------------- RELÓGIOS ----------------
+            # `data_inicio` marca a primeira mexida no card, qualquer que
+            # seja -- inclusive Backlog -> Pausado. Não serve como início
+            # do cycle time. `data_saida_backlog` só marca quando o card
+            # entra de fato numa fase de trabalho.
+            trabalhando = novo_status not in PARADOS
+            if trabalhando and not atual.get("data_saida_backlog"):
+                atualizacao["data_saida_backlog"] = agora_br()
 
+            # Pausa congela os dois relógios. Ao entrar em Pausado, guarda
+            # o instante; ao sair, soma o intervalo ao acumulado.
+            if novo_status == 'Pausado' and status_anterior != 'Pausado':
+                atualizacao["pausado_em"] = agora_br()
+            elif status_anterior == 'Pausado' and novo_status != 'Pausado':
+                desde = atual.get("pausado_em")
+                if desde:
+                    try:
+                        ini = datetime.fromisoformat(str(desde).replace('Z', '+00:00'))
+                        agora = datetime.now(timezone.utc)
+                        if ini.tzinfo is None:
+                            ini = ini.replace(tzinfo=timezone.utc)
+                        parado = max(0, int((agora - ini).total_seconds()))
+                    except (ValueError, TypeError):
+                        parado = 0
+                    atualizacao["tempo_parado_segundos"] = \
+                        int(atual.get("tempo_parado_segundos") or 0) + parado
+                atualizacao["pausado_em"] = None
+
+            # ------------------------------------------------------------
+            # TRILHA DE FASES — grava PRIMEIRO, e sozinha.
+            #
+            # Antes este insert estava dentro do mesmo try/except do
+            # disparo de fluxo. Qualquer excecao no fluxo (criar lead,
+            # criar cobranca, abrir quadros) era capturada pelo except e
+            # o insert nunca chegava a rodar.
+            #
+            # O diagnostico mostrou o efeito: historico_colunas com
+            # registros ate hoje, projeto_movimentos parada ha seis dias.
+            # A trilha do painel simplesmente deixou de ser alimentada,
+            # em silencio.
+            #
+            # Agora sao dois blocos independentes. A trilha e o registro
+            # do fato; o fluxo e consequencia. Consequencia que falha nao
+            # pode apagar o fato.
+            # ------------------------------------------------------------
+            if novo_status and novo_status != status_anterior:
                 try:
                     supabase.table("projeto_movimentos").insert({
                         "projeto_id": projeto_id,
@@ -747,9 +830,41 @@ def atualizar_projeto(projeto_id):
                         "para_status": novo_status,
                         "area": (res_atual.data[0].get("area") if res_atual.data else None),
                         "autor": session.get('usuario_nome'),
+                        # `autor` responde quem; estes dois, por que.
+                        "motivo": motivo or None,
+                        "motivo_detalhe": motivo_detalhe or None,
                     }).execute()
                 except Exception as e_mov:
                     print("Aviso: movimento de projeto nao registrado:", e_mov)
+
+            # Fluxo de finalizacao: depende da trilha ja estar gravada.
+            if novo_status == 'Finalizado' and novo_status != status_anterior:
+                try:
+                    # O que acontece ao finalizar e escolha de quem finaliza:
+                    # nem toda entrega gera cobranca, e nem todo produto entra
+                    # em relacionamento. A tela pergunta, e o que vier marcado
+                    # chega aqui em `encerramento`.
+                    p = res_atual.data[0] if res_atual.data else {}
+                    enc = dados.get("encerramento") or {}
+                    disparar('projeto.finalizado', {
+                        "projeto_id": projeto_id,
+                        "projeto_nome": p.get("nome_projeto"),
+                        "area": p.get("area"),
+                        "cliente_id": p.get("cliente_id"),
+                        "cliente_nome": p.get("empresa"),
+                        "lead_id": p.get("origem_lead_id"),
+                        "quadro": next((q for q, a2 in QUADRO_AREA.items()
+                                        if a2 == p.get("area")), None),
+                        "com_relacionamento": bool(enc.get("relacionamento")),
+                        "com_cobranca": bool(enc.get("cobranca")),
+                        "valor": enc.get("valor"),
+                    })
+                except Exception as e_fluxo:
+                    print("Aviso: fluxo de finalizacao nao rodou:", e_fluxo)
+                    _registrar_execucao(None, 'projeto.finalizado',
+                                        {"projeto_id": projeto_id}, None,
+                                        f"falha antes de disparar: {str(e_fluxo)[:300]}")
+
 
             if novo_status and novo_status != status_anterior:
                 try:
