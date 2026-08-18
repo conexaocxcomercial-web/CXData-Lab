@@ -313,11 +313,25 @@ def _comparar(rotulo, antigo, novo, extra=None):
 @app.context_processor
 def injetar_permissoes():
     """Disponibiliza as permissões do usuário em TODOS os templates,
-    para a sidebar e telas decidirem o que mostrar."""
+    para a sidebar e telas decidirem o que mostrar.
+
+    `quadros_catalogo` sai daqui, e não de uma lista escrita à mão em
+    cada tela. A tela inicial mantinha a própria cópia da árvore de
+    quadros e ficou dois quadros atrasada -- Educação e Tecnologia
+    existiam no sistema e não apareciam no painel, nem com contagem
+    zerada: simplesmente não estavam lá.
+
+    Servindo do mesmo lugar que a barra lateral e a tela de acessos
+    leem, quadro novo em ARVORE_QUADROS aparece em todo lugar sozinho.
+    """
     return {
         "perm_modulos": session.get("perm_modulos") or [],
         "tipo_usuario": session.get("tipo_usuario", "interno"),
-        "papel_externo": session.get("papel_externo", "visualizador")
+        "papel_externo": session.get("papel_externo", "visualizador"),
+        "quadros_catalogo": [
+            {"chave": chave, "area": area, "icone": icone, "produto": produto}
+            for chave, area, produto, icone, _subs in ARVORE_QUADROS
+        ],
     }
 
 # --- HELPERS DE SEGURANÇA ---
