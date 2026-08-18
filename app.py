@@ -2391,6 +2391,244 @@ def criar_lead():
         return jsonify({"status": "erro", "mensagem": "Erro ao criar lead.", "detalhe": str(e)[:300]}), 500
 
 
+@app.route('/api/leads/importar', methods=['POST'])
+def importar_leads():
+    """Cria leads em lote a partir de uma planilha.
+
+    QUEM FAZ O QUÊ
+    --------------
+    O navegador lê o arquivo (xlsx, xls, csv), deixa a pessoa dizer qual
+    coluna é qual, e manda JSON limpo para cá. Isso evita subir binário
+    de planilha para a função serverless e dá conferência imediata na
+    tela, antes de qualquer gravação.
+
+    Mas o servidor NÃO confia no que chega. Toda regra que vale para o
+    lead criado a mão vale aqui de novo: funil da lista fechada, coluna
+    de entrada, campos obrigatórios. Validação no cliente é conveniência;
+    validação aqui é o que garante o dado.
+
+    DUPLICADO É O RISCO REAL
+    ------------------------
+    Reimportar a mesma planilha dobraria o funil e estragaria toda a
+    taxa de conversão. Antes de gravar, comparamos com o que já existe
+    por e-mail, telefone e empresa+contato -- e também dentro do próprio
+    lote, porque planilha costuma repetir linha.
+
+    Devolve o que criou, o que pulou e por quê, linha a linha.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    try:
+        d = request.get_json(silent=True) or {}
+        linhas = d.get("linhas") or []
+        funil = d.get("funil") or "qualificacao"
+        coluna = d.get("coluna") or ENTRADA_FUNIL.get(funil)
+        pular_dup = d.get("pular_duplicados") is not False
+
+        if funil not in FUNIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Funil inválido."}), 400
+        if coluna not in COLUNAS_FUNIL.get(funil, []):
+            coluna = ENTRADA_FUNIL[funil]
+        if not linhas:
+            return jsonify({"status": "erro", "mensagem": "Nenhuma linha recebida."}), 400
+        # Teto por requisição: acima disso a função serverless estoura o
+        # tempo. A tela quebra em blocos e chama várias vezes.
+        if len(linhas) > 500:
+            return jsonify({"status": "erro",
+                            "mensagem": "Máximo de 500 linhas por vez."}), 400
+
+        existentes = _chaves_de_leads_existentes()
+        agora = datetime.now(timezone.utc).isoformat()
+        autor = session.get('usuario_nome', '')
+
+        novos, pulados, no_lote = [], [], set()
+
+        for item in linhas:
+            n = item.get("n")                      # linha da planilha, para o relatório
+            empresa = (item.get("empresa") or "").strip()
+            contato = (item.get("contato") or "").strip()
+
+            if not (empresa or contato):
+                pulados.append({"n": n, "empresa": empresa or contato,
+                                "motivo": "sem empresa e sem contato"})
+                continue
+
+            email = (item.get("email") or "").strip().lower()
+            telefone = _so_digitos(item.get("telefone"))
+
+            chaves = _chaves_do_lead(empresa, contato, email, telefone)
+            if pular_dup and (chaves & existentes):
+                pulados.append({"n": n, "empresa": empresa or contato,
+                                "motivo": "já existe no CRM"})
+                continue
+            if pular_dup and (chaves & no_lote):
+                pulados.append({"n": n, "empresa": empresa or contato,
+                                "motivo": "repetido na própria planilha"})
+                continue
+            no_lote |= chaves
+
+            novos.append({
+                "empresa": empresa,
+                "contato": contato,
+                "telefone": (item.get("telefone") or "").strip() or None,
+                "email": email or None,
+                "produto": (item.get("produto") or "").strip() or None,
+                "responsavel": (item.get("responsavel") or "").strip() or autor,
+                "origem": (item.get("origem") or "").strip() or None,
+                "segmento": (item.get("segmento") or "").strip() or None,
+                "cidade": (item.get("cidade") or "").strip() or None,
+                "estado": (item.get("estado") or "").strip().upper()[:2] or None,
+                "cnpj": (item.get("cnpj") or "").strip() or None,
+                "anotacoes": (item.get("anotacoes") or "").strip() or None,
+                "valor_estimado": _num_ou_nulo(item.get("valor_estimado")),
+                "proximo_contato": _data_ou_nulo(item.get("proximo_contato")),
+                "funil": funil,
+                "coluna": coluna,
+                "movido_em": agora,
+            })
+
+        criados = 0
+        if novos:
+            # Em blocos: um insert único de centenas de linhas costuma
+            # estourar o limite da requisição ao PostgREST.
+            for i in range(0, len(novos), 100):
+                r = supabase.table("leads").insert(novos[i:i + 100]).execute()
+                criados += len(r.data or [])
+
+        registrar_auditoria("leads_importados", "lead", None, {
+            "criados": criados, "pulados": len(pulados),
+            "funil": funil, "coluna": coluna,
+        })
+
+        return jsonify({
+            "status": "sucesso",
+            "criados": criados,
+            "pulados": pulados,
+            "total": len(linhas),
+        }), 201
+
+    except Exception as e:
+        print("Erro em importar_leads:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao importar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+def _so_digitos(v):
+    return "".join(c for c in str(v or "") if c.isdigit())
+
+
+def _chaves_do_lead(empresa, contato, email, telefone):
+    """Identidades possíveis de um lead, para comparar sem falso negativo.
+
+    Telefone só conta a partir de 10 dígitos: com menos, é ramal ou dado
+    truncado e uniria leads diferentes. E-mail é a chave mais confiável;
+    empresa+contato pega quem repete sem e-mail nem telefone.
+    """
+    ch = set()
+    if email:
+        ch.add("e:" + email)
+    if len(telefone) >= 10:
+        ch.add("t:" + telefone[-10:])          # ignora DDI e zero à esquerda
+    if empresa and contato:
+        ch.add("n:" + empresa.lower().strip() + "|" + contato.lower().strip())
+    elif empresa:
+        ch.add("n:" + empresa.lower().strip())
+    return ch
+
+
+def _chaves_de_leads_existentes():
+    """Índice de tudo que já está no CRM, inclusive na lixeira.
+
+    A lixeira entra de propósito: reimportar um lead que alguém excluiu
+    de propósito o traz de volta sem ninguém pedir.
+    """
+    idx = set()
+    try:
+        r = supabase.table("leads").select("empresa, contato, email, telefone").execute()
+        for l in (r.data or []):
+            idx |= _chaves_do_lead((l.get("empresa") or "").strip(),
+                                   (l.get("contato") or "").strip(),
+                                   (l.get("email") or "").strip().lower(),
+                                   _so_digitos(l.get("telefone")))
+    except Exception as e:
+        print("Aviso: nao foi possivel indexar leads existentes:", e)
+    return idx
+
+
+def _num_ou_nulo(v):
+    """Converte valor de planilha em float. Aceita 12.500,00, 12,500.00,
+    R$ 12500, 3.175 e 1200,50.
+
+    O CASO AMBÍGUO
+    --------------
+    "3.175" pode ser três mil e cento e setenta e cinco (Brasil) ou três
+    vírgula um sete cinco (Estados Unidos). Sem contexto não dá para
+    saber -- mas há um sinal confiável: separador decimal quase nunca
+    tem exatamente três casas, e separador de milhar sempre tem.
+
+    Então ponto seguido de exatamente 3 dígitos, sem vírgula na string,
+    é milhar. É a leitura certa para um CRM em reais, onde um lead de
+    "R$ 3.175" vale três mil e não três.
+    """
+    if v is None or v == "":
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+
+    t = "".join(c for c in str(v) if c.isdigit() or c in ",.-")
+    if not t or not any(c.isdigit() for c in t):
+        return None
+
+    if "," in t and "." in t:
+        # Tem os dois: o último a aparecer é o decimal.
+        if t.rfind(",") > t.rfind("."):
+            t = t.replace(".", "").replace(",", ".")     # 12.500,00
+        else:
+            t = t.replace(",", "")                       # 12,500.00
+    elif "," in t:
+        t = t.replace(",", ".")                          # 1200,50
+    elif "." in t:
+        depois = t.rsplit(".", 1)[1]
+        if len(depois) == 3:
+            t = t.replace(".", "")                       # 3.175 -> 3175
+        # senão o ponto fica: 1500.75 e 1.5 seguem decimais
+
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def _data_ou_nulo(v):
+    """Aceita 2026-08-18, 18/08/2026, 8/8/2026 e 18-08-2026.
+
+    Dia e mês com um dígito só são comuns em planilha digitada à mão --
+    exigir dois zeraria a coluna de metade das linhas.
+    """
+    t = str(v or "").strip()[:10]
+    if not t:
+        return None
+    # ISO já vem pronto
+    if len(t) == 10 and t[4] == "-" and t[7] == "-":
+        return t
+    for sep in ("/", "-"):
+        if sep not in t:
+            continue
+        p = t.split(sep)
+        if len(p) != 3 or len(p[2]) != 4:
+            continue
+        dia, mes, ano = p[0].strip(), p[1].strip(), p[2].strip()
+        if not (dia.isdigit() and mes.isdigit() and ano.isdigit()):
+            continue
+        if not (1 <= int(dia) <= 31 and 1 <= int(mes) <= 12):
+            continue
+        return f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}"
+    return None
+
+
 @app.route('/api/leads/<lead_id>', methods=['PUT'])
 def atualizar_lead(lead_id):
     if 'usuario_id' not in session:
@@ -3248,11 +3486,36 @@ def fechar_lead(lead_id):
             cliente_id = (rc.data or [{}])[0].get("id")
 
         atual_funil, atual_coluna = lead.get("funil"), lead.get("coluna")
+
+        # PASSAGEM DE BASTAO
+        # SDR qualifica, closer fecha -- e as vezes o SDR segue ate o
+        # fim. Quem fica com o lead depois do ganho e decisao comercial,
+        # e ate agora se perdia: o campo mantinha quem criou o lead.
+        # Campo ausente no corpo significa "nao mexeu", nao "apague".
+        resp_antes = lead.get("responsavel")
+        resp_novo = (d.get("responsavel") or "").strip() or resp_antes
+        houve_passagem = bool(resp_novo and resp_antes and resp_novo != resp_antes)
+
         supabase.table("leads").update({
             "funil": "fechamento", "coluna": "Ganho", "cliente_id": cliente_id,
             "valor_estimado": d.get("valor") or lead.get("valor_estimado"),
+            "responsavel": resp_novo,
             "movido_em": datetime.now(timezone.utc).isoformat(),
         }).eq("id", lead_id).execute()
+
+        # Registrada como interacao, e nao no movimento de coluna: a
+        # troca de dono e um fato do relacionamento, nao do funil. Assim
+        # ela aparece na linha do tempo do lead junto com as conversas.
+        if houve_passagem:
+            try:
+                supabase.table("lead_interacoes").insert({
+                    "lead_id": lead_id,
+                    "tipo": "passagem",
+                    "autor": session.get('usuario_nome'),
+                    "resumo": f"Responsavel passou de {resp_antes} para {resp_novo} no fechamento.",
+                }).execute()
+            except Exception as e:
+                print("Aviso: passagem de bastao nao registrada:", e)
 
         try:
             supabase.table("lead_movimentos").insert({
@@ -3273,6 +3536,10 @@ def fechar_lead(lead_id):
             "quadros": d.get("quadros") or [],
             "telefone": lead.get("telefone"), "email": lead.get("email"),
             "cnpj": d.get("cnpj") or lead.get("cnpj"),
+            # Disponivel para regras de fluxo que queiram avisar ou
+            # atribuir com base em quem fechou.
+            "responsavel": resp_novo,
+            "responsavel_anterior": resp_antes if houve_passagem else None,
         })
         return jsonify({"status": "sucesso", "cliente_id": cliente_id, "fluxo": resultado}), 200
     except Exception as e:
