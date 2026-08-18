@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Início | core.cx</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
+    <title>core.cx</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -255,16 +254,49 @@
         function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
 
         // Mapa area -> quadro, espelhando o cfg de projetos.html
-        const QUADROS = [
-            { chave:'recrutamento',  nome:'R&S',            area:'Recrutamento e seleção', ico:'group_add',      cor:'#6C5CE7', bg:'#F1EFFE' },
-            { chave:'rhestrategico', nome:'RH Estratégico', area:'RH Estratégico',         ico:'psychology',     cor:'#0E9F6E', bg:'#E6F7F0' },
-            { chave:'projetos',      nome:'Projetos',       area:'Projetos',               ico:'folder_managed', cor:'#6C5CE7', bg:'#F1EFFE' },
-            { chave:'rhinterno',     nome:'RH Interno',     area:'RH Interno',             ico:'badge',          cor:'#C2660B', bg:'#FDF3E4' },
-            { chave:'cxdata',        nome:'CX Data',        area:'CX Data',                ico:'database',       cor:'#0EA5E9', bg:'#E4F4FD' },
-            { chave:'comercial',     nome:'Comercial',      area:'Comercial',              ico:'handshake',      cor:'#C2660B', bg:'#FDF3E4' },
-            { chave:'marketing',     nome:'Marketing',      area:'Marketing',              ico:'campaign',       cor:'#DB2777', bg:'#FCE7F3' },
-            { chave:'financeiro',    nome:'Financeiro',     area:'Adm/Fin',                ico:'payments',       cor:'#0891B2', bg:'#E0F5F9' }
-        ];
+        /* ==========================================================
+           QUADROS DE TRABALHO
+
+           A lista vem do servidor (ARVORE_QUADROS), nao escrita aqui.
+           A copia manual anterior ficou dois quadros atrasada: Educacao
+           e Tecnologia existiam no sistema e nao apareciam no painel --
+           nem zerados, simplesmente ausentes. Quem olhasse esta tela
+           veria um retrato incompleto da operacao.
+
+           Agora quadro novo aparece sozinho. So o rotulo curto e a cor
+           ficam aqui, porque sao decisao de interface: o servidor nao
+           precisa saber que R&S e o apelido de "Recrutamento e selecao".
+           ========================================================== */
+        const CATALOGO_QUADROS = {{ quadros_catalogo | tojson }};
+
+        // Apelido curto para caber no cartao. Sem entrada, usa a area.
+        const APELIDO = {
+            recrutamento: 'R&S',
+            financeiro:   'Financeiro',
+        };
+
+        // Paleta por quadro. Quadro novo sem cor definida cai no neutro,
+        // que e legivel -- nunca fica invisivel por falta de estilo.
+        const CORES_QUADRO = {
+            recrutamento:  { cor:'#6C5CE7', bg:'#F1EFFE' },
+            rhestrategico: { cor:'#0E9F6E', bg:'#E6F7F0' },
+            educacao:      { cor:'#7C3AED', bg:'#F3EEFE' },
+            cxdata:        { cor:'#0EA5E9', bg:'#E4F4FD' },
+            projetos:      { cor:'#6C5CE7', bg:'#F1EFFE' },
+            comercial:     { cor:'#C2660B', bg:'#FDF3E4' },
+            marketing:     { cor:'#DB2777', bg:'#FCE7F3' },
+            financeiro:    { cor:'#0891B2', bg:'#E0F5F9' },
+            tecnologia:    { cor:'#475569', bg:'#EEF1F5' },
+            rhinterno:     { cor:'#C2660B', bg:'#FDF3E4' },
+        };
+        const COR_PADRAO = { cor:'#56565F', bg:'#F2F2F5' };
+
+        const QUADROS = CATALOGO_QUADROS.map(q => Object.assign({
+            chave: q.chave,
+            nome:  APELIDO[q.chave] || q.area,
+            area:  q.area,
+            ico:   q.icone || 'dashboard',
+        }, CORES_QUADRO[q.chave] || COR_PADRAO));
         function quadroDaArea(area){ return QUADROS.find(q => q.area === area) || null; }
 
         // ===== SAUDAÇÃO =====
