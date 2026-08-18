@@ -38,7 +38,12 @@
         .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
         .top-bar-logo span{ color:var(--acao); }
 
-        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; height:56px; flex-shrink:0;
+        /* min-height, nao height. Com altura fixa E flex-wrap, o que quebra
+           para a segunda linha sai da caixa e cai por cima do quadro --
+           falha silenciosa que aparecia so quando alguem somava um botao.
+           Assim a barra cresce, em vez de transbordar. */
+        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px;
+            min-height:56px; flex-shrink:0; row-gap:8px;
             background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap; }
         .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
         .cmd-sep{ width:1px; height:22px; background:var(--linha); }
@@ -137,6 +142,32 @@
         .empty .material-symbols-rounded{ font-size:44px; opacity:.25; display:block; margin-bottom:13px; }
         .empty h3{ font-size:15px; font-weight:650; color:var(--tinta-2); margin-bottom:6px; }
         .empty p{ font-size:13px; font-weight:500; line-height:1.6; max-width:380px; margin:0 auto 16px; }
+
+        /* ===== MENU DE AÇÕES SECUNDÁRIAS =====
+           Importar é ação rara: não disputa espaço com "Novo lead", que é
+           o que a pessoa vem fazer todo dia. Cinco botões lado a lado
+           estouravam a barra em 1366px -- e nenhum deles ficava legível.
+           O que se usa uma vez por mês mora aqui dentro. */
+        .cmd-mais{ position:relative; }
+        .cmd-mais-btn{ width:34px; height:34px; border-radius:var(--r-ctrl);
+            background:var(--papel-2); color:var(--tinta-2); border:none; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; transition:.15s; }
+        .cmd-mais-btn:hover{ background:var(--linha); color:var(--tinta); }
+        .cmd-mais.on .cmd-mais-btn{ background:var(--linha); color:var(--tinta); }
+        .cmd-mais-btn .material-symbols-rounded{ font-size:19px; }
+        .cmd-menu{ position:absolute; top:calc(100% + 6px); right:0; min-width:212px;
+            background:var(--papel); border-radius:12px; box-shadow:0 12px 34px rgba(23,23,26,.16);
+            border:1px solid var(--linha); overflow:hidden; z-index:200;
+            opacity:0; visibility:hidden; transform:translateY(-5px); transition:.16s; }
+        .cmd-mais.on .cmd-menu{ opacity:1; visibility:visible; transform:none; }
+        .cmd-menu-i{ display:flex; align-items:flex-start; gap:11px; padding:11px 14px;
+            font-size:13px; font-weight:550; color:var(--tinta-2); cursor:pointer;
+            transition:.14s; text-align:left; width:100%; background:none; border:none; }
+        .cmd-menu-i:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cmd-menu-i .material-symbols-rounded{ font-size:18px; color:var(--tinta-3); margin-top:1px; }
+        .cmd-menu-i:hover .material-symbols-rounded{ color:var(--acao); }
+        .cmd-menu-i small{ display:block; font-size:11px; color:var(--tinta-3);
+            font-weight:400; margin-top:2px; line-height:1.4; }
 
         /* ===== IMPORTADOR DE PLANILHA ===== */
         .imp-passos{ display:flex; gap:6px; align-items:center; margin-bottom:4px; }
@@ -527,9 +558,18 @@
             <button class="btn btn-fant" id="btnHoje" onclick="alternarHoje()">
                 <span class="material-symbols-rounded">today</span><span class="rot-longo">Contatos de </span>hoje<span class="chip-n" id="chipHoje" style="display:none">0</span>
             </button>
-            <button class="btn btn-fant" onclick="Importar.abrir()" title="Importar leads de planilha">
-                <span class="material-symbols-rounded">upload_file</span><span class="rot-longo">Importar</span>
-            </button>
+            <div class="cmd-mais" id="cmdMais">
+                <button class="cmd-mais-btn" onclick="alternarMais(event)"
+                        aria-label="Mais ações" title="Mais ações" aria-haspopup="true">
+                    <span class="material-symbols-rounded">more_horiz</span>
+                </button>
+                <div class="cmd-menu" role="menu">
+                    <button class="cmd-menu-i" role="menuitem" onclick="alternarMais(event,false);Importar.abrir()">
+                        <span class="material-symbols-rounded">upload_file</span>
+                        <span>Importar leads<small>De uma planilha Excel ou CSV</small></span>
+                    </button>
+                </div>
+            </div>
             <button class="btn btn-acao" onclick="abrirLead(null)"><span class="material-symbols-rounded">add</span>Novo lead</button>
         </div>
     </div>
@@ -2045,6 +2085,23 @@
 <input type="file" id="impArquivo" accept=".xlsx,.xls,.csv,.txt" style="display:none">
 
 
+<script>
+/* Menu de ações secundárias da barra de comando. */
+function alternarMais(ev, forcar){
+    if(ev) ev.stopPropagation();
+    const m = document.getElementById('cmdMais');
+    if(!m) return;
+    if(forcar === false) m.classList.remove('on');
+    else m.classList.toggle('on');
+}
+document.addEventListener('click', function(e){
+    const m = document.getElementById('cmdMais');
+    if(m && !m.contains(e.target)) m.classList.remove('on');
+});
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') alternarMais(null, false);
+});
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 "use strict";
