@@ -69,7 +69,16 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     display:inline-flex; align-items:center; justify-content:center; }
 
 .sel{ font-size:12.5px; font-weight:500; padding:7px 11px; background:var(--papel-2);
-    border-radius:var(--r-ctrl); color:var(--tinta-2); cursor:pointer; outline:none; }
+    border-radius:var(--r-ctrl); color:var(--tinta-2); cursor:pointer; outline:none;
+    max-width:250px; }
+.datas{ display:none; align-items:center; gap:7px; }
+.datas.on{ display:flex; }
+.datas input{ font-size:12.5px; padding:7px 9px; background:var(--papel-2);
+    border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta);
+    outline:none; cursor:pointer; }
+.datas input:focus{ background:var(--papel); border-color:var(--acao);
+    box-shadow:0 0 0 3px var(--acao-fraco); }
+.datas-ate{ font-size:12px; color:var(--tinta-3); }
 .sel:focus{ box-shadow:0 0 0 3px var(--acao-fraco); }
 
 /* gaveta de filtros */
@@ -161,6 +170,22 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     background:var(--tinta); color:#fff; font-size:11px; padding:5px 9px; border-radius:7px;
     white-space:nowrap; opacity:0; pointer-events:none; transition:.14s; margin-bottom:5px; z-index:5; }
 .sb:hover .sb-dica{ opacity:1; }
+
+/* ===== PARETO DE ORIGEM =====
+   Duas perguntas numa figura: de onde vem o VOLUME (barras, ordenadas)
+   e onde ele se ACUMULA (linha). O corte de 80% mostra quantos canais
+   sustentam o funil -- normalmente poucos. E a cor da barra carrega a
+   conversão, que é o contraponto: o canal que mais traz nem sempre é o
+   que mais fecha, e essa tensão é a decisão de investimento. */
+.par{ display:block; width:100%; }
+.par-leg{ display:flex; gap:16px; flex-wrap:wrap; margin-top:13px;
+    padding-top:13px; border-top:1px solid var(--papel-2); }
+.par-li{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--tinta-3); }
+.par-pt{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+.par-ln{ width:16px; height:2px; background:var(--atencao); flex-shrink:0; }
+.par-caixa{ background:var(--acao-fraco); border-radius:var(--r-ctrl);
+    padding:11px 14px; margin-top:13px; font-size:12.5px; color:#3C3489; line-height:1.55; }
+.par-caixa b{ font-weight:650; }
 
 /* ===== TABELA ===== */
 .tb{ border:1px solid var(--linha); border-radius:var(--r-ctrl); overflow:hidden; }
@@ -261,17 +286,24 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     </div>
     <div class="cmd-dir">
         <select class="sel" id="periodo" onchange="Painel.periodo(this.value)">
+            <option value="semana">Esta semana</option>
+            <option value="mes">Este mês</option>
             <option value="30">Últimos 30 dias</option>
             <option value="90" selected>Últimos 90 dias</option>
             <option value="180">Últimos 6 meses</option>
             <option value="365">Últimos 12 meses</option>
-            <option value="mes">Este mês</option>
             <option value="ano">Este ano</option>
+            <option value="custom">Escolher datas…</option>
         </select>
+        <span class="datas" id="datas">
+            <input type="date" id="dDe" onchange="Painel.datas()" aria-label="Data inicial">
+            <span class="datas-ate">até</span>
+            <input type="date" id="dAte" onchange="Painel.datas()" aria-label="Data final">
+        </span>
         <select class="sel" id="visao" onchange="Painel.visao(this.value)"
                 title="Como as etapas do funil são contadas">
-            <option value="periodo" selected>Por período</option>
-            <option value="safra">Por safra do lead</option>
+            <option value="periodo" selected>Contar o que aconteceu no período</option>
+            <option value="entrada">Seguir os leads que entraram</option>
         </select>
         <button class="btn btn-fant" id="btnFiltros" onclick="Painel.toggleFiltros()">
             <span class="material-symbols-rounded">tune</span>Filtros<span
@@ -314,7 +346,7 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 const Painel = (function(){
 
   const st = { dados:null, otica:'trabalho', periodo:'90', vis:'periodo',
-               filtros:{}, carregando:false };
+               de:'', ate:'', filtros:{}, carregando:false };
 
   const esc = v => String(v ?? '').replace(/[&<>"']/g,
     c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -334,16 +366,25 @@ const Painel = (function(){
     {maximumFractionDigits:1}) + (v === 1 ? ' dia' : ' dias');
 
   /* ---------- carga ---------- */
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000)
+                     .toISOString().slice(0,10);
+
   function params(){
     const p = new URLSearchParams();
-    if(st.periodo === 'mes'){
-      const h = new Date();
-      p.set('de', new Date(h.getFullYear(), h.getMonth(), 1).toISOString().slice(0,10));
-      p.set('ate', h.toISOString().slice(0,10));
+    const h = new Date();
+    if(st.periodo === 'semana'){
+      // Semana começa na segunda: sábado e domingo pertencem à semana
+      // que terminou, não à que vai começar.
+      const dow = (h.getDay() + 6) % 7;
+      const seg = new Date(h); seg.setDate(h.getDate() - dow);
+      p.set('de', iso(seg)); p.set('ate', iso(h));
+    }else if(st.periodo === 'mes'){
+      p.set('de', iso(new Date(h.getFullYear(), h.getMonth(), 1)));
+      p.set('ate', iso(h));
     }else if(st.periodo === 'ano'){
-      const h = new Date();
-      p.set('de', h.getFullYear() + '-01-01');
-      p.set('ate', h.toISOString().slice(0,10));
+      p.set('de', h.getFullYear() + '-01-01'); p.set('ate', iso(h));
+    }else if(st.periodo === 'custom'){
+      p.set('de', st.de || iso(h)); p.set('ate', st.ate || iso(h));
     }else{
       p.set('dias', st.periodo);
     }
@@ -413,9 +454,9 @@ const Painel = (function(){
       </div>
 
       <div class="sec">
-        <div class="sec-cab"><span class="sec-tit">Onde o funil vaza</span>
+        <div class="sec-cab"><span class="sec-tit">Do lead ao contrato</span>
           <span class="sec-linha"></span>
-          <span class="sec-nota">conversão da etapa anterior</span></div>
+          <span class="sec-nota">quanto sobrevive de uma etapa para a seguinte</span></div>
         <div class="cartao">
           ${topo ? `<div class="fun">
             ${t.funil.map(e => {
@@ -458,23 +499,37 @@ const Painel = (function(){
       </div>
 
       <div class="sec">
-        <div class="sec-cab"><span class="sec-tit">Por origem</span><span class="sec-linha"></span></div>
-        <div class="cartao">${tabelaTrabalho(t.por_origem, 'Origem', vv)}</div>
+        <div class="sec-cab"><span class="sec-tit">De onde vêm os leads</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">volume, acúmulo e conversão</span></div>
+        <div class="cartao">${pareto(t.por_origem)}</div>
       </div>
 
-      <div class="sec">
-        <div class="sec-cab"><span class="sec-tit">Por segmento</span><span class="sec-linha"></span>
-          <span class="sec-nota">setor do cliente</span></div>
-        <div class="cartao">${tabelaTrabalho(t.por_segmento || [], 'Segmento', vv)}</div>
+      <div class="duas">
+        <div class="cartao">
+          <div class="cartao-t">Por segmento</div>
+          <div class="cartao-d">Em que setor os leads chegam e convertem.</div>
+          ${tabelaTrabalho(t.por_segmento || [], 'Segmento', vv)}
+        </div>
+        <div class="cartao">
+          <div class="cartao-t">Por região</div>
+          <div class="cartao-d">Estado informado ao passar o lead para o closer.</div>
+          ${tabelaTrabalho(t.por_estado || [], 'Estado', vv)}
+        </div>
       </div>
 
       <div class="duas">
         <div class="cartao">
           <div class="cartao-t">Saíram do funil</div>
-          <div class="cartao-d">Perdidos e em nutrição, no período.</div>
+          <div class="cartao-d">Percentual sobre os ${t.base || 0} leads do período —
+          um número absoluto sozinho não diz se é muito ou pouco.</div>
           <div class="duas" style="gap:11px">
-            ${kpiCard('Perdidos', t.perdidos, 'saíram sem fechar')}
-            ${kpiCard('Em nutrição', t.nutricao, 'guardados para depois')}
+            ${kpiCard('Perdidos', t.perdidos,
+                      t.pct_perdidos == null ? 'saíram sem fechar'
+                        : pct(t.pct_perdidos) + ' dos leads do período')}
+            ${kpiCard('Em nutrição', t.nutricao,
+                      t.pct_nutricao == null ? 'guardados para depois'
+                        : pct(t.pct_nutricao) + ' dos leads do período')}
           </div>
         </div>
         <div class="cartao">
@@ -493,24 +548,111 @@ const Painel = (function(){
   function notaVisao(){
     const t = st.dados.trabalho;
     const cresceu = t.funil.some(e => e.conv != null && e.conv > 100);
-    if(st.vis === 'safra'){
+    if(st.vis === 'entrada'){
       return `<div class="faixa info" style="margin:15px 0 0">
         <span class="material-symbols-rounded">groups</span>
-        <span><b>Por safra.</b> São os leads que <b>nasceram</b> no período,
-        seguidos até onde chegaram — mesmo que tenham fechado depois. É a
-        leitura em que a conversão faz sentido. Em compensação, períodos
-        recentes parecem piores: leads de agora ainda não tiveram tempo de fechar.</span>
+        <span><b>Seguindo os leads que entraram.</b> Só os leads que
+        chegaram dentro do recorte, acompanhados até onde foram — mesmo
+        que tenham fechado depois. É a leitura em que a conversão faz
+        sentido. Em compensação, períodos recentes parecem piores: quem
+        entrou agora ainda não teve tempo de fechar.</span>
       </div>`;
     }
     return `<div class="faixa ${cresceu ? 'alerta' : 'info'}" style="margin:15px 0 0">
       <span class="material-symbols-rounded">${cresceu ? 'warning' : 'info'}</span>
-      <span><b>Por período.</b> Cada etapa conta o que <b>aconteceu</b> no
-      recorte, venha o lead de quando vier.
+      <span><b>Contando o que aconteceu no período.</b> Cada etapa registra
+      o que ocorreu dentro do recorte, venha o lead de quando vier.
       ${cresceu ? `Por isso uma etapa aparece <b>acima de 100%</b>: houve
-      propostas e fechamentos de leads que entraram antes deste período.
-      Para medir conversão, troque para <b>Por safra do lead</b>.`
+      propostas e fechamentos de leads que entraram antes. Para medir
+      conversão, troque para <b>Seguir os leads que entraram</b>.`
       : 'Serve para ver quanto o funil andou no mês.'}</span>
     </div>`;
+  }
+
+  /* Pareto: barras de volume ordenadas + linha de acúmulo + corte de 80%.
+     A cor da barra é a conversão, para a figura responder as duas
+     perguntas de uma vez: quem traz mais, e quem traz melhor. */
+  function pareto(lista){
+    const dados = (lista || []).filter(x => x.leads > 0).slice(0, 9);
+    if(!dados.length) return semDados('Nenhum lead com origem registrada no período.');
+
+    const total = dados.reduce((a,b) => a + b.leads, 0);
+    const maxL = Math.max(...dados.map(x => x.leads));
+    const L = 44, R = 46, T = 14, B = 58;          // margens do desenho
+    const larg = 640, alt = 236;
+    const pw = larg - L - R, ph = alt - T - B;
+    const passo = pw / dados.length;
+
+    // Conversão vira cor: verde forte converte bem, cinza converte pouco.
+    const corBarra = c => c >= 40 ? '#0E9F6E' : c >= 20 ? '#6C5CE7'
+                        : c >= 8 ? '#8B7BF0' : '#C7C7D1';
+
+    let acum = 0;
+    const pontos = [], barras = [], rotulos = [];
+    dados.forEach((x, i) => {
+      const h = maxL ? (x.leads / maxL) * ph : 0;
+      const cx = L + passo * i + passo * 0.5;
+      const bw = Math.min(46, passo * 0.62);
+      barras.push(`<rect x="${(cx - bw/2).toFixed(1)}" y="${(T + ph - h).toFixed(1)}"
+        width="${bw.toFixed(1)}" height="${Math.max(1,h).toFixed(1)}" rx="4"
+        fill="${corBarra(x.conv)}"><title>${esc(x.chave)} · ${x.leads} leads · ${pct(x.conv)} de conversão</title></rect>`);
+      barras.push(`<text x="${cx.toFixed(1)}" y="${(T + ph - h - 6).toFixed(1)}"
+        text-anchor="middle" font-size="11" font-weight="600" fill="#56565F">${x.leads}</text>`);
+      acum += x.leads;
+      pontos.push([cx, T + ph - (acum / total) * ph]);
+      const nome = x.chave.length > 13 ? x.chave.slice(0,12) + '…' : x.chave;
+      rotulos.push(`<text x="${cx.toFixed(1)}" y="${alt - B + 18}" text-anchor="end"
+        font-size="10.5" fill="#7C7C88"
+        transform="rotate(-32 ${cx.toFixed(1)} ${alt - B + 18})">${esc(nome)}</text>`);
+      rotulos.push(`<text x="${cx.toFixed(1)}" y="${alt - 8}" text-anchor="middle"
+        font-size="10" font-weight="600" fill="${corBarra(x.conv)}">${pct(x.conv)}</text>`);
+    });
+
+    const linha = pontos.map((p,i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const y80 = T + ph - 0.8 * ph;
+
+    // Quantas origens bastam para 80% dos leads.
+    let soma = 0, corte = 0;
+    for(const x of dados){ soma += x.leads; corte++; if(soma / total >= 0.8) break; }
+    const melhor = [...dados].filter(x => x.leads >= 2)
+                             .sort((a,b) => b.conv - a.conv)[0];
+
+    return `
+      <svg class="par" viewBox="0 0 ${larg} ${alt}" role="img"
+           aria-label="Volume de leads por origem, acúmulo e conversão">
+        ${[0,.25,.5,.75,1].map(f => `<line x1="${L}" x2="${larg-R}"
+          y1="${(T+ph-f*ph).toFixed(1)}" y2="${(T+ph-f*ph).toFixed(1)}"
+          stroke="#EFEFF3" stroke-width="1"/>`).join('')}
+        <line x1="${L}" x2="${larg-R}" y1="${y80.toFixed(1)}" y2="${y80.toFixed(1)}"
+              stroke="#E5BE7F" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="${larg-R+5}" y="${(y80+4).toFixed(1)}" font-size="10" fill="#C2660B">80%</text>
+        <text x="${L-8}" y="${T+6}" text-anchor="end" font-size="10" fill="#7C7C88">${maxL}</text>
+        <text x="${L-8}" y="${T+ph+4}" text-anchor="end" font-size="10" fill="#7C7C88">0</text>
+        ${barras.join('')}
+        <path d="${linha}" fill="none" stroke="#C2660B" stroke-width="2"
+              stroke-linejoin="round" stroke-linecap="round"/>
+        ${pontos.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}"
+          r="3" fill="#fff" stroke="#C2660B" stroke-width="2"/>`).join('')}
+        ${rotulos.join('')}
+      </svg>
+
+      <div class="par-leg">
+        <span class="par-li"><span class="par-pt" style="background:#0E9F6E"></span>converte 40%+</span>
+        <span class="par-li"><span class="par-pt" style="background:#6C5CE7"></span>20 a 40%</span>
+        <span class="par-li"><span class="par-pt" style="background:#8B7BF0"></span>8 a 20%</span>
+        <span class="par-li"><span class="par-pt" style="background:#C7C7D1"></span>abaixo de 8%</span>
+        <span class="par-li"><span class="par-ln"></span>acúmulo do volume</span>
+      </div>
+
+      <div class="par-caixa">
+        <b>${corte} ${corte === 1 ? 'origem traz' : 'origens trazem'} 80% dos leads</b>
+        de ${dados.length} ${dados.length === 1 ? 'canal ativo' : 'canais ativos'}.
+        ${melhor ? `A que mais converte é <b>${esc(melhor.chave)}</b>, com ${pct(melhor.conv)}
+        — ${melhor.leads === dados[0].leads
+            ? 'e também é a de maior volume.'
+            : `contra ${pct(dados[0].conv)} de <b>${esc(dados[0].chave)}</b>, que traz mais gente.`}`
+        : ''}
+      </div>`;
   }
 
   function tabelaTrabalho(lista, rotulo, vv){
@@ -674,7 +816,34 @@ const Painel = (function(){
       p.classList.toggle('on', o === qual);
     });
   }
-  function periodo(v){ st.periodo = v; carregar(); }
+  function periodo(v){
+    st.periodo = v;
+    const cx = document.getElementById('datas');
+    cx.classList.toggle('on', v === 'custom');
+    if(v === 'custom'){
+      // Nasce com o mês corrente: campo em branco não diz o que esperar.
+      if(!st.de){
+        const h = new Date();
+        st.de = iso(new Date(h.getFullYear(), h.getMonth(), 1));
+        st.ate = iso(h);
+        document.getElementById('dDe').value = st.de;
+        document.getElementById('dAte').value = st.ate;
+      }
+    }
+    carregar();
+  }
+  function datas(){
+    const a = document.getElementById('dDe').value;
+    const b = document.getElementById('dAte').value;
+    if(!a || !b) return;
+    // Invertido é engano comum: corrige em vez de devolver vazio.
+    st.de = a <= b ? a : b;
+    st.ate = a <= b ? b : a;
+    document.getElementById('dDe').value = st.de;
+    document.getElementById('dAte').value = st.ate;
+    st.periodo = 'custom';
+    carregar();
+  }
   function visao(v){ st.vis = v; carregar(); }
   function toggleFiltros(){ document.getElementById('gaveta').classList.toggle('on'); }
   function filtrar(){
@@ -698,7 +867,7 @@ const Painel = (function(){
   }
 
   document.addEventListener('DOMContentLoaded', carregar);
-  return { otica, periodo, visao, toggleFiltros, filtrar, limpar };
+  return { otica, periodo, visao, datas, toggleFiltros, filtrar, limpar };
 })();
 </script>
 </body>
