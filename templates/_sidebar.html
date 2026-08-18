@@ -60,10 +60,23 @@ html body{
   object-fit:contain;
   flex:0 0 30px;
 }
+/* Assinatura expandida.
+
+   84px, e nao 104px. "core.cx" nao tem nenhuma letra alta -- 94% da arte
+   e corpo de letra. A 104px ela rendia 16,2px de traco solido contra ~9px
+   das maiusculas do menu ao lado: mais de 1,7x o peso optico da navegacao,
+   ainda que as alturas de caixa parecessem proximas. A marca gritava mais
+   alto que os links, que sao o que a pessoa veio usar.
+
+   A 84px o traco fica com ~13px. A marca segue sendo o elemento mais forte
+   do cabecalho, sem disputar atencao com o menu.
+
+   O max-height saiu: o arquivo foi recortado (nao tem mais moldura vazia),
+   entao a largura sozinha ja determina a altura pela proporcao 6,42:1.
+   Manter um teto que nunca era alcancado so escondia a regra real. */
 .cxsb-marca{
-  width:104px;
+  width:84px;
   height:auto;
-  max-height:20px;
   object-fit:contain;
   object-position:left center;
   display:block;
