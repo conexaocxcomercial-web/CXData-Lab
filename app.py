@@ -689,6 +689,34 @@ def criar_projeto():
 # Estados em que o card nao esta sendo trabalhado.
 PARADOS = ('Backlog', 'Não Iniciado', 'Pausado', 'Finalizado', 'Cancelado', 'Onboarding')
 
+# ----------------------------------------------------------------------------
+# ONDE O CICLO DE PRODUCAO TERMINA, POR AREA
+#
+# Cycle time mede o que NOS produzimos. Em quase todo quadro isso vai ate
+# a entrega -- Finalizado.
+#
+# Em R&S nao: o servico e entregar candidatos qualificados, e isso termina
+# quando o cliente entrevista. O que vem depois -- ele avaliar, dar
+# retorno, decidir -- e tempo dele, nao nosso. Cobrar isso do time seria
+# medir a agenda do cliente.
+#
+# O lead time continua indo ate Finalizado, porque e o que o cliente
+# viveu. A DIFERENCA entre os dois vira o numero mais util da tela:
+# quantos dias foram o cliente decidindo.
+#
+# Configuracao por area, e nao regra global: sem isso, o proximo quadro
+# criado herdaria a excecao do R&S sem ninguem perceber.
+# ----------------------------------------------------------------------------
+FIM_DO_CICLO = {
+    'Recrutamento e seleção': 'Entrevista com o cliente',
+}
+CICLO_PADRAO = 'Finalizado'
+
+
+def marco_fim_ciclo(area):
+    """Coluna que encerra o ciclo de producao daquele quadro."""
+    return FIM_DO_CICLO.get(area, CICLO_PADRAO)
+
 # Listas fechadas. Texto livre em campo de motivo vira dezoito grafias da
 # mesma coisa e nenhum agrupamento possivel no painel.
 MOTIVOS_PAUSA = (
@@ -785,6 +813,14 @@ def atualizar_projeto(projeto_id):
             trabalhando = novo_status not in PARADOS
             if trabalhando and not atual.get("data_saida_backlog"):
                 atualizacao["data_saida_backlog"] = agora_br()
+
+            # Fim do ciclo de producao. Em R&S e a entrevista com o
+            # cliente; nos demais, o proprio Finalizado. Só a PRIMEIRA
+            # vez conta: card que volta e avanca de novo nao reinicia o
+            # marco, senao o ciclo encolheria a cada idas e vindas.
+            if (novo_status == marco_fim_ciclo(atual.get("area"))
+                    and not atual.get("data_fim_ciclo")):
+                atualizacao["data_fim_ciclo"] = agora_br()
 
             # Pausa congela os dois relógios. Ao entrar em Pausado, guarda
             # o instante; ao sair, soma o intervalo ao acumulado.
