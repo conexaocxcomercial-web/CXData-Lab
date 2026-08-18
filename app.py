@@ -4281,35 +4281,35 @@ def api_comercial_painel():
         #            é de agosto, porque o dinheiro entrou em agosto.
         #            Responde "quanto andou o funil neste mês".
         #            NÃO serve para conversão: as etapas misturam leads
-        #            de safras diferentes, e a taxa passa de 100%.
+        #            de entradas diferentes, e a taxa passa de 100%.
         #
-        #   SAFRA    pega os leads NASCIDOS no recorte e segue cada um
-        #            até onde chegou, em qualquer data. Responde "dos
+        #   ENTRADA  pega os leads que ENTRARAM no recorte e segue cada
+        #            um até onde chegou, em qualquer data. Responde "dos
         #            leads de julho, quantos fecharam". A conversão só
         #            faz sentido aqui, e por construção nunca sobe.
-        #            Em compensação, safras recentes parecem piores:
+        #            Em compensação, períodos recentes parecem piores:
         #            os leads de agosto ainda não tiveram tempo de fechar.
         #
         # Nenhuma das duas é "a certa". A tela mostra qual está em uso.
         # ------------------------------------------------------------
-        visao = 'safra' if request.args.get('visao') == 'safra' else 'periodo'
+        visao = 'entrada' if request.args.get('visao') == 'entrada' else 'periodo'
 
         # Por onde cada lead JÁ passou, sem recorte de data. É o que
-        # permite seguir a safra até o fim, mesmo fechando meses depois.
+        # permite seguir o lead até o fim, mesmo fechando meses depois.
         passou_sempre = {}
         for m in movs:
             passou_sempre.setdefault((m.get('para_funil'), m.get('para_coluna')),
                                      set()).add(str(m.get('lead_id')))
 
-        ids_safra = {str(l['id']) for l in gerados}
+        ids_entrada = {str(l['id']) for l in gerados}
 
         funil, anterior = [], None
         for chave, fnl, col, rotulo in ETAPAS_COMERCIAL:
             if chave == 'leads':
-                ids = set(ids_safra)
-            elif visao == 'safra':
-                # Só os leads da safra, cheguem quando chegarem.
-                ids = set(passou_sempre.get((fnl, col), set())) & ids_safra
+                ids = set(ids_entrada)
+            elif visao == 'entrada':
+                # Só quem entrou no recorte, chegue onde chegar, quando chegar.
+                ids = set(passou_sempre.get((fnl, col), set())) & ids_entrada
                 ids |= {str(l['id']) for l in gerados
                         if l.get('funil') == fnl and l.get('coluna') == col}
             else:
@@ -4372,10 +4372,16 @@ def api_comercial_painel():
             "funil": funil,
             "perdidos": len(perdidos),
             "nutricao": len(nutricao),
+            # Sobre os leads do recorte: "12 perdidos" não diz nada sem
+            # saber de quantos. 12 de 20 é um problema; 12 de 400, não.
+            "base": len(gerados),
+            "pct_perdidos": round(len(perdidos) / len(gerados) * 100, 1) if gerados else None,
+            "pct_nutricao": round(len(nutricao) / len(gerados) * 100, 1) if gerados else None,
             "ciclo": ciclo,
             "por_produto": quebra('produto', gerados, 'Sem produto'),
             "por_origem": quebra('origem', gerados, 'Sem origem'),
             "por_segmento": quebra('segmento', gerados, 'Sem segmento'),
+            "por_estado": quebra('estado', gerados, 'Sem UF'),
             "objecoes": _objecoes_no_periodo(movs, de, ate),
         }
 
