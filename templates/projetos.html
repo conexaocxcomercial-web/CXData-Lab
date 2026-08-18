@@ -733,6 +733,23 @@
         .md-opcao-txt small { display: block; font-size: 11.5px; color: var(--tinta-3); font-weight: 500; line-height: 1.45; margin-top: 2px; }
         .md-opcao-ico { font-size: 18px; color: var(--tinta-3); flex-shrink: 0; }
     
+        /* janela de motivo (pausa e cancelamento) */
+        .mot-op{ display:flex; align-items:center; gap:11px; padding:11px 13px; width:100%;
+            background:var(--papel-2); border-radius:var(--r-ctrl); cursor:pointer;
+            transition:.14s; box-shadow:inset 0 0 0 1px transparent; text-align:left; border:none; }
+        .mot-op:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); }
+        .mot-op.on{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .mot-r{ width:16px; height:16px; min-width:16px; border-radius:50%;
+            box-shadow:inset 0 0 0 1.5px var(--linha-2); transition:.14s; }
+        .mot-op.on .mot-r{ box-shadow:inset 0 0 0 5px var(--acao); }
+        .mot-t{ font-size:13px; font-weight:550; flex:1; min-width:0; }
+        .mot-op.on .mot-t{ color:var(--acao); font-weight:600; }
+        .mot-lista{ display:flex; flex-direction:column; gap:5px; }
+        .mot-nota{ background:var(--acao-fraco); border-radius:var(--r-ctrl);
+            padding:12px 14px; font-size:12px; line-height:1.55; color:#3C3489; }
+        .mot-nota b{ font-weight:650; }
+        .mot-nota.alerta{ background:var(--cr-fundo); color:#8A1F1F; }
+
         /* janela de encerramento */
         .enc-op{ display:flex; align-items:flex-start; gap:11px; padding:12px 13px; width:100%;
             background:var(--papel-2); border-radius:var(--r-ctrl); cursor:pointer; transition:.14s;
@@ -1614,7 +1631,8 @@
                     { id: 'Gestão de Clima', nome: 'Gestão de Clima', cor: '#eab308' },
                     { id: 'Gestão com Base em Dados', nome: 'Gestão com Base em Dados', cor: '#6366f1' },
                     { id: 'Pausado', nome: 'Pausado', cor: 'var(--accent-pink)' },
-                    { id: 'Finalizado', nome: 'Finalizado', cor: '#10b981' }
+                    { id: 'Finalizado', nome: 'Finalizado', cor: '#10b981' },
+                    { id: 'Cancelado', nome: 'Cancelado', cor: '#ef4444' }
                 ]
             }
         };
@@ -2230,6 +2248,7 @@
             const colunaContainer = destino.closest('.kanban-column');
             const novoStatus = colunaContainer.getAttribute('data-status');
             
+            if(pedirMotivo(id, novoStatus)) return;
             if(pedirEncerramento(id, novoStatus)) return;
             try {
                 await salvarStatus(id, novoStatus);
@@ -2248,6 +2267,135 @@
            ========================================================== */
         const AREAS_RELACIONAMENTO = ['Recrutamento e seleção', 'RH Estratégico', 'CX Data'];
         let encPendente = null;
+
+        /* ==========================================================
+           MOTIVO DE PAUSA E DE CANCELAMENTO
+
+           Pausar congela lead time e cycle time -- na Conexão a pausa
+           parte sempre do cliente, então não é justo cobrar do time.
+           Mas sem o motivo, os dias parados viram um buraco que ninguém
+           consegue explicar depois. Por isso a pergunta acontece na hora
+           de mover, e não num relatório no fim do mês.
+
+           Cancelar sai dos indicadores de tempo. Fica só o motivo e o
+           autor, que são o que o painel precisa contar.
+           ========================================================== */
+        let MOTIVOS = { pausa: [], cancelamento: [] };
+        let motPendente = null, motEscolha = '';
+
+        (async function carregarMotivos(){
+            try{
+                const r = await fetch('/api/motivos');
+                if(r.ok){ const d = await r.json();
+                    MOTIVOS = { pausa: d.pausa || [], cancelamento: d.cancelamento || [] }; }
+            }catch(e){ console.warn('motivos indisponíveis', e); }
+        })();
+
+        // Devolve true se abriu a janela (o chamador deve parar).
+        function pedirMotivo(projetoId, novoStatus){
+          try{
+            if(novoStatus !== 'Pausado' && novoStatus !== 'Cancelado') return false;
+            const p = projetosGlobais.find(x => x.id === projetoId);
+            if(!p || p.status === novoStatus) return false;
+            const janela = document.getElementById('modalMotivo');
+            if(!janela){ console.warn('modalMotivo ausente'); return false; }
+
+            const pausa = novoStatus === 'Pausado';
+            const lista = pausa ? MOTIVOS.pausa : MOTIVOS.cancelamento;
+            if(!lista.length) return false;   // sem lista, não trava o card
+
+            motPendente = { id: projetoId, status: novoStatus, anterior: p.status };
+            motEscolha = '';
+            document.getElementById('motEyebrow').innerText = pausa ? 'Pausar' : 'Cancelar';
+            document.getElementById('motTitulo').innerText = pausa
+                ? 'Por que este card vai pausar?' : 'Por que este card foi cancelado?';
+            document.getElementById('motNome').innerText =
+                (p.empresa ? p.empresa + ' · ' : '') + (p.nome_projeto || '');
+            document.getElementById('motRotulo').innerText = pausa ? 'Pausar card' : 'Cancelar card';
+            document.getElementById('motDetalhe').value = '';
+            document.getElementById('motLinhaDetalhe').style.display = 'none';
+            document.getElementById('motLista').innerHTML = lista.map(m => `
+                <button class="mot-op" onclick="escolherMotivo('${escAttr(m)}')">
+                    <span class="mot-r"></span><span class="mot-t">${escH(m)}</span>
+                </button>`).join('');
+            atualizarNotaMotivo();
+            janela.classList.add('ativo');
+            return true;
+          }catch(err){
+            console.error('Janela de motivo falhou:', err);
+            motPendente = null;
+            return false;
+          }
+        }
+
+        function escolherMotivo(m){
+            motEscolha = m;
+            document.querySelectorAll('#motLista .mot-op').forEach(b =>
+                b.classList.toggle('on', b.querySelector('.mot-t').innerText === m));
+            const outro = m === 'Outro';
+            document.getElementById('motLinhaDetalhe').style.display = outro ? 'flex' : 'none';
+            if(outro) setTimeout(() => document.getElementById('motDetalhe').focus(), 60);
+            atualizarNotaMotivo();
+        }
+
+        /* Diz o que a escolha provoca nos indicadores. Congelar o relógio
+           é invisível: sem esta frase, ninguém sabe que pausar protege o
+           prazo e cancelar tira o card da conta. */
+        function atualizarNotaMotivo(){
+            if(!motPendente) return;
+            const pausa = motPendente.status === 'Pausado';
+            const nota = document.getElementById('motNota');
+            nota.className = 'mot-nota' + (pausa ? '' : ' alerta');
+            nota.innerHTML = pausa
+                ? `<b>O relógio para aqui.</b> Os dias em pausa não entram no lead time
+                   nem no cycle time — eles são contados à parte, como espera do cliente.
+                   A contagem volta quando o card sair da pausa.`
+                : `<b>Sai dos indicadores de tempo.</b> Cancelado não entra no lead time
+                   nem no cycle time. Fica registrado o motivo e quem cancelou, para o
+                   painel mostrar por que as demandas morrem.`;
+        }
+
+        function cancelarMotivo(){
+            motPendente = null; motEscolha = '';
+            document.getElementById('modalMotivo').classList.remove('ativo');
+            renderizarProjetos();   // devolve o card para onde estava
+        }
+
+        async function confirmarMotivo(){
+            if(!motPendente) return;
+            if(!motEscolha){ showToast('Escolha um motivo.', 'error'); return; }
+            const detalhe = document.getElementById('motDetalhe').value.trim();
+            if(motEscolha === 'Outro' && detalhe.length < 3){
+                showToast('Descreva o motivo em poucas palavras.', 'error'); return;
+            }
+            const btn = document.getElementById('motSalvar');
+            btn.disabled = true;
+            const { id, status, anterior } = motPendente;
+            motPendente = null;
+            document.getElementById('modalMotivo').classList.remove('ativo');
+
+            const proj = projetosGlobais.find(p => p.id === id);
+            if(proj) proj.status = status;
+            renderizarProjetos();
+            try{
+                const r = await fetch(`/api/projetos/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, motivo: motEscolha, motivo_detalhe: detalhe })
+                });
+                if(!r.ok) throw new Error(await motivoErro(r, 'Não foi possível mover o card.'));
+                showToast(status === 'Pausado'
+                    ? 'Card pausado · ' + motEscolha
+                    : 'Card cancelado · ' + motEscolha, 'success');
+            }catch(e){
+                // Sem devolver, a pessoa acredita que moveu e o servidor
+                // não registrou nada.
+                if(proj) proj.status = anterior;
+                renderizarProjetos();
+                showToast(e.message, 'error');
+            }finally{
+                btn.disabled = false;
+            }
+        }
 
         function salvarStatus(projetoId, novoStatus, encerramento){
             const corpo = { status: novoStatus };
@@ -2391,6 +2539,7 @@
 
         // --- MÁGICA: ALTERAR STATUS DIRETO NA LISTA ---
         async function alterarStatusLista(projetoId, novoStatus) {
+            if(pedirMotivo(projetoId, novoStatus)) return;
             if(pedirEncerramento(projetoId, novoStatus)) return;
             showToast("Atualizando status...", "default");
             
@@ -3558,6 +3707,7 @@
             if (!id) return;
             const p = projetosGlobais.find(x => x.id === id);
             if (!p || p.status === novoStatus) return;
+            if (pedirMotivo(id, novoStatus)) return;
             if (pedirEncerramento(id, novoStatus)) return;
             const anterior = p.status;
             p.status = novoStatus;
@@ -3709,7 +3859,35 @@
         </div>
     </div>
 
-        <div class="modal-overlay" id="modalEncerrar" onclick="if(event.target.id==='modalEncerrar')cancelarEncerrar()">
+        <div class="modal-overlay" id="modalMotivo" onclick="if(event.target.id==='modalMotivo')cancelarMotivo()">
+        <div class="modal-content" style="max-width:460px">
+            <div class="md-head">
+                <div class="md-head-txt">
+                    <span class="md-eyebrow" id="motEyebrow">Pausar</span>
+                    <div class="md-titulo" id="motTitulo">Por que este card vai pausar?</div>
+                    <div class="md-sub" id="motNome"></div>
+                </div>
+                <button class="close-btn" onclick="cancelarMotivo()" aria-label="Fechar"></button>
+            </div>
+            <div class="md-corpo">
+                <div class="mot-lista" id="motLista"></div>
+                <div class="input-group" id="motLinhaDetalhe" style="display:none">
+                    <label for="motDetalhe">Descreva em poucas palavras</label>
+                    <input type="text" id="motDetalhe" class="input-item" autocomplete="off"
+                           placeholder="O que aconteceu" oninput="atualizarNotaMotivo()">
+                </div>
+                <div class="mot-nota" id="motNota"></div>
+            </div>
+            <div class="md-pe">
+                <button class="btn-md btn-md-fantasma" onclick="cancelarMotivo()">Cancelar</button>
+                <button class="btn-md btn-md-primario" id="motSalvar" onclick="confirmarMotivo()">
+                    <span class="material-symbols-rounded">check</span><span id="motRotulo">Pausar card</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalEncerrar" onclick="if(event.target.id==='modalEncerrar')cancelarEncerrar()">
         <div class="modal-content" style="max-width:480px">
             <div class="md-head">
                 <div class="md-head-txt">
