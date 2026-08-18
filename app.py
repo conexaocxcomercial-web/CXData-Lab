@@ -4236,6 +4236,7 @@ def api_comercial_painel():
         f_orig = request.args.get('origem') or ''
         f_resp = request.args.get('responsavel') or ''
         f_uf = (request.args.get('estado') or '').upper()[:2]
+        f_seg = request.args.get('segmento') or ''
         if f_prod:
             leads = [l for l in leads if (l.get('produto') or '') == f_prod]
         if f_orig:
@@ -4244,6 +4245,8 @@ def api_comercial_painel():
             leads = [l for l in leads if (l.get('responsavel') or '') == f_resp]
         if f_uf:
             leads = [l for l in leads if (l.get('estado') or '').upper() == f_uf]
+        if f_seg:
+            leads = [l for l in leads if (l.get('segmento') or '') == f_seg]
 
         por_id = {str(l['id']): l for l in leads}
         movs = [m for m in movs if str(m.get('lead_id')) in por_id]
@@ -4268,10 +4271,47 @@ def api_comercial_painel():
 
         gerados = [l for l in leads if dentro(l.get('criado_em'))]
 
+        # ------------------------------------------------------------
+        # DUAS LEITURAS DO MESMO FUNIL
+        #
+        # Um lead entra em 20/07 e fecha em 15/08. Onde ele aparece?
+        # Depende da pergunta -- e são duas perguntas diferentes:
+        #
+        #   PERÍODO  conta cada evento no mês em que aconteceu. A venda
+        #            é de agosto, porque o dinheiro entrou em agosto.
+        #            Responde "quanto andou o funil neste mês".
+        #            NÃO serve para conversão: as etapas misturam leads
+        #            de safras diferentes, e a taxa passa de 100%.
+        #
+        #   SAFRA    pega os leads NASCIDOS no recorte e segue cada um
+        #            até onde chegou, em qualquer data. Responde "dos
+        #            leads de julho, quantos fecharam". A conversão só
+        #            faz sentido aqui, e por construção nunca sobe.
+        #            Em compensação, safras recentes parecem piores:
+        #            os leads de agosto ainda não tiveram tempo de fechar.
+        #
+        # Nenhuma das duas é "a certa". A tela mostra qual está em uso.
+        # ------------------------------------------------------------
+        visao = 'safra' if request.args.get('visao') == 'safra' else 'periodo'
+
+        # Por onde cada lead JÁ passou, sem recorte de data. É o que
+        # permite seguir a safra até o fim, mesmo fechando meses depois.
+        passou_sempre = {}
+        for m in movs:
+            passou_sempre.setdefault((m.get('para_funil'), m.get('para_coluna')),
+                                     set()).add(str(m.get('lead_id')))
+
+        ids_safra = {str(l['id']) for l in gerados}
+
         funil, anterior = [], None
         for chave, fnl, col, rotulo in ETAPAS_COMERCIAL:
             if chave == 'leads':
-                ids = {str(l['id']) for l in gerados}
+                ids = set(ids_safra)
+            elif visao == 'safra':
+                # Só os leads da safra, cheguem quando chegarem.
+                ids = set(passou_sempre.get((fnl, col), set())) & ids_safra
+                ids |= {str(l['id']) for l in gerados
+                        if l.get('funil') == fnl and l.get('coluna') == col}
             else:
                 ids = set(passou.get((fnl, col), set()))
                 # Quem já está parado na etapa hoje conta, mesmo sem
@@ -4335,6 +4375,7 @@ def api_comercial_painel():
             "ciclo": ciclo,
             "por_produto": quebra('produto', gerados, 'Sem produto'),
             "por_origem": quebra('origem', gerados, 'Sem origem'),
+            "por_segmento": quebra('segmento', gerados, 'Sem segmento'),
             "objecoes": _objecoes_no_periodo(movs, de, ate),
         }
 
@@ -4375,6 +4416,7 @@ def api_comercial_painel():
             "serie": serie if ver_valor else [],
             "por_produto": receita_por('produto', 'Sem produto') if ver_valor else [],
             "por_origem": receita_por('origem', 'Sem origem') if ver_valor else [],
+            "por_segmento": receita_por('segmento', 'Sem segmento') if ver_valor else [],
             "por_estado": receita_por('estado', 'Sem UF') if ver_valor else [],
             "por_responsavel": receita_por('responsavel', 'Sem responsável') if ver_valor else [],
         }
@@ -4382,6 +4424,7 @@ def api_comercial_painel():
         return jsonify({
             "status": "sucesso",
             "periodo": {"de": de, "ate": ate, "granularidade": granul},
+            "visao": visao,
             "ver_valor": ver_valor,
             "trabalho": trabalho,
             "resultado": resultado,
@@ -4392,6 +4435,7 @@ def api_comercial_painel():
                 "origens": sorted({(l.get('origem') or '').strip() for l in leads} - {''}),
                 "responsaveis": sorted({(l.get('responsavel') or '').strip() for l in leads} - {''}),
                 "estados": sorted({(l.get('estado') or '').strip().upper() for l in leads} - {''}),
+                "segmentos": sorted({(l.get('segmento') or '').strip() for l in leads} - {''}),
             },
         }), 200
 
