@@ -347,8 +347,8 @@ html body{
       <div class="cxsb-item" data-path="/crm" data-tip="Pipeline" onclick="location.href='/crm'">
         <span class="material-symbols-rounded">filter_alt</span><span class="cxsb-item-txt">Pipeline</span>
       </div>
-      <div class="cxsb-item" data-path="/dashboard?aba=comercial" data-tip="Dashboard comercial"
-           onclick="location.href='/dashboard?aba=comercial'">
+      <div class="cxsb-item" data-path="/dashboard/comercial" data-tip="Dashboard comercial"
+           onclick="location.href='/dashboard/comercial'">
         <span class="material-symbols-rounded">monitoring</span><span class="cxsb-item-txt">Dashboard</span>
       </div>
     </div>
@@ -532,17 +532,18 @@ html body{
   if (caminho === '/planejamento') caminho = '/agenda';
   if (caminho === '/board/geral')  caminho = '/board/cxdata';
 
-  // /dashboard e /dashboard?aba=comercial são a mesma tela em abas
-  // diferentes: sem olhar a query, os dois itens acenderiam juntos.
-  var aba = new URLSearchParams(busca).get('aba');
-  var atual = (caminho === '/dashboard' && aba) ? caminho + '?aba=' + aba : caminho;
+  // /dashboard e /dashboard/comercial sao telas distintas. Antes eram a
+  // mesma tela em abas e o realce dependia da query -- agora basta o
+  // caminho, mas /dashboard nao pode acender quando o atual e o
+  // comercial, senao os dois itens ficam ligados ao mesmo tempo.
+  var atual = caminho;
 
   var listaAtiva = null;
   document.querySelectorAll('.cxsb-item[data-path]').forEach(function(it){
     var p = it.getAttribute('data-path');
     var bate;
     if (p.indexOf('?') >= 0)      bate = (atual === p);
-    else if (p === '/dashboard')  bate = (caminho === '/dashboard' && !aba);
+    else if (p === '/dashboard')  bate = (caminho === '/dashboard');
     else if (p === '/')           bate = (caminho === '/');
     else                          bate = (caminho === p || caminho.indexOf(p + '/') === 0);
     if (bate) {
