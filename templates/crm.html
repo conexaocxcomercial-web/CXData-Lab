@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM | core.cx</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -138,6 +137,90 @@
         .empty .material-symbols-rounded{ font-size:44px; opacity:.25; display:block; margin-bottom:13px; }
         .empty h3{ font-size:15px; font-weight:650; color:var(--tinta-2); margin-bottom:6px; }
         .empty p{ font-size:13px; font-weight:500; line-height:1.6; max-width:380px; margin:0 auto 16px; }
+
+        /* ===== IMPORTADOR DE PLANILHA ===== */
+        .imp-passos{ display:flex; gap:6px; align-items:center; margin-bottom:4px; }
+        .imp-passo{ display:flex; align-items:center; gap:7px; font-size:11.5px;
+            font-weight:600; color:var(--tinta-3); }
+        .imp-passo b{ width:19px; height:19px; border-radius:50%; background:var(--papel-2);
+            display:flex; align-items:center; justify-content:center; font-size:10px; }
+        .imp-passo.on{ color:var(--acao); }
+        .imp-passo.on b{ background:var(--acao); color:#fff; }
+        .imp-passo.feito b{ background:var(--ok-fraco); color:var(--ok); }
+        .imp-tr{ flex:1; height:1px; background:var(--linha); }
+
+        .imp-solta{ border:1.5px dashed var(--linha-2); border-radius:var(--r-card);
+            padding:34px 20px; text-align:center; cursor:pointer; transition:.15s;
+            background:var(--papel-2); }
+        .imp-solta:hover,.imp-solta.sobre{ border-color:var(--acao); background:var(--acao-fraco); }
+        .imp-solta .material-symbols-rounded{ font-size:34px; color:var(--tinta-3);
+            display:block; margin-bottom:10px; }
+        .imp-solta.sobre .material-symbols-rounded{ color:var(--acao); }
+        .imp-solta-t{ font-size:13.5px; font-weight:650; margin-bottom:4px; }
+        .imp-solta-d{ font-size:12px; color:var(--tinta-3); line-height:1.5; }
+
+        .imp-arq{ display:flex; align-items:center; gap:11px; background:var(--papel-2);
+            border-radius:var(--r-ctrl); padding:11px 13px; }
+        .imp-arq .material-symbols-rounded{ font-size:20px; color:var(--ok); }
+        .imp-arq-n{ font-size:13px; font-weight:600; flex:1; min-width:0;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .imp-arq-d{ font-size:11.5px; color:var(--tinta-3); }
+
+        /* Mapeamento: uma linha por campo do CRM. */
+        .imp-map{ display:flex; flex-direction:column; gap:1px; background:var(--linha);
+            border-radius:var(--r-ctrl); overflow:hidden; }
+        .imp-linha{ display:grid; grid-template-columns:1fr 18px 1.2fr; gap:9px;
+            align-items:center; background:var(--papel); padding:9px 12px; }
+        .imp-campo{ font-size:12.5px; font-weight:550; }
+        .imp-campo small{ display:block; font-size:10.5px; color:var(--tinta-3);
+            font-weight:400; margin-top:1px; }
+        .imp-campo.obg::after{ content:' *'; color:var(--critico); font-weight:700; }
+        .imp-seta{ color:var(--linha-2); display:flex; justify-content:center; }
+        .imp-seta .material-symbols-rounded{ font-size:16px; }
+        .imp-sel{ width:100%; font-size:12.5px; padding:7px 9px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:7px; color:var(--tinta);
+            outline:none; cursor:pointer; }
+        .imp-sel:focus{ background:var(--papel); border-color:var(--acao); }
+        .imp-sel.vazio{ color:var(--tinta-3); }
+
+        .imp-resumo{ display:flex; gap:9px; flex-wrap:wrap; }
+        .imp-bloco{ flex:1; min-width:96px; background:var(--papel-2); border-radius:var(--r-ctrl);
+            padding:11px 13px; }
+        .imp-bloco-n{ font-size:19px; font-weight:650; font-family:'IBM Plex Mono',monospace;
+            letter-spacing:-.5px; }
+        .imp-bloco-r{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:1px; }
+        .imp-bloco.ok .imp-bloco-n{ color:var(--ok); }
+        .imp-bloco.alerta .imp-bloco-n{ color:var(--atencao); }
+
+        .imp-tabela{ border:1px solid var(--linha); border-radius:var(--r-ctrl);
+            overflow:hidden; max-height:230px; overflow-y:auto; }
+        .imp-th,.imp-tr2{ display:grid; grid-template-columns:26px 1.3fr 1fr 1.1fr;
+            gap:9px; padding:7px 11px; align-items:center; font-size:12px; }
+        .imp-th{ background:var(--papel-2); border-bottom:1px solid var(--linha);
+            font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.4px; color:var(--tinta-3); position:sticky; top:0; }
+        .imp-tr2{ border-bottom:1px solid var(--papel-2); }
+        .imp-tr2:last-child{ border:none; }
+        .imp-tr2 span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .imp-n{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--tinta-3); }
+        .imp-tr2.ruim{ background:#FEF7F7; }
+        .imp-motivo{ font-size:11px; color:var(--critico); }
+        .imp-tr2.pula .imp-motivo{ color:var(--atencao); }
+
+        .imp-aviso{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px;
+            border-radius:var(--r-ctrl); font-size:12px; line-height:1.55; }
+        .imp-aviso .material-symbols-rounded{ font-size:17px; flex-shrink:0; margin-top:1px; }
+        .imp-aviso.info{ background:var(--acao-fraco); color:#3C3489; }
+        .imp-aviso.alerta{ background:var(--at-fundo); color:#7A4A0C; }
+        .imp-aviso.erro{ background:var(--cr-fundo); color:#8A1F1F; }
+        .imp-aviso b{ font-weight:650; }
+
+        .imp-barra{ height:5px; background:var(--papel-2); border-radius:99px; overflow:hidden; }
+        .imp-barra i{ display:block; height:100%; background:var(--acao); width:0;
+            transition:width .2s; }
+
+        .imp-modelo{ font-size:12px; font-weight:600; color:var(--acao); cursor:pointer;
+            background:none; border:none; padding:0; text-decoration:underline; }
 
         /* ===== MODAL ===== */
         .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
@@ -443,6 +526,9 @@
             </button>
             <button class="btn btn-fant" id="btnHoje" onclick="alternarHoje()">
                 <span class="material-symbols-rounded">today</span><span class="rot-longo">Contatos de </span>hoje<span class="chip-n" id="chipHoje" style="display:none">0</span>
+            </button>
+            <button class="btn btn-fant" onclick="Importar.abrir()" title="Importar leads de planilha">
+                <span class="material-symbols-rounded">upload_file</span><span class="rot-longo">Importar</span>
             </button>
             <button class="btn btn-acao" onclick="abrirLead(null)"><span class="material-symbols-rounded">add</span>Novo lead</button>
         </div>
@@ -1940,5 +2026,430 @@
             }
         });
     </script>
+
+<!-- ===== IMPORTADOR DE PLANILHA ===== -->
+<div class="modal-overlay" id="modalImportar" onclick="if(event.target.id==='modalImportar')Importar.fechar()">
+    <div class="modal" style="max-width:620px">
+        <div class="md-head">
+            <div style="flex:1;min-width:0">
+                <div class="md-eyebrow">CRM</div>
+                <div class="md-tit" id="impTitulo">Importar leads</div>
+            </div>
+            <button class="md-x" onclick="Importar.fechar()" aria-label="Fechar">
+                <span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div class="md-corpo" id="impCorpo"></div>
+        <div class="md-pe" id="impPe"></div>
+    </div>
+</div>
+<input type="file" id="impArquivo" accept=".xlsx,.xls,.csv,.txt" style="display:none">
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+"use strict";
+/* ===========================================================================
+   IMPORTADOR DE LEADS
+   ---------------------------------------------------------------------------
+   Tres passos: escolher o arquivo, dizer qual coluna e qual, conferir e gravar.
+
+   POR QUE O NAVEGADOR LE A PLANILHA
+   Enviar o .xlsx para a funcao serverless exigiria uma biblioteca de leitura
+   no servidor e um upload binario, num ambiente com limite apertado de
+   tamanho e tempo. Lendo aqui, a pessoa ve a previa antes de qualquer
+   gravacao -- e o servidor recebe JSON limpo, que ele valida de novo.
+
+   O SERVIDOR NAO CONFIA NESTA TELA. Toda regra aplicada aqui existe la
+   tambem. O que se faz aqui e conveniencia; o que garante o dado e o backend.
+   =========================================================================== */
+const Importar = (function(){
+
+  /* Campos do CRM que a planilha pode preencher. `chaves` sao os nomes de
+     coluna que reconhecemos sozinhos -- sem acento e em minusculas. */
+  const CAMPOS = [
+    { id:'empresa',        rot:'Empresa',          obg:true,
+      dica:'ou o contato, um dos dois',
+      chaves:['empresa','razao social','cliente','nome da empresa','companhia','company'] },
+    { id:'contato',        rot:'Contato',          obg:true,
+      dica:'nome da pessoa',
+      chaves:['contato','nome','responsavel contato','pessoa','name','nome do contato'] },
+    { id:'telefone',       rot:'Telefone',
+      chaves:['telefone','celular','whatsapp','fone','tel','phone'] },
+    { id:'email',          rot:'E-mail',
+      chaves:['email','e mail','mail','correio'] },
+    { id:'cnpj',           rot:'CNPJ',
+      chaves:['cnpj','documento','cnpj cpf'] },
+    { id:'produto',        rot:'Produto',
+      dica:'interesse principal',
+      chaves:['produto','servico','interesse','solucao'] },
+    { id:'origem',         rot:'Origem',
+      dica:'de onde veio',
+      chaves:['origem','fonte','canal','source'] },
+    { id:'segmento',       rot:'Segmento',
+      chaves:['segmento','setor','ramo','area de atuacao','industria'] },
+    { id:'cidade',         rot:'Cidade',
+      chaves:['cidade','municipio','city'] },
+    { id:'estado',         rot:'Estado',           dica:'sigla, 2 letras',
+      chaves:['estado','uf','sigla'] },
+    { id:'responsavel',    rot:'Responsável',      dica:'quem cuida no time',
+      chaves:['responsavel','vendedor','closer','owner','consultor'] },
+    { id:'valor_estimado', rot:'Valor estimado',
+      chaves:['valor','valor estimado','ticket','proposta','preco','valor da proposta'] },
+    { id:'proximo_contato',rot:'Próximo contato',  dica:'data',
+      chaves:['proximo contato','data','retorno','follow up','agendamento'] },
+    { id:'anotacoes',      rot:'Anotações',
+      chaves:['anotacoes','observacao','observacoes','notas','obs','comentario'] },
+  ];
+
+  const st = { passo:1, arquivo:null, colunas:[], linhas:[], mapa:{},
+               funil:'qualificacao', pularDup:true, analise:null, enviando:false };
+
+  const esc = v => String(v ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // Tira acento, pontuacao e espaco duplo: "E-Mail " e "e_mail" viram "e mail".
+  const normaliza = t => String(t ?? '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,' ').trim();
+
+  /* ---------------- passo 1 · arquivo ---------------- */
+  function abrir(){
+    Object.assign(st, { passo:1, arquivo:null, colunas:[], linhas:[],
+                        mapa:{}, analise:null, enviando:false,
+                        funil: (typeof funilAtual !== 'undefined' && funilAtual) || 'qualificacao' });
+    document.getElementById('modalImportar').classList.add('show');
+    pintar();
+  }
+  function fechar(){ document.getElementById('modalImportar').classList.remove('show'); }
+
+  function passos(){
+    const nomes = ['Arquivo','Colunas','Conferir'];
+    return '<div class="imp-passos">' + nomes.map((n,i) => {
+      const k = i + 1;
+      const cls = st.passo === k ? 'on' : (st.passo > k ? 'feito' : '');
+      return `<span class="imp-passo ${cls}"><b>${st.passo > k ? '&check;' : k}</b>${n}</span>`
+           + (i < 2 ? '<span class="imp-tr"></span>' : '');
+    }).join('') + '</div>';
+  }
+
+  function pintar(){
+    const corpo = document.getElementById('impCorpo');
+    const pe = document.getElementById('impPe');
+    document.getElementById('impTitulo').innerText =
+      st.passo === 1 ? 'Importar leads'
+      : st.passo === 2 ? 'De qual coluna vem cada campo?'
+      : 'Confira antes de gravar';
+
+    if(st.passo === 1){
+      corpo.innerHTML = passos() + `
+        <div class="imp-solta" id="impSolta"
+             onclick="document.getElementById('impArquivo').click()">
+          <span class="material-symbols-rounded">table_view</span>
+          <div class="imp-solta-t">Arraste a planilha ou clique para escolher</div>
+          <div class="imp-solta-d">Excel (.xlsx, .xls) ou CSV &middot; até 500 linhas por vez</div>
+        </div>
+        <div class="imp-aviso info">
+          <span class="material-symbols-rounded">lightbulb</span>
+          <span>A primeira linha precisa ser o <b>cabeçalho</b> com o nome das colunas.
+          Reconhecemos os nomes mais comuns sozinhos — o que não bater, você indica no
+          passo seguinte. <button class="imp-modelo" onclick="Importar.modelo()">Baixar
+          planilha modelo</button></span>
+        </div>`;
+      pe.innerHTML = `<button class="btn btn-fant" onclick="Importar.fechar()">Cancelar</button>`;
+      ligarArrasto();
+      return;
+    }
+
+    if(st.passo === 2){
+      const opcoes = c => '<option value="">— não importar —</option>' +
+        st.colunas.map(x => `<option value="${esc(x)}" ${st.mapa[c.id]===x?'selected':''}>${esc(x)}</option>`).join('');
+      corpo.innerHTML = passos() + `
+        <div class="imp-arq">
+          <span class="material-symbols-rounded">description</span>
+          <span class="imp-arq-n">${esc(st.arquivo)}</span>
+          <span class="imp-arq-d">${st.linhas.length} linha${st.linhas.length!==1?'s':''}</span>
+        </div>
+
+        <div class="ig">
+          <label for="impFunil">Onde os leads entram</label>
+          <select id="impFunil" onchange="Importar.setFunil(this.value)">
+            <option value="qualificacao" ${st.funil==='qualificacao'?'selected':''}>Qualificação · Prospecção</option>
+            <option value="fechamento"   ${st.funil==='fechamento'?'selected':''}>Fechamento · Agendamento</option>
+            <option value="relacionamento" ${st.funil==='relacionamento'?'selected':''}>Relacionamento · Backlog</option>
+            <option value="nutricao"     ${st.funil==='nutricao'?'selected':''}>Nutrição · Backlog</option>
+          </select>
+        </div>
+
+        <div class="imp-map">
+          ${CAMPOS.map(c => `
+            <div class="imp-linha">
+              <span class="imp-campo ${c.obg?'obg':''}">${c.rot}
+                ${c.dica?`<small>${c.dica}</small>`:''}</span>
+              <span class="imp-seta"><span class="material-symbols-rounded">arrow_forward</span></span>
+              <select class="imp-sel ${st.mapa[c.id]?'':'vazio'}"
+                      onchange="Importar.mapear('${c.id}', this.value)">${opcoes(c)}</select>
+            </div>`).join('')}
+        </div>
+
+        <label class="ig" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+          <input type="checkbox" id="impDup" ${st.pularDup?'checked':''}
+                 onchange="Importar.setDup(this.checked)" style="width:15px;height:15px;accent-color:var(--acao)">
+          <span style="font-size:12.5px;font-weight:500;color:var(--tinta-2)">
+            Pular quem já está no CRM (por e-mail, telefone ou empresa + contato)</span>
+        </label>`;
+      pe.innerHTML = `
+        <button class="btn btn-fant" onclick="Importar.voltar()">Voltar</button>
+        <button class="btn btn-acao" onclick="Importar.conferir()">
+          <span class="material-symbols-rounded">arrow_forward</span>Conferir</button>`;
+      return;
+    }
+
+    // passo 3
+    const a = st.analise;
+    corpo.innerHTML = passos() + `
+      <div class="imp-resumo">
+        <div class="imp-bloco ok"><div class="imp-bloco-n">${a.validas.length}</div>
+          <div class="imp-bloco-r">serão criados</div></div>
+        ${a.invalidas.length ? `<div class="imp-bloco alerta">
+          <div class="imp-bloco-n">${a.invalidas.length}</div>
+          <div class="imp-bloco-r">com problema</div></div>` : ''}
+        <div class="imp-bloco"><div class="imp-bloco-n">${st.linhas.length}</div>
+          <div class="imp-bloco-r">linhas no arquivo</div></div>
+      </div>
+
+      ${a.invalidas.length ? `
+        <div class="imp-aviso alerta">
+          <span class="material-symbols-rounded">warning</span>
+          <span><b>${a.invalidas.length} linha${a.invalidas.length!==1?'s':''} não
+          ${a.invalidas.length!==1?'serão':'será'} importada${a.invalidas.length!==1?'s':''}.</b>
+          Elas continuam na sua planilha — corrija e importe de novo, se quiser.</span>
+        </div>
+        <div class="imp-tabela">
+          <div class="imp-th"><span>#</span><span>Empresa</span><span>Contato</span><span>Motivo</span></div>
+          ${a.invalidas.slice(0,60).map(l => `
+            <div class="imp-tr2 ruim"><span class="imp-n">${l.n}</span>
+              <span>${esc(l.empresa||'—')}</span><span>${esc(l.contato||'—')}</span>
+              <span class="imp-motivo">${esc(l.motivo)}</span></div>`).join('')}
+        </div>` : ''}
+
+      ${a.validas.length ? `
+        <div class="ig"><label>Prévia dos primeiros</label>
+          <div class="imp-tabela">
+            <div class="imp-th"><span>#</span><span>Empresa</span><span>Contato</span><span>Telefone</span></div>
+            ${a.validas.slice(0,8).map(l => `
+              <div class="imp-tr2"><span class="imp-n">${l.n}</span>
+                <span>${esc(l.empresa||'—')}</span><span>${esc(l.contato||'—')}</span>
+                <span>${esc(l.telefone||'—')}</span></div>`).join('')}
+          </div></div>` : `
+        <div class="imp-aviso erro">
+          <span class="material-symbols-rounded">error</span>
+          <span>Nenhuma linha válida. Volte e confira o mapeamento das colunas.</span>
+        </div>`}
+
+      <div class="imp-aviso info">
+        <span class="material-symbols-rounded">info</span>
+        <span>Entram em <b>${esc(rotuloFunil())}</b>${st.pularDup
+          ? ', pulando quem já existe no CRM' : ', <b>sem</b> checar duplicados'}.</span>
+      </div>
+      <div id="impProgresso"></div>`;
+
+    pe.innerHTML = `
+      <button class="btn btn-fant" onclick="Importar.voltar()">Voltar</button>
+      <button class="btn btn-acao" id="impGravar" onclick="Importar.gravar()"
+        ${a.validas.length?'':'disabled'}>
+        <span class="material-symbols-rounded">upload</span>
+        Importar ${a.validas.length} lead${a.validas.length!==1?'s':''}</button>`;
+  }
+
+  function rotuloFunil(){
+    return ({qualificacao:'Qualificação · Prospecção', fechamento:'Fechamento · Agendamento',
+             relacionamento:'Relacionamento · Backlog', nutricao:'Nutrição · Backlog'})[st.funil];
+  }
+
+  /* ---------------- leitura do arquivo ---------------- */
+  function ligarArrasto(){
+    const alvo = document.getElementById('impSolta');
+    if(!alvo) return;
+    ['dragenter','dragover'].forEach(e => alvo.addEventListener(e, ev => {
+      ev.preventDefault(); alvo.classList.add('sobre'); }));
+    ['dragleave','drop'].forEach(e => alvo.addEventListener(e, ev => {
+      ev.preventDefault(); alvo.classList.remove('sobre'); }));
+    alvo.addEventListener('drop', ev => {
+      const f = ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if(f) ler(f);
+    });
+  }
+
+  function ler(file){
+    if(typeof XLSX === 'undefined'){
+      toast('A biblioteca de planilha não carregou. Recarregue a página.', 'erro');
+      return;
+    }
+    const leitor = new FileReader();
+    leitor.onload = ev => {
+      try{
+        const wb = XLSX.read(ev.target.result, { type:'array', cellDates:true });
+        const aba = wb.Sheets[wb.SheetNames[0]];
+        // defval:'' mantem as colunas vazias, senao o mapeamento perde campo
+        const linhas = XLSX.utils.sheet_to_json(aba, { defval:'', raw:false });
+        if(!linhas.length){ toast('A planilha está vazia.', 'erro'); return; }
+
+        st.arquivo = file.name;
+        st.linhas = linhas;
+        st.colunas = Object.keys(linhas[0]).filter(c => String(c).trim() !== '');
+        st.mapa = autoMapear(st.colunas);
+        st.passo = 2;
+        pintar();
+      }catch(err){
+        console.error('leitura da planilha:', err);
+        toast('Não consegui ler este arquivo. Salve como .xlsx ou .csv e tente de novo.', 'erro');
+      }
+    };
+    leitor.onerror = () => toast('Falha ao abrir o arquivo.', 'erro');
+    leitor.readAsArrayBuffer(file);
+  }
+
+  /* Casa cabecalho com campo: primeiro nome igual, depois nome contido.
+     Uma coluna so serve a um campo -- senao "nome" viraria empresa e
+     contato ao mesmo tempo. */
+  function autoMapear(colunas){
+    const mapa = {}, usadas = new Set();
+    const norm = colunas.map(c => ({ orig:c, n:normaliza(c) }));
+    CAMPOS.forEach(campo => {
+      let achou = norm.find(c => !usadas.has(c.orig) && campo.chaves.includes(c.n));
+      if(!achou) achou = norm.find(c => !usadas.has(c.orig) &&
+        campo.chaves.some(k => c.n.includes(k) || k.includes(c.n)));
+      if(achou){ mapa[campo.id] = achou.orig; usadas.add(achou.orig); }
+    });
+    return mapa;
+  }
+
+  function mapear(campo, coluna){
+    if(coluna) st.mapa[campo] = coluna; else delete st.mapa[campo];
+    pintar();
+  }
+  function setFunil(v){ st.funil = v; }
+  function setDup(v){ st.pularDup = v; }
+  function voltar(){ st.passo = Math.max(1, st.passo - 1); pintar(); }
+
+  /* ---------------- passo 3 · conferencia ---------------- */
+  function conferir(){
+    if(!st.mapa.empresa && !st.mapa.contato){
+      toast('Indique ao menos a coluna de Empresa ou a de Contato.', 'erro');
+      return;
+    }
+    const validas = [], invalidas = [];
+    st.linhas.forEach((linha, i) => {
+      const n = i + 2;                     // +1 do cabecalho, +1 porque planilha comeca em 1
+      const item = { n };
+      CAMPOS.forEach(c => {
+        const col = st.mapa[c.id];
+        if(col) item[c.id] = String(linha[col] ?? '').trim();
+      });
+      if(!item.empresa && !item.contato){
+        invalidas.push(Object.assign(item, { motivo:'sem empresa e sem contato' }));
+        return;
+      }
+      if(item.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.email)){
+        invalidas.push(Object.assign(item, { motivo:'e-mail inválido: ' + item.email }));
+        return;
+      }
+      validas.push(item);
+    });
+    st.analise = { validas, invalidas };
+    st.passo = 3;
+    pintar();
+  }
+
+  /* ---------------- gravacao ---------------- */
+  async function gravar(){
+    if(st.enviando || !st.analise.validas.length) return;
+    st.enviando = true;
+    const btn = document.getElementById('impGravar');
+    if(btn) btn.disabled = true;
+
+    const prog = document.getElementById('impProgresso');
+    const lote = 200;                       // abaixo do teto de 500 do servidor
+    const total = st.analise.validas.length;
+    let criados = 0, pulados = [];
+
+    try{
+      for(let i = 0; i < total; i += lote){
+        const parte = st.analise.validas.slice(i, i + lote);
+        if(prog) prog.innerHTML =
+          `<div class="imp-barra"><i style="width:${Math.round(i/total*100)}%"></i></div>
+           <div style="font-size:11.5px;color:var(--tinta-3);margin-top:6px">
+             Enviando ${i + parte.length} de ${total}…</div>`;
+
+        const r = await fetch('/api/leads/importar', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ linhas: parte, funil: st.funil,
+                                 pular_duplicados: st.pularDup })
+        });
+        const d = await r.json().catch(() => ({}));
+        if(!r.ok) throw new Error(d.mensagem || ('Falha no envio (HTTP ' + r.status + ')'));
+        criados += d.criados || 0;
+        pulados = pulados.concat(d.pulados || []);
+      }
+
+      fechar();
+      const partes = [criados + (criados === 1 ? ' lead importado' : ' leads importados')];
+      if(pulados.length) partes.push(pulados.length + ' pulado' + (pulados.length!==1?'s':''));
+      toast(partes.join(' · '), criados ? 'ok' : 'erro');
+      if(typeof carregar === 'function') carregar();
+      else if(typeof carregarLeads === 'function') carregarLeads();
+    }catch(err){
+      console.error('importacao:', err);
+      if(prog) prog.innerHTML = `<div class="imp-aviso erro">
+        <span class="material-symbols-rounded">error</span>
+        <span>${esc(err.message)}${criados ? ' — <b>' + criados +
+        '</b> já entraram antes da falha.' : ''}</span></div>`;
+      if(btn) btn.disabled = false;
+    }finally{
+      st.enviando = false;
+    }
+  }
+
+  /* Planilha modelo: cabecalho exato + uma linha de exemplo. Elimina a
+     ida e volta de descobrir quais colunas o sistema entende. */
+  function modelo(){
+    const cab = CAMPOS.map(c => c.rot);
+    const ex  = ['Conexão CX','Ana Medeiros','(84) 99999-0000','ana@conexaocx.com.br',
+                 '00.000.000/0001-00','Recrutamento e Seleção','Indicação','Serviços',
+                 'Natal','RN','Jhonattan Luiz','12.500,00','18/08/2026',
+                 'Reunião pedida pelo cliente'];
+    const linhas = [cab, ex].map(l =>
+      l.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(';')).join('\r\n');
+    // BOM para o Excel abrir com acento correto
+    const blob = new Blob(['\ufeff' + linhas], { type:'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'modelo-importacao-leads.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function toast(msg, tipo){
+    if(typeof showToast === 'function'){ showToast(msg, tipo === 'erro' ? 'error' : 'success'); return; }
+    alert(msg);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('impArquivo');
+    if(inp) inp.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if(f) ler(f);
+      e.target.value = '';        // permite reescolher o mesmo arquivo
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' &&
+       document.getElementById('modalImportar').classList.contains('show')) fechar();
+  });
+
+  return { abrir, fechar, mapear, setFunil, setDup, voltar, conferir, gravar, modelo };
+})();
+</script>
+
 </body>
 </html>
