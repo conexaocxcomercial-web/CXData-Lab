@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel | core.cx</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -221,7 +220,6 @@
         </div>
         <div class="cb-abas">
             <button class="aba on" data-aba="operacao" onclick="trocarAba('operacao')">Operação</button>
-            <button class="aba" data-aba="comercial" onclick="trocarAba('comercial')">Comercial</button>
         </div>
     </div>
 
@@ -252,19 +250,9 @@
         let quadroOp = '', op = null, com = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // A sidebar aponta para ?aba=comercial; abrir direto na aba certa
-            // evita o pisca de carregar operação e trocar em seguida.
-            const alvo = new URLSearchParams(window.location.search).get('aba');
-            if(alvo === 'comercial'){
-                abaAtiva = 'comercial';
-                document.querySelectorAll('.aba').forEach(b =>
-                    b.classList.toggle('on', b.getAttribute('data-aba') === 'comercial'));
-                document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
-                document.getElementById('abaComercial').classList.add('on');
-                carregarComercial();
-            } else {
-                carregarOperacao();
-            }
+            // Só o operacional vive aqui. O comercial virou tela própria,
+            // em /dashboard/comercial.
+            carregarOperacao();
         });
 
         function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
