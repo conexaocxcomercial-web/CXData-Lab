@@ -99,6 +99,30 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .sec-linha{ flex:1; height:1px; background:var(--linha); }
 .sec-nota{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
 
+/* ===== PLACAR =====
+   Seis numeros de peso igual nao dizem onde olhar. Aqui eles se agrupam
+   por natureza -- o que anda, o que trava, o que saiu -- e so o grupo do
+   meio ganha cor quando ha algo a resolver. Cor sem motivo vira ruido; a
+   quarta vez que tudo esta vermelho, ninguem mais ve vermelho. */
+.placar{ display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-bottom:22px; }
+@media(max-width:900px){ .placar{ grid-template-columns:1fr; } }
+.pl-grupo{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    padding:14px 17px 16px; }
+.pl-rot{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--tinta-3); margin-bottom:12px; display:flex; align-items:center; gap:7px; }
+.pl-rot .material-symbols-rounded{ font-size:14px; }
+.pl-itens{ display:flex; gap:22px; }
+.pl-i{ flex:1; min-width:0; }
+.pl-n{ font-size:27px; font-weight:700; letter-spacing:-1.1px; line-height:1; }
+.pl-n.ok{ color:var(--ok); } .pl-n.aviso{ color:var(--atencao); }
+.pl-n.ruim{ color:var(--critico); } .pl-n.zero{ color:var(--linha-2); }
+.pl-l{ font-size:11.5px; color:var(--tinta-2); font-weight:500; margin-top:5px; line-height:1.35; }
+.pl-l small{ display:block; color:var(--tinta-3); font-size:10.5px; font-weight:400; margin-top:1px; }
+.pl-grupo.alerta{ background:var(--cr-fundo); box-shadow:0 0 0 1px var(--cr-borda); }
+.pl-grupo.alerta .pl-rot{ color:#8A1F1F; }
+.pl-grupo.alerta .pl-l{ color:#8A1F1F; }
+.pl-grupo.alerta .pl-l small{ color:#A85252; }
+
 .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px;
     margin-bottom:22px; }
 .kpi{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:15px 17px; }
@@ -107,6 +131,44 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .kpi-v{ font-size:24px; font-weight:700; letter-spacing:-.9px; line-height:1; }
 .kpi-v.ok{ color:var(--ok); } .kpi-v.aviso{ color:var(--atencao); } .kpi-v.ruim{ color:var(--critico); }
 .kpi-p{ font-size:11.5px; color:var(--tinta-3); font-weight:500; margin-top:6px; line-height:1.4; }
+
+/* ===== JORNADA DO CARD =====
+   Lead time E a soma de espera + producao + espera do cliente. Tres
+   numeros soltos escondem exatamente a relacao que interessa; uma barra
+   empilhada mostra a proporcao antes de qualquer leitura de numero. */
+.jor{ display:flex; height:38px; border-radius:9px; overflow:hidden; background:var(--papel-2); }
+.jor-f{ display:flex; align-items:center; justify-content:center; font-size:12px;
+    font-weight:650; color:#fff; min-width:0; transition:.25s; position:relative; }
+.jor-f span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 8px; }
+.jor-espera{ background:#B8B2E8; } .jor-ciclo{ background:var(--acao); }
+.jor-cliente{ background:#E5BE7F; color:#5C3A05; }
+.jor-leg{ display:flex; gap:20px; margin-top:14px; flex-wrap:wrap; }
+.jor-li{ display:flex; align-items:flex-start; gap:8px; min-width:0; }
+.jor-pt{ width:10px; height:10px; border-radius:3px; margin-top:4px; flex-shrink:0; }
+.jor-txt{ min-width:0; }
+.jor-v{ font-size:15px; font-weight:700; letter-spacing:-.4px; }
+.jor-r{ font-size:11px; color:var(--tinta-3); line-height:1.4; margin-top:1px; }
+.jor-total{ display:flex; align-items:baseline; gap:9px; margin-bottom:14px; }
+.jor-total b{ font-size:26px; font-weight:700; letter-spacing:-1px; }
+.jor-total span{ font-size:12px; color:var(--tinta-3); }
+
+/* ===== ANEL DE PRAZO =====
+   Uma proporcao unica pede uma figura unica. Duas barras somando 100%
+   custam duas leituras para dizer o que o anel diz numa. */
+.anel-cx{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.anel{ width:132px; height:132px; flex-shrink:0; transform:rotate(-90deg); }
+.anel-tr{ fill:none; stroke:var(--papel-2); }
+.anel-ar{ fill:none; stroke-linecap:round; transition:stroke-dasharray .5s; }
+.anel-mid{ position:relative; width:132px; height:132px; flex-shrink:0; }
+.anel-num{ position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; }
+.anel-num b{ font-size:26px; font-weight:700; letter-spacing:-1px; line-height:1; }
+.anel-num small{ font-size:10.5px; color:var(--tinta-3); margin-top:3px; }
+.anel-det{ flex:1; min-width:150px; display:flex; flex-direction:column; gap:11px; }
+.anel-l{ display:flex; align-items:center; gap:10px; font-size:12.5px; }
+.anel-p{ width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+.anel-l b{ margin-left:auto; font-weight:650; font-family:'IBM Plex Mono',monospace; }
+.anel-l small{ color:var(--tinta-3); font-size:11px; min-width:34px; text-align:right; }
 
 .cartao{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
     padding:17px 19px; }
@@ -118,24 +180,35 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 
 /* Barras horizontais. display:block obrigatório: são <span>, e span
    inline ignora height e margem vertical. */
-.bh{ display:flex; flex-direction:column; gap:9px; }
-.bh-l{ display:grid; grid-template-columns:1fr 84px; gap:11px; align-items:center; }
-.bh-c{ display:block; min-width:0; }
-.bh-t{ display:block; font-size:12.5px; font-weight:500; color:var(--tinta-2);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:5px; }
-.bh-t small{ color:var(--tinta-3); font-weight:400; }
-.bh-b{ display:block; height:7px; background:var(--papel-2); border-radius:99px; overflow:hidden; }
-.bh-f{ display:block; height:100%; border-radius:99px; background:var(--acao); transition:width .3s; }
-.bh-v{ display:block; font-size:12.5px; font-weight:650; text-align:right; }
-.bh-v small{ display:block; font-size:10.5px; font-weight:500; color:var(--tinta-3); }
+/* Rotulo e numero na MESMA linha, acima da barra: antes o numero ficava
+   na outra ponta e o olho precisava atravessar a linha inteira para
+   ligar um ao outro. */
+.bh{ display:flex; flex-direction:column; gap:13px; }
+.bh-l{ display:block; }
+.bh-c{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+.bh-t{ flex:1; min-width:0; font-size:12.5px; font-weight:550; color:var(--tinta);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bh-t small{ color:var(--tinta-3); font-weight:400; font-size:11px; }
+.bh-v{ font-size:12.5px; font-weight:650; white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace; }
+.bh-v small{ font-family:'Inter',sans-serif; font-weight:500; color:var(--tinta-3);
+    font-size:10.5px; margin-left:6px; }
+.bh-b{ display:block; height:8px; background:var(--papel-2); border-radius:99px; overflow:hidden; }
+.bh-f{ display:block; height:100%; border-radius:99px; background:var(--acao); transition:width .35s; }
+.bh-mais{ font-size:11.5px; color:var(--tinta-3); padding-top:4px; }
 
 /* Série com duas medidas por período: abertos e entregues lado a lado.
    Ver as duas juntas é o que revela se a fila cresce ou encolhe. */
-.serie{ display:flex; align-items:flex-end; justify-content:flex-start; gap:4px;
-    height:168px; padding-top:22px; }
-.sb{ flex:1 1 0; min-width:6px; max-width:64px; display:flex; flex-direction:column;
-    justify-content:flex-end; align-items:center; gap:5px; position:relative; }
-.sb-par{ display:flex; align-items:flex-end; gap:2px; width:100%; }
+/* Linhas de referencia atras das barras dao escala sem eixo numerico. */
+.serie-cx{ position:relative; }
+.serie-grade{ position:absolute; inset:0 0 26px 0; display:flex; flex-direction:column;
+    justify-content:space-between; pointer-events:none; }
+.serie-grade i{ display:block; height:1px; background:var(--papel-2); }
+.serie{ display:flex; align-items:flex-end; justify-content:flex-start; gap:5px;
+    height:196px; position:relative; }
+.sb{ flex:1 1 0; min-width:6px; max-width:58px; display:flex; flex-direction:column;
+    justify-content:flex-end; align-items:center; gap:6px; position:relative; }
+.sb-par{ display:flex; align-items:flex-end; gap:3px; width:100%; }
 .sb-b{ flex:1; border-radius:4px 4px 0 0; min-height:2px; transition:.2s; }
 .sb-b.ini{ background:#C7C2F5; } .sb-b.fim{ background:var(--acao); }
 .sb:hover .sb-b.ini{ background:#B0A9F0; } .sb:hover .sb-b.fim{ background:#5a4bd4; }
@@ -371,106 +444,83 @@ const Painel = (function(){
     const e = st.dados.entrega, c = e.contadores, t = e.tempos;
     const maxFluxo = Math.max(1, ...e.fluxo.map(x => Math.max(x.iniciados, x.finalizados)));
     const totalPrazo = e.prazo.no_prazo + e.prazo.fora;
+    const temProblema = c.atrasados > 0;
 
     document.getElementById('abaEntrega').innerHTML = `
-      <div class="kpis">
-        ${kpi('Em andamento', c.em_andamento, 'cards sendo trabalhados')}
-        ${kpi('No backlog', c.backlog, 'esperando começar')}
-        ${kpi('Atrasados', c.atrasados, 'passaram do prazo', c.atrasados ? 'ruim' : 'ok')}
-        ${kpi('Pausados', c.pausados, 'parados por decisão do cliente')}
-        ${kpi('Finalizados', c.finalizados, 'entregues no período', 'ok')}
-        ${kpi('Cancelados', c.cancelados, 'encerrados sem entrega')}
+      <div class="placar">
+        <div class="pl-grupo">
+          <div class="pl-rot"><span class="material-symbols-rounded">bolt</span>Em curso</div>
+          <div class="pl-itens">
+            ${plItem(c.em_andamento, 'Em andamento', 'sendo trabalhados')}
+            ${plItem(c.backlog, 'No backlog', 'esperando começar')}
+          </div>
+        </div>
+        <div class="pl-grupo${temProblema ? ' alerta' : ''}">
+          <div class="pl-rot"><span class="material-symbols-rounded">${
+            temProblema ? 'warning' : 'check_circle'}</span>Precisa de atenção</div>
+          <div class="pl-itens">
+            ${plItem(c.atrasados, 'Atrasados', 'passaram do prazo',
+                     c.atrasados ? 'ruim' : 'zero')}
+            ${plItem(c.pausados, 'Pausados', 'decisão do cliente',
+                     c.pausados ? 'aviso' : 'zero')}
+          </div>
+        </div>
+        <div class="pl-grupo">
+          <div class="pl-rot"><span class="material-symbols-rounded">flag</span>Saíram no período</div>
+          <div class="pl-itens">
+            ${plItem(c.finalizados, 'Entregues', 'concluídos', 'ok')}
+            ${plItem(c.cancelados, 'Cancelados', 'sem entrega', c.cancelados ? '' : 'zero')}
+          </div>
+        </div>
       </div>
 
       <div class="sec">
-        <div class="sec-cab"><span class="sec-tit">Quanto tempo leva</span>
+        <div class="sec-cab"><span class="sec-tit">A jornada de um card</span>
           <span class="sec-linha"></span>
           <span class="sec-nota">mediana, pausas descontadas</span></div>
-        <div class="tres">
-          ${cartaoNum('Lead time', dias(t.lead), 'do card nascer até ser entregue',
-                      t.base_lead, t.total_finalizados)}
-          ${cartaoNum('Cycle time', dias(t.cycle), 'do início do trabalho até a entrega',
-                      t.base_cycle, t.total_finalizados)}
-          ${cartaoNum('Espera no backlog', dias(t.espera_backlog),
-                      'parado antes de alguém começar', t.base_cycle, t.total_finalizados)}
-        </div>
-        ${t.apos_ciclo != null ? `
-          <div class="faixa info" style="margin-top:11px">
-            <span class="material-symbols-rounded">hourglass_top</span>
-            <span><b>${dias(t.apos_ciclo)} entre o fim do ciclo e a entrega.</b>
-            Em R&S isso é o cliente avaliando os candidatos — tempo que não
-            depende do time.</span>
-          </div>` : ''}
-        ${t.base_cycle < t.total_finalizados ? `
-          <div class="faixa alerta" style="margin-top:11px">
-            <span class="material-symbols-rounded">info</span>
-            <span><b>O cycle time cobre ${t.base_cycle} das ${t.total_finalizados} entregas.</b>
-            As outras foram do Backlog direto para Finalizado, sem passar por fase de
-            trabalho — não há como saber quando o trabalho começou. Não é falha de
-            dado: é como o quadro foi usado.</span>
-          </div>` : ''}
+        <div class="cartao">${jornada(t)}</div>
       </div>
 
       <div class="duas">
         <div class="cartao">
           <div class="cartao-t">Onde o trabalho está</div>
-          <div class="cartao-d">Cards abertos por fase, e há quantos dias parados ali.
-          Barra âmbar marca fase com card parado há mais de duas semanas.</div>
-          ${e.onde_esta.length ? `<div class="bh">
-            ${e.onde_esta.map(f => `
-              <div class="bh-l">
-                <span class="bh-c">
-                  <span class="bh-t">${esc(f.fase)}${f.parado_mediano != null
-                    ? `<small> · há ${n(f.parado_mediano,0)}d</small>` : ''}</span>
-                  <span class="bh-b"><span class="bh-f" style="width:${
-                    Math.max(2, f.qtd / e.onde_esta[0].qtd * 100)}%;background:${
-                    f.parado_mediano > 14 ? 'var(--atencao)' : 'var(--acao)'}"></span></span>
-                </span>
-                <span class="bh-v">${f.qtd}</span>
-              </div>`).join('')}
-          </div>` : semDados('Nenhum card aberto.')}
+          <div class="cartao-d">Cards abertos por fase. O tom âmbar marca fase com card
+          parado há mais de duas semanas.</div>
+          ${e.onde_esta.length ? listaFases(e.onde_esta) : semDados('Nenhum card aberto.')}
         </div>
 
         <div class="cartao">
           <div class="cartao-t">Entregas no prazo</div>
           <div class="cartao-d">Entre as ${totalPrazo} entregas com prazo combinado.</div>
-          ${totalPrazo ? `
-            <div class="num" style="font-size:34px;font-weight:700;letter-spacing:-1.2px;
-                 line-height:1;color:${e.prazo.pct_no_prazo >= 80 ? 'var(--ok)'
-                 : e.prazo.pct_no_prazo >= 60 ? 'var(--atencao)' : 'var(--critico)'}">
-              ${pct(e.prazo.pct_no_prazo)}</div>
-            <div class="bh" style="margin-top:15px">
-              ${barra('No prazo', e.prazo.no_prazo, totalPrazo, 'var(--ok)')}
-              ${barra('Fora do prazo', e.prazo.fora, totalPrazo, 'var(--critico)')}
-            </div>
-            ${e.prazo.sem_prazo ? `<div class="cartao-d" style="margin:14px 0 0">
-              ${e.prazo.sem_prazo} entrega${e.prazo.sem_prazo!==1?'s':''} sem prazo combinado
-              ${e.prazo.sem_prazo!==1?'ficaram':'ficou'} fora desta conta.</div>` : ''}`
-          : semDados('Nenhuma entrega com prazo combinado no período.')}
+          ${totalPrazo ? anelPrazo(e.prazo, totalPrazo)
+                       : semDados('Nenhuma entrega com prazo combinado no período.')}
         </div>
       </div>
 
       <div class="sec" style="margin-top:22px">
         <div class="sec-cab"><span class="sec-tit">Entrou e saiu</span>
           <span class="sec-linha"></span>
-          <span class="sec-nota">${st.dados.periodo.granularidade === 'dia' ? 'por dia' : 'por mês'}</span></div>
+          <span class="sec-nota">${st.dados.periodo.granularidade === 'dia' ? 'por dia' : 'por mês'}
+          · entrando mais do que saindo, a fila cresce</span></div>
         <div class="cartao">
           ${e.fluxo.length ? `
-            <div class="serie">
-              ${e.fluxo.map(x => `<div class="sb">
-                <span class="sb-dica">${rotX(x.quando)} · ${x.iniciados} aberto${
-                  x.iniciados!==1?'s':''} · ${x.finalizados} entregue${x.finalizados!==1?'s':''}</span>
-                <span class="sb-par">
-                  <span class="sb-b ini" style="height:${Math.max(2, x.iniciados/maxFluxo*114)}px"></span>
-                  <span class="sb-b fim" style="height:${Math.max(2, x.finalizados/maxFluxo*114)}px"></span>
-                </span>
-                <span class="sb-x">${rotX(x.quando)}</span>
-              </div>`).join('')}
+            <div class="serie-cx">
+              <div class="serie-grade">${'<i></i>'.repeat(5)}</div>
+              <div class="serie">
+                ${e.fluxo.map(x => `<div class="sb">
+                  <span class="sb-dica">${rotX(x.quando)} · ${x.iniciados} aberto${
+                    x.iniciados!==1?'s':''} · ${x.finalizados} entregue${x.finalizados!==1?'s':''}</span>
+                  <span class="sb-par">
+                    <span class="sb-b ini" style="height:${Math.max(3, x.iniciados/maxFluxo*152)}px"></span>
+                    <span class="sb-b fim" style="height:${Math.max(3, x.finalizados/maxFluxo*152)}px"></span>
+                  </span>
+                  <span class="sb-x">${rotX(x.quando)}</span>
+                </div>`).join('')}
+              </div>
             </div>
             <div class="leg">
               <span class="leg-i"><span class="leg-p" style="background:#C7C2F5"></span>abertos</span>
               <span class="leg-i"><span class="leg-p" style="background:var(--acao)"></span>entregues</span>
-              <span class="leg-i" style="margin-left:auto">entrando mais do que saindo, a fila cresce</span>
             </div>` : semDados('Sem movimentação no período.')}
         </div>
       </div>
@@ -480,27 +530,133 @@ const Painel = (function(){
           <span class="sec-nota">produto e interno na mesma régua</span></div>
         <div class="cartao">
           ${e.por_quadro.length ? `<div class="tb">
-            <div class="tb-h" style="grid-template-columns:1.5fr .6fr .6fr .7fr .7fr .7fr .8fr">
+            <div class="tb-h" style="grid-template-columns:1.6fr .6fr .6fr .65fr .7fr .7fr .8fr">
               <span>Quadro</span><span class="d">Abertos</span><span class="d">Atras.</span>
               <span class="d">Entreg.</span><span class="d">Lead</span><span class="d">Cycle</span>
               <span class="d">No prazo</span></div>
             ${e.por_quadro.map(q => `
-              <div class="tb-l" style="grid-template-columns:1.5fr .6fr .6fr .7fr .7fr .7fr .8fr">
+              <div class="tb-l" style="grid-template-columns:1.6fr .6fr .6fr .65fr .7fr .7fr .8fr">
                 <span class="tb-nome">${esc(q.area)}${q.horas
                   ? `<span class="tb-sub"> · ${hrs(q.horas)}</span>` : ''}</span>
                 <span class="d">${q.abertos}</span>
-                <span class="d" style="color:${q.atrasados?'var(--critico)':'var(--tinta-3)'}">${q.atrasados||'—'}</span>
+                <span class="d" style="color:${q.atrasados?'var(--critico)':'var(--linha-2)'}">${q.atrasados||'—'}</span>
                 <span class="d">${q.finalizados}</span>
                 <span class="d">${q.lead != null ? n(q.lead,1)+'d' : '—'}</span>
                 <span class="d">${q.cycle != null ? n(q.cycle,1)+'d' : '—'}</span>
-                <span class="d" style="color:${q.pct_no_prazo == null ? 'var(--tinta-3)'
-                  : q.pct_no_prazo >= 80 ? 'var(--ok)' : q.pct_no_prazo >= 60
-                  ? 'var(--atencao)' : 'var(--critico)'}">${
-                  q.pct_no_prazo != null ? pct(q.pct_no_prazo) : '—'}</span>
+                <span class="d">${q.pct_no_prazo != null ? pilPrazo(q.pct_no_prazo) : '—'}</span>
               </div>`).join('')}
           </div>` : semDados('Nenhum quadro com movimento no período.')}
         </div>
       </div>`;
+  }
+
+  function plItem(valor, rot, sub, tom){
+    return `<div class="pl-i">
+      <div class="pl-n num ${tom || (valor ? '' : 'zero')}">${n(valor)}</div>
+      <div class="pl-l">${esc(rot)}<small>${esc(sub)}</small></div></div>`;
+  }
+
+  /* A jornada como barra empilhada. Lead time É a soma das partes --
+     três números soltos escondem justamente essa relação, que é onde
+     está a decisão: reduzir fila é obra diferente de acelerar produção. */
+  function jornada(t){
+    const espera = t.espera_backlog || 0;
+    const ciclo = t.cycle || 0;
+    const pos = t.apos_ciclo || 0;
+    const soma = espera + ciclo + pos;
+    if(!soma) return semDados('Ainda não há entregas suficientes para medir o tempo.');
+    const p = v => Math.max(v ? 8 : 0, v / soma * 100);   // fatia mínima legível
+    const parcial = t.base_cycle != null && t.total_finalizados != null
+                    && t.base_cycle < t.total_finalizados;
+
+    return `
+      <div class="jor-total">
+        <b class="num">${dias(t.lead)}</b>
+        <span>do card nascer até o cliente receber</span>
+      </div>
+      <div class="jor">
+        ${espera ? `<span class="jor-f jor-espera" style="width:${p(espera)}%"
+          title="Esperando começar"><span>${n(espera,1)}d</span></span>` : ''}
+        ${ciclo ? `<span class="jor-f jor-ciclo" style="width:${p(ciclo)}%"
+          title="Produção"><span>${n(ciclo,1)}d</span></span>` : ''}
+        ${pos ? `<span class="jor-f jor-cliente" style="width:${p(pos)}%"
+          title="Com o cliente"><span>${n(pos,1)}d</span></span>` : ''}
+      </div>
+      <div class="jor-leg">
+        <span class="jor-li"><span class="jor-pt" style="background:#B8B2E8"></span>
+          <span class="jor-txt"><span class="jor-v num">${dias(espera)}</span>
+            <span class="jor-r">na fila, antes de alguém começar</span></span></span>
+        <span class="jor-li"><span class="jor-pt" style="background:var(--acao)"></span>
+          <span class="jor-txt"><span class="jor-v num">${dias(ciclo)}</span>
+            <span class="jor-r">produzindo — o cycle time</span></span></span>
+        ${pos ? `<span class="jor-li"><span class="jor-pt" style="background:#E5BE7F"></span>
+          <span class="jor-txt"><span class="jor-v num">${dias(pos)}</span>
+            <span class="jor-r">com o cliente, após a entrega do ciclo</span></span></span>` : ''}
+      </div>
+      ${parcial ? `<div class="faixa alerta" style="margin-top:16px">
+        <span class="material-symbols-rounded">info</span>
+        <span>O ciclo é medido em <b>${t.base_cycle} das ${t.total_finalizados} entregas</b>.
+        As outras foram do Backlog direto para Finalizado, sem passar por fase de
+        trabalho — não há como saber quando o trabalho começou.</span>
+      </div>` : ''}`;
+  }
+
+  /* Fases: as oito maiores, e o resto somado. Quinze linhas com barras de
+     um card viram fiapo e alongam o cartão sem informar nada. */
+  function listaFases(lista){
+    const topo = lista.slice(0, 8);
+    const resto = lista.slice(8);
+    const max = lista[0].qtd;
+    return `<div class="bh">
+      ${topo.map(f => `
+        <div class="bh-l">
+          <span class="bh-c">
+            <span class="bh-t">${esc(f.fase)}${f.parado_mediano != null
+              ? `<small> · parado há ${n(f.parado_mediano,0)}d</small>` : ''}</span>
+            <span class="bh-v">${f.qtd}</span>
+          </span>
+          <span class="bh-b"><span class="bh-f" style="width:${Math.max(3, f.qtd/max*100)}%;
+            background:${f.parado_mediano > 14 ? 'var(--atencao)' : 'var(--acao)'}"></span></span>
+        </div>`).join('')}
+      ${resto.length ? `<div class="bh-mais">mais ${resto.length} fase${resto.length!==1?'s':''}
+        com ${resto.reduce((a,b) => a + b.qtd, 0)} card${
+        resto.reduce((a,b) => a + b.qtd, 0)!==1?'s':''}</div>` : ''}
+    </div>`;
+  }
+
+  /* Anel: uma proporção única pede uma figura única. Duas barras somando
+     100% custam duas leituras para dizer o que o anel diz numa. */
+  function anelPrazo(p, total){
+    const r = 54, circ = 2 * Math.PI * r;
+    const frac = total ? p.no_prazo / total : 0;
+    const cor = p.pct_no_prazo >= 80 ? 'var(--ok)'
+              : p.pct_no_prazo >= 60 ? 'var(--atencao)' : 'var(--critico)';
+    return `
+      <div class="anel-cx">
+        <span class="anel-mid">
+          <svg class="anel" viewBox="0 0 132 132" aria-hidden="true">
+            <circle class="anel-tr" cx="66" cy="66" r="${r}" stroke-width="13"/>
+            <circle class="anel-ar" cx="66" cy="66" r="${r}" stroke-width="13"
+                    stroke="${cor}" stroke-dasharray="${(circ*frac).toFixed(1)} ${circ.toFixed(1)}"/>
+          </svg>
+          <span class="anel-num"><b class="num" style="color:${cor}">${pct(p.pct_no_prazo)}</b>
+            <small>no prazo</small></span>
+        </span>
+        <span class="anel-det">
+          <span class="anel-l"><span class="anel-p" style="background:${cor}"></span>
+            No prazo <small>${n(p.no_prazo/total*100,0)}%</small><b>${p.no_prazo}</b></span>
+          <span class="anel-l"><span class="anel-p" style="background:var(--papel-2)"></span>
+            Fora do prazo <small>${n(p.fora/total*100,0)}%</small><b>${p.fora}</b></span>
+          ${p.sem_prazo ? `<span class="cartao-d" style="margin:4px 0 0">
+            ${p.sem_prazo} entrega${p.sem_prazo!==1?'s':''} sem prazo combinado
+            ${p.sem_prazo!==1?'ficaram':'ficou'} fora desta conta.</span>` : ''}
+        </span>
+      </div>`;
+  }
+
+  function pilPrazo(v){
+    const cor = v >= 80 ? 'var(--ok)' : v >= 60 ? 'var(--atencao)' : 'var(--critico)';
+    return `<span style="color:${cor};font-weight:650">${pct(v)}</span>`;
   }
 
   /* ---------- ótica 2 · esforço ---------- */
@@ -522,7 +678,7 @@ const Painel = (function(){
           <div class="cartao-t">Horas por quadro</div>
           <div class="cartao-d">Onde o esforço da operação foi gasto.</div>
           ${s.por_area.length ? `<div class="bh">
-            ${s.por_area.map(x => barraH(x, s.por_area[0].horas, x.chave, pct(x.fatia)))}
+            ${s.por_area.map(x => barraH(x, s.por_area[0].horas, x.chave, pct(x.fatia))).join('')}
           </div>` : semDados('Nenhuma hora lançada no período.')}
         </div>
 
@@ -531,8 +687,8 @@ const Painel = (function(){
           <div class="cartao-d">Quanto esforço cada cliente consome.</div>
           ${s.por_cliente.length ? `<div class="bh">
             ${s.por_cliente.slice(0,8).map(x => barraH(x, s.por_cliente[0].horas,
-              x.chave + ` <small>· ${x.projetos} projeto${x.projetos!==1?'s':''}</small>`,
-              pct(x.fatia), true))}
+              esc(x.chave) + ` <small>· ${x.projetos} projeto${x.projetos!==1?'s':''}</small>`,
+              pct(x.fatia), true)).join('')}
           </div>` : semDados('Sem horas por cliente no período.')}
         </div>
       </div>
@@ -659,27 +815,14 @@ const Painel = (function(){
   }
   /* A cobertura anda junto do número. Uma média que descreve 40% da
      operação, lida como se fosse 100%, leva a decisão errada. */
-  function cartaoNum(rot, valor, pe, base, total){
-    const parcial = base != null && total != null && base < total;
-    return `<div class="cartao"><div class="kpi-r">${esc(rot)}</div>
-      <div class="kpi-v num" style="margin-top:6px">${esc(valor)}</div>
-      <div class="kpi-p">${esc(pe)}</div>
-      ${parcial ? `<div class="pil p-aviso" style="margin-top:9px">${base} de ${total} entregas</div>` : ''}
-    </div>`;
-  }
-  function barra(rot, v, total, cor){
-    return `<div class="bh-l">
-      <span class="bh-c"><span class="bh-t">${esc(rot)}</span>
-        <span class="bh-b"><span class="bh-f" style="width:${
-          total ? Math.max(2, v/total*100) : 0}%;background:${cor}"></span></span></span>
-      <span class="bh-v">${v}<small>${total ? n(v/total*100,0)+'%' : ''}</small></span></div>`;
-  }
   function barraH(x, maximo, rotulo, sub, jaEscapado){
     return `<div class="bh-l">
-      <span class="bh-c"><span class="bh-t">${jaEscapado ? rotulo : esc(rotulo)}</span>
-        <span class="bh-b"><span class="bh-f" style="width:${
-          Math.max(2, maximo ? x.horas/maximo*100 : 0)}%"></span></span></span>
-      <span class="bh-v">${hrs(x.horas)}<small>${sub}</small></span></div>`;
+      <span class="bh-c">
+        <span class="bh-t">${jaEscapado ? rotulo : esc(rotulo)}</span>
+        <span class="bh-v">${hrs(x.horas)}<small>${sub}</small></span>
+      </span>
+      <span class="bh-b"><span class="bh-f" style="width:${
+        Math.max(3, maximo ? x.horas/maximo*100 : 0)}%"></span></span></div>`;
   }
   function semDados(txt){
     return `<div class="vazio"><span class="material-symbols-rounded">inbox</span>
