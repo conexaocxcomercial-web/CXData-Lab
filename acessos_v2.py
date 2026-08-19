@@ -609,7 +609,10 @@ def redefinir_senha(usuario_id):
             return _erro("A senha precisa de pelo menos 8 caracteres.", codigo=400)
         _sb().table("usuarios").update({
             "senha_hash": _ctx['gerar_hash'](senha),
-            "senha": None,          # apaga o legado em texto puro
+            # String vazia, e nao None: a coluna `senha` e NOT NULL. Gravar
+            # null derrubava o update inteiro, entao redefinir senha pela
+            # tela de Acessos nunca funcionou -- devolvia erro sempre.
+            "senha": "",
         }).eq("id", usuario_id).execute()
         _auditar("senha_redefinida", "usuario", usuario_id, {})
         return jsonify({"status": "sucesso"}), 200
