@@ -1,773 +1,745 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel | core.cx</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <style>
-        :root{
-            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
-            --linha:#E4E4EA; --linha-2:#D3D3DC;
-            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
-            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
-            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
-            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
-            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
-            --sdr:#0EA5E9; --sdr-fraco:#E4F4FD; --closer:#6C5CE7; --nutri:#C2660B;
-            --azul:#1A5FA0; --azul-fraco:#E9F2FB;
-            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
-            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
-            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
-            --accent-lime:#BEF533; --accent-pink:#FF43C0;
-        }
-        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
-        button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
-        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
-              min-height:100vh; -webkit-font-smoothing:antialiased; }
-        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
-        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
-        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
-        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
-        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação | core.cx</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+:root{
+    --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+    --linha:#E4E4EA; --linha-2:#D3D3DC;
+    --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+    --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+    --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+    --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+    --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+    --azul:#1A5FA0; --azul-fraco:#E9F2FB;
+    --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+    --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+    --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
+body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+      min-height:100vh; -webkit-font-smoothing:antialiased; }
+.num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
+      letter-spacing:-.2px; }
+:focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
+@media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
-            justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
-            position:sticky; top:0; z-index:20; }
-        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
-        .top-bar-logo span{ color:var(--acao); }
+.top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+    justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+    position:sticky; top:0; z-index:20; }
+.top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+.top-bar-logo span{ color:var(--acao); }
 
-        .cabecalho{ background:var(--papel); border-bottom:1px solid var(--linha);
-            position:sticky; top:56px; z-index:15; }
-        .cb-topo{ max-width:1200px; margin:0 auto; padding:19px 22px 0; }
-        .cb-tit{ font-size:22px; font-weight:700; letter-spacing:-.7px; line-height:1.1; }
-        .cb-sub{ font-size:12.5px; color:var(--tinta-3); margin-top:4px; }
-        .cb-abas{ max-width:1200px; margin:0 auto; padding:0 22px; display:flex; gap:2px; margin-top:15px; }
-        .aba{ font-size:13px; font-weight:550; padding:10px 14px; color:var(--tinta-3); cursor:pointer;
-            border-bottom:2px solid transparent; transition:.14s; }
-        .aba:hover{ color:var(--tinta-2); }
-        .aba.on{ color:var(--tinta); font-weight:650; border-bottom-color:var(--acao); }
+/* min-height, não height: com altura fixa e flex-wrap, o que quebra sai da
+   caixa e cai sobre o conteúdo. */
+.cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; min-height:56px;
+    row-gap:8px; background:var(--papel); border-bottom:1px solid var(--linha);
+    flex-wrap:wrap; position:sticky; top:56px; z-index:15; }
+.cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+.cmd-sep{ width:1px; height:22px; background:var(--linha); }
+.cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
 
-        .wrap{ max-width:1200px; margin:0 auto; padding:18px 22px 80px; }
-        .painel-aba{ display:none; }
-        .painel-aba.on{ display:block; }
-        .loading{ text-align:center; padding:64px; color:var(--tinta-3); font-size:13px; font-weight:500; }
-        .empty{ text-align:center; padding:48px 24px; color:var(--tinta-3); background:var(--papel);
-            border-radius:var(--r-card); box-shadow:var(--e1); }
-        .empty .material-symbols-rounded{ font-size:36px; opacity:.3; display:block; margin-bottom:11px; }
-        .empty h3{ font-size:14px; font-weight:650; color:var(--tinta-2); margin-bottom:5px; }
-        .empty p{ font-size:12.5px; font-weight:500; line-height:1.6; max-width:340px; margin:0 auto; }
+.segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+.segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); cursor:pointer;
+    padding:6px 14px; border-radius:6px; white-space:nowrap; transition:.15s;
+    display:flex; align-items:center; gap:6px; }
+.segm-btn:hover{ color:var(--tinta); }
+.segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600;
+    box-shadow:0 1px 2px rgba(0,0,0,.07); }
+.segm-btn .material-symbols-rounded{ font-size:16px; }
 
-        /* ferramentas */
-        .ferr{ display:flex; align-items:center; gap:9px; margin-bottom:16px; flex-wrap:wrap; }
-        .seg{ display:flex; background:var(--papel); border-radius:var(--r-ctrl); padding:3px; gap:2px; box-shadow:var(--e1); }
-        .seg button{ font-size:12px; font-weight:550; color:var(--tinta-2); padding:6px 12px;
-            border-radius:6px; cursor:pointer; transition:.14s; }
-        .seg button:hover{ color:var(--tinta); }
-        .seg button.on{ background:var(--tinta); color:#fff; font-weight:600; }
-        .filtro{ font-size:12px; font-weight:550; padding:8px 11px; background:var(--papel);
-            border-radius:var(--r-ctrl); color:var(--tinta-2); box-shadow:var(--e1); cursor:pointer; outline:none; }
-        .ferr-dir{ margin-left:auto; font-size:11.5px; color:var(--tinta-3); font-weight:500; }
+.btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+    gap:6px; padding:8px 13px; border-radius:var(--r-ctrl); white-space:nowrap; transition:.14s; }
+.btn .material-symbols-rounded{ font-size:17px; }
+.btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+.btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+.btn-fant.on{ background:var(--acao-fraco); color:var(--acao); }
+.chip-n{ font-size:10.5px; font-weight:700; background:var(--acao); color:#fff;
+    min-width:16px; height:16px; padding:0 5px; border-radius:99px;
+    display:inline-flex; align-items:center; justify-content:center; }
 
-        /* atenção */
-        .at-bloco{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
-            overflow:hidden; margin-bottom:16px; }
-        .at-cab{ padding:12px 16px; border-bottom:1px solid var(--linha); display:flex; align-items:center; gap:9px; }
-        .at-cab .material-symbols-rounded{ font-size:17px; color:var(--critico); }
-        .at-t{ font-size:12.5px; font-weight:650; flex:1; }
-        .at-n{ font-size:11px; font-weight:600; background:var(--cr-fundo); color:var(--critico);
-            padding:3px 9px; border-radius:99px; }
-        .al{ display:grid; grid-template-columns:1fr auto; gap:13px; padding:11px 16px;
-            border-bottom:1px solid var(--papel-2); align-items:center; }
-        .al:last-child{ border:none; }
-        .al-t{ font-size:12.5px; font-weight:600; line-height:1.35; }
-        .al-s{ font-size:11px; color:var(--tinta-3); margin-top:2px; }
-        .al-v{ font-size:11.5px; font-weight:650; padding:4px 10px; border-radius:99px; white-space:nowrap; }
-        .v-cr{ background:var(--cr-fundo); color:var(--critico); }
-        .v-at{ background:var(--at-fundo); color:var(--atencao); }
-        .v-ok{ background:var(--ok-fraco); color:var(--ok); }
+.sel{ font-size:12.5px; font-weight:500; padding:7px 11px; background:var(--papel-2);
+    border-radius:var(--r-ctrl); color:var(--tinta-2); cursor:pointer; outline:none;
+    max-width:230px; }
+.datas{ display:none; align-items:center; gap:7px; }
+.datas.on{ display:flex; }
+.datas input{ font-size:12.5px; padding:7px 9px; background:var(--papel-2);
+    border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta);
+    outline:none; cursor:pointer; }
+.datas input:focus{ background:var(--papel); border-color:var(--acao);
+    box-shadow:0 0 0 3px var(--acao-fraco); }
+.datas-ate{ font-size:12px; color:var(--tinta-3); }
 
-        /* kpis */
-        .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(152px,1fr)); gap:11px; margin-bottom:16px; }
-        .kpi{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:14px 16px; }
-        .kpi-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
-            color:var(--tinta-3); margin-bottom:8px; }
-        .kpi-v{ font-size:23px; font-weight:700; letter-spacing:-.8px; line-height:1; }
-        .kpi-p{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:5px; }
+.filtros{ display:none; gap:11px; align-items:flex-end; flex-wrap:wrap;
+    padding:13px 22px; background:var(--papel); border-bottom:1px solid var(--linha); }
+.filtros.on{ display:flex; }
+.fg{ display:flex; flex-direction:column; gap:6px; min-width:150px; }
+.fg label{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--tinta-3); }
+.fg select{ font-size:12.5px; padding:8px 10px; background:var(--papel-2);
+    border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta); outline:none; }
+.fg select:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
 
-        /* gráfico */
-        .gr{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
-            overflow:hidden; margin-bottom:14px; }
-        .gr-cab{ padding:14px 17px 12px; border-bottom:1px solid var(--linha); display:flex;
-            align-items:flex-start; gap:12px; flex-wrap:wrap; }
-        .gr-t{ font-size:13.5px; font-weight:650; letter-spacing:-.2px; }
-        .gr-s{ font-size:11.5px; color:var(--tinta-3); margin-top:3px; line-height:1.45; }
-        .gr-corpo{ padding:16px 17px 17px; }
-        .dupla{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .tripla{ display:grid; grid-template-columns:1.35fr 1fr; gap:14px; }
-        @media(max-width:900px){ .dupla,.tripla{ grid-template-columns:1fr; } }
+.wrap{ max-width:1280px; margin:0 auto; padding:18px 22px 80px; }
+.otica{ display:none; }
+.otica.on{ display:block; }
 
-        /* barra horizontal */
-        .bh{ display:flex; align-items:center; gap:12px; padding:7px 0; }
-        .bh-rot{ width:130px; flex-shrink:0; font-size:12px; font-weight:550; color:var(--tinta);
-            display:flex; align-items:center; gap:8px; min-width:0; }
-        .bh-rot span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .bh-av{ width:22px; height:22px; min-width:22px; border-radius:50%; display:flex;
-            align-items:center; justify-content:center; font-size:8.5px; font-weight:650; }
-        .bh-t{ flex:1; height:21px; background:var(--papel-2); border-radius:5px; overflow:hidden;
-            display:flex; min-width:56px; }
-        .bh-t i{ display:block; height:100%; }
-        .bh-v{ width:64px; text-align:right; font-size:12px; font-weight:650; font-family:'IBM Plex Mono',monospace; }
-        @media(max-width:600px){ .bh-rot{ width:98px; } }
-        .legenda{ display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; padding-top:13px; border-top:1px solid var(--linha); }
-        .lg{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--tinta-2); font-weight:500; }
-        .lg i{ width:9px; height:9px; border-radius:2.5px; display:block; }
-        .conclusao{ font-size:12.5px; color:var(--tinta-2); line-height:1.6; margin-top:13px;
-            padding:11px 13px; background:var(--papel-2); border-radius:9px; }
-        .conclusao b{ font-weight:650; color:var(--tinta); }
+.sec{ margin-bottom:22px; }
+.sec-cab{ display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+.sec-tit{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--tinta-3); white-space:nowrap; }
+.sec-linha{ flex:1; height:1px; background:var(--linha); }
+.sec-nota{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
 
-        /* cascata */
-        .casc{ display:flex; flex-direction:column; }
-        .et{ display:grid; grid-template-columns:124px 1fr 86px; gap:14px; align-items:center; padding:2px 0; }
-        @media(max-width:760px){ .et{ grid-template-columns:100px 1fr 68px; gap:10px; } }
-        .et-rot{ display:flex; align-items:center; gap:8px; min-width:0; }
-        .et-pt{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-        .et-nome{ font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .et-tri{ height:36px; display:flex; align-items:center; }
-        .et-b{ height:36px; border-radius:6px; display:flex; align-items:center; padding:0 12px;
-            color:#fff; font-size:13px; font-weight:700; font-family:'IBM Plex Mono',monospace;
-            letter-spacing:-.3px; min-width:42px; }
-        .et-marca{ margin-left:11px; font-size:11px; color:var(--tinta-3); font-weight:500;
-            white-space:nowrap; display:flex; align-items:center; gap:5px; }
-        .et-marca .material-symbols-rounded{ font-size:13px; color:var(--linha-2); }
-        .et-val{ text-align:right; font-size:12px; font-weight:600; color:var(--tinta-2);
-            font-family:'IBM Plex Mono',monospace; }
-        .conv{ display:grid; grid-template-columns:124px 1fr 86px; gap:14px; align-items:center; padding:1px 0; }
-        @media(max-width:760px){ .conv{ grid-template-columns:100px 1fr 68px; gap:10px; } }
-        .conv-tx{ display:flex; align-items:center; gap:8px; }
-        .conv-l{ width:2px; height:15px; background:var(--linha-2); margin-left:16px; border-radius:2px; }
-        .conv-p{ font-size:11.5px; font-weight:650; padding:2px 9px; border-radius:99px; font-family:'IBM Plex Mono',monospace; }
-        .cv-bom{ background:var(--ok-fraco); color:var(--ok); }
-        .cv-medio{ background:var(--at-fundo); color:var(--atencao); }
-        .cv-ruim{ background:var(--cr-fundo); color:var(--critico); }
-        .conv-rot{ font-size:11px; color:var(--tinta-3); font-weight:500; }
-        .funil-div{ display:flex; align-items:center; gap:11px; margin:13px 0 9px; padding-top:13px;
-            border-top:1px dashed var(--linha-2); }
-        .funil-div.primeiro{ margin-top:0; padding-top:0; border-top:none; }
-        .fd-selo{ font-size:10px; font-weight:600; letter-spacing:.6px; text-transform:uppercase;
-            padding:4px 11px; border-radius:99px; }
-        .fd-txt{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
-        .resumo-linha{ display:flex; gap:1px; background:var(--linha); border-radius:10px;
-            overflow:hidden; margin-top:16px; }
-        .rl{ flex:1; background:var(--papel-2); padding:12px 14px; min-width:0; }
-        .rl-r{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
-            color:var(--tinta-3); margin-bottom:6px; }
-        .rl-v{ font-size:19px; font-weight:700; letter-spacing:-.5px; line-height:1; }
-        .rl-p{ font-size:10.5px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
-        @media(max-width:700px){ .resumo-linha{ flex-wrap:wrap; } .rl{ min-width:calc(50% - 1px); } }
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px;
+    margin-bottom:22px; }
+.kpi{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:15px 17px; }
+.kpi-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--tinta-3); margin-bottom:7px; }
+.kpi-v{ font-size:24px; font-weight:700; letter-spacing:-.9px; line-height:1; }
+.kpi-v.ok{ color:var(--ok); } .kpi-v.aviso{ color:var(--atencao); } .kpi-v.ruim{ color:var(--critico); }
+.kpi-p{ font-size:11.5px; color:var(--tinta-3); font-weight:500; margin-top:6px; line-height:1.4; }
 
-        /* matriz */
-        .mz-l{ display:grid; gap:2px; align-items:center; margin-bottom:2px; }
-        .mz-rot{ font-size:11.5px; font-weight:550; color:var(--tinta-2); padding-right:8px;
-            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .mz-c{ height:30px; border-radius:4px; display:flex; align-items:center; justify-content:center;
-            font-size:11px; font-weight:600; font-family:'IBM Plex Mono',monospace; }
-        .mz-cab{ font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
-            color:var(--tinta-3); text-align:center; padding-bottom:5px; line-height:1.2;
-            overflow:hidden; text-overflow:ellipsis; }
+.cartao{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    padding:17px 19px; }
+.cartao-t{ font-size:13px; font-weight:650; letter-spacing:-.15px; margin-bottom:3px; }
+.cartao-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.5; margin-bottom:15px; }
+.duas{ display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+.tres{ display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+@media(max-width:940px){ .duas,.tres{ grid-template-columns:1fr; } }
 
-        /* lista */
-        .li{ display:grid; grid-template-columns:1fr auto auto; gap:12px; padding:10px 0;
-            border-bottom:1px solid var(--papel-2); align-items:center; }
-        .li:last-child{ border:none; }
-        .li-t{ font-size:12.5px; font-weight:600; line-height:1.35; min-width:0; }
-        .li-s{ font-size:11px; color:var(--tinta-3); margin-top:2px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
-        .li-v{ font-size:12px; font-weight:650; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
-        .pilula{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; }
-        .p-neutro{ background:var(--papel-2); color:var(--tinta-3); }
-        .p-ok{ background:var(--ok-fraco); color:var(--ok); }
-        .p-at{ background:var(--at-fundo); color:var(--atencao); }
-        .p-cr{ background:var(--cr-fundo); color:var(--critico); }
-        .p-az{ background:var(--azul-fraco); color:var(--azul); }
+/* Barras horizontais. display:block obrigatório: são <span>, e span
+   inline ignora height e margem vertical. */
+.bh{ display:flex; flex-direction:column; gap:9px; }
+.bh-l{ display:grid; grid-template-columns:1fr 84px; gap:11px; align-items:center; }
+.bh-c{ display:block; min-width:0; }
+.bh-t{ display:block; font-size:12.5px; font-weight:500; color:var(--tinta-2);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:5px; }
+.bh-t small{ color:var(--tinta-3); font-weight:400; }
+.bh-b{ display:block; height:7px; background:var(--papel-2); border-radius:99px; overflow:hidden; }
+.bh-f{ display:block; height:100%; border-radius:99px; background:var(--acao); transition:width .3s; }
+.bh-v{ display:block; font-size:12.5px; font-weight:650; text-align:right; }
+.bh-v small{ display:block; font-size:10.5px; font-weight:500; color:var(--tinta-3); }
 
-        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
-            display:flex; flex-direction:column; gap:9px; }
-        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
-            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2);
-            display:flex; align-items:center; gap:9px; max-width:88vw; }
+/* Série com duas medidas por período: abertos e entregues lado a lado.
+   Ver as duas juntas é o que revela se a fila cresce ou encolhe. */
+.serie{ display:flex; align-items:flex-end; justify-content:flex-start; gap:4px;
+    height:168px; padding-top:22px; }
+.sb{ flex:1 1 0; min-width:6px; max-width:64px; display:flex; flex-direction:column;
+    justify-content:flex-end; align-items:center; gap:5px; position:relative; }
+.sb-par{ display:flex; align-items:flex-end; gap:2px; width:100%; }
+.sb-b{ flex:1; border-radius:4px 4px 0 0; min-height:2px; transition:.2s; }
+.sb-b.ini{ background:#C7C2F5; } .sb-b.fim{ background:var(--acao); }
+.sb:hover .sb-b.ini{ background:#B0A9F0; } .sb:hover .sb-b.fim{ background:#5a4bd4; }
+.sb-x{ font-size:9.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap; }
+.sb-dica{ position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+    background:var(--tinta); color:#fff; font-size:11px; padding:5px 9px; border-radius:7px;
+    white-space:nowrap; opacity:0; pointer-events:none; transition:.14s; margin-bottom:5px; z-index:5; }
+.sb:hover .sb-dica{ opacity:1; }
+.leg{ display:flex; gap:16px; margin-top:13px; padding-top:13px; border-top:1px solid var(--papel-2);
+    flex-wrap:wrap; }
+.leg-i{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--tinta-3); }
+.leg-p{ width:10px; height:10px; border-radius:3px; }
 
-        @media (max-width:900px){
-            .top-bar{ padding:0 16px 0 60px; }
-            .cb-topo{ padding:16px 16px 0; }
-            .cb-abas{ padding:0 16px; }
-            .wrap{ padding:14px 16px 70px; }
-            .ferr-dir{ width:100%; margin-left:0; }
-        }
-    </style>
+.tb{ border:1px solid var(--linha); border-radius:var(--r-ctrl); overflow:hidden; }
+.tb-h,.tb-l{ display:grid; gap:11px; padding:9px 13px; align-items:center; font-size:12.5px; }
+.tb-h{ background:var(--papel-2); border-bottom:1px solid var(--linha); font-size:10.5px;
+    font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--tinta-3); }
+.tb-l{ border-bottom:1px solid var(--papel-2); }
+.tb-l:last-child{ border:none; }
+.tb-l span,.tb-h span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tb-h .d,.tb-l .d{ text-align:right; }
+.tb-l .d{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.tb-nome{ font-weight:550; }
+.tb-sub{ font-size:10.5px; color:var(--tinta-3); font-weight:400; }
+
+.apr{ display:block; height:6px; background:var(--papel-2); border-radius:99px;
+    overflow:hidden; margin-top:5px; }
+.apr i{ display:block; height:100%; border-radius:99px; }
+.apr-ok i{ background:var(--ok); } .apr-baixo i{ background:var(--atencao); }
+.apr-alto i{ background:var(--azul); }
+.apr-linha{ display:flex; justify-content:space-between; font-size:11.5px; gap:8px; }
+
+.pil{ font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.p-aviso{ background:var(--at-fundo); color:var(--atencao); }
+
+.vazio{ text-align:center; padding:34px 20px; color:var(--tinta-3); }
+.vazio .material-symbols-rounded{ font-size:30px; opacity:.3; display:block; margin-bottom:9px; }
+.vazio p{ font-size:12.5px; line-height:1.6; max-width:340px; margin:0 auto; }
+
+.esq{ height:96px; background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    position:relative; overflow:hidden; }
+.esq::after{ content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
+    animation:br 1.4s infinite; }
+@keyframes br{ from{transform:translateX(-100%);} to{transform:translateX(100%);} }
+
+.faixa{ border-radius:var(--r-card); padding:13px 16px; display:flex; gap:11px;
+    align-items:flex-start; font-size:12.5px; line-height:1.55; }
+.faixa .material-symbols-rounded{ font-size:18px; flex-shrink:0; margin-top:1px; }
+.faixa.info{ background:var(--acao-fraco); color:#3C3489; }
+.faixa.alerta{ background:var(--at-fundo); color:#7A4A0C; }
+.faixa b{ font-weight:650; }
+
+@media (max-width:900px){
+    .top-bar{ padding:0 16px 0 60px; }
+    .cmd{ padding:10px 16px; }
+    .cmd-tit,.cmd-sep{ display:none; }
+    .segm{ width:100%; } .segm-btn{ flex:1; justify-content:center; padding:6px 8px; }
+    .cmd-dir{ width:100%; margin-left:0; }
+    .cmd-dir .sel{ flex:1 1 100%; max-width:none; }
+    .cmd-dir .btn{ flex:1 1 100%; justify-content:center; }
+    .filtros{ padding:13px 16px; gap:9px; }
+    .fg{ flex:1 1 46%; min-width:0; } .fg select{ width:100%; }
+    .wrap{ padding:14px 16px 70px; }
+    .kpis{ grid-template-columns:1fr 1fr; gap:9px; margin-bottom:18px; }
+    .kpi{ padding:12px 14px; } .kpi-v{ font-size:20px; }
+    .cartao{ padding:15px 16px; } .sec{ margin-bottom:18px; }
+    .duas,.tres{ gap:9px; }
+    .serie{ height:140px; } .sb-x{ font-size:9px; }
+    .bh-l{ grid-template-columns:1fr 74px; gap:9px; }
+    .faixa{ padding:11px 13px; font-size:12px; }
+    .tb-h,.tb-l{ padding:9px 11px; gap:8px; }
+}
+@media (max-width:420px){ .kpis{ grid-template-columns:1fr; } .sb-x{ display:none; } }
+</style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="top-bar-logo" onclick="window.location.href='/'">core<span>.cx</span></div>
-        {% include '_usermenu.html' %}
-    </div>
-    {% include '_sidebar.html' %}
+<div class="top-bar">
+    <div class="top-bar-logo" onclick="window.location.href='/'">core<span>.cx</span></div>
+    {% include '_usermenu.html' %}
+</div>
+{% include '_sidebar.html' %}
 
-    <div class="cabecalho">
-        <div class="cb-topo">
-            <h1 class="cb-tit">Painel</h1>
-            <p class="cb-sub" id="cbSub">Carregando...</p>
+<div class="cmd">
+    <span class="cmd-tit">Operação</span>
+    <div class="cmd-sep"></div>
+    <div class="segm" role="tablist">
+        <button class="segm-btn on" id="ot-entrega" role="tab" aria-selected="true"
+                onclick="Painel.otica('entrega')">
+            <span class="material-symbols-rounded">rocket_launch</span>Entrega</button>
+        <button class="segm-btn" id="ot-esforco" role="tab" aria-selected="false"
+                onclick="Painel.otica('esforco')">
+            <span class="material-symbols-rounded">timer</span>Esforço</button>
+        <button class="segm-btn" id="ot-time" role="tab" aria-selected="false"
+                onclick="Painel.otica('time')">
+            <span class="material-symbols-rounded">groups</span>Time</button>
+    </div>
+    <div class="cmd-dir">
+        <select class="sel" id="periodo" onchange="Painel.periodo(this.value)">
+            <option value="semana">Esta semana</option>
+            <option value="mes">Este mês</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+            <option value="180">Últimos 6 meses</option>
+            <option value="365">Últimos 12 meses</option>
+            <option value="ano">Este ano</option>
+            <option value="custom">Escolher datas…</option>
+        </select>
+        <span class="datas" id="datas">
+            <input type="date" id="dDe" onchange="Painel.datas()" aria-label="Data inicial">
+            <span class="datas-ate">até</span>
+            <input type="date" id="dAte" onchange="Painel.datas()" aria-label="Data final">
+        </span>
+        <button class="btn btn-fant" id="btnFiltros" onclick="Painel.toggleFiltros()">
+            <span class="material-symbols-rounded">tune</span>Filtros<span
+                class="chip-n" id="chipF" style="display:none">0</span></button>
+    </div>
+</div>
+
+<div class="filtros" id="gaveta">
+    <div class="fg"><label for="fQuadro">Quadro</label>
+        <select id="fQuadro" onchange="Painel.filtrar()"><option value="">Todos</option></select></div>
+    <div class="fg"><label for="fResp">Responsável</label>
+        <select id="fResp" onchange="Painel.filtrar()"><option value="">Todos</option></select></div>
+    <div class="fg"><label for="fCliente">Cliente</label>
+        <select id="fCliente" onchange="Painel.filtrar()"><option value="">Todos</option></select></div>
+    <div class="fg" style="min-width:0"><label>&nbsp;</label>
+        <button class="btn btn-fant" onclick="Painel.limpar()">Limpar</button></div>
+</div>
+
+<div class="wrap">
+    <div class="otica on" id="abaEntrega"></div>
+    <div class="otica" id="abaEsforco"></div>
+    <div class="otica" id="abaTime"></div>
+</div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   PAINEL OPERACIONAL · três óticas
+
+   ENTREGA   o trabalho anda? onde trava? sai no prazo?
+   ESFORÇO   para onde vai a hora?
+   TIME      quem está com o quê, e quanto da jornada virou hora lançada?
+
+   Vale igual para quadro de produto e interno — a diferença está nos
+   números, não na estrutura.
+
+   Uma regra atravessa a tela toda: número parcial anda junto da sua
+   cobertura. Uma média que descreve 40% da operação, lida como se fosse
+   100%, leva a decisão errada.
+   =========================================================================== */
+const Painel = (function(){
+
+  const st = { dados:null, otica:'entrega', periodo:'30', de:'', ate:'',
+               filtros:{}, carregando:false };
+
+  const esc = v => String(v ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const n = (v, casas=0) => v == null ? '—'
+    : Number(v).toLocaleString('pt-BR', {minimumFractionDigits:casas, maximumFractionDigits:casas});
+  const pct = v => v == null ? '—' : n(v,1) + '%';
+  const dias = v => v == null ? '—' : n(v,1) + (Math.abs(v) === 1 ? ' dia' : ' dias');
+  const hrs = v => v == null ? '—' : n(v,1) + 'h';
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+
+  const MES = {'01':'jan','02':'fev','03':'mar','04':'abr','05':'mai','06':'jun',
+               '07':'jul','08':'ago','09':'set','10':'out','11':'nov','12':'dez'};
+  const rotX = q => st.dados.periodo.granularidade === 'dia'
+      ? q.slice(8,10)+'/'+q.slice(5,7) : MES[q.slice(5,7)]+'/'+q.slice(2,4);
+
+  /* ---------- carga ---------- */
+  function params(){
+    const p = new URLSearchParams(); const h = new Date();
+    if(st.periodo === 'semana'){
+      // Semana começa na segunda: sábado e domingo pertencem à semana
+      // que terminou, não à que vai começar.
+      const dow = (h.getDay() + 6) % 7;
+      const seg = new Date(h); seg.setDate(h.getDate() - dow);
+      p.set('de', iso(seg)); p.set('ate', iso(h));
+    }else if(st.periodo === 'mes'){
+      p.set('de', iso(new Date(h.getFullYear(), h.getMonth(), 1))); p.set('ate', iso(h));
+    }else if(st.periodo === 'ano'){
+      p.set('de', h.getFullYear() + '-01-01'); p.set('ate', iso(h));
+    }else if(st.periodo === 'custom'){
+      p.set('de', st.de || iso(h)); p.set('ate', st.ate || iso(h));
+    }else{ p.set('dias', st.periodo); }
+    Object.entries(st.filtros).forEach(([k,v]) => { if(v) p.set(k,v); });
+    return p.toString();
+  }
+
+  async function carregar(){
+    if(st.carregando) return;
+    st.carregando = true;
+    ['abaEntrega','abaEsforco','abaTime'].forEach(id =>
+      document.getElementById(id).innerHTML =
+        '<div class="kpis">' + '<div class="esq"></div>'.repeat(4) + '</div>');
+    try{
+      const r = await fetch('/api/operacional/painel?' + params());
+      if(r.status === 401){ location.href = '/login?proximo=/dashboard'; return; }
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.mensagem || 'Falha ao carregar.');
+      st.dados = d;
+      preencherOpcoes(d.opcoes);
+      pintarEntrega(); pintarEsforco(); pintarTime();
+    }catch(e){
+      document.getElementById('abaEntrega').innerHTML = `
+        <div class="cartao"><div class="vazio">
+          <span class="material-symbols-rounded">cloud_off</span>
+          <p>${esc(e.message)}</p></div></div>`;
+    }finally{ st.carregando = false; }
+  }
+
+  // Os seletores oferecem só o que existe de fato: lista fixa envelhece
+  // e passa a filtrar por coisa que ninguém usa.
+  function preencherOpcoes(op){
+    const q = document.getElementById('fQuadro'), a = q.value;
+    q.innerHTML = '<option value="">Todos</option>' +
+      (op.quadros||[]).map(x => `<option value="${esc(x.chave)}">${esc(x.nome)}</option>`).join('');
+    q.value = a;
+    [['fResp', op.responsaveis], ['fCliente', op.clientes]].forEach(([id, lista]) => {
+      const el = document.getElementById(id), v = el.value;
+      el.innerHTML = '<option value="">Todos</option>' +
+        (lista||[]).map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+      el.value = v;
+    });
+  }
+
+  /* ---------- ótica 1 · entrega ---------- */
+  function pintarEntrega(){
+    const e = st.dados.entrega, c = e.contadores, t = e.tempos;
+    const maxFluxo = Math.max(1, ...e.fluxo.map(x => Math.max(x.iniciados, x.finalizados)));
+    const totalPrazo = e.prazo.no_prazo + e.prazo.fora;
+
+    document.getElementById('abaEntrega').innerHTML = `
+      <div class="kpis">
+        ${kpi('Em andamento', c.em_andamento, 'cards sendo trabalhados')}
+        ${kpi('No backlog', c.backlog, 'esperando começar')}
+        ${kpi('Atrasados', c.atrasados, 'passaram do prazo', c.atrasados ? 'ruim' : 'ok')}
+        ${kpi('Pausados', c.pausados, 'parados por decisão do cliente')}
+        ${kpi('Finalizados', c.finalizados, 'entregues no período', 'ok')}
+        ${kpi('Cancelados', c.cancelados, 'encerrados sem entrega')}
+      </div>
+
+      <div class="sec">
+        <div class="sec-cab"><span class="sec-tit">Quanto tempo leva</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">mediana, pausas descontadas</span></div>
+        <div class="tres">
+          ${cartaoNum('Lead time', dias(t.lead), 'do card nascer até ser entregue',
+                      t.base_lead, t.total_finalizados)}
+          ${cartaoNum('Cycle time', dias(t.cycle), 'do início do trabalho até a entrega',
+                      t.base_cycle, t.total_finalizados)}
+          ${cartaoNum('Espera no backlog', dias(t.espera_backlog),
+                      'parado antes de alguém começar', t.base_cycle, t.total_finalizados)}
         </div>
-        <div class="cb-abas">
-            <button class="aba on" data-aba="operacao" onclick="trocarAba('operacao')">Operação</button>
+        ${t.apos_ciclo != null ? `
+          <div class="faixa info" style="margin-top:11px">
+            <span class="material-symbols-rounded">hourglass_top</span>
+            <span><b>${dias(t.apos_ciclo)} entre o fim do ciclo e a entrega.</b>
+            Em R&S isso é o cliente avaliando os candidatos — tempo que não
+            depende do time.</span>
+          </div>` : ''}
+        ${t.base_cycle < t.total_finalizados ? `
+          <div class="faixa alerta" style="margin-top:11px">
+            <span class="material-symbols-rounded">info</span>
+            <span><b>O cycle time cobre ${t.base_cycle} das ${t.total_finalizados} entregas.</b>
+            As outras foram do Backlog direto para Finalizado, sem passar por fase de
+            trabalho — não há como saber quando o trabalho começou. Não é falha de
+            dado: é como o quadro foi usado.</span>
+          </div>` : ''}
+      </div>
+
+      <div class="duas">
+        <div class="cartao">
+          <div class="cartao-t">Onde o trabalho está</div>
+          <div class="cartao-d">Cards abertos por fase, e há quantos dias parados ali.
+          Barra âmbar marca fase com card parado há mais de duas semanas.</div>
+          ${e.onde_esta.length ? `<div class="bh">
+            ${e.onde_esta.map(f => `
+              <div class="bh-l">
+                <span class="bh-c">
+                  <span class="bh-t">${esc(f.fase)}${f.parado_mediano != null
+                    ? `<small> · há ${n(f.parado_mediano,0)}d</small>` : ''}</span>
+                  <span class="bh-b"><span class="bh-f" style="width:${
+                    Math.max(2, f.qtd / e.onde_esta[0].qtd * 100)}%;background:${
+                    f.parado_mediano > 14 ? 'var(--atencao)' : 'var(--acao)'}"></span></span>
+                </span>
+                <span class="bh-v">${f.qtd}</span>
+              </div>`).join('')}
+          </div>` : semDados('Nenhum card aberto.')}
         </div>
-    </div>
 
-    <div class="wrap">
-        <div class="painel-aba on" id="abaOperacao"><div class="loading">Carregando...</div></div>
-        <div class="painel-aba" id="abaComercial"><div class="loading">Carregando...</div></div>
-    </div>
+        <div class="cartao">
+          <div class="cartao-t">Entregas no prazo</div>
+          <div class="cartao-d">Entre as ${totalPrazo} entregas com prazo combinado.</div>
+          ${totalPrazo ? `
+            <div class="num" style="font-size:34px;font-weight:700;letter-spacing:-1.2px;
+                 line-height:1;color:${e.prazo.pct_no_prazo >= 80 ? 'var(--ok)'
+                 : e.prazo.pct_no_prazo >= 60 ? 'var(--atencao)' : 'var(--critico)'}">
+              ${pct(e.prazo.pct_no_prazo)}</div>
+            <div class="bh" style="margin-top:15px">
+              ${barra('No prazo', e.prazo.no_prazo, totalPrazo, 'var(--ok)')}
+              ${barra('Fora do prazo', e.prazo.fora, totalPrazo, 'var(--critico)')}
+            </div>
+            ${e.prazo.sem_prazo ? `<div class="cartao-d" style="margin:14px 0 0">
+              ${e.prazo.sem_prazo} entrega${e.prazo.sem_prazo!==1?'s':''} sem prazo combinado
+              ${e.prazo.sem_prazo!==1?'ficaram':'ficou'} fora desta conta.</div>` : ''}`
+          : semDados('Nenhuma entrega com prazo combinado no período.')}
+        </div>
+      </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+      <div class="sec" style="margin-top:22px">
+        <div class="sec-cab"><span class="sec-tit">Entrou e saiu</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">${st.dados.periodo.granularidade === 'dia' ? 'por dia' : 'por mês'}</span></div>
+        <div class="cartao">
+          ${e.fluxo.length ? `
+            <div class="serie">
+              ${e.fluxo.map(x => `<div class="sb">
+                <span class="sb-dica">${rotX(x.quando)} · ${x.iniciados} aberto${
+                  x.iniciados!==1?'s':''} · ${x.finalizados} entregue${x.finalizados!==1?'s':''}</span>
+                <span class="sb-par">
+                  <span class="sb-b ini" style="height:${Math.max(2, x.iniciados/maxFluxo*114)}px"></span>
+                  <span class="sb-b fim" style="height:${Math.max(2, x.finalizados/maxFluxo*114)}px"></span>
+                </span>
+                <span class="sb-x">${rotX(x.quando)}</span>
+              </div>`).join('')}
+            </div>
+            <div class="leg">
+              <span class="leg-i"><span class="leg-p" style="background:#C7C2F5"></span>abertos</span>
+              <span class="leg-i"><span class="leg-p" style="background:var(--acao)"></span>entregues</span>
+              <span class="leg-i" style="margin-left:auto">entrando mais do que saindo, a fila cresce</span>
+            </div>` : semDados('Sem movimentação no período.')}
+        </div>
+      </div>
 
-    <script>
-        const NIVEL = "{{ nivel_acesso }}";
-        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
-            ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
-        const QUADROS = [['recrutamento','Recrutamento e Seleção'],['rhestrategico','RH Estratégico'],
-            ['projetos','Projetos'],['rhinterno','RH Interno'],['cxdata','CX Data'],
-            ['comercial','Comercial'],['marketing','Marketing'],['financeiro','Adm/Financeiro']];
-        const ROT_PERDA = { contato_invalido:'Contato não existe', nao_localizado:'Não localizado',
-            empresa_fechada:'Empresa fechou', duplicado:'Lead duplicado',
-            nao_e_publico:'Fora do perfil', outra_perda:'Outro motivo' };
-        const ROT_OBJECAO = { preco:'Preço', momento:'Momento', sem_verba:'Sem verba',
-            concorrente:'Concorrente', nao_decisor:'Não decisor', sem_interesse:'Sem interesse',
-            sem_resposta:'Sem resposta', outra:'Outra' };
-        const CORES_FUNIL = { qualificacao:'#0EA5E9', fechamento:'#6C5CE7', nutricao:'#C2660B' };
+      <div class="sec">
+        <div class="sec-cab"><span class="sec-tit">Por quadro</span><span class="sec-linha"></span>
+          <span class="sec-nota">produto e interno na mesma régua</span></div>
+        <div class="cartao">
+          ${e.por_quadro.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.5fr .6fr .6fr .7fr .7fr .7fr .8fr">
+              <span>Quadro</span><span class="d">Abertos</span><span class="d">Atras.</span>
+              <span class="d">Entreg.</span><span class="d">Lead</span><span class="d">Cycle</span>
+              <span class="d">No prazo</span></div>
+            ${e.por_quadro.map(q => `
+              <div class="tb-l" style="grid-template-columns:1.5fr .6fr .6fr .7fr .7fr .7fr .8fr">
+                <span class="tb-nome">${esc(q.area)}${q.horas
+                  ? `<span class="tb-sub"> · ${hrs(q.horas)}</span>` : ''}</span>
+                <span class="d">${q.abertos}</span>
+                <span class="d" style="color:${q.atrasados?'var(--critico)':'var(--tinta-3)'}">${q.atrasados||'—'}</span>
+                <span class="d">${q.finalizados}</span>
+                <span class="d">${q.lead != null ? n(q.lead,1)+'d' : '—'}</span>
+                <span class="d">${q.cycle != null ? n(q.cycle,1)+'d' : '—'}</span>
+                <span class="d" style="color:${q.pct_no_prazo == null ? 'var(--tinta-3)'
+                  : q.pct_no_prazo >= 80 ? 'var(--ok)' : q.pct_no_prazo >= 60
+                  ? 'var(--atencao)' : 'var(--critico)'}">${
+                  q.pct_no_prazo != null ? pct(q.pct_no_prazo) : '—'}</span>
+              </div>`).join('')}
+          </div>` : semDados('Nenhum quadro com movimento no período.')}
+        </div>
+      </div>`;
+  }
 
-        let abaAtiva = 'operacao';
-        let diasOp = 30, diasCom = 90;       // comercial usa 90: o ciclo de venda é de ~38 dias
-        let quadroOp = '', op = null, com = null;
+  /* ---------- ótica 2 · esforço ---------- */
+  function pintarEsforco(){
+    const s = st.dados.esforco;
+    document.getElementById('abaEsforco').innerHTML = `
+      <div class="kpis">
+        ${kpi('Horas lançadas', hrs(s.total_horas), 'no período')}
+        ${kpi('Lançamentos', n(s.lancamentos), 'sessões de trabalho registradas')}
+        ${kpi('Média por sessão', hrs(s.lancamentos ? s.total_horas/s.lancamentos : 0),
+              'duração típica de um lançamento')}
+        ${kpi('Quadro que mais consome', s.por_area[0] ? s.por_area[0].chave : '—',
+              s.por_area[0] ? hrs(s.por_area[0].horas) + ' · ' + pct(s.por_area[0].fatia)
+                            : 'nenhuma hora lançada')}
+      </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Só o operacional vive aqui. O comercial virou tela própria,
-            // em /dashboard/comercial.
-            carregarOperacao();
-        });
+      <div class="duas">
+        <div class="cartao">
+          <div class="cartao-t">Horas por quadro</div>
+          <div class="cartao-d">Onde o esforço da operação foi gasto.</div>
+          ${s.por_area.length ? `<div class="bh">
+            ${s.por_area.map(x => barraH(x, s.por_area[0].horas, x.chave, pct(x.fatia)))}
+          </div>` : semDados('Nenhuma hora lançada no período.')}
+        </div>
 
-        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
-        function cor(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=n.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
-        function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
-        function moeda(v){
-            if(v === null || v === undefined) return '—';
-            if(v >= 1000) return 'R$ ' + (v/1000).toFixed(v >= 10000 ? 0 : 1).replace('.',',') + 'k';
-            return 'R$ ' + Math.round(v);
-        }
-        function pct(n){ return (n===null||n===undefined) ? '—' : n + '%'; }
+        <div class="cartao">
+          <div class="cartao-t">Horas por cliente</div>
+          <div class="cartao-d">Quanto esforço cada cliente consome.</div>
+          ${s.por_cliente.length ? `<div class="bh">
+            ${s.por_cliente.slice(0,8).map(x => barraH(x, s.por_cliente[0].horas,
+              x.chave + ` <small>· ${x.projetos} projeto${x.projetos!==1?'s':''}</small>`,
+              pct(x.fatia), true))}
+          </div>` : semDados('Sem horas por cliente no período.')}
+        </div>
+      </div>
 
-        async function motivo(resp, padrao){
-            try{ const d = await resp.json();
-                if(d && d.detalhe) return (d.mensagem||padrao)+' '+d.detalhe;
-                if(d && d.mensagem) return d.mensagem;
-                if(d && d.erro) return d.erro;
-            }catch(e){}
-            return padrao+' (HTTP '+resp.status+')';
-        }
-        function erroEm(alvo, msg){
-            document.getElementById(alvo).innerHTML =
-                `<div class="empty"><span class="material-symbols-rounded">error</span>
-                 <h3>Não foi possível carregar</h3><p>${escH(msg)}</p></div>`;
-        }
+      <div class="duas" style="margin-top:11px">
+        <div class="cartao">
+          <div class="cartao-t">Projetos que mais consumiram</div>
+          <div class="cartao-d">Os quinze com mais horas no período.</div>
+          ${s.por_projeto.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.7fr .7fr .7fr">
+              <span>Projeto</span><span class="d">Horas</span><span class="d">Sessões</span></div>
+            ${s.por_projeto.map(x => `
+              <div class="tb-l" style="grid-template-columns:1.7fr .7fr .7fr">
+                <span class="tb-nome">${esc(x.chave)}</span>
+                <span class="d">${hrs(x.horas)}</span><span class="d">${x.lancamentos}</span>
+              </div>`).join('')}
+          </div>` : semDados('Sem lançamentos no período.')}
+        </div>
 
-        function trocarAba(a){
-            abaAtiva = a;
-            document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.getAttribute('data-aba')===a));
-            document.querySelectorAll('.painel-aba').forEach(p => p.classList.remove('on'));
-            document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.add('on');
-            atualizarSub();
-            // Mantém a URL coerente com a aba: recarregar a página volta ao mesmo lugar.
-            try{
-                const u = new URL(window.location.href);
-                if(a === 'comercial') u.searchParams.set('aba','comercial');
-                else u.searchParams.delete('aba');
-                window.history.replaceState({}, '', u);
-            }catch(e){}
-            if(a === 'comercial' && !com) carregarComercial();
-        }
-        function atualizarSub(){
-            const d = abaAtiva === 'operacao' ? diasOp : diasCom;
-            const escopo = abaAtiva === 'operacao'
-                ? (quadroOp ? (QUADROS.find(q=>q[0]===quadroOp)||[])[1] : 'todos os quadros')
-                : 'três funis';
-            document.getElementById('cbSub').innerText = `Últimos ${d} dias · ${escopo}`;
-        }
+        <div class="cartao">
+          <div class="cartao-t">Tarefas que mais consumiram</div>
+          <div class="cartao-d">Total e duração média de cada tipo de atividade.</div>
+          ${s.por_tarefa.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.7fr .7fr .7fr">
+              <span>Tarefa</span><span class="d">Horas</span><span class="d">Média</span></div>
+            ${s.por_tarefa.map(x => `
+              <div class="tb-l" style="grid-template-columns:1.7fr .7fr .7fr">
+                <span class="tb-nome">${esc(x.chave)}<span class="tb-sub"> · ${x.lancamentos}x</span></span>
+                <span class="d">${hrs(x.horas)}</span><span class="d">${hrs(x.media)}</span>
+              </div>`).join('')}
+          </div>` : semDados('Sem lançamentos no período.')}
+        </div>
+      </div>
 
-        function barrasHtml(itens, chaveRot, chaveVal, corFn, sufixo){
-            const max = Math.max(1, ...itens.map(i => i[chaveVal]));
-            return itens.map(i => `<div class="bh">
-                <span class="bh-rot"><span>${escH(i[chaveRot])}</span></span>
-                <span class="bh-t"><i style="width:${Math.max(2, i[chaveVal]/max*100)}%;background:${corFn(i)}"></i></span>
-                <span class="bh-v">${i[chaveVal]}${sufixo||''}</span></div>`).join('');
-        }
+      <div class="sec" style="margin-top:22px">
+        <div class="sec-cab"><span class="sec-tit">Quanto custa cada tarefa, por quadro</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">a mesma tarefa custa diferente em cada lugar</span></div>
+        <div class="cartao">
+          ${s.por_tarefa_tipo.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1fr 1.5fr .55fr .7fr .7fr">
+              <span>Quadro</span><span>Tarefa</span><span class="d">Vezes</span>
+              <span class="d">Total</span><span class="d">Média</span></div>
+            ${s.por_tarefa_tipo.slice(0,18).map(x => `
+              <div class="tb-l" style="grid-template-columns:1fr 1.5fr .55fr .7fr .7fr">
+                <span class="tb-sub" style="font-size:12px">${esc(x.area)}</span>
+                <span class="tb-nome">${esc(x.tarefa)}</span>
+                <span class="d">${x.lancamentos}</span>
+                <span class="d">${hrs(x.horas)}</span><span class="d">${hrs(x.media)}</span>
+              </div>`).join('')}
+          </div>` : semDados('Sem lançamentos no período.')}
+        </div>
+      </div>`;
+  }
 
-        /* ==================== OPERAÇÃO ==================== */
-        async function carregarOperacao(){
-            document.getElementById('abaOperacao').innerHTML = '<div class="loading">Carregando...</div>';
-            try{
-                const u = '/api/painel/operacao?dias=' + diasOp + (quadroOp ? '&quadro='+quadroOp : '');
-                const r = await fetch(u);
-                if(!r.ok){ erroEm('abaOperacao', await motivo(r,'Erro ao carregar o painel.')); return; }
-                op = await r.json();
-            }catch(e){ erroEm('abaOperacao','Sem conexão com o servidor.'); return; }
-            renderOperacao();
-            atualizarSub();
-        }
+  /* ---------- ótica 3 · time ---------- */
+  function pintarTime(){
+    const t = st.dados.time;
+    const cadastradas = t.pessoas.filter(p => p.cadastrado);
+    const media = cadastradas.length
+      ? cadastradas.reduce((a,b) => a + (b.aproveitamento||0), 0) / cadastradas.length : null;
+    const semLancar = cadastradas.filter(p => !p.horas_lancadas).length;
 
-        function renderOperacao(){
-            const k = op.kpis, a = op.atencao;
-            const totalAtencao = (a.atrasados||[]).length + (a.vencendo||[]).length + (a.parados?1:0);
+    document.getElementById('abaTime').innerHTML = `
+      <div class="kpis">
+        ${kpi('Horas lançadas', hrs(t.horas_lancadas_total), 'somando todo o time')}
+        ${kpi('Horas esperadas', hrs(t.horas_esperadas_total),
+              t.dias_uteis + ' dias úteis no período')}
+        ${kpi('Aproveitamento médio', pct(media), 'do que se espera da jornada',
+              media == null ? '' : media >= 70 ? 'ok' : media >= 45 ? 'aviso' : 'ruim')}
+        ${kpi('Sem lançar hora', semLancar,
+              semLancar ? 'pessoas sem registro no período' : 'todo mundo lançou',
+              semLancar ? 'aviso' : 'ok')}
+      </div>
 
-            let atencao = '';
-            if(totalAtencao){
-                const itens = [];
-                (a.atrasados||[]).forEach(p => itens.push(`<div class="al">
-                    <div><div class="al-t">${escH(p.nome)}${p.empresa?' · '+escH(p.empresa):''}</div>
-                        <div class="al-s">${escH(p.area||'')} · ${escH(p.status||'')} · ${escH(p.responsavel||'sem responsável')}</div></div>
-                    <span class="al-v v-cr">${p.dias} ${p.dias===1?'dia':'dias'} atrasado</span></div>`));
-                (a.vencendo||[]).forEach(p => itens.push(`<div class="al">
-                    <div><div class="al-t">${escH(p.nome)}${p.empresa?' · '+escH(p.empresa):''}</div>
-                        <div class="al-s">${escH(p.area||'')} · ${escH(p.status||'')} · ${escH(p.responsavel||'sem responsável')}</div></div>
-                    <span class="al-v v-at">${p.dias===0?'vence hoje':'vence em '+p.dias+'d'}</span></div>`));
-                if(a.parados) itens.push(`<div class="al">
-                    <div><div class="al-t">${a.parados} ${a.parados===1?'projeto parado':'projetos parados'} há mais de 14 dias</div>
-                        <div class="al-s">sem mudança de fase no período</div></div>
-                    <span class="al-v v-at">verificar</span></div>`);
-                atencao = `<div class="at-bloco">
-                    <div class="at-cab"><span class="material-symbols-rounded">priority_high</span>
-                        <span class="at-t">Precisa de atenção</span>
-                        <span class="at-n">${itens.length} ${itens.length===1?'item':'itens'}</span></div>
-                    ${itens.join('')}</div>`;
-            } else {
-                atencao = `<div class="at-bloco"><div class="at-cab">
-                    <span class="material-symbols-rounded" style="color:var(--ok)">check_circle</span>
-                    <span class="at-t">Nada atrasado nem parado</span></div></div>`;
-            }
+      <div class="sec">
+        <div class="sec-cab"><span class="sec-tit">Jornada e aproveitamento</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">horas lançadas sobre a jornada contratada</span></div>
+        <div class="cartao">
+          ${t.pessoas.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.4fr .6fr 1.5fr .6fr .55fr .6fr">
+              <span>Pessoa</span><span class="d">Jornada</span><span>Aproveitamento</span>
+              <span class="d">Abertos</span><span class="d">Atras.</span><span class="d">Entreg.</span></div>
+            ${t.pessoas.map(p => {
+              const a = p.aproveitamento;
+              const tom = a == null ? 'apr-baixo' : a >= 110 ? 'apr-alto'
+                        : a >= 60 ? 'apr-ok' : 'apr-baixo';
+              return `<div class="tb-l" style="grid-template-columns:1.4fr .6fr 1.5fr .6fr .55fr .6fr">
+                <span class="tb-nome">${esc(p.nome)}${p.cadastrado ? ''
+                  : '<span class="tb-sub"> · fora do cadastro</span>'}</span>
+                <span class="d">${p.carga_semanal}h</span>
+                <span>
+                  <span class="apr-linha">
+                    <span class="num" style="font-weight:650">${hrs(p.horas_lancadas)}</span>
+                    <span style="color:var(--tinta-3)">${a != null ? pct(a) : '—'} de ${hrs(p.horas_esperadas)}</span>
+                  </span>
+                  <span class="apr ${tom}"><i style="width:${Math.min(100, a||0)}%"></i></span>
+                </span>
+                <span class="d">${p.projetos_abertos}</span>
+                <span class="d" style="color:${p.atrasados?'var(--critico)':'var(--tinta-3)'}">${p.atrasados||'—'}</span>
+                <span class="d">${p.finalizados}</span>
+              </div>`;
+            }).join('')}
+          </div>` : semDados('Nenhuma pessoa com atividade no período.')}
 
-            const html = `
-                <div class="ferr">
-                    <div class="seg">
-                        ${[7,30,90,365].map(d=>`<button class="${diasOp===d?'on':''}" onclick="periodoOp(${d})">${d===365?'Ano':d+' dias'}</button>`).join('')}
-                    </div>
-                    <select class="filtro" onchange="filtrarQuadro(this.value)">
-                        <option value="">Todos os quadros</option>
-                        ${QUADROS.map(([c,n])=>`<option value="${escA(c)}" ${quadroOp===c?'selected':''}>${escH(n)}</option>`).join('')}
-                    </select>
-                    <span class="ferr-dir">atualizado agora</span>
-                </div>
+          <div class="faixa info" style="margin-top:15px">
+            <span class="material-symbols-rounded">calculate</span>
+            <span><b>Como o esperado é calculado:</b> jornada semanal ÷ 5 × ${t.dias_uteis}
+            dias úteis do período. Feriados não entram na conta, então o esperado fica um
+            pouco alto e o aproveitamento, conservador.
+            <b>Aproveitamento baixo raramente significa pouco trabalho</b> — costuma
+            significar hora não lançada.</span>
+          </div>
+        </div>
+      </div>`;
+  }
 
-                ${atencao}
+  /* ---------- peças ---------- */
+  function kpi(rot, valor, pe, tom){
+    return `<div class="kpi"><div class="kpi-r">${esc(rot)}</div>
+      <div class="kpi-v num ${tom||''}">${esc(valor)}</div>
+      <div class="kpi-p">${esc(pe)}</div></div>`;
+  }
+  /* A cobertura anda junto do número. Uma média que descreve 40% da
+     operação, lida como se fosse 100%, leva a decisão errada. */
+  function cartaoNum(rot, valor, pe, base, total){
+    const parcial = base != null && total != null && base < total;
+    return `<div class="cartao"><div class="kpi-r">${esc(rot)}</div>
+      <div class="kpi-v num" style="margin-top:6px">${esc(valor)}</div>
+      <div class="kpi-p">${esc(pe)}</div>
+      ${parcial ? `<div class="pil p-aviso" style="margin-top:9px">${base} de ${total} entregas</div>` : ''}
+    </div>`;
+  }
+  function barra(rot, v, total, cor){
+    return `<div class="bh-l">
+      <span class="bh-c"><span class="bh-t">${esc(rot)}</span>
+        <span class="bh-b"><span class="bh-f" style="width:${
+          total ? Math.max(2, v/total*100) : 0}%;background:${cor}"></span></span></span>
+      <span class="bh-v">${v}<small>${total ? n(v/total*100,0)+'%' : ''}</small></span></div>`;
+  }
+  function barraH(x, maximo, rotulo, sub, jaEscapado){
+    return `<div class="bh-l">
+      <span class="bh-c"><span class="bh-t">${jaEscapado ? rotulo : esc(rotulo)}</span>
+        <span class="bh-b"><span class="bh-f" style="width:${
+          Math.max(2, maximo ? x.horas/maximo*100 : 0)}%"></span></span></span>
+      <span class="bh-v">${hrs(x.horas)}<small>${sub}</small></span></div>`;
+  }
+  function semDados(txt){
+    return `<div class="vazio"><span class="material-symbols-rounded">inbox</span>
+      <p>${esc(txt)}</p></div>`;
+  }
 
-                <div class="kpis">
-                    <div class="kpi"><div class="kpi-r">Em andamento</div><div class="kpi-v num">${k.ativos}</div>
-                        <div class="kpi-p">projetos ativos</div></div>
-                    <div class="kpi"><div class="kpi-r">Concluídos</div>
-                        <div class="kpi-v num" style="color:var(--ok)">${k.concluidos}</div>
-                        <div class="kpi-p">no período</div></div>
-                    <div class="kpi"><div class="kpi-r">Atrasados</div>
-                        <div class="kpi-v num" style="color:${k.atrasados?'var(--critico)':'var(--ok)'}">${k.atrasados}</div>
-                        <div class="kpi-p">${k.ativos ? Math.round(k.atrasados/k.ativos*100) : 0}% do total ativo</div></div>
-                    <div class="kpi"><div class="kpi-r">Tempo até concluir</div>
-                        <div class="kpi-v num">${k.mediana_conclusao}<span style="font-size:14px"> dias</span></div>
-                        <div class="kpi-p">mediana</div></div>
-                    <div class="kpi"><div class="kpi-r">Horas lançadas</div>
-                        <div class="kpi-v num">${k.horas}<span style="font-size:14px">h</span></div>
-                        <div class="kpi-p">${k.fora_plano_pct}% fora do plano</div></div>
-                </div>
+  /* ---------- navegação ---------- */
+  function otica(qual){
+    st.otica = qual;
+    ['entrega','esforco','time'].forEach(o => {
+      const b = document.getElementById('ot-'+o);
+      const p = document.getElementById('aba' + o[0].toUpperCase() + o.slice(1));
+      b.classList.toggle('on', o === qual);
+      b.setAttribute('aria-selected', o === qual);
+      p.classList.toggle('on', o === qual);
+    });
+  }
+  function periodo(v){
+    st.periodo = v;
+    document.getElementById('datas').classList.toggle('on', v === 'custom');
+    if(v === 'custom' && !st.de){
+      // Nasce com o mês corrente: campo em branco não diz o que esperar.
+      const h = new Date();
+      st.de = iso(new Date(h.getFullYear(), h.getMonth(), 1)); st.ate = iso(h);
+      document.getElementById('dDe').value = st.de;
+      document.getElementById('dAte').value = st.ate;
+    }
+    carregar();
+  }
+  function datas(){
+    const a = document.getElementById('dDe').value, b = document.getElementById('dAte').value;
+    if(!a || !b) return;
+    // Invertido é engano comum: corrige em vez de devolver vazio.
+    st.de = a <= b ? a : b; st.ate = a <= b ? b : a;
+    document.getElementById('dDe').value = st.de;
+    document.getElementById('dAte').value = st.ate;
+    st.periodo = 'custom'; carregar();
+  }
+  function toggleFiltros(){ document.getElementById('gaveta').classList.toggle('on'); }
+  function filtrar(){
+    st.filtros = {
+      quadro: document.getElementById('fQuadro').value,
+      responsavel: document.getElementById('fResp').value,
+      cliente: document.getElementById('fCliente').value,
+    };
+    const q = Object.values(st.filtros).filter(Boolean).length;
+    const chip = document.getElementById('chipF');
+    chip.style.display = q ? 'inline-flex' : 'none';
+    chip.textContent = q;
+    document.getElementById('btnFiltros').classList.toggle('on', q > 0);
+    carregar();
+  }
+  function limpar(){
+    ['fQuadro','fResp','fCliente'].forEach(i => document.getElementById(i).value = '');
+    filtrar();
+  }
 
-                <div class="tripla">
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Onde o trabalho está</div>
-                            <div class="gr-s">Projetos ativos por área, divididos pelo tempo parado na fase atual.</div></div></div>
-                        <div class="gr-corpo">
-                            ${op.areas.length ? op.areas.map(a => {
-                                const t = Math.max(1, a.total);
-                                return `<div class="bh">
-                                    <span class="bh-rot"><span>${escH(a.area)}</span></span>
-                                    <span class="bh-t">
-                                        ${a.ok ? `<i style="width:${a.ok/t*100}%;background:var(--ok)"></i>`:''}
-                                        ${a.atencao ? `<i style="width:${a.atencao/t*100}%;background:var(--at-borda)"></i>`:''}
-                                        ${a.critico ? `<i style="width:${a.critico/t*100}%;background:var(--critico)"></i>`:''}
-                                    </span>
-                                    <span class="bh-v">${a.total}</span></div>`;
-                            }).join('') : '<div class="conclusao">Nenhum projeto ativo no recorte.</div>'}
-                            <div class="legenda">
-                                <span class="lg"><i style="background:var(--ok)"></i>até 7 dias na fase</span>
-                                <span class="lg"><i style="background:var(--at-borda)"></i>8 a 14 dias</span>
-                                <span class="lg"><i style="background:var(--critico)"></i>mais de 14 dias</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Carga por pessoa</div>
-                            <div class="gr-s">Projetos ativos sob responsabilidade de cada um.</div></div></div>
-                        <div class="gr-corpo">
-                            ${op.carga.length ? op.carga.map(c => {
-                                const max = Math.max(1, ...op.carga.map(x=>x.total));
-                                const [bg,fg] = cor(c.pessoa);
-                                const cr = c.total > 8 ? 'var(--critico)' : c.total > 6 ? 'var(--atencao)' : 'var(--acao)';
-                                return `<div class="bh">
-                                    <span class="bh-rot"><span class="bh-av" style="background:${bg};color:${fg}">${iniciais(c.pessoa)}</span>
-                                        <span>${escH(c.pessoa.split(' ')[0])}</span></span>
-                                    <span class="bh-t"><i style="width:${c.total/max*100}%;background:${cr}"></i></span>
-                                    <span class="bh-v">${c.total}</span></div>`;
-                            }).join('') : '<div class="conclusao">Ninguém com projeto ativo.</div>'}
-                            <div class="legenda">
-                                <span class="lg"><i style="background:var(--critico)"></i>acima de 8</span>
-                                <span class="lg"><i style="background:var(--atencao)"></i>7 a 8</span>
-                                <span class="lg"><i style="background:var(--acao)"></i>até 6</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                ${op.gargalo && op.gargalo.length ? `<div class="gr">
-                    <div class="gr-cab"><div>
-                        <div class="gr-t">Tempo médio em cada fase</div>
-                        <div class="gr-s">Mediana de dias que os projetos passam em cada fase. Quanto mais escuro, mais tempo.</div></div></div>
-                    <div class="gr-corpo">
-                        <div class="mz-l" style="grid-template-columns:repeat(${op.gargalo.length},1fr)">
-                            ${op.gargalo.map(g=>`<div class="mz-cab">${escH(g.fase)}</div>`).join('')}
-                        </div>
-                        <div class="mz-l" style="grid-template-columns:repeat(${op.gargalo.length},1fr)">
-                            ${op.gargalo.map(g => {
-                                const max = Math.max(1, ...op.gargalo.map(x=>x.dias));
-                                const int = g.dias/max;
-                                const bg = int > .66 ? '#FBE3E3' : int > .33 ? '#FFF0D6' : '#E6F7F0';
-                                const fg = int > .66 ? '#8A1F1F' : int > .33 ? '#7A4A0C' : '#0A5C42';
-                                return `<div class="mz-c" style="background:${bg};color:${fg}" title="${g.amostra} projetos">${g.dias}d</div>`;
-                            }).join('')}
-                        </div>
-                        <div class="conclusao">
-                            <b>${escH(op.gargalo[0].fase)}</b> concentra ${op.gargalo[0].dias} dias —
-                            é onde o ganho de prazo está.
-                        </div>
-                    </div>
-                </div>` : `<div class="gr">
-                    <div class="gr-cab"><div><div class="gr-t">Tempo médio em cada fase</div>
-                        <div class="gr-s">Ainda sem histórico suficiente.</div></div></div>
-                    <div class="gr-corpo"><div class="conclusao">
-                        O histórico de fases começa a ser gravado a partir de agora. Este gráfico
-                        aparece quando houver projetos que mudaram de fase pelo menos uma vez.</div></div>
-                </div>`}
-
-                <div class="dupla">
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Em que gastamos o tempo</div>
-                            <div class="gr-s">Horas lançadas por área no período.</div></div></div>
-                        <div class="gr-corpo">
-                            ${op.horas_area.length ? barrasHtml(op.horas_area,'area','horas',()=>'var(--acao)','h')
-                                : '<div class="conclusao">Nenhuma hora lançada no período.</div>'}
-                            ${op.fora_plano_horas ? `<div class="conclusao">
-                                <b>${op.fora_plano_horas}h</b> foram em trabalho não planejado —
-                                ${k.fora_plano_pct}% do total.</div>` : ''}
-                        </div>
-                    </div>
-
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Clientes com mais trabalho aberto</div>
-                            <div class="gr-s">Volume por cliente e prazo mais próximo.</div></div></div>
-                        <div class="gr-corpo">
-                            ${op.clientes.length ? op.clientes.map(c => {
-                                const prazo = c.prazo ? diasAte(c.prazo) : null;
-                                const cls = prazo === null ? 'p-neutro' : prazo < 0 ? 'p-cr' : prazo <= 7 ? 'p-at' : 'p-ok';
-                                const txt = prazo === null ? 'sem prazo' : prazo < 0 ? `${-prazo}d atrasado`
-                                    : prazo === 0 ? 'vence hoje' : `vence em ${prazo}d`;
-                                return `<div class="li">
-                                    <div><div class="li-t">${escH(c.cliente)}</div>
-                                        <div class="li-s">${c.areas.slice(0,2).map(a=>`<span class="pilula p-az">${escH(a)}</span>`).join('')}
-                                            ${c.projetos} ${c.projetos===1?'projeto':'projetos'}</div></div>
-                                    <span class="li-v"></span><span class="pilula ${cls}">${txt}</span></div>`;
-                            }).join('') : '<div class="conclusao">Nenhum cliente com trabalho aberto.</div>'}
-                        </div>
-                    </div>
-                </div>`;
-            document.getElementById('abaOperacao').innerHTML = html;
-        }
-
-        function diasAte(dataStr){
-            const hoje = new Date(); hoje.setHours(0,0,0,0);
-            const d = new Date(dataStr + 'T00:00:00');
-            return Math.round((d - hoje) / 86400000);
-        }
-        function periodoOp(d){ diasOp = d; carregarOperacao(); }
-        function filtrarQuadro(q){ quadroOp = q; carregarOperacao(); }
-
-        /* ==================== COMERCIAL ==================== */
-        async function carregarComercial(){
-            document.getElementById('abaComercial').innerHTML = '<div class="loading">Carregando...</div>';
-            try{
-                const r = await fetch('/api/painel/comercial?dias=' + diasCom);
-                if(!r.ok){ erroEm('abaComercial', await motivo(r,'Erro ao carregar o painel.')); return; }
-                com = await r.json();
-            }catch(e){ erroEm('abaComercial','Sem conexão com o servidor.'); return; }
-            renderComercial();
-            atualizarSub();
-        }
-
-        function classeConv(v){ return v >= 65 ? 'cv-bom' : v >= 55 ? 'cv-medio' : 'cv-ruim'; }
-
-        function renderComercial(){
-            const k = com.kpis, a = com.atencao, vv = com.ver_valor;
-            const casc = com.cascata || [];
-            const topo = casc.length ? casc[0].qtd : 0;
-            const fecha = casc.length ? casc[casc.length-1].qtd : 0;
-
-            const itensAt = [];
-            if(a.contato_hoje) itensAt.push(`<div class="al">
-                <div><div class="al-t">${a.contato_hoje} ${a.contato_hoje===1?'lead com contato marcado':'leads com contato marcado'} para hoje ou antes</div>
-                    <div class="al-s">aguardando retorno agendado</div></div>
-                <span class="al-v v-cr">hoje</span></div>`);
-            if(a.parados) itensAt.push(`<div class="al">
-                <div><div class="al-t">${a.parados} ${a.parados===1?'lead parado':'leads parados'} há mais de 14 dias</div>
-                    <div class="al-s">sem movimentação no funil</div></div>
-                <span class="al-v v-cr">${vv && com.valor_parado ? moeda(com.valor_parado)+' parados' : 'verificar'}</span></div>`);
-            if(a.sem_contato) itensAt.push(`<div class="al">
-                <div><div class="al-t">${a.sem_contato} em Fechamento sem próximo contato agendado</div>
-                    <div class="al-s">risco de esfriar sem ninguém perceber</div></div>
-                <span class="al-v v-at">agendar</span></div>`);
-
-            const html = `
-                <div class="ferr">
-                    <div class="seg">
-                        ${[30,90,180,365].map(d=>`<button class="${diasCom===d?'on':''}" onclick="periodoCom(${d})">${d===365?'Ano':d+' dias'}</button>`).join('')}
-                    </div>
-                    <span class="ferr-dir">${diasCom < 90 ? 'recorte curto pode distorcer a conversão para cima' : 'atualizado agora'}</span>
-                </div>
-
-                ${itensAt.length ? `<div class="at-bloco">
-                    <div class="at-cab"><span class="material-symbols-rounded">priority_high</span>
-                        <span class="at-t">Precisa de atenção</span>
-                        <span class="at-n">${itensAt.length} ${itensAt.length===1?'item':'itens'}</span></div>
-                    ${itensAt.join('')}</div>`
-                : `<div class="at-bloco"><div class="at-cab">
-                    <span class="material-symbols-rounded" style="color:var(--ok)">check_circle</span>
-                    <span class="at-t">Nenhum lead esperando ou parado</span></div></div>`}
-
-                <div class="kpis">
-                    ${vv ? `<div class="kpi"><div class="kpi-r">No funil</div>
-                        <div class="kpi-v num">${moeda(k.valor_funil)}</div>
-                        <div class="kpi-p">${k.ativos} leads ativos</div></div>` :
-                    `<div class="kpi"><div class="kpi-r">No funil</div><div class="kpi-v num">${k.ativos}</div>
-                        <div class="kpi-p">leads ativos</div></div>`}
-                    <div class="kpi"><div class="kpi-r">Ganhos</div>
-                        <div class="kpi-v num" style="color:var(--ok)">${vv ? moeda(k.valor_ganho) : k.ganhos}</div>
-                        <div class="kpi-p">${k.ganhos} ${k.ganhos===1?'contrato':'contratos'} no período</div></div>
-                    <div class="kpi"><div class="kpi-r">Conversão total</div>
-                        <div class="kpi-v num">${topo ? (fecha/topo*100).toFixed(1) : 0}%</div>
-                        <div class="kpi-p">da prospecção ao fechamento</div></div>
-                    <div class="kpi"><div class="kpi-r">Ciclo de venda</div>
-                        <div class="kpi-v num">${k.ciclo}<span style="font-size:14px"> dias</span></div>
-                        <div class="kpi-p">mediana até fechar</div></div>
-                    ${vv ? `<div class="kpi"><div class="kpi-r">Ticket médio</div>
-                        <div class="kpi-v num">${moeda(k.ticket)}</div>
-                        <div class="kpi-p">dos ganhos no período</div></div>` : ''}
-                    <div class="kpi"><div class="kpi-r">Perdidos</div>
-                        <div class="kpi-v num" style="color:${k.perdidos?'var(--critico)':'var(--tinta-3)'}">${k.perdidos}</div>
-                        <div class="kpi-p">${vv && k.valor_perdido ? moeda(k.valor_perdido)+' não fechados' : 'no período'}</div></div>
-                </div>
-
-                <div class="gr">
-                    <div class="gr-cab"><div>
-                        <div class="gr-t">Leads que passaram por cada etapa</div>
-                        <div class="gr-s">Últimos ${diasCom} dias · inclui quem já saiu da etapa. É daqui que sai a taxa de conversão.</div></div></div>
-                    <div class="gr-corpo">
-                        ${casc.length ? `<div class="casc">${cascataHtml(casc, topo)}</div>
-                        <div class="resumo-linha">
-                            <div class="rl"><div class="rl-r">Entraram</div><div class="rl-v num">${topo}</div>
-                                <div class="rl-p">no topo do funil</div></div>
-                            <div class="rl"><div class="rl-r">Viraram oportunidade</div>
-                                <div class="rl-v num" style="color:var(--sdr)">${casc[2] ? casc[2].qtd : 0}</div>
-                                <div class="rl-p">${topo ? Math.round((casc[2]?casc[2].qtd:0)/topo*100) : 0}% da prospecção</div></div>
-                            <div class="rl"><div class="rl-r">Fecharam</div>
-                                <div class="rl-v num" style="color:var(--ok)">${fecha}</div>
-                                <div class="rl-p">${casc[3] && casc[3].qtd ? Math.round(fecha/casc[3].qtd*100) : 0}% das oportunidades</div></div>
-                            <div class="rl"><div class="rl-r">Conversão total</div>
-                                <div class="rl-v num">${topo ? (fecha/topo*100).toFixed(1) : 0}%</div>
-                                <div class="rl-p">de ponta a ponta</div></div>
-                        </div>
-                        ${conclusaoCascata(casc)}
-                        <div class="legenda">
-                            <span class="lg"><i style="background:var(--ok)"></i>acima de 65% — saudável</span>
-                            <span class="lg"><i style="background:var(--at-borda)"></i>55% a 65% — atenção</span>
-                            <span class="lg"><i style="background:var(--critico)"></i>abaixo de 55% — investigar</span>
-                        </div>` : '<div class="conclusao">Sem movimentação de leads no período.</div>'}
-                    </div>
-                </div>
-
-                <div class="dupla">
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Para onde foram os que saíram</div>
-                            <div class="gr-s">Destino dos leads que não fecharam.</div></div></div>
-                        <div class="gr-corpo">
-                            <div class="bh"><span class="bh-rot"><span>Nutrição</span></span>
-                                <span class="bh-t"><i style="width:${barra(com.destino.nutricao, com.destino)}%;background:var(--nutri)"></i></span>
-                                <span class="bh-v">${com.destino.nutricao}</span></div>
-                            <div class="bh"><span class="bh-rot"><span>Perdido</span></span>
-                                <span class="bh-t"><i style="width:${barra(com.destino.perdido, com.destino)}%;background:var(--critico)"></i></span>
-                                <span class="bh-v">${com.destino.perdido}</span></div>
-                            <div class="bh"><span class="bh-rot"><span>Ainda ativos</span></span>
-                                <span class="bh-t"><i style="width:${barra(com.destino.ativos, com.destino)}%;background:var(--acao)"></i></span>
-                                <span class="bh-v">${com.destino.ativos}</span></div>
-                            ${com.destino.nutricao ? `<div class="conclusao">
-                                <b>${com.destino.nutricao} foram para nutrição</b>, não se perderam —
-                                ${vv && com.valor_nutricao ? moeda(com.valor_nutricao)+' adormecidos' : 'são retorno adiado'}.</div>` : ''}
-                        </div>
-                    </div>
-
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Por que não avançam</div>
-                            <div class="gr-s">Objeções de quem foi para nutrição — houve conversa e ele disse não agora.</div></div></div>
-                        <div class="gr-corpo">
-                            ${com.objecoes.length ? com.objecoes.map(o => {
-                                const max = Math.max(1, ...com.objecoes.map(x=>x.qtd));
-                                const cr = o.qtd/max > .66 ? 'var(--critico)' : o.qtd/max > .33 ? 'var(--atencao)' : 'var(--tinta-3)';
-                                return `<div class="bh">
-                                    <span class="bh-rot"><span>${escH(ROT_OBJECAO[o.objecao]||o.objecao)}</span></span>
-                                    <span class="bh-t"><i style="width:${o.qtd/max*100}%;background:${cr}"></i></span>
-                                    <span class="bh-v">${o.qtd}</span></div>`;
-                            }).join('') : '<div class="conclusao">Nenhuma objeção registrada no período.</div>'}
-
-                            ${(com.perdas && com.perdas.length) ? `
-                            <div class="legenda" style="margin-top:16px">
-                                <span class="lg" style="color:var(--tinta-3)">Perdidos por falta de contato</span>
-                            </div>
-                            ${com.perdas.map(p => {
-                                const max = Math.max(1, ...com.perdas.map(x=>x.qtd));
-                                return `<div class="bh">
-                                    <span class="bh-rot"><span>${escH(ROT_PERDA[p.motivo]||p.motivo)}</span></span>
-                                    <span class="bh-t"><i style="width:${p.qtd/max*100}%;background:var(--linha-2)"></i></span>
-                                    <span class="bh-v">${p.qtd}</span></div>`;
-                            }).join('')}` : ''}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dupla">
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">De onde vêm os que fecham</div>
-                            <div class="gr-s">Origem dos leads, com quantos viraram contrato.</div></div></div>
-                        <div class="gr-corpo">
-                            ${com.origens.length ? com.origens.map(o => {
-                                const cls = o.taxa >= 15 ? 'p-ok' : o.taxa > 0 ? 'p-neutro' : 'p-cr';
-                                return `<div class="li">
-                                    <div><div class="li-t">${escH(o.origem)}</div>
-                                        <div class="li-s">${o.total} leads · ${o.ganhos} ${o.ganhos===1?'ganho':'ganhos'}</div></div>
-                                    <span class="li-v" style="color:${o.taxa?'':'var(--critico)'}">${o.taxa}%</span>
-                                    <span class="pilula ${cls}">${o.taxa >= 15 ? 'melhor conversão' : o.taxa > 0 ? '—' : 'rever'}</span></div>`;
-                            }).join('') : '<div class="conclusao">Nenhum lead com origem informada.</div>'}
-                        </div>
-                    </div>
-
-                    <div class="gr">
-                        <div class="gr-cab"><div>
-                            <div class="gr-t">Por pessoa</div>
-                            <div class="gr-s">Leads ativos${vv?', valor sob responsabilidade':''} e ganhos no período.</div></div></div>
-                        <div class="gr-corpo">
-                            ${com.equipe.length ? com.equipe.map(p => {
-                                const [bg,fg] = cor(p.pessoa);
-                                return `<div class="li">
-                                    <div><div class="li-t" style="display:flex;align-items:center;gap:8px">
-                                        <span class="bh-av" style="background:${bg};color:${fg}">${iniciais(p.pessoa)}</span>${escH(p.pessoa)}</div>
-                                        <div class="li-s">${p.leads} ativos · ${p.ganhos} ${p.ganhos===1?'ganho':'ganhos'}</div></div>
-                                    <span class="li-v">${vv ? moeda(p.valor) : ''}</span>
-                                    <span class="pilula p-neutro">${p.leads?Math.round(p.ganhos/(p.leads+p.ganhos)*100):0}% conv.</span></div>`;
-                            }).join('') : '<div class="conclusao">Nenhum lead atribuído.</div>'}
-                        </div>
-                    </div>
-                </div>`;
-            document.getElementById('abaComercial').innerHTML = html;
-        }
-
-        function barra(v, destino){
-            const max = Math.max(1, destino.nutricao, destino.perdido, destino.ativos);
-            return Math.max(2, v/max*100);
-        }
-
-        function cascataHtml(casc, topo){
-            let html = '', funilAnterior = null;
-            casc.forEach((e, i) => {
-                if(e.funil !== funilAnterior){
-                    const nome = e.funil === 'qualificacao' ? 'Qualificação' : 'Fechamento';
-                    const desc = e.funil === 'qualificacao'
-                        ? 'SDR · da prospecção até virar oportunidade'
-                        : 'Closer · da reunião até o contrato';
-                    const c = CORES_FUNIL[e.funil] || 'var(--acao)';
-                    html += `<div class="funil-div ${i===0?'primeiro':''}">
-                        <span class="fd-selo" style="background:${c}1A;color:${c}">${nome}</span>
-                        <span class="fd-txt">${desc}</span></div>`;
-                    funilAnterior = e.funil;
-                }
-                const ehFim = (e.etapa === 'Ganho' || e.etapa === 'Fechamento');
-                const c = ehFim ? '#0E9F6E' : degrade(i, casc.length);
-                const larg = topo ? Math.max(4, e.qtd/topo*100) : 4;
-                html += `<div class="et">
-                    <span class="et-rot"><span class="et-pt" style="background:${c}"></span>
-                        <span class="et-nome">${escH(e.etapa)}</span></span>
-                    <span class="et-tri"><span class="et-b" style="width:${larg}%;background:${c}">${e.qtd}</span>
-                        ${e.etapa==='Ganho' ? '<span class="et-marca"><span class="material-symbols-rounded">arrow_forward</span>viram oportunidade</span>' : ''}
-                        ${e.etapa==='Fechamento' ? '<span class="et-marca"><span class="material-symbols-rounded">check</span>contratos assinados</span>' : ''}
-                    </span>
-                    <span class="et-val" ${ehFim && e.etapa==='Fechamento'?'style="color:var(--ok);font-weight:700"':''}>${e.pct_topo}%</span>
-                </div>`;
-                if(e.conversao !== null && e.conversao !== undefined && i < casc.length-1){
-                    const proxFunil = casc[i+1].funil !== e.funil;
-                    if(!proxFunil){
-                        html += `<div class="conv"><span></span>
-                            <span class="conv-tx"><span class="conv-l"></span>
-                                <span class="conv-p ${classeConv(e.conversao)}">${e.conversao}%</span>
-                                <span class="conv-rot">avançaram${e.sairam ? ' · '+e.sairam+' saíram aqui' : ''}</span></span>
-                            <span></span></div>`;
-                    }
-                }
-            });
-            return html;
-        }
-
-        function degrade(i, total){
-            const paleta = ['#0EA5E9','#2299DB','#3B8DE0','#5478E4','#6C5CE7','#8B5CF6'];
-            return paleta[Math.min(i, paleta.length-1)];
-        }
-
-        function conclusaoCascata(casc){
-            const comConv = casc.filter(e => e.conversao !== null && e.conversao !== undefined && e.sairam);
-            if(!comConv.length) return '';
-            const maiorPerda = comConv.reduce((a,b) => b.sairam > a.sairam ? b : a);
-            const piorTaxa = comConv.reduce((a,b) => b.conversao < a.conversao ? b : a);
-            if(maiorPerda.etapa === piorTaxa.etapa)
-                return `<div class="conclusao"><b>${escH(maiorPerda.etapa)}</b> é o maior gargalo:
-                    ${maiorPerda.sairam} leads saem ali, e só ${maiorPerda.conversao}% avançam.</div>`;
-            return `<div class="conclusao">A maior perda em volume é em <b>${escH(maiorPerda.etapa)}</b>,
-                com ${maiorPerda.sairam} leads. Mas a pior taxa é em <b>${escH(piorTaxa.etapa)}</b>,
-                onde só ${piorTaxa.conversao}% avançam — e cada lead que cai ali já custou mais esforço.</div>`;
-        }
-
-        function periodoCom(d){ diasCom = d; carregarComercial(); }
-
-        function showToast(msg,tipo){
-            const c=document.getElementById('toastContainer');
-            const t=document.createElement('div'); t.className='toast';
-            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${escH(msg)}`;
-            c.appendChild(t); setTimeout(()=>t.remove(),4000);
-        }
-    </script>
+  document.addEventListener('DOMContentLoaded', carregar);
+  return { otica, periodo, datas, toggleFiltros, filtrar, limpar };
+})();
+</script>
 </body>
 </html>
