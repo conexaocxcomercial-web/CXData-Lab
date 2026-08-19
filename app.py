@@ -4359,6 +4359,356 @@ def _mediana(vals):
     return round(v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2, 1)
 
 
+# ============================================================================
+# PAINEL OPERACIONAL
+#
+# Tres oticas, porque quinze indicadores numa tela so ninguem le:
+#
+#   ENTREGA   O trabalho anda? Quantos abertos, atrasados, onde travam,
+#             quanto tempo levam, quantos saem no prazo.
+#
+#   ESFORCO   Para onde vai a hora? Por quadro, projeto, tarefa e cliente.
+#
+#   TIME      Quem esta com o que, e quanto da jornada virou hora lancada.
+#
+# Vale para quadro de produto e interno igualmente -- a diferenca esta nos
+# numeros, nao na estrutura.
+# ============================================================================
+
+def _horas(seg):
+    return round((seg or 0) / 3600.0, 1)
+
+
+def _dias_uteis(de, ate):
+    """Dias uteis entre duas datas ISO, inclusive.
+
+    Sem calendario de feriados: o aproveitamento sai um pouco otimista em
+    meses com feriado. Melhor um numero levemente conservador e explicado
+    do que uma tabela de feriados que ninguem mantem.
+    """
+    from datetime import date, timedelta
+    d0 = date.fromisoformat(de)
+    d1 = date.fromisoformat(ate)
+    n, cur = 0, d0
+    while cur <= d1:
+        if cur.weekday() < 5:
+            n += 1
+        cur += timedelta(days=1)
+    return n
+
+
+def _paginar(tabela, colunas, filtro=None, teto=8000):
+    """Le tabela grande em blocos. O PostgREST devolve no maximo 1000 por
+    requisicao -- sem isto, `time_logs` viria truncada em silencio e o
+    painel mostraria menos horas do que existem."""
+    saida, off = [], 0
+    while off < teto:
+        q = supabase.table(tabela).select(colunas)
+        if filtro:
+            q = filtro(q)
+        r = q.range(off, off + 999).execute()
+        lote = r.data or []
+        saida.extend(lote)
+        if len(lote) < 1000:
+            break
+        off += 1000
+    return saida
+
+
+@app.route('/api/operacional/painel', methods=['GET'])
+def api_operacional_painel():
+    """Alimenta as tres oticas do painel operacional numa chamada."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    try:
+        de, ate, granul = _periodo_comercial()      # mesmo recorte do comercial
+        dias_uteis = _dias_uteis(de, ate)
+
+        projetos = _paginar("projetos", "*", lambda q: q.is_("excluido_em", "null"))
+        projetos = filtrar_projetos_permitidos(projetos)
+
+        # --- filtros da tela ---
+        f_quadro = request.args.get('quadro') or ''
+        f_resp = request.args.get('responsavel') or ''
+        f_cliente = request.args.get('cliente') or ''
+        area_do_quadro = QUADRO_AREA.get(f_quadro) if f_quadro else None
+        if area_do_quadro:
+            projetos = [p for p in projetos if p.get('area') == area_do_quadro]
+        if f_resp:
+            projetos = [p for p in projetos if (p.get('responsavel') or '') == f_resp]
+        if f_cliente:
+            projetos = [p for p in projetos if (p.get('empresa') or '') == f_cliente]
+
+        por_id = {str(p['id']): p for p in projetos}
+
+        logs = _paginar("time_logs",
+                        "projeto_id, colaborador, descricao_tarefa, tempo_segundos, "
+                        "criado_em, data_inicio_atividade")
+        # Hora lancada pertence ao dia em que o trabalho aconteceu, nao ao
+        # dia em que alguem clicou em parar.
+        def quando_log(l):
+            return str(l.get('data_inicio_atividade') or l.get('criado_em') or '')[:10]
+        logs = [l for l in logs
+                if str(l.get('projeto_id')) in por_id and de <= quando_log(l) <= ate]
+
+        dentro = lambda iso: bool(iso) and de <= str(iso)[:10] <= ate
+        ativo = lambda p: p.get('status') not in ('Finalizado', 'Cancelado')
+        hoje = datetime.now(timezone.utc).date().isoformat()
+
+        # ============================================================
+        # OTICA 1 · ENTREGA
+        # ============================================================
+        finalizados = [p for p in projetos
+                       if p.get('status') == 'Finalizado' and dentro(p.get('data_conclusao'))]
+        cancelados = [p for p in projetos
+                      if p.get('status') == 'Cancelado' and dentro(p.get('data_status_atual'))]
+        iniciados = [p for p in projetos if dentro(p.get('criado_em'))]
+
+        def atrasado(p):
+            if not p.get('prazo_data') or not ativo(p):
+                return False
+            return str(p['prazo_data'])[:10] < hoje
+
+        contadores = {
+            "em_andamento": sum(1 for p in projetos
+                                if ativo(p) and p.get('status') not in ('Backlog', 'Pausado')),
+            "backlog": sum(1 for p in projetos if p.get('status') == 'Backlog'),
+            "pausados": sum(1 for p in projetos if p.get('status') == 'Pausado'),
+            "atrasados": sum(1 for p in projetos if atrasado(p)),
+            "finalizados": len(finalizados),
+            "cancelados": len(cancelados),
+        }
+
+        # Onde o trabalho esta parado agora, e ha quanto tempo.
+        onde = {}
+        for p in projetos:
+            if not ativo(p):
+                continue
+            f = p.get('status') or 'sem fase'
+            it = onde.setdefault(f, {"fase": f, "qtd": 0, "dias": []})
+            it["qtd"] += 1
+            d = _dias_entre(p.get('data_status_atual'), datetime.now(timezone.utc).isoformat())
+            if d is not None:
+                it["dias"].append(d)
+        onde_esta = sorted(
+            ({"fase": v["fase"], "qtd": v["qtd"], "parado_mediano": _mediana(v["dias"])}
+             for v in onde.values()),
+            key=lambda x: -x["qtd"])
+
+        # Prazo: so entre os finalizados com prazo combinado.
+        no_prazo = fora = sem_prazo = 0
+        for p in finalizados:
+            if not p.get('prazo_data'):
+                sem_prazo += 1
+            elif str(p['data_conclusao'])[:10] <= str(p['prazo_data'])[:10]:
+                no_prazo += 1
+            else:
+                fora += 1
+        com_prazo = no_prazo + fora
+
+        # Lead e cycle time. Pausa nao conta em nenhum dos dois.
+        leads, cycles, esperas, decidindo = [], [], [], []
+        for p in finalizados:
+            parado = (p.get('tempo_parado_segundos') or 0) / 86400.0
+            lt = _dias_entre(p.get('criado_em'), p.get('data_conclusao'))
+            if lt is not None:
+                leads.append(max(0, lt - parado))
+            if p.get('data_saida_backlog'):
+                fim = p.get('data_fim_ciclo') or p.get('data_conclusao')
+                ct = _dias_entre(p.get('data_saida_backlog'), fim)
+                if ct is not None:
+                    cycles.append(max(0, ct - parado))
+                e = _dias_entre(p.get('criado_em'), p.get('data_saida_backlog'))
+                if e is not None:
+                    esperas.append(e)
+            if p.get('data_fim_ciclo') and p.get('data_conclusao'):
+                d2 = _dias_entre(p['data_fim_ciclo'], p['data_conclusao'])
+                if d2 is not None and d2 > 0:
+                    decidindo.append(d2)
+
+        # Fluxo: quantos entraram e quantos sairam, no tempo.
+        fluxo = {}
+        chave = lambda iso: str(iso)[:10] if granul == 'dia' else str(iso)[:7]
+        for p in iniciados:
+            k = chave(p['criado_em'])
+            fluxo.setdefault(k, {"quando": k, "iniciados": 0, "finalizados": 0})["iniciados"] += 1
+        for p in finalizados:
+            k = chave(p['data_conclusao'])
+            fluxo.setdefault(k, {"quando": k, "iniciados": 0, "finalizados": 0})["finalizados"] += 1
+
+        # Por quadro: a mesma leitura, quebrada.
+        por_quadro = []
+        for chv, area, _prod, _ico, _subs in ARVORE_QUADROS:
+            do_q = [p for p in projetos if p.get('area') == area]
+            if not do_q:
+                continue
+            fin_q = [p for p in do_q if p.get('status') == 'Finalizado'
+                     and dentro(p.get('data_conclusao'))]
+            lt_q = [max(0, _dias_entre(p.get('criado_em'), p.get('data_conclusao'))
+                        - (p.get('tempo_parado_segundos') or 0) / 86400.0)
+                    for p in fin_q if _dias_entre(p.get('criado_em'), p.get('data_conclusao')) is not None]
+            ct_q = [max(0, _dias_entre(p['data_saida_backlog'],
+                                       p.get('data_fim_ciclo') or p['data_conclusao'])
+                        - (p.get('tempo_parado_segundos') or 0) / 86400.0)
+                    for p in fin_q if p.get('data_saida_backlog')
+                    and _dias_entre(p['data_saida_backlog'],
+                                    p.get('data_fim_ciclo') or p['data_conclusao']) is not None]
+            np_q = sum(1 for p in fin_q if p.get('prazo_data')
+                       and str(p['data_conclusao'])[:10] <= str(p['prazo_data'])[:10])
+            cp_q = sum(1 for p in fin_q if p.get('prazo_data'))
+            por_quadro.append({
+                "quadro": chv, "area": area,
+                "abertos": sum(1 for p in do_q if ativo(p)),
+                "atrasados": sum(1 for p in do_q if atrasado(p)),
+                "finalizados": len(fin_q),
+                "lead": _mediana(lt_q), "cycle": _mediana(ct_q),
+                "cobertura_cycle": len(ct_q), "base_cycle": len(fin_q),
+                "pct_no_prazo": round(np_q / cp_q * 100, 1) if cp_q else None,
+                "horas": _horas(sum(l.get('tempo_segundos') or 0 for l in logs
+                                    if por_id.get(str(l['projeto_id']), {}).get('area') == area)),
+            })
+        por_quadro.sort(key=lambda x: -x["abertos"])
+
+        entrega = {
+            "contadores": contadores,
+            "onde_esta": onde_esta,
+            "prazo": {"no_prazo": no_prazo, "fora": fora, "sem_prazo": sem_prazo,
+                      "pct_no_prazo": round(no_prazo / com_prazo * 100, 1) if com_prazo else None},
+            "tempos": {
+                "lead": _mediana(leads), "cycle": _mediana(cycles),
+                "espera_backlog": _mediana(esperas), "apos_ciclo": _mediana(decidindo),
+                # A cobertura anda junto do numero: sem ela, uma media de
+                # 40% da operacao seria lida como se fosse 100%.
+                "base_lead": len(leads), "base_cycle": len(cycles),
+                "total_finalizados": len(finalizados),
+            },
+            "fluxo": sorted(fluxo.values(), key=lambda x: x["quando"]),
+            "por_quadro": por_quadro,
+        }
+
+        # ============================================================
+        # OTICA 2 · ESFORCO
+        # ============================================================
+        total_seg = sum(l.get('tempo_segundos') or 0 for l in logs)
+
+        def agrupar(chave_fn, rotulo_vazio):
+            g = {}
+            for l in logs:
+                k = chave_fn(l) or rotulo_vazio
+                it = g.setdefault(k, {"chave": k, "seg": 0, "lancamentos": 0, "projetos": set()})
+                it["seg"] += l.get('tempo_segundos') or 0
+                it["lancamentos"] += 1
+                it["projetos"].add(str(l.get('projeto_id')))
+            saida = []
+            for it in g.values():
+                saida.append({
+                    "chave": it["chave"], "horas": _horas(it["seg"]),
+                    "lancamentos": it["lancamentos"], "projetos": len(it["projetos"]),
+                    "media": _horas(it["seg"] / it["lancamentos"]) if it["lancamentos"] else 0,
+                    "fatia": round(it["seg"] / total_seg * 100, 1) if total_seg else 0,
+                })
+            return sorted(saida, key=lambda x: -x["horas"])
+
+        prj = lambda l: por_id.get(str(l.get('projeto_id')), {})
+
+        # Tarefa dentro de cada quadro: "Reuniao com cliente" custa uma
+        # coisa em R&S e outra em CX Data. A media geral esconde isso.
+        tarefa_tipo = {}
+        for l in logs:
+            p = prj(l)
+            k = ((p.get('area') or 'sem quadro'), (l.get('descricao_tarefa') or 'sem tarefa'))
+            it = tarefa_tipo.setdefault(k, {"area": k[0], "tarefa": k[1], "seg": 0, "n": 0})
+            it["seg"] += l.get('tempo_segundos') or 0
+            it["n"] += 1
+        por_tarefa_tipo = sorted(
+            ({"area": v["area"], "tarefa": v["tarefa"], "horas": _horas(v["seg"]),
+              "lancamentos": v["n"], "media": _horas(v["seg"] / v["n"])}
+             for v in tarefa_tipo.values()),
+            key=lambda x: -x["horas"])[:40]
+
+        esforco = {
+            "total_horas": _horas(total_seg),
+            "lancamentos": len(logs),
+            "por_area": agrupar(lambda l: prj(l).get('area'), 'sem quadro'),
+            "por_projeto": agrupar(
+                lambda l: (prj(l).get('nome_projeto') or 'projeto removido'), 'sem projeto')[:15],
+            "por_tarefa": agrupar(lambda l: l.get('descricao_tarefa'), 'sem tarefa')[:15],
+            "por_cliente": agrupar(lambda l: prj(l).get('empresa'), 'sem cliente')[:15],
+            "por_tarefa_tipo": por_tarefa_tipo,
+        }
+
+        # ============================================================
+        # OTICA 3 · TIME
+        # ============================================================
+        pessoas_bd = (supabase.table("usuarios")
+                      .select("nome, cargo, carga_semanal, ativo, tipo_usuario")
+                      .execute()).data or []
+        carga = {(u.get('nome') or '').strip(): (u.get('carga_semanal') or 40)
+                 for u in pessoas_bd
+                 if u.get('ativo') is not False
+                 and (u.get('tipo_usuario') or 'interno') == 'interno'}
+
+        seg_por_pessoa, lanc_por_pessoa = {}, {}
+        for l in logs:
+            nome = (l.get('colaborador') or '').strip() or 'sem responsável'
+            seg_por_pessoa[nome] = seg_por_pessoa.get(nome, 0) + (l.get('tempo_segundos') or 0)
+            lanc_por_pessoa[nome] = lanc_por_pessoa.get(nome, 0) + 1
+
+        pessoas = []
+        for nome in sorted(set(list(carga.keys()) + list(seg_por_pessoa.keys()))):
+            h_semana = carga.get(nome, 40)
+            # Jornada diaria x dias uteis do recorte. Sem feriados: o
+            # esperado fica um pouco alto, e o aproveitamento um pouco
+            # conservador.
+            esperado = round(h_semana / 5.0 * dias_uteis, 1)
+            lancado = _horas(seg_por_pessoa.get(nome, 0))
+            meus = [p for p in projetos if (p.get('responsavel') or '').strip() == nome]
+            pessoas.append({
+                "nome": nome,
+                "carga_semanal": h_semana,
+                "horas_esperadas": esperado,
+                "horas_lancadas": lancado,
+                "aproveitamento": round(lancado / esperado * 100, 1) if esperado else None,
+                "lancamentos": lanc_por_pessoa.get(nome, 0),
+                "projetos_abertos": sum(1 for p in meus if ativo(p)),
+                "atrasados": sum(1 for p in meus if atrasado(p)),
+                "finalizados": sum(1 for p in meus if p.get('status') == 'Finalizado'
+                                   and dentro(p.get('data_conclusao'))),
+                "cadastrado": nome in carga,
+            })
+        pessoas.sort(key=lambda x: -(x["horas_lancadas"] or 0))
+
+        time_ = {
+            "pessoas": pessoas,
+            "dias_uteis": dias_uteis,
+            "horas_esperadas_total": round(sum(p["horas_esperadas"] for p in pessoas
+                                               if p["cadastrado"]), 1),
+            "horas_lancadas_total": _horas(total_seg),
+        }
+
+        return jsonify({
+            "status": "sucesso",
+            "periodo": {"de": de, "ate": ate, "granularidade": granul, "dias_uteis": dias_uteis},
+            "entrega": entrega,
+            "esforco": esforco,
+            "time": time_,
+            "opcoes": {
+                "quadros": [{"chave": c, "nome": a} for c, a, _p, _i, _s in ARVORE_QUADROS],
+                "responsaveis": sorted({(p.get('responsavel') or '').strip()
+                                        for p in projetos} - {''}),
+                "clientes": sorted({(p.get('empresa') or '').strip() for p in projetos} - {''}),
+            },
+        }), 200
+
+    except Exception as e:
+        print("Erro em api_operacional_painel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
 @app.route('/api/comercial/painel', methods=['GET'])
 def api_comercial_painel():
     """Alimenta as duas óticas do painel comercial numa chamada só."""
