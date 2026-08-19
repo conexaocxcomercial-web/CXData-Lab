@@ -563,8 +563,17 @@ def diagnostico_sessao():
 
 @app.route('/logout')
 def logout():
+    """Encerra a sessao e volta para o login, SEM `proximo`.
+
+    Antes passava `request.path` -- que aqui vale `/logout`. A tela de
+    login guardava isso e, ao entrar com sucesso, navegava justamente
+    para /logout: a pessoa deslogava no instante em que logava, e a tela
+    parecia apenas recarregar. Um laco fechado.
+
+    Depois de sair, o destino certo e a raiz.
+    """
     session.clear()
-    return redirect(url_for('login', proximo=request.path))
+    return redirect(url_for('login'))
 
 # --- ROTAS PROTEGIDAS ---
 
