@@ -421,11 +421,23 @@
             }
         }
 
+        /* Para onde ir depois de entrar.
+
+           Recusa tres coisas, e a terceira e a que morde:
+
+           1. endereco externo -- "//outro.site" comeca com barra mas leva
+              para fora do dominio;
+           2. barra invertida -- alguns navegadores tratam "/\\x" como "//x";
+           3. rotas que desfazem o login. Um link de /logout gerava
+              ?proximo=/logout, e entrar levava direto a sair de novo.
+              A tela parecia so recarregar. */
         function destinoSeguro(){
             const destino = new URLSearchParams(window.location.search).get('proximo');
             if(!destino) return '/';
             if(destino[0] !== '/') return '/';
             if(destino[1] === '/' || destino[1] === '\\') return '/';
+            const caminho = destino.split('?')[0].replace(/\/+$/, '');
+            if(caminho === '/logout' || caminho === '/login') return '/';
             return destino;
         }
 
