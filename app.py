@@ -502,7 +502,11 @@ def login():
                 # Converte e apaga o texto puro no mesmo movimento: quem
                 # entra uma vez deixa de ter a senha legível no banco.
                 supabase.table("usuarios").update(
-                    {"senha_hash": novo_hash, "senha": None}
+                    # String vazia, e nao None: a coluna `senha` e NOT NULL,
+                    # entao gravar null derruba o update inteiro -- e como isto
+                    # vive dentro de um try/except, a falha era engolida e a
+                    # senha em texto puro continuava no banco.
+                    {"senha_hash": novo_hash, "senha": ""}
                 ).eq("id", usuario["id"]).execute()
             except Exception as e:
                 print(f"[AVISO] Falha ao converter senha para hash: {str(e)}")
@@ -535,6 +539,27 @@ def login():
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
 
     return render_template('login.html')
+
+@app.route('/api/sessao')
+def diagnostico_sessao():
+    """Diz o que o SERVIDOR enxerga da sua sessao.
+
+    Existe para separar duas causas que, na tela, parecem a mesma coisa:
+    o cookie nao chegou ao servidor, ou chegou e esta vazio. Abra este
+    endereco logo depois de tentar entrar.
+    """
+    tem_cookie = bool(request.cookies.get(app.config.get("SESSION_COOKIE_NAME") or "session"))
+    return jsonify({
+        "cookie_chegou": tem_cookie,
+        "sessao_tem_usuario": "usuario_id" in session,
+        "usuario_nome": session.get("usuario_nome"),
+        "nivel_acesso": session.get("nivel_acesso"),
+        "admin": session.get("admin"),
+        "chaves_na_sessao": sorted(session.keys()),
+        "cookies_recebidos": sorted(request.cookies.keys()),
+        "secret_de_ambiente": bool(os.environ.get("FLASK_SECRET_KEY")),
+    }), 200
+
 
 @app.route('/logout')
 def logout():
@@ -5469,7 +5494,7 @@ def redefinir_senha_acessos(usuario_id):
                             "mensagem": "A senha precisa de pelo menos 8 caracteres."}), 400
         supabase.table("usuarios").update({
             "senha_hash": gerar_hash(senha),
-            "senha": None,          # apaga o legado em texto puro
+            "senha": "",            # NOT NULL: string vazia apaga sem quebrar
         }).eq("id", usuario_id).execute()
         registrar_auditoria('senha_redefinida', 'usuario', usuario_id, {})
         return jsonify({"status": "sucesso"}), 200
