@@ -425,9 +425,14 @@ def catalogo():
             {"chave": "tudo", "nome": "Vê tudo", "curto": "tudo",
              "descricao": "Vê e edita o trabalho de todos naquele quadro."},
         ],
+        # O perfil viaja completo -- nível e telas junto -- para a tela
+        # poder aplicá-lo na hora, sem esperar a volta do servidor. O
+        # servidor continua sendo quem define: a tela só espelha.
         "perfis": [
             {"chave": c, "nome": p["nome"], "descricao": p["descricao"],
-             "admin": p.get("admin", False)}
+             "admin": p.get("admin", False),
+             "nivel_padrao": p.get("nivel_padrao"),
+             "telas": list(p.get("telas", ()))}
             for c, p in PERFIS.items()
         ],
         "modos": [
