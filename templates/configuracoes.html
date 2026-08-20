@@ -591,7 +591,7 @@ const Config = (function(){
   function blocoQuemRecebe(q, e){
     if(e.modo === 'direto'){
       return `<div class="bloco">
-        <div class="bl-t">Quem recebe os cards
+        <div class="bl-t">Quem recebe automaticamente
           <span class="bl-cnt">1 de ${q.candidatos.length}</span></div>
         <div class="chips">
           ${q.candidatos.map(c => `
@@ -599,8 +599,10 @@ const Config = (function(){
                     onclick="Config.definirExecutor('${c.id}')">
               <span class="material-symbols-rounded">check</span>${esc(c.nome)}</button>`).join('')}
         </div>
-        <div class="dica">Só quem foi marcado como responsável neste quadro, em Acessos.
-        Todo card novo <b>já nasce com o nome dela</b> e ela é avisada na hora.</div>
+        <div class="dica">Só aparecem os marcados para <b>receber card</b> deste quadro,
+        em Acessos. Todo card novo <b>já nasce com o nome dela</b>, e ela é avisada na hora.
+        Quem enxerga o card pode passá-lo para outra pessoa a qualquer momento —
+        receber por padrão não tranca nada.</div>
       </div>`;
     }
 
@@ -624,7 +626,9 @@ const Config = (function(){
           ${q.com_acesso.map(p => `<option value="${p.id}"${
             e.direciona === p.id ? ' selected' : ''}>${esc(p.nome)}</option>`).join('')}
         </select>
-        <div class="dica">Recebe o aviso do card novo e escolhe quem executa.</div>
+        <div class="dica">Recebe o aviso do card novo e escolhe quem executa.
+        <b>Só essa pessoa</b> — mais os administradores e quem tem nível "vê tudo" neste
+        quadro — enxerga a fila de atribuição.</div>
       </div>
       <div class="bloco">
         <div class="bl-t">Pode ficar com o card
