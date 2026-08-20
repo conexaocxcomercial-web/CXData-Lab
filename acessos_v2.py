@@ -112,9 +112,14 @@ CAPS_ADMIN = (
 # decisão a tomar: são o trabalho do dia.
 CAPS_LIBERADAS = (
     'projeto.ver',
+    # Quem enxerga o card, edita o card. Não existe permissão separada
+    # para editar: o que limita é o ALCANCE, resolvido em `pode()` pelo
+    # nível daquele quadro. Sem esta linha, `projeto.editar` nunca entrava
+    # na sessão e ninguém além do administrador conseguia mexer em card
+    # nenhum -- nem no próprio.
+    'projeto.editar',
     'projeto.excluir',        # vai para a lixeira, com registro de quem foi
     'projeto.solicitar',
-    'projeto.atribuir',
     'tempo.registrar',
     'okr.ver',
     'feed.publicar',
@@ -122,6 +127,12 @@ CAPS_LIBERADAS = (
     'dados.exportar',
     'crm.valor.ver',
 )
+
+# Direcionar demanda não é permissão de pessoa, é papel de quadro: quem
+# direciona é escolhido em Configurações, por quadro. Deixar isto em
+# CAPS_LIBERADAS dava a todo mundo o poder de atribuir card em qualquer
+# quadro -- inclusive nos que a pessoa nem acessa.
+CAPS_POR_PAPEL_DE_QUADRO = ('projeto.atribuir',)
 
 # Não são "tem ou não tem": são "vê só o seu ou vê o do quadro todo".
 # Um seletor único move todas de uma vez, em vez de cinco decisões
@@ -149,6 +160,59 @@ CAPS_POR_TELA = {
 ALCANCES = ('proprio', 'quadro')
 MODOS_QUADRO = ('direto', 'fila', 'rodizio')
 
+# ----------------------------------------------------------------------------
+# NÍVEL POR QUADRO
+#
+# Três estados, e só três. Cada um a mais é uma pergunta que quem
+# configura precisa responder doze vezes, uma por quadro.
+#
+#   sem acesso  o quadro não aparece
+#   proprio     vê o quadro, mas os detalhes só dos próprios cards
+#   tudo        vê e edita o trabalho de todos naquele quadro
+#
+# "Pode editar" e "pode adicionar" não viraram níveis separados de
+# propósito: quem enxerga o card do colega e não pode mexer nele acaba
+# pedindo por mensagem, e o controle vira burocracia sem virar segurança.
+# Ver e editar andam juntos; o que muda é o alcance.
+# ----------------------------------------------------------------------------
+NIVEIS_QUADRO = ('proprio', 'tudo')
+
+# Abrir solicitação em qualquer quadro vale para todo mundo, inclusive em
+# quadro sem acesso: pedir algo ao Financeiro não exige enxergar o
+# Financeiro. Por isso `projeto.solicitar` está em CAPS_LIBERADAS.
+
+# ----------------------------------------------------------------------------
+# PERFIS PRONTOS
+#
+# Configurar doze quadros e sete telas a mão, para treze pessoas, é onde
+# o modelo anterior falhava na prática: dava trabalho e ninguém revisava.
+# O perfil preenche tudo de uma vez; a exceção se ajusta depois, quadro a
+# quadro. Perfil é ponto de partida, não jaula.
+# ----------------------------------------------------------------------------
+PERFIS = {
+    'admin': {
+        'nome': 'Administrador',
+        'descricao': 'Vê e faz tudo, inclusive configurar acessos e apagar em definitivo.',
+        'admin': True,
+    },
+    'diretoria': {
+        'nome': 'Diretoria',
+        'descricao': 'Vê o trabalho de todos, em todos os quadros. '
+                     'Sem acesso a Acessos, Configurações e Lixeira.',
+        'admin': False,
+        'nivel_padrao': 'tudo',
+        'telas': ('agenda', 'crm', 'clientes', 'okr', 'feed', 'dashboard'),
+    },
+    'colaborador': {
+        'nome': 'Colaborador',
+        'descricao': 'Vê os quadros em que atua, mas só os próprios cards. '
+                     'Sem painel operacional.',
+        'admin': False,
+        'nivel_padrao': 'proprio',
+        'telas': ('agenda', 'crm', 'clientes', 'okr', 'feed'),
+    },
+}
+
 # Papéis operacionais por quadro, gravados em `quadro_responsaveis`.
 PAPEIS_OPERACIONAIS = ('direciona', 'cobranca', 'relacionamento')
 
@@ -175,7 +239,12 @@ def montar_caps(usuario):
     if (usuario.get('tipo_usuario') or 'interno') == 'externo':
         return {}
 
-    alcance = usuario.get('alcance') if usuario.get('alcance') in ALCANCES else 'proprio'
+    # O alcance global vira o MAIOR nível entre os quadros da pessoa.
+    # Ele ainda serve às capacidades que não pertencem a quadro nenhum --
+    # CRM e Clientes, por exemplo. As de projeto usam o nível do quadro
+    # do card, resolvido em `pode()`.
+    acessos = _acessos_do(usuario)
+    alcance = 'quadro' if 'tudo' in acessos.values() else 'proprio'
     telas = set(usuario.get('areas') or [])
 
     # As telas liberadas acendem as capacidades dos seus módulos.
@@ -209,6 +278,22 @@ def montar_caps(usuario):
     return caps
 
 
+def _acessos_do(usuario):
+    """Mapa {quadro: nivel} da pessoa, validado.
+
+    Aceita o formato novo (`acessos`) e reconstrói a partir do antigo
+    (`quadros` + `alcance`) quando ele ainda não existe — assim ninguém
+    perde acesso entre o deploy do código e a execução da migração.
+    """
+    bruto = usuario.get('acessos')
+    if isinstance(bruto, dict) and bruto:
+        return {q: n for q, n in bruto.items()
+                if q in _quadros_validos() and n in NIVEIS_QUADRO}
+    antigo = usuario.get('alcance')
+    nivel = 'tudo' if antigo == 'quadro' else 'proprio'
+    return {q: nivel for q in (usuario.get('quadros') or []) if q in _quadros_validos()}
+
+
 def aplicar_na_sessao(usuario):
     """Monta a sessão de permissões no login.
 
@@ -217,11 +302,18 @@ def aplicar_na_sessao(usuario):
     trocar o modelo sem reescrever todos os templates no mesmo dia.
     """
     admin = bool(usuario.get('admin'))
-    quadros = [q for q in (usuario.get('quadros') or []) if q in _quadros_validos()]
-    areas = [a for a in (usuario.get('areas') or []) if a in _areas_validas()]
+    acessos = _acessos_do(usuario)
+    # Administrador enxerga tudo em todos, sem depender do que está
+    # gravado: o interruptor de admin é a fonte da verdade.
+    if admin:
+        acessos = {c: 'tudo' for c, _n, _i in _quadros_lista()}
+    quadros = sorted(acessos.keys())
+    areas = list(_areas_validas()) if admin else [
+        a for a in (usuario.get('areas') or []) if a in _areas_validas()]
 
     session['admin'] = admin
-    session['alcance'] = usuario.get('alcance') if usuario.get('alcance') in ALCANCES else 'proprio'
+    session['acessos'] = acessos
+    session['alcance'] = 'quadro' if 'tudo' in acessos.values() else 'proprio'
     session['quadros'] = quadros
     session['areas'] = areas
     session['caps'] = montar_caps(usuario)
@@ -324,13 +416,19 @@ def catalogo():
         "quadros": [{"chave": c, "nome": n, "icone": i} for c, n, i in _quadros_lista()],
         "telas": [{"chave": c, "nome": n, "icone": i, "descricao": d}
                   for c, n, i, d in _areas_lista()],
-        "alcances": [
-            {"chave": "proprio", "nome": "Só os próprios cards",
-             "descricao": "Vê o quadro inteiro, mas os detalhes e o tempo lançado "
-                          "só dos cards em que é responsável."},
-            {"chave": "quadro", "nome": "Tudo do quadro",
-             "descricao": "Vê os detalhes e o tempo lançado por todos que atuam "
-                          "nos mesmos quadros."},
+        "niveis": [
+            {"chave": "", "nome": "Sem acesso", "curto": "—",
+             "descricao": "O quadro não aparece para esta pessoa."},
+            {"chave": "proprio", "nome": "Só os seus", "curto": "seus",
+             "descricao": "Vê o quadro, mas os detalhes e o tempo lançado só dos "
+                          "cards em que é responsável."},
+            {"chave": "tudo", "nome": "Vê tudo", "curto": "tudo",
+             "descricao": "Vê e edita o trabalho de todos naquele quadro."},
+        ],
+        "perfis": [
+            {"chave": c, "nome": p["nome"], "descricao": p["descricao"],
+             "admin": p.get("admin", False)}
+            for c, p in PERFIS.items()
         ],
         "modos": [
             {"chave": "direto", "nome": "Direto", "icone": "bolt",
@@ -361,13 +459,34 @@ def _pessoa_publica(u, responsavel_em):
         "telefone": u.get("telefone") or "",
         "ativo": u.get("ativo") is not False,
         "admin": bool(u.get("admin")),
+        "acessos": _acessos_do(u),
         "alcance": u.get("alcance") if u.get("alcance") in ALCANCES else 'proprio',
         "quadros": [q for q in (u.get("quadros") or []) if q in _quadros_validos()],
+        "perfil": _perfil_de(u),
         "telas": [a for a in (u.get("areas") or []) if a in _areas_validas()],
         "responsavel_em": sorted(responsavel_em.get(str(u["id"]), [])),
         "ultimo_acesso": u.get("ultimo_acesso"),
         "tem_senha": bool(u.get("senha_hash")),
     }
+
+
+def _perfil_de(u):
+    """Qual perfil descreve esta pessoa hoje, ou 'personalizado'.
+
+    Serve para a tela mostrar o ponto de partida sem obrigar ninguém a
+    escolher de novo -- e para deixar claro quando alguém saiu do padrão.
+    """
+    if u.get('admin'):
+        return 'admin'
+    acessos = _acessos_do(u)
+    todos = {c for c, _n, _i in _quadros_lista()}
+    telas = set(u.get('areas') or [])
+    for chave in ('diretoria', 'colaborador'):
+        p = PERFIS[chave]
+        esperado = {c: p['nivel_padrao'] for c in todos}
+        if acessos == esperado and telas == set(p['telas']):
+            return chave
+    return 'personalizado'
 
 
 def _mapa_responsaveis():
@@ -496,7 +615,27 @@ def salvar_pessoa(usuario_id):
             upd["telefone"] = (d["telefone"] or "").strip() or None
 
         quadros = None
-        if "quadros" in d:
+
+        # Perfil preenche tudo de uma vez; a exceção vem depois, quadro a
+        # quadro. Aplicar o perfil e as exceções no mesmo pedido faria a
+        # ordem importar -- por isso o perfil é resolvido primeiro.
+        if d.get("perfil") in PERFIS:
+            p = PERFIS[d["perfil"]]
+            upd["admin"] = bool(p.get("admin"))
+            if not p.get("admin"):
+                nivel = p.get("nivel_padrao", "proprio")
+                d["acessos"] = {c: nivel for c, _n, _i in _quadros_lista()}
+                d["telas"] = list(p.get("telas", ()))
+
+        if "acessos" in d:
+            mapa = {q: n for q, n in (d["acessos"] or {}).items()
+                    if q in _quadros_validos() and n in NIVEIS_QUADRO}
+            upd["acessos"] = mapa
+            quadros = sorted(mapa.keys())
+            upd["quadros"] = quadros
+            # `alcance` continua alimentado para o que ainda o lê.
+            upd["alcance"] = 'quadro' if 'tudo' in mapa.values() else 'proprio'
+        elif "quadros" in d:
             quadros = [q for q in (d["quadros"] or []) if q in _quadros_validos()]
             upd["quadros"] = quadros
         if "telas" in d:
@@ -525,10 +664,12 @@ def salvar_pessoa(usuario_id):
         # gravar o conjunto completo evita que a tela precise inventar
         # exceções e que a sidebar fique com buraco.
         if virou_admin:
-            upd["quadros"] = [c for c, _n, _i in _quadros_lista()]
+            todos = [c for c, _n, _i in _quadros_lista()]
+            upd["quadros"] = todos
+            upd["acessos"] = {c: "tudo" for c in todos}
             upd["areas"] = list(_areas_validas())
             upd["alcance"] = "quadro"
-            quadros = upd["quadros"]
+            quadros = todos
 
         upd["nivel_acesso"] = 'admin' if upd.get(
             "admin", antes.get("admin")) else 'personalizado'
@@ -755,7 +896,7 @@ def salvar_quadro(quadro):
             if not executor:
                 return _erro("No modo Direto, escolha quem recebe os cards.", codigo=400)
             if executor not in marcados:
-                return _erro("Essa pessoa não está marcada como responsável neste "
+                return _erro("Essa pessoa não está marcada para receber card neste "
                              "quadro. Marque em Acessos antes.", codigo=400)
         elif modo == 'rodizio':
             if len(marcados) < 2:
