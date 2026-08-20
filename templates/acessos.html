@@ -850,27 +850,43 @@ const Acessos = (function(){
   }
 
   /* Perfil é ponto de partida, não jaula: preenche tudo de uma vez e a
-     exceção se ajusta depois, quadro a quadro. */
+     exceção se ajusta depois, quadro a quadro.
+
+     Aplica LOCALMENTE antes de salvar. Antes a tela mandava só
+     {perfil: 'colaborador'} e esperava o servidor devolver os dez
+     quadros preenchidos para então repintar. Enquanto a volta não vinha
+     — ou se ela falhasse — a matriz continuava com os valores antigos e
+     o clique parecia não ter feito nada.
+
+     O servidor continua sendo quem decide: ele recebe o mesmo `perfil` e
+     reaplica por conta própria. A cópia local é espelho, não fonte. */
   function aplicarPerfil(chave){
     const e = st.edicao;
     if(chave === 'personalizado'){ e.perfil = 'personalizado'; pintarPainel(); return; }
     const p = st.catalogo.perfis.find(x => x.chave === chave);
     if(!p) return;
+
     confirmar('Aplicar perfil ' + p.nome,
       `${esc(p.descricao)}<br><br>Isso <b>substitui</b> o que está configurado hoje
        para <b>${esc(e.nome)}</b>. Dá para ajustar quadro a quadro depois.`,
-      'Aplicar', () => { e.perfil = chave; salvar({ perfil: chave }); });
-  }
-
-  function alternarResp(chave){
-    const e = st.edicao;
-    // Admin acessa tudo; para os demais, só quadro liberado.
-    if(!e.admin && !(e.acessos || {})[chave]) return;
-    const i = e.responsavel_em.indexOf(chave);
-    if(i >= 0) e.responsavel_em.splice(i, 1);
-    else e.responsavel_em.push(chave);
-    pintarPainel();
-    salvar({responsavel_em: e.responsavel_em});
+      'Aplicar', () => {
+        e.perfil = chave;
+        e.admin = !!p.admin;
+        if(p.admin){
+          e.acessos = {};
+          st.catalogo.quadros.forEach(q => e.acessos[q.chave] = 'tudo');
+          e.telas = st.catalogo.telas.map(t => t.chave);
+        }else{
+          e.acessos = {};
+          st.catalogo.quadros.forEach(q => e.acessos[q.chave] = p.nivel_padrao || 'proprio');
+          e.telas = (p.telas || []).slice();
+        }
+        e.quadros = Object.keys(e.acessos);
+        // Quadro que saiu da lista leva junto a marcação de receber card.
+        e.responsavel_em = e.responsavel_em.filter(q => e.acessos[q]);
+        pintarPainel();
+        salvar({ perfil: chave });
+      });
   }
 
   function alternarTela(chave){
@@ -915,7 +931,7 @@ const Acessos = (function(){
       Object.assign(st.aberta, st.edicao);
       status('Salvo. Vale no próximo login dela.', 'salvo');
       pintarLista();
-      if(st.aberta) abrirDeNovoSeAdminMudou(campos);
+      if(st.aberta) recarregarSeServidorDecidiu(campos);
     }catch(err){
       // Reverte para o que o servidor tem: deixar a tela mostrando algo
       // que não foi gravado é pior do que o erro em si.
@@ -928,14 +944,31 @@ const Acessos = (function(){
     }
   }
 
-  function abrirDeNovoSeAdminMudou(campos){
-    if(!('admin' in campos)) return;
-    // Virar admin muda quadros e telas no servidor; recarregar mantém a
-    // tela igual ao banco em vez de adivinhar.
-    recarregar().then(() => {
-      const atual = st.pessoas.find(p => p.id === st.aberta?.id);
-      if(atual) abrir(atual.id);
-    });
+  /* Recarrega quando o servidor decide MAIS do que foi enviado.
+
+     Ligar o administrador reescreve quadros e telas; aplicar um perfil
+     reescreve os dez quadros de uma vez. Nos dois casos a tela não tem
+     como adivinhar o resultado — antes ela repintava com o estado antigo
+     e parecia que o clique não fez nada. */
+  function recarregarSeServidorDecidiu(campos){
+    if(!('admin' in campos) && !('perfil' in campos)) return;
+    const id = st.aberta && st.aberta.id;
+    if(!id) return;
+    recarregar()
+      .then(() => {
+        const atual = st.pessoas.find(p => p.id === id);
+        // Só reabre se o painel ainda estiver aberto na MESMA pessoa:
+        // recarregar leva tempo, e quem já fechou ou trocou de pessoa
+        // veria o painel dar um salto sozinho.
+        if(atual && st.aberta && st.aberta.id === id) abrir(id);
+      })
+      .catch(err => {
+        // Falhar aqui não desfaz o que foi salvo. A tela já mostra o
+        // resultado aplicado localmente; o aviso evita que a pessoa ache
+        // que está vendo dado do servidor quando não está.
+        console.warn('ressincronizacao falhou:', err);
+        status('Salvo. Recarregue a página para conferir.', 'salvo');
+      });
   }
 
   /* ---------- modais ---------- */
