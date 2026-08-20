@@ -153,10 +153,15 @@ def pode(capacidade, alvo=None):
             or alvo.get('autor') or '').strip().lower()
 
     if esc == 'quadro':
-        # O líder responde pelo quadro inteiro: vê o trabalho de todos
-        # que atuam nele. Antes isso dependia de `usuarios.equipe`, um
-        # texto livre onde "R&S" e "RS" viravam times diferentes.
-        return dono == eu or alvo_no_meu_quadro(alvo)
+        # O escopo 'quadro' consulta o nível DAQUELE quadro. Assim a mesma
+        # pessoa pode ver tudo em R&S e só os próprios cards em Marketing,
+        # sem precisar de duas contas nem de exceção no código.
+        nivel = nivel_no_quadro(alvo)
+        if nivel == 'tudo':
+            return True
+        if nivel == 'proprio':
+            return dono == eu
+        return False
 
     if esc == 'time':
         # Escopo legado. Enquanto houver papel gravado com 'time',
@@ -166,20 +171,97 @@ def pode(capacidade, alvo=None):
     return dono == eu
 
 
-def alvo_no_meu_quadro(alvo):
-    """True se o registro pertence a um quadro em que a pessoa atua."""
-    meus = quadros_permitidos()
-    if not meus:
+def pode_direcionar(quadro):
+    """Quem distribui a demanda que chega naquele quadro.
+
+    Direcionar não é permissão de pessoa, é papel de quadro. Três podem:
+
+      1. administrador — responde por tudo;
+      2. quem foi escolhido em Configurações como quem direciona;
+      3. quem tem nível "vê tudo" naquele quadro — já enxerga e responde
+         pelo trabalho de todos ali, e travar a atribuição criaria uma
+         dependência inútil de uma pessoa só.
+
+    Antes `projeto.atribuir` era liberado a todo mundo: qualquer pessoa
+    podia direcionar card em qualquer quadro, inclusive nos que nem
+    acessa. A fila aparecia para quem não tinha nada a ver com ela.
+    """
+    if session.get('admin') or session.get('nivel_acesso') == 'admin':
+        return True
+    if not quadro:
         return False
+    if (session.get('acessos') or {}).get(quadro) == 'tudo':
+        return True
+    eu = str(session.get('usuario_id') or '')
+    if not eu:
+        return False
+    try:
+        r = (supabase.table("quadro_responsaveis").select("usuario_id")
+             .eq("quadro", quadro).eq("papel", "direciona").limit(1).execute())
+        return bool(r.data) and str(r.data[0].get("usuario_id") or '') == eu
+    except Exception as e:
+        print("Aviso: pode_direcionar:", e)
+        return False
+
+
+def quadros_que_direciono():
+    """Quadros em que a pessoa pode distribuir demanda."""
+    if session.get('admin') or session.get('nivel_acesso') == 'admin':
+        return [c for c, _a, _p, _i, _s in ARVORE_QUADROS]
+    acessos = session.get('acessos') or {}
+    meus = [q for q, n in acessos.items() if n == 'tudo']
+    eu = str(session.get('usuario_id') or '')
+    if eu:
+        try:
+            r = (supabase.table("quadro_responsaveis").select("quadro")
+                 .eq("papel", "direciona").eq("usuario_id", eu).execute())
+            meus += [x["quadro"] for x in (r.data or []) if x.get("quadro")]
+        except Exception as e:
+            print("Aviso: quadros_que_direciono:", e)
+    return sorted(set(meus))
+
+
+def quadro_do_alvo(alvo):
+    """Chave do quadro a que o registro pertence, ou None.
+
+    Projeto traz `area`; lead não tem área, e o funil comercial pertence
+    ao quadro Comercial.
+    """
     area = alvo.get('area')
     if area:
-        for q in meus:
-            if QUADRO_AREA.get(q) == area:
-                return True
-    # Leads não têm área: o funil comercial pertence ao quadro Comercial.
-    if alvo.get('funil') and 'comercial' in meus:
-        return True
-    return False
+        for q, a in QUADRO_AREA.items():
+            if a == area:
+                return q
+    if alvo.get('funil'):
+        return 'comercial'
+    return None
+
+
+def nivel_no_quadro(alvo):
+    """Nível da pessoa no quadro do registro: 'tudo', 'proprio' ou None.
+
+    É aqui que o acesso deixou de ser global. Antes existia UM alcance
+    para todos os quadros: ou a pessoa via o trabalho de todos em todos,
+    ou só o dela em todos. A operação real precisa do meio-termo — a
+    mesma pessoa lidera um quadro e apenas executa em outro.
+    """
+    q = quadro_do_alvo(alvo)
+    if not q:
+        return None
+    mapa = session.get('acessos') or {}
+    nivel = mapa.get(q)
+    if nivel in ('tudo', 'proprio'):
+        return nivel
+    # Sem o mapa (sessão antiga), cai no modelo anterior para não deslogar
+    # ninguém no meio do dia.
+    if q in (session.get('quadros') or []):
+        return session.get('alcance') if session.get('alcance') in ('tudo', 'proprio') else 'proprio'
+    return None
+
+
+def alvo_no_meu_quadro(alvo):
+    """True se o registro pertence a um quadro que a pessoa acessa."""
+    return nivel_no_quadro(alvo) is not None
 
 
 def filtrar(registros, capacidade):
@@ -396,64 +478,43 @@ def pode_acessar_modulo(modulo):
                      pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
 
 def filtrar_projetos_permitidos(projetos):
-    """Recebe lista de projetos (dicts) e devolve só os que o usuário logado pode ver,
-    combinando as dimensões de cliente e projeto. Não afeta admin/gestor."""
-    nivel = session.get('nivel_acesso')
+    """Devolve só os projetos que a pessoa logada pode ver.
 
-    # Admin e Gestor veem tudo (comportamento atual preservado)
-    if nivel in ('admin', 'gestor'):
-        if session.get('caps'):
-            novo = filtrar(projetos, 'projeto.ver')
-            _comparar('projeto.ver:qtd', len(projetos) == len(projetos),
-                      len(novo) == len(projetos),
-                      {"antigo": len(projetos), "novo": len(novo)})
+    REESCRITA. A versão anterior decidia por `nivel_acesso` — 'admin',
+    'gestor', 'comum', 'colaborador' — níveis que o modelo novo não usa
+    mais. Todo mundo virou 'admin' ou 'personalizado', e 'personalizado'
+    caía num ramo granular baseado em `perm_clientes_ids` e
+    `perm_projetos_ids`, campos que nenhuma tela alimenta desde a
+    migração de acessos.
+
+    Resultado prático: a lista de projetos não respeitava os quadros nem
+    o alcance configurados. Agora a regra é uma só, e a mesma que o
+    `pode()` aplica em qualquer outro lugar.
+    """
+    if not projetos:
         return projetos
 
-    # Comum: vê TODOS os dados (o controle é só de módulos, não de dados)
-    if nivel == 'comum':
-        return projetos
+    # Portal do cliente continua com a lógica própria: ele não enxerga
+    # quadros, e sim os projetos do cliente a que está vinculado.
+    if session.get('tipo_usuario') == 'externo':
+        return _filtrar_projetos_externo(projetos)
 
-    # Colaborador (legado): só onde é responsável
-    if nivel == 'colaborador':
-        meu_nome = (session.get('usuario_nome') or '').strip().lower()
-        antigo = [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
-        if session.get('caps'):
-            novo = filtrar(projetos, 'projeto.ver')
-            _comparar('projeto.ver:qtd', True, len(novo) == len(antigo),
-                      {"antigo": len(antigo), "novo": len(novo)})
-        return antigo
+    return filtrar(projetos, 'projeto.ver')
 
-    # === PERSONALIZADO (interno) e EXTERNO (cliente): lógica granular ===
-    perm_cli_modo = session.get('perm_clientes_modo') or 'todos'
-    perm_cli_ids = set(str(x) for x in (session.get('perm_clientes_ids') or []))
-    perm_proj_modo = session.get('perm_projetos_modo') or 'todos'
-    perm_proj_ids = set(str(x) for x in (session.get('perm_projetos_ids') or []))
-    meu_nome = (session.get('usuario_nome') or '').strip().lower()
 
-    resultado = []
-    for p in projetos:
-        # Dimensão CLIENTE
-        if perm_cli_modo == 'proprios':
-            # "seus" = projetos onde ele é responsável
-            if (p.get('responsavel') or '').strip().lower() != meu_nome:
-                continue
-        elif perm_cli_modo == 'selecionados':
-            if str(p.get('cliente_id')) not in perm_cli_ids:
-                continue
-        # 'todos' não filtra por cliente
+def _filtrar_projetos_externo(projetos):
+    """Projetos visíveis a um usuário do portal do cliente.
 
-        # Dimensão PROJETO
-        if perm_proj_modo == 'selecionados':
-            if str(p.get('id')) not in perm_proj_ids:
-                continue
-        # 'todos' não filtra por projeto
+    Só o que pertence ao cliente vinculado, e só o que foi marcado como
+    visível para ele — a marcação é por projeto, na tela de edição.
+    """
+    cliente = str(session.get('cliente_vinculado_id') or '')
+    if not cliente:
+        return []
+    return [p for p in projetos
+            if str(p.get('cliente_id') or '') == cliente
+            and p.get('visivel_cliente') is True]
 
-        # Para EXTERNO: além de tudo, o projeto precisa estar marcado como visível
-        if is_externo() and not p.get('visivel_cliente'):
-            continue
-
-        resultado.append(p)
-    return resultado
 
 def projetos_visiveis_cliente():
     """Compatibilidade: retorna IDs de projetos visíveis para o externo logado."""
@@ -3767,10 +3828,12 @@ def fila_atribuicao():
     """
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
-    if not (pode('projeto.atribuir') or session.get('nivel_acesso') in ('admin', 'gestor')):
+    quadro = request.args.get('quadro')
+    # A fila só aparece para quem direciona AQUELE quadro. Antes ela
+    # aparecia para todo mundo, em todo quadro.
+    if not pode_direcionar(quadro):
         return jsonify({"status": "sucesso", "projetos": [], "pessoas": []}), 200
     try:
-        quadro = request.args.get('quadro')
         q = (supabase.table("projetos").select("*")
              .eq("aguardando_responsavel", True).is_("excluido_em", "null"))
         if quadro and quadro in QUADRO_AREA:
@@ -4079,23 +4142,40 @@ def atribuir_projeto(projeto_id):
     """Define o responsável. Com `lote`, vale para todos os cards do contrato."""
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
-    if not (pode('projeto.atribuir') or session.get('nivel_acesso') in ('admin', 'gestor')):
-        return jsonify({"status": "erro",
-                        "mensagem": "Você não tem permissão para atribuir projetos."}), 403
     try:
         d = request.json or {}
         responsavel = (d.get("responsavel") or '').strip()
         if not responsavel:
             return jsonify({"status": "erro", "mensagem": "Informe o responsável."}), 400
 
-        upd = {"responsavel": responsavel, "aguardando_responsavel": False}
-        if d.get("prazo"):
-            upd["prazo_data"] = d["prazo"]
-
-        r = supabase.table("projetos").select("lote_id").eq("id", projeto_id).limit(1).execute()
+        r = (supabase.table("projetos").select(
+             "lote_id, area, responsavel, aguardando_responsavel")
+             .eq("id", projeto_id).limit(1).execute())
         if not r.data:
             return jsonify({"status": "erro", "mensagem": "Projeto não encontrado."}), 404
         lote = r.data[0].get("lote_id")
+
+        # A REGRA DA PLATAFORMA: quem enxerga o card, edita o card.
+        # Trocar responsável é editar, como mudar prazo -- não merece
+        # permissão própria.
+        #
+        # O card SEM dono é o único caso em que a regra geral não decide:
+        # sem responsável, "vê só os seus" não alcança o card e ele
+        # ficaria invisível para todo mundo. Aí vale quem enxerga a fila.
+        #
+        # Checado aqui e não só na tela: esconder o botão não impede
+        # ninguém de chamar a rota direto.
+        alvo = r.data[0]
+        quadro = next((q for q, a in QUADRO_AREA.items() if a == alvo.get("area")), None)
+        liberado = (pode_direcionar(quadro) if alvo.get("aguardando_responsavel")
+                    else pode('projeto.editar', alvo))
+        if not liberado:
+            return jsonify({"status": "erro",
+                            "mensagem": "Você não tem acesso a este card."}), 403
+
+        upd = {"responsavel": responsavel, "aguardando_responsavel": False}
+        if d.get("prazo"):
+            upd["prazo_data"] = d["prazo"]
 
         if d.get("lote") and lote:
             res = (supabase.table("projetos").update(upd)
