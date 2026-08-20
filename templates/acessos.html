@@ -221,6 +221,59 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .alc-op.on{ background:var(--papel); color:var(--tinta); font-weight:650;
     box-shadow:0 1px 2px rgba(0,0,0,.07); }
 
+/* ===== PERFIL =====
+   Configurar doze quadros e sete telas a mão, para treze pessoas, é onde
+   o modelo anterior falhava: dava trabalho e ninguém revisava. O perfil
+   preenche tudo de uma vez; a exceção se ajusta depois. */
+.perfis{ display:flex; flex-direction:column; gap:5px; }
+.perfil{ display:flex; align-items:flex-start; gap:11px; padding:11px 13px; width:100%;
+    background:var(--papel-2); border-radius:var(--r-ctrl); cursor:pointer;
+    transition:.14s; box-shadow:inset 0 0 0 1px transparent; border:none; text-align:left; }
+.perfil:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); }
+.perfil.on{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
+.perfil-r{ width:16px; height:16px; min-width:16px; border-radius:50%; margin-top:2px;
+    box-shadow:inset 0 0 0 1.5px var(--linha-2); transition:.14s; }
+.perfil.on .perfil-r{ box-shadow:inset 0 0 0 5px var(--acao); }
+.perfil-t{ font-size:12.5px; font-weight:650; }
+.perfil.on .perfil-t{ color:var(--acao); }
+.perfil-d{ font-size:11px; color:var(--tinta-3); line-height:1.45; margin-top:2px; }
+
+/* ===== MATRIZ DE QUADROS =====
+   Uma linha por quadro, três estados exclusivos. Chips soltas obrigavam
+   a cruzar duas listas -- "quais quadros" e "qual alcance" -- para
+   responder uma pergunta só: o que esta pessoa vê aqui. */
+.mtz{ display:flex; flex-direction:column; gap:1px; background:var(--linha);
+    border-radius:var(--r-ctrl); overflow:hidden; }
+.mtz-l{ display:grid; grid-template-columns:1fr auto auto; gap:10px;
+    align-items:center; background:var(--papel); padding:9px 11px; }
+.mtz-n{ font-size:12.5px; font-weight:550; min-width:0; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+.mtz-seg{ display:flex; background:var(--papel-2); border-radius:7px; padding:2px; gap:1px; }
+.mtz-b{ font-size:11px; font-weight:550; color:var(--tinta-3); padding:5px 10px;
+    border-radius:5px; cursor:pointer; border:none; white-space:nowrap; transition:.13s; }
+.mtz-b:hover{ color:var(--tinta-2); }
+.mtz-b.on{ background:var(--papel); color:var(--tinta); font-weight:650;
+    box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.mtz-b.on.tudo{ color:var(--ok); }
+.mtz-b.on.nada{ color:var(--tinta-3); }
+/* Receber card é decisão separada de enxergar: uma sócia acompanha o
+   quadro sem que todo card caia no colo dela. */
+.mtz-resp{ width:30px; height:26px; border-radius:6px; background:var(--papel-2);
+    color:var(--linha-2); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; border:none; transition:.13s; }
+.mtz-resp:hover{ background:var(--linha); }
+.mtz-resp.on{ background:var(--ok-fraco); color:var(--ok); }
+.mtz-resp:disabled{ opacity:.3; cursor:not-allowed; }
+.mtz-resp .material-symbols-rounded{ font-size:16px; }
+.mtz-cab{ display:grid; grid-template-columns:1fr auto auto; gap:10px;
+    padding:0 11px 8px; font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--tinta-3); }
+.mtz-cab span:last-child{ width:30px; text-align:center; }
+.mtz-acoes{ display:flex; gap:6px; margin-top:9px; flex-wrap:wrap; }
+.mtz-ac{ font-size:11px; font-weight:600; color:var(--acao); background:var(--acao-fraco);
+    padding:5px 10px; border-radius:99px; cursor:pointer; border:none; }
+.mtz-ac:hover{ background:#E4E0FC; }
+
 /* pílulas */
 .chips{ display:flex; gap:6px; flex-wrap:wrap; }
 .chip{ font-size:12px; font-weight:500; padding:7px 12px; border-radius:var(--r-pill);
@@ -626,94 +679,112 @@ const Acessos = (function(){
     const e = st.edicao;
     const cat = st.catalogo;
     const corpo = document.getElementById('pnCorpo');
-
-    // Administrador tem tudo: mostrar chips desabilitadas seria oferecer
-    // uma escolha que não existe.
-    if(e.admin){
-      corpo.innerHTML = `
-        <div class="bloco">${blocoAdmin(e)}</div>
-        <div class="bloco">
-          <div class="caixa-adm">
-            <span class="material-symbols-rounded">shield</span>
-            <span><b>Administrador vê e faz tudo.</b> Todos os quadros, todas as telas,
-            configurar acessos, apagar em definitivo e o registro de auditoria.
-            Não há o que configurar abaixo — desligue o interruptor para
-            escolher item a item.</span>
-          </div>
-        </div>`;
-      return;
-    }
-
-    const marcados = new Set(e.quadros);
     const resp = new Set(e.responsavel_em);
-    const telas = new Set(e.telas);
+    const acessos = e.acessos || {};
+
+    /* O painel do administrador NÃO some mais.
+
+       Antes, ligar o interruptor escondia tudo e devolvia só uma caixa
+       explicativa — inclusive a marcação de "pode receber card". Como
+       essa marcação é o que alimenta a lista de Configurações, um
+       administrador nunca podia ser escolhido para receber demanda num
+       quadro em modo Direto. Era o bug relatado.
+
+       Agora a matriz continua visível: os níveis ficam travados em "vê
+       tudo", porque é o que ser administrador significa, mas a coluna de
+       receber card segue editável. Enxergar tudo e receber trabalho são
+       decisões diferentes. */
+    const admin = e.admin;
 
     corpo.innerHTML = `
       <div class="bloco">${blocoAdmin(e)}</div>
 
+      ${admin ? '' : `
       <div class="bloco">
-        <div class="bl-t">Quadros que acessa
-          <span class="bl-cnt">${e.quadros.length} de ${cat.quadros.length}</span>
-          <button class="bl-acao" onclick="Acessos.todosQuadros()">${
-            e.quadros.length === cat.quadros.length ? 'Limpar' : 'Marcar todos'}</button></div>
-        <div class="chips">
-          ${cat.quadros.map(q => `
-            <button class="chip${marcados.has(q.chave)?' on':''}"
-                    onclick="Acessos.alternarQuadro('${q.chave}')">
-              <span class="material-symbols-rounded">check</span>${esc(q.nome)}</button>`).join('')}
+        <div class="bl-t">Ponto de partida</div>
+        <div class="perfis">
+          ${cat.perfis.filter(p => p.chave !== 'admin').map(p => `
+            <button class="perfil${e.perfil === p.chave ? ' on' : ''}"
+                    onclick="Acessos.aplicarPerfil('${p.chave}')">
+              <span class="perfil-r"></span>
+              <span><span class="perfil-t">${esc(p.nome)}</span>
+                <span class="perfil-d">${esc(p.descricao)}</span></span>
+            </button>`).join('')}
+          <button class="perfil${e.perfil === 'personalizado' ? ' on' : ''}"
+                  onclick="Acessos.aplicarPerfil('personalizado')">
+            <span class="perfil-r"></span>
+            <span><span class="perfil-t">Personalizado</span>
+              <span class="perfil-d">Ajustado quadro a quadro, abaixo.</span></span>
+          </button>
         </div>
-        ${!e.quadros.length ? `<div class="dica alerta">Sem quadro nenhum, não há
-          o que abrir depois do login.</div>` : ''}
-      </div>
+      </div>`}
 
       <div class="bloco">
-        <div class="bl-t">Dentro desses quadros</div>
-        <div class="alc">
-          ${cat.alcances.map(a => `
-            <button class="alc-op${e.alcance===a.chave?' on':''}"
-                    onclick="Acessos.definirAlcance('${a.chave}')">${esc(a.nome)}</button>`).join('')}
+        <div class="bl-t">Quadros de trabalho
+          <span class="bl-cnt">${Object.keys(acessos).length} de ${cat.quadros.length}</span></div>
+        <div class="mtz-cab">
+          <span>Quadro</span><span>O que enxerga</span>
+          <span title="Pode receber card">Recebe</span></div>
+        <div class="mtz">
+          ${cat.quadros.map(q => {
+            const nivel = acessos[q.chave] || '';
+            return `<div class="mtz-l">
+              <span class="mtz-n">${esc(q.nome)}</span>
+              <span class="mtz-seg">
+                ${cat.niveis.map(nv => `
+                  <button class="mtz-b${nivel === nv.chave ? ' on ' + (nv.chave || 'nada')
+                    + (nv.chave === 'tudo' ? ' tudo' : '') : ''}"
+                    ${admin ? 'disabled' : ''} title="${esc(nv.descricao)}"
+                    onclick="Acessos.definirNivel('${q.chave}','${nv.chave}')"
+                    >${esc(nv.curto === '—' ? 'sem' : nv.curto)}</button>`).join('')}
+              </span>
+              <button class="mtz-resp${resp.has(q.chave) ? ' on' : ''}"
+                      ${nivel || admin ? '' : 'disabled'}
+                      title="${nivel || admin ? 'Pode receber card deste quadro'
+                                              : 'Libere o quadro antes'}"
+                      onclick="Acessos.alternarResp('${q.chave}')">
+                <span class="material-symbols-rounded">${
+                  resp.has(q.chave) ? 'how_to_reg' : 'person_add'}</span>
+              </button>
+            </div>`;
+          }).join('')}
         </div>
-        <div class="dica">${esc(
-          (cat.alcances.find(a => a.chave === e.alcance) || {}).descricao || '')}</div>
-      </div>
-
-      <div class="bloco">
-        <div class="bl-t">Pode ser responsável em
-          <span class="bl-cnt">${e.responsavel_em.length} de ${e.quadros.length}</span></div>
-        ${e.quadros.length ? `
-          <div class="chips">
-            ${e.quadros.map(c => {
-              const q = cat.quadros.find(x => x.chave === c) || {chave:c, nome:c};
-              return `<button class="chip verde${resp.has(c)?' on':''}"
-                        onclick="Acessos.alternarResp('${c}')">
-                <span class="material-symbols-rounded">check</span>${esc(q.nome)}</button>`;
-            }).join('')}
+        ${admin ? `<div class="dica">Administrador vê tudo em todos os quadros —
+          por isso os níveis estão travados. <b>Receber card continua sendo escolha sua:</b>
+          marque os quadros em que esta pessoa deve entrar na distribuição.</div>`
+        : `<div class="mtz-acoes">
+            <button class="mtz-ac" onclick="Acessos.todosNivel('tudo')">Vê tudo em todos</button>
+            <button class="mtz-ac" onclick="Acessos.todosNivel('proprio')">Só os seus em todos</button>
+            <button class="mtz-ac" onclick="Acessos.todosNivel('')">Limpar</button>
           </div>
-          <div class="dica">Só aparecem os quadros que ela acessa. Marcada aqui, ela
-          vira opção em <b>Configurações</b> na hora de definir quem recebe os cards.</div>`
-        : `<div class="dica">Escolha ao menos um quadro acima para poder marcar
-           responsabilidade.</div>`}
+          <div class="dica">O ícone à direita marca quem <b>pode receber card</b> do quadro.
+          É o que alimenta a lista de Configurações na hora de distribuir a demanda —
+          e é decisão separada de enxergar: acompanhar um quadro não obriga a
+          receber trabalho dele.</div>`}
       </div>
 
       <div class="bloco">
         <div class="bl-t">Telas da plataforma
           <span class="bl-cnt">${e.telas.length} de ${cat.telas.length}</span>
-          <button class="bl-acao" onclick="Acessos.todasTelas()">${
-            e.telas.length === cat.telas.length ? 'Limpar' : 'Marcar todas'}</button></div>
+          ${admin ? '' : `<button class="bl-acao" onclick="Acessos.todasTelas()">${
+            e.telas.length === cat.telas.length ? 'Limpar' : 'Marcar todas'}</button>`}</div>
         <div class="chips">
           ${cat.telas.map(t => `
-            <button class="chip${telas.has(t.chave)?' on':''}"
+            <button class="chip${(admin || e.telas.includes(t.chave)) ? ' on' : ''}"
+                    ${admin ? 'disabled' : ''}
                     onclick="Acessos.alternarTela('${t.chave}')" title="${esc(t.descricao)}">
               <span class="material-symbols-rounded">check</span>${esc(t.nome)}</button>`).join('')}
         </div>
+        <div class="dica">O <b>painel operacional</b> mora aqui: desmarque "Painel" para
+        tirar o acesso sem mexer em mais nada.</div>
       </div>
 
       <div class="bloco">
         <div class="bl-t">Sempre liberado</div>
         <div class="dica" style="margin-top:0">
           ${esc((cat.liberado_sempre || []).join(' · '))}.
-          <b>Todo mundo tem.</b> O que muda de pessoa para pessoa são os quadros
-          e as telas acima.</div>
+          <b>Todo mundo tem</b>, inclusive abrir solicitação em quadro que não acessa —
+          pedir algo ao Financeiro não exige enxergar o Financeiro.</div>
       </div>`;
   }
 
@@ -744,39 +815,57 @@ const Acessos = (function(){
     }
   }
 
-  function alternarQuadro(chave){
+  function definirNivel(quadro, nivel){
     const e = st.edicao;
-    const i = e.quadros.indexOf(chave);
-    if(i >= 0){
-      e.quadros.splice(i, 1);
-      // Perder o quadro tira a responsabilidade junto: alguém que recebe
-      // card de um quadro que não abre é um beco sem saída.
-      const j = e.responsavel_em.indexOf(chave);
-      if(j >= 0){
-        e.responsavel_em.splice(j, 1);
-        toast(`${nomeQuadro(chave)}: responsabilidade removida junto`);
-      }
+    if(e.admin) return;
+    if(!e.acessos) e.acessos = {};
+    if(nivel){
+      e.acessos[quadro] = nivel;
     }else{
-      e.quadros.push(chave);
+      delete e.acessos[quadro];
+      // Sem acesso ao quadro, receber card dele seria um beco sem saída:
+      // a pessoa entraria na distribuição e não conseguiria abrir a tela.
+      const k = e.responsavel_em.indexOf(quadro);
+      if(k >= 0){
+        e.responsavel_em.splice(k, 1);
+        toast(`${nomeQuadro(quadro)}: também deixou de receber card`);
+      }
     }
+    e.perfil = 'personalizado';
+    e.quadros = Object.keys(e.acessos);
     pintarPainel();
-    salvar({quadros: e.quadros, responsavel_em: e.responsavel_em});
+    salvar({ acessos: e.acessos, responsavel_em: e.responsavel_em });
   }
 
-  function todosQuadros(){
+  function todosNivel(nivel){
     const e = st.edicao;
-    const todas = st.catalogo.quadros.map(q => q.chave);
-    if(e.quadros.length === todas.length){
-      e.quadros = []; e.responsavel_em = [];
-    }else{
-      e.quadros = todas;
-    }
+    if(e.admin) return;
+    e.acessos = {};
+    if(nivel) st.catalogo.quadros.forEach(q => e.acessos[q.chave] = nivel);
+    else e.responsavel_em = [];
+    e.perfil = 'personalizado';
+    e.quadros = Object.keys(e.acessos);
     pintarPainel();
-    salvar({quadros: e.quadros, responsavel_em: e.responsavel_em});
+    salvar({ acessos: e.acessos, responsavel_em: e.responsavel_em });
+  }
+
+  /* Perfil é ponto de partida, não jaula: preenche tudo de uma vez e a
+     exceção se ajusta depois, quadro a quadro. */
+  function aplicarPerfil(chave){
+    const e = st.edicao;
+    if(chave === 'personalizado'){ e.perfil = 'personalizado'; pintarPainel(); return; }
+    const p = st.catalogo.perfis.find(x => x.chave === chave);
+    if(!p) return;
+    confirmar('Aplicar perfil ' + p.nome,
+      `${esc(p.descricao)}<br><br>Isso <b>substitui</b> o que está configurado hoje
+       para <b>${esc(e.nome)}</b>. Dá para ajustar quadro a quadro depois.`,
+      'Aplicar', () => { e.perfil = chave; salvar({ perfil: chave }); });
   }
 
   function alternarResp(chave){
     const e = st.edicao;
+    // Admin acessa tudo; para os demais, só quadro liberado.
+    if(!e.admin && !(e.acessos || {})[chave]) return;
     const i = e.responsavel_em.indexOf(chave);
     if(i >= 0) e.responsavel_em.splice(i, 1);
     else e.responsavel_em.push(chave);
@@ -799,14 +888,6 @@ const Acessos = (function(){
     e.telas = e.telas.length === todas.length ? [] : todas;
     pintarPainel();
     salvar({telas: e.telas});
-  }
-
-  function definirAlcance(v){
-    const e = st.edicao;
-    if(e.alcance === v) return;
-    e.alcance = v;
-    pintarPainel();
-    salvar({alcance: v});
   }
 
   function alternarAtivo(){
@@ -1036,8 +1117,8 @@ const Acessos = (function(){
   document.addEventListener('DOMContentLoaded', carregar);
 
   return { aba, abrir, fecharPainel, buscar, filtrar, recarregar, fecharModal,
-           alternarAdmin, alternarQuadro, alternarResp, alternarTela,
-           todosQuadros, todasTelas, definirAlcance,
+           alternarAdmin, alternarResp, alternarTela, todasTelas,
+           definirNivel, todosNivel, aplicarPerfil,
            modalNova, criar, gravarSenha, senhaSugerida };
 })();
 </script>
