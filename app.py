@@ -109,14 +109,23 @@ GRUPOS_ORDEM = ['Operação', 'Comercial', 'Clientes', 'OKR', 'Comunicação', '
 # Sem isso, Educação e Tecnologia sumiam da tela de acessos e ninguém
 # conseguia liberar esses quadros para ninguém.
 QUADROS = []
+# Telas da plataforma. Cada uma é liga/desliga -- diferente dos quadros de
+# trabalho, que têm três estados porque neles existe a pergunta "quanto
+# desta pessoa". Numa tela como o Feed essa pergunta não faz sentido.
+#
+# `crm` e `crm_painel` são separados de propósito: quem opera o funil não
+# necessariamente pode ver receita, ticket médio e conversão por pessoa.
 AREAS = [
-    ('agenda',    'Agenda',    'calendar_month', 'Planejamento do dia e cronômetro'),
-    ('crm',       'CRM',       'filter_alt',     'Funis de qualificação, fechamento e nutrição'),
-    ('clientes',  'Clientes',  'business',       'Carteira de clientes'),
-    ('okr',       'OKR',       'target',         'Objetivos e resultados-chave'),
-    ('feed',      'Feed',      'campaign',       'Comunicados, eventos e celebrações'),
-    ('dashboard', 'Painel',    'insights',       'Indicadores de projetos e produtividade'),
-    ('lixeira',   'Lixeira',   'delete',         'Itens excluídos e restauração'),
+    ('feed',          'Feed',                   'campaign',       'Comunicados, eventos e celebrações'),
+    ('agenda',        'Agenda',                 'calendar_month', 'Planejamento do dia e cronômetro'),
+    ('crm',           'CRM',                    'filter_alt',     'Funis de qualificação, fechamento e nutrição'),
+    ('crm_painel',    'Dashboard do CRM',       'monitoring',     'Resultado comercial: receita, conversão e ticket'),
+    ('dashboard',     'Dashboard operacional',  'insights',       'Entrega, esforço e time'),
+    ('okr',           'OKR',                    'target',         'Objetivos e resultados-chave'),
+    ('clientes',      'Clientes',               'business',       'Carteira de clientes'),
+    ('lixeira',       'Lixeira',                'delete',         'Itens excluídos e restauração'),
+    ('configuracoes', 'Configurações',          'settings',       'Como cada quadro distribui a demanda'),
+    ('acessos',       'Acessos',                'key',            'Quem entra e o que cada um vê'),
 ]
 QUADROS_VALIDOS = {q for q, _ in QUADROS}
 AREAS_VALIDAS = {a for a, _, _, _ in AREAS}
@@ -219,6 +228,55 @@ def quadros_que_direciono():
         except Exception as e:
             print("Aviso: quadros_que_direciono:", e)
     return sorted(set(meus))
+
+
+def _pessoas_que_direcionam(quadro):
+    """Quem recebe o aviso de card sem dono naquele quadro.
+
+    É o MESMO grupo que já enxerga a fila em `pode_direcionar` --
+    administrador, quem tem nível "vê tudo" ali, e quem foi designado em
+    Configurações. Um público novo para notificação criaria duas
+    respostas possíveis para "quem cuida deste quadro", e elas
+    divergiriam na primeira mudança de configuração.
+    """
+    ids = set()
+    try:
+        r = (supabase.table("usuarios").select("id, acessos, admin")
+             .eq("ativo", True).execute())
+        for u in (r.data or []):
+            if u.get("admin") or (u.get("acessos") or {}).get(quadro) == "tudo":
+                ids.add(str(u["id"]))
+    except Exception as e:
+        print("Aviso: _pessoas_que_direcionam (acessos):", e)
+    try:
+        r = (supabase.table("quadro_responsaveis").select("usuario_id")
+             .eq("quadro", quadro).eq("papel", "direciona").execute())
+        ids |= {str(x["usuario_id"]) for x in (r.data or []) if x.get("usuario_id")}
+    except Exception as e:
+        print("Aviso: _pessoas_que_direcionam (responsaveis):", e)
+    return ids
+
+
+def avisar_sem_dono(projeto_id, nome_projeto, quadro):
+    """Notifica quem direciona o quadro que um card chegou sem dono.
+
+    Chamado toda vez que um card nasce ou volta a ficar órfão -- por
+    exemplo, quando quem o executava é desativado. Sem isto, um card
+    entra em `aguardando_responsavel` e só é descoberto quando alguém
+    abre a fila por conta própria.
+    """
+    try:
+        for uid in _pessoas_que_direcionam(quadro):
+            supabase.table("notificacoes").insert({
+                "usuario_id": uid,
+                "tipo": "card_sem_dono",
+                "projeto_id": projeto_id,
+                "resumo": f'"{nome_projeto}" chegou sem responsável e está esperando '
+                         f'na fila de {quadro}.',
+                "lida": False,
+            }).execute()
+    except Exception as e:
+        print("Aviso: avisar_sem_dono:", e)
 
 
 def quadro_do_alvo(alvo):
@@ -1302,40 +1360,50 @@ def historico_tempo(projeto_id):
 
 @app.route('/api/notificacoes', methods=['GET'])
 def get_notificacoes():
+    """Duas fontes num sino só.
+
+    Comentário em projeto que a pessoa RESPONDE — igual sempre foi.
+    Card SEM DONO em quadro que a pessoa DIRECIONA — novo: sem isto,
+    ninguém era avisado que um card tinha chegado órfão na fila; era
+    preciso abrir Configurações por conta própria para descobrir.
+    """
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    usuario = session.get('usuario_nome')
+    usuario_id = str(session.get('usuario_id') or '')
+    usuario = session.get('usuario_nome') or ''
+    notificacoes = []
+
+    # --- comentários em projetos sob a responsabilidade da pessoa ---
     try:
-        # 1. Busca todos os projetos do banco
-        res_projetos = supabase.table('projetos').select('id, nome_projeto, responsavel').execute()
-        projetos_do_usuario = {}
-        
-        # Filtra na unha (Python) para evitar erro de maiúscula/minúscula/espaço
-        for p in res_projetos.data:
-            if p['responsavel'] and p['responsavel'].strip().lower() == usuario.strip().lower():
-                projetos_do_usuario[p['id']] = p['nome_projeto']
-
-        if not projetos_do_usuario:
-            return jsonify({"status": "sucesso", "notificacoes": []}), 200
-
-        proj_ids = list(projetos_do_usuario.keys())
-        
-        # 2. Busca comentários não lidos apenas desses projetos
-        res_comentarios = supabase.table('comentarios').select('*').in_('projeto_id', proj_ids).eq('lido_pelo_responsavel', False).execute()
-        
-        notificacoes = []
-        for c in res_comentarios.data:
-            # Não notifica se o autor for você mesmo
-            if c['autor'].strip().lower() != usuario.strip().lower():
-                c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
-                notificacoes.append(c)
-
-        # 3. Ordena para os mais novos ficarem no topo
-        notificacoes.sort(key=lambda x: x['criado_em'], reverse=True)
-        
-        return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
+        res_projetos = (supabase.table('projetos')
+                        .select('id, nome_projeto, responsavel').execute())
+        projetos_do_usuario = {
+            p['id']: p['nome_projeto'] for p in (res_projetos.data or [])
+            if p.get('responsavel')
+            and p['responsavel'].strip().lower() == usuario.strip().lower()
+        }
+        if projetos_do_usuario:
+            res_comentarios = (supabase.table('comentarios').select('*')
+                               .in_('projeto_id', list(projetos_do_usuario.keys()))
+                               .eq('lido_pelo_responsavel', False).execute())
+            for c in (res_comentarios.data or []):
+                if (c.get('autor') or '').strip().lower() != usuario.strip().lower():
+                    c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
+                    c['tipo'] = 'comentario'
+                    notificacoes.append(c)
     except Exception as e:
-        print(f"[CRITICAL] Erro em Notificacoes: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao buscar notificacoes"}), 500
+        print(f"[CRITICAL] Erro em Notificacoes (comentarios): {e}")
+
+    # --- cards sem dono, nos quadros que a pessoa direciona ---
+    try:
+        r = (supabase.table('notificacoes').select('*')
+             .eq('usuario_id', usuario_id).eq('lida', False)
+             .order('criado_em', desc=True).limit(60).execute())
+        notificacoes.extend(r.data or [])
+    except Exception as e:
+        print(f"[CRITICAL] Erro em Notificacoes (cards sem dono): {e}")
+
+    notificacoes.sort(key=lambda x: x.get('criado_em') or '', reverse=True)
+    return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
 
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
@@ -1994,8 +2062,11 @@ def dashboard_comercial_page():
     """
     if 'usuario_id' not in session:
         return redirect(url_for('login', proximo=request.path))
-    liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
-                or pode_acessar_modulo('dashboard')
+    # O dashboard do CRM tem tela própria: quem opera o funil não
+    # necessariamente pode ver receita e conversão por pessoa.
+    liberado = (session.get('admin') is True
+                or session.get('nivel_acesso') == 'admin'
+                or pode_acessar_modulo('crm_painel')
                 or pode('crm.painel.ver'))
     if not liberado:
         return redirect(url_for('index'))
@@ -3709,14 +3780,16 @@ def _acao_abrir_quadros(acao, dados):
                 "data_status_atual": datetime.now(timezone.utc).isoformat(),
             }
             r = _inserir_projeto(novo)
+            projeto_id = (r.data or [{}])[0].get("id")
+            # Card sem dono nenhum: avisa quem direciona o quadro, senão
+            # ele só é descoberto quando alguém abre a fila por conta
+            # própria.
+            if aguardando and projeto_id:
+                avisar_sem_dono(projeto_id, nome, quadro)
             criados.append({
-                "projeto_id": (r.data or [{}])[0].get("id"),
+                "projeto_id": projeto_id,
                 "quadro": quadro,
                 "responsavel": dono.get("nome") if dono else None,
-                # Em Direto e Rodízio avisa quem executa; em Fila, quem
-                # direciona. Card que nasce sem ninguém saber é o
-                # problema que estamos resolvendo.
-                "avisar": (dono or direciona or {}).get("nome"),
             })
     return {"criados": len(criados), "itens": criados}
 
