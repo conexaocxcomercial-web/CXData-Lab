@@ -4621,6 +4621,10 @@ def api_operacional_painel():
         f_quadro = request.args.get('quadro') or ''
         f_resp = request.args.get('responsavel') or ''
         f_cliente = request.args.get('cliente') or ''
+        # Por qual data o período recorta. "Fechamos 20 este mês" e
+        # "dos abertos este mês, 20 já fecharam" são perguntas diferentes,
+        # e antes só a primeira tinha resposta.
+        base = 'criacao' if request.args.get('base') == 'criacao' else 'conclusao'
         area_do_quadro = QUADRO_AREA.get(f_quadro) if f_quadro else None
         if area_do_quadro:
             projetos = [p for p in projetos if p.get('area') == area_do_quadro]
@@ -4648,8 +4652,14 @@ def api_operacional_painel():
         # ============================================================
         # OTICA 1 · ENTREGA
         # ============================================================
-        finalizados = [p for p in projetos
-                       if p.get('status') == 'Finalizado' and dentro(p.get('data_conclusao'))]
+        if base == 'criacao':
+            # Abertos no período que já foram entregues -- mede a safra.
+            finalizados = [p for p in projetos
+                           if p.get('status') == 'Finalizado'
+                           and p.get('data_conclusao') and dentro(p.get('criado_em'))]
+        else:
+            finalizados = [p for p in projetos
+                           if p.get('status') == 'Finalizado' and dentro(p.get('data_conclusao'))]
         cancelados = [p for p in projetos
                       if p.get('status') == 'Cancelado' and dentro(p.get('data_status_atual'))]
         iniciados = [p for p in projetos if dentro(p.get('criado_em'))]
@@ -4773,6 +4783,9 @@ def api_operacional_painel():
                 "total_finalizados": len(finalizados),
             },
             "fluxo": sorted(fluxo.values(), key=lambda x: x["quando"]),
+            # O gráfico mostra o desenho; o resumo responde a pergunta.
+            "fluxo_total": {"iniciados": len(iniciados), "finalizados": len(finalizados),
+                            "saldo": len(iniciados) - len(finalizados)},
             "por_quadro": por_quadro,
         }
 
@@ -4878,7 +4891,8 @@ def api_operacional_painel():
 
         return jsonify({
             "status": "sucesso",
-            "periodo": {"de": de, "ate": ate, "granularidade": granul, "dias_uteis": dias_uteis},
+            "periodo": {"de": de, "ate": ate, "granularidade": granul,
+                        "dias_uteis": dias_uteis, "base": base},
             "entrega": entrega,
             "esforco": esforco,
             "time": time_,
