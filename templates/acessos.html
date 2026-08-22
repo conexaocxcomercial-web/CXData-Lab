@@ -444,6 +444,7 @@ const Acessos = (function(){
     aberta: null,        // pessoa aberta no painel
     edicao: null,        // cópia editável
     salvando: false,
+    pendente: null,      // alteração que chegou durante um salvamento
   };
 
   /* ---------- utilidades ---------- */
@@ -911,6 +912,20 @@ const Acessos = (function(){
       });
   }
 
+  /* Marca quem pode RECEBER card do quadro -- o que alimenta a lista de
+     Configurações na hora de distribuir a demanda. É decisão separada de
+     enxergar: acompanhar um quadro não obriga a receber trabalho dele. */
+  function alternarResp(chave){
+    const e = st.edicao;
+    // Admin acessa todos os quadros; para os demais, só quadro liberado.
+    if(!e.admin && !(e.acessos || {})[chave]) return;
+    const i = e.responsavel_em.indexOf(chave);
+    if(i >= 0) e.responsavel_em.splice(i, 1);
+    else e.responsavel_em.push(chave);
+    pintarPainel();
+    salvar({responsavel_em: e.responsavel_em});
+  }
+
   /* Estado explícito, não alternância: numa lista de dez telas, clicar em
      "vê" e receber "não vê" porque já estava ligado é o tipo de coisa que
      faz a pessoa desconfiar do que está vendo. */
@@ -949,7 +964,15 @@ const Acessos = (function(){
 
   /* ---------- gravação ---------- */
   async function salvar(campos){
-    if(!st.aberta || st.salvando) return;
+    if(!st.aberta) return;
+    // Salvamento em andamento: em vez de descartar o clique, guarda o que
+    // mudou e envia assim que o anterior terminar. Antes o `return` seco
+    // fazia a tela mostrar uma alteração que o servidor nunca recebeu --
+    // exatamente o tipo de divergência que ninguém percebe na hora.
+    if(st.salvando){
+      st.pendente = Object.assign(st.pendente || {}, campos);
+      return;
+    }
     st.salvando = true;
     status('Salvando…');
     try{
@@ -970,6 +993,12 @@ const Acessos = (function(){
       toast(err.message, 'erro');
     }finally{
       st.salvando = false;
+      // Descarrega o que se acumulou enquanto esta requisição corria.
+      if(st.pendente){
+        const fila = st.pendente;
+        st.pendente = null;
+        salvar(fila);
+      }
     }
   }
 
