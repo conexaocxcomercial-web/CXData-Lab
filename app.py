@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
+import uuid
 
 # Fuso horário de Brasília (UTC-3). Usado para gravar datas de projeto
 # de forma consistente com a realidade local — evita erro de "um dia" na
@@ -19,22 +20,458 @@ import os
 
 app = Flask(__name__)
 # CHAVE DE SESSÃO: lê de variável de ambiente, com fallback para não quebrar local
+# PENDÊNCIA DE SEGURANÇA: o valor padrão permite forjar sessão de admin.
+# Definir FLASK_SECRET_KEY no Vercel e remover o padrão.
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cxdata_chave_mestra_oficial_2026_!@")
+app.permanent_session_lifetime = timedelta(days=7)
 
-# CREDENCIAIS SUPABASE: priorizam variáveis de ambiente (Vercel).
-# O fallback mantém o sistema funcionando caso as env vars ainda não estejam configuradas.
+# CREDENCIAIS SUPABASE
+# Preferência: SUPABASE_SERVICE_KEY (service_role, passa por cima do RLS)
+# > SUPABASE_KEY (anon) > padrão embutido.
+#
+# PENDÊNCIA DE SEGURANÇA: o padrão embutido vaza junto com o repositório.
+# Ao fechar: repositório privado, chaves rotacionadas, variáveis no Vercel
+# e estes padrões removidos.
 URL = os.environ.get("SUPABASE_URL", "https://udqeheyyhvqlwejdwkbj.supabase.co")
-KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
+KEY = (os.environ.get("SUPABASE_SERVICE_KEY")
+       or os.environ.get("SUPABASE_KEY")
+       or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkcWVoZXl5aHZxbHdlamR3a2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTk3NTksImV4cCI6MjA4ODk5NTc1OX0.qo9kF_dcrVLycg0XV9dnFyIH2euHAC8FISbkgv3KNrQ")
 supabase: Client = create_client(URL, KEY)
+
+# ============================================================
+# ACESSOS v2 -- modelo de permissao em modulo separado
+#
+# Acesso e a parte do sistema em que um erro custa mais caro.
+# Isolar as regras num arquivo permite le-las inteiras de uma vez,
+# em vez de caca-las entre cinco mil linhas de rotas.
+#
+# O registro do blueprint fica no fim do arquivo, depois de
+# ARVORE_QUADROS e das funcoes que o modulo precisa existirem.
+# ============================================================
+import acessos_v2
+
+
+# ============================================================
+# PERMISSÕES — ponto único de decisão
+#
+# Uma capacidade é um verbo sobre um recurso: 'crm.lead.editar'.
+# O escopo diz sobre quais registros ela vale: tudo, time, proprio.
+#
+# O catálogo vive aqui, no código, e nunca no banco: assim nenhuma
+# capacidade existe sem alguém tê-la implementado.
+# ============================================================
+
+CATALOGO = {
+    # chave: (grupo, rótulo, descrição, escopos possíveis, sensível)
+    'projeto.ver':        ('Operação', 'Ver projetos', 'Abrir os quadros e ver os cards.', ('tudo','quadro','proprio'), False),
+    'projeto.editar':     ('Operação', 'Editar projetos', 'Criar, editar e mover cards entre fases.', ('tudo','quadro','proprio'), False),
+    'projeto.excluir':    ('Operação', 'Excluir projetos', 'Enviar projeto para a lixeira.', ('tudo','quadro','proprio'), False),
+    'projeto.solicitar':  ('Operação', 'Solicitar em outro quadro', 'Abrir demanda para outra área.', (), False),
+    'projeto.atribuir':   ('Operação', 'Atribuir responsável', 'Direcionar um card novo para quem executa.', ('tudo', 'quadro'), False),
+    'tempo.registrar':    ('Operação', 'Registrar tempo', 'Usar o cronômetro e planejar a agenda.', (), False),
+    'tempo.ver':          ('Operação', 'Ver tempo lançado', 'Horas na agenda e no histórico dos projetos.', ('tudo','quadro','proprio'), False),
+
+    'crm.lead.ver':       ('Comercial', 'Ver leads', 'Abrir os três funis e ver os cards.', ('tudo','quadro','proprio'), False),
+    'crm.lead.editar':    ('Comercial', 'Editar leads', 'Criar, editar e mover no funil.', ('tudo','quadro','proprio'), False),
+    'crm.lead.excluir':   ('Comercial', 'Excluir leads', 'Remover lead do funil.', ('tudo','proprio'), False),
+    'crm.valor.ver':      ('Comercial', 'Ver valores', 'Valor estimado no card e projeção de receita. Sem esta permissão o funil funciona normalmente, só sem os números.', (), True),
+    'crm.painel.ver':     ('Comercial', 'Painel do funil', 'Indicadores de conversão e tempo por etapa.', ('tudo','quadro','proprio'), False),
+
+    'cliente.ver':        ('Clientes', 'Ver clientes', 'Abrir a carteira de clientes.', ('tudo','proprio'), False),
+    'cliente.gerir':      ('Clientes', 'Gerir clientes', 'Cadastrar e editar clientes.', (), False),
+    'cliente.portal.gerir':('Clientes', 'Gerir portal do cliente', 'Liberar acesso externo e gerir usuários do cliente.', (), False),
+
+    'okr.ver':            ('OKR', 'Ver OKR', 'Ver a árvore de objetivos e o progresso.', ('tudo','quadro'), False),
+    'okr.gerir':          ('OKR', 'Gerir OKR', 'Criar e editar objetivos, resultados-chave e tarefas.', ('tudo','quadro'), False),
+
+    'feed.publicar':      ('Comunicação', 'Publicar no mural', 'Post, evento ou celebração.', (), False),
+    'feed.comunicado':    ('Comunicação', 'Publicar comunicado', 'A voz institucional da empresa.', (), False),
+    'feed.moderar':       ('Comunicação', 'Moderar o mural', 'Fixar, editar e excluir post de qualquer pessoa.', (), False),
+    'comentario.excluir': ('Comunicação', 'Excluir comentários', 'Apagar comentário de outra pessoa.', (), False),
+
+    'dashboard.ver':      ('Análise', 'Ver dashboard', 'Painel geral de projetos e produtividade.', ('tudo','quadro','proprio'), False),
+    'dados.exportar':     ('Análise', 'Exportar dados', 'Baixar listagens em planilha. Dado exportado sai do controle da plataforma.', (), True),
+
+    'usuario.gerir':      ('Administração', 'Gerir pessoas', 'Criar e editar pessoas da equipe.', (), True),
+    'papel.gerir':        ('Administração', 'Gerir papéis', 'Criar papéis e definir permissões.', (), True),
+    'lixeira.ver':        ('Administração', 'Ver lixeira', 'Ver e restaurar itens excluídos.', (), False),
+    'lixeira.purgar':     ('Administração', 'Apagar em definitivo', 'Remoção irreversível.', (), True),
+    'auditoria.ver':      ('Administração', 'Ver auditoria', 'Registro de quem fez o quê.', (), True),
+}
+
+GRUPOS_ORDEM = ['Operação', 'Comercial', 'Clientes', 'OKR', 'Comunicação', 'Análise', 'Administração']
+
+# Quadros de trabalho e áreas da plataforma. Ficam no código porque
+# são a lista real de telas que existem — não configuração.
+# Lista de quadros para as telas de acesso. Definida aqui porque é
+# usada antes de ARVORE_QUADROS existir; a função sincroniza_quadros()
+# logo abaixo da árvore substitui esta lista pela versão completa.
+# Sem isso, Educação e Tecnologia sumiam da tela de acessos e ninguém
+# conseguia liberar esses quadros para ninguém.
+QUADROS = []
+# Telas da plataforma. Cada uma é liga/desliga -- diferente dos quadros de
+# trabalho, que têm três estados porque neles existe a pergunta "quanto
+# desta pessoa". Numa tela como o Feed essa pergunta não faz sentido.
+#
+# `crm` e `crm_painel` são separados de propósito: quem opera o funil não
+# necessariamente pode ver receita, ticket médio e conversão por pessoa.
+AREAS = [
+    ('feed',          'Feed',                   'campaign',       'Comunicados, eventos e celebrações'),
+    ('agenda',        'Agenda',                 'calendar_month', 'Planejamento do dia e cronômetro'),
+    ('crm',           'CRM',                    'filter_alt',     'Funis de qualificação, fechamento e nutrição'),
+    ('crm_painel',    'Dashboard do CRM',       'monitoring',     'Resultado comercial: receita, conversão e ticket'),
+    ('dashboard',     'Dashboard operacional',  'insights',       'Entrega, esforço e time'),
+    ('okr',           'OKR',                    'target',         'Objetivos e resultados-chave'),
+    ('clientes',      'Clientes',               'business',       'Carteira de clientes'),
+    ('lixeira',       'Lixeira',                'delete',         'Itens excluídos e restauração'),
+    ('configuracoes', 'Configurações',          'settings',       'Como cada quadro distribui a demanda'),
+    ('acessos',       'Acessos',                'key',            'Quem entra e o que cada um vê'),
+]
+QUADROS_VALIDOS = {q for q, _ in QUADROS}
+AREAS_VALIDAS = {a for a, _, _, _ in AREAS}
+
+
+def caps_da_sessao():
+    """Capacidades do usuário logado: {capacidade: escopo}.
+    Carregadas no login e guardadas na sessão."""
+    return session.get('caps') or {}
+
+
+def pode(capacidade, alvo=None):
+    """Verdadeiro se o usuário tem a capacidade e, havendo alvo, se o
+    escopo dele alcança esse alvo.
+
+    Escopos:
+      tudo    registros de todo mundo
+      quadro  registros dos quadros em que a pessoa atua
+      proprio só onde ela é responsável
+
+    `alvo` é um dict do registro. O dono vem de 'responsavel',
+    'colaborador' ou 'autor'; o quadro vem de 'area' ou 'funil'.
+    """
+    esc = caps_da_sessao().get(capacidade)
+    if esc is None:
+        return False
+    if alvo is None:
+        return True
+    if esc == 'tudo':
+        return True
+
+    eu = (session.get('usuario_nome') or '').strip().lower()
+    dono = (alvo.get('responsavel') or alvo.get('colaborador')
+            or alvo.get('autor') or '').strip().lower()
+
+    if esc == 'quadro':
+        # O escopo 'quadro' consulta o nível DAQUELE quadro. Assim a mesma
+        # pessoa pode ver tudo em R&S e só os próprios cards em Marketing,
+        # sem precisar de duas contas nem de exceção no código.
+        nivel = nivel_no_quadro(alvo)
+        if nivel == 'tudo':
+            return True
+        if nivel == 'proprio':
+            return dono == eu
+        return False
+
+    if esc == 'time':
+        # Escopo legado. Enquanto houver papel gravado com 'time',
+        # ele se comporta como 'quadro' em vez de falhar.
+        return dono == eu or alvo_no_meu_quadro(alvo)
+
+    return dono == eu
+
+
+def pode_direcionar(quadro):
+    """Quem distribui a demanda que chega naquele quadro.
+
+    Direcionar não é permissão de pessoa, é papel de quadro. Três podem:
+
+      1. administrador — responde por tudo;
+      2. quem foi escolhido em Configurações como quem direciona;
+      3. quem tem nível "vê tudo" naquele quadro — já enxerga e responde
+         pelo trabalho de todos ali, e travar a atribuição criaria uma
+         dependência inútil de uma pessoa só.
+
+    Antes `projeto.atribuir` era liberado a todo mundo: qualquer pessoa
+    podia direcionar card em qualquer quadro, inclusive nos que nem
+    acessa. A fila aparecia para quem não tinha nada a ver com ela.
+    """
+    if session.get('admin') or session.get('nivel_acesso') == 'admin':
+        return True
+    if not quadro:
+        return False
+    if (session.get('acessos') or {}).get(quadro) == 'tudo':
+        return True
+    eu = str(session.get('usuario_id') or '')
+    if not eu:
+        return False
+    try:
+        r = (supabase.table("quadro_responsaveis").select("usuario_id")
+             .eq("quadro", quadro).eq("papel", "direciona").limit(1).execute())
+        return bool(r.data) and str(r.data[0].get("usuario_id") or '') == eu
+    except Exception as e:
+        print("Aviso: pode_direcionar:", e)
+        return False
+
+
+def quadros_que_direciono():
+    """Quadros em que a pessoa pode distribuir demanda."""
+    if session.get('admin') or session.get('nivel_acesso') == 'admin':
+        return [c for c, _a, _p, _i, _s in ARVORE_QUADROS]
+    acessos = session.get('acessos') or {}
+    meus = [q for q, n in acessos.items() if n == 'tudo']
+    eu = str(session.get('usuario_id') or '')
+    if eu:
+        try:
+            r = (supabase.table("quadro_responsaveis").select("quadro")
+                 .eq("papel", "direciona").eq("usuario_id", eu).execute())
+            meus += [x["quadro"] for x in (r.data or []) if x.get("quadro")]
+        except Exception as e:
+            print("Aviso: quadros_que_direciono:", e)
+    return sorted(set(meus))
+
+
+def _pessoas_que_direcionam(quadro):
+    """Quem recebe o aviso de card sem dono naquele quadro.
+
+    É o MESMO grupo que já enxerga a fila em `pode_direcionar` --
+    administrador, quem tem nível "vê tudo" ali, e quem foi designado em
+    Configurações. Um público novo para notificação criaria duas
+    respostas possíveis para "quem cuida deste quadro", e elas
+    divergiriam na primeira mudança de configuração.
+    """
+    ids = set()
+    try:
+        r = (supabase.table("usuarios").select("id, acessos, admin")
+             .eq("ativo", True).execute())
+        for u in (r.data or []):
+            if u.get("admin") or (u.get("acessos") or {}).get(quadro) == "tudo":
+                ids.add(str(u["id"]))
+    except Exception as e:
+        print("Aviso: _pessoas_que_direcionam (acessos):", e)
+    try:
+        r = (supabase.table("quadro_responsaveis").select("usuario_id")
+             .eq("quadro", quadro).eq("papel", "direciona").execute())
+        ids |= {str(x["usuario_id"]) for x in (r.data or []) if x.get("usuario_id")}
+    except Exception as e:
+        print("Aviso: _pessoas_que_direcionam (responsaveis):", e)
+    return ids
+
+
+def avisar_sem_dono(projeto_id, nome_projeto, quadro):
+    """Notifica quem direciona o quadro que um card chegou sem dono.
+
+    Chamado toda vez que um card nasce ou volta a ficar órfão -- por
+    exemplo, quando quem o executava é desativado. Sem isto, um card
+    entra em `aguardando_responsavel` e só é descoberto quando alguém
+    abre a fila por conta própria.
+    """
+    try:
+        for uid in _pessoas_que_direcionam(quadro):
+            supabase.table("notificacoes").insert({
+                "usuario_id": uid,
+                "tipo": "card_sem_dono",
+                "projeto_id": projeto_id,
+                "resumo": f'"{nome_projeto}" chegou sem responsável e está esperando '
+                         f'na fila de {quadro}.',
+                "lida": False,
+            }).execute()
+    except Exception as e:
+        print("Aviso: avisar_sem_dono:", e)
+
+
+def quadro_do_alvo(alvo):
+    """Chave do quadro a que o registro pertence, ou None.
+
+    Projeto traz `area`; lead não tem área, e o funil comercial pertence
+    ao quadro Comercial.
+    """
+    area = alvo.get('area')
+    if area:
+        for q, a in QUADRO_AREA.items():
+            if a == area:
+                return q
+    if alvo.get('funil'):
+        return 'comercial'
+    return None
+
+
+def nivel_no_quadro(alvo):
+    """Nível da pessoa no quadro do registro: 'tudo', 'proprio' ou None.
+
+    É aqui que o acesso deixou de ser global. Antes existia UM alcance
+    para todos os quadros: ou a pessoa via o trabalho de todos em todos,
+    ou só o dela em todos. A operação real precisa do meio-termo — a
+    mesma pessoa lidera um quadro e apenas executa em outro.
+    """
+    q = quadro_do_alvo(alvo)
+    if not q:
+        return None
+    mapa = session.get('acessos') or {}
+    nivel = mapa.get(q)
+    if nivel in ('tudo', 'proprio'):
+        return nivel
+    # Sem o mapa (sessão antiga), cai no modelo anterior para não deslogar
+    # ninguém no meio do dia.
+    if q in (session.get('quadros') or []):
+        return session.get('alcance') if session.get('alcance') in ('tudo', 'proprio') else 'proprio'
+    return None
+
+
+def alvo_no_meu_quadro(alvo):
+    """True se o registro pertence a um quadro que a pessoa acessa."""
+    return nivel_no_quadro(alvo) is not None
+
+
+def filtrar(registros, capacidade):
+    """Devolve só os registros que o escopo da capacidade alcança."""
+    esc = caps_da_sessao().get(capacidade)
+    if esc is None:
+        return []
+    if esc == 'tudo':
+        return registros
+    return [r for r in registros if pode(capacidade, r)]
+
+
+def quadros_permitidos():
+    """Quadros de trabalho liberados para esta pessoa."""
+    return session.get('quadros') or []
+
+
+def areas_permitidas():
+    """Áreas da plataforma liberadas para esta pessoa."""
+    return session.get('areas') or []
+
+
+def exige(capacidade):
+    """Decorador de rota: bloqueia quem não tem a capacidade."""
+    def wrapper(fn):
+        @wraps(fn)
+        def interna(*args, **kwargs):
+            if 'usuario_id' not in session:
+                return jsonify({"erro": "Nao logado"}), 401
+            if not pode(capacidade):
+                return jsonify({"status": "erro",
+                                "mensagem": "Você não tem permissão para isso."}), 403
+            return fn(*args, **kwargs)
+        return interna
+    return wrapper
+
+
+def carregar_permissoes(usuario):
+    """Monta caps, quadros, telas e alcance na sessao. Chamado no login.
+
+    O QUE MUDOU
+    -----------
+    Antes as capacidades vinham de `papel_capacidades`, com excecoes por
+    pessoa em `usuarios.ajustes`. Agora saem de quatro campos da propria
+    pessoa: admin, quadros, alcance e areas.
+
+    As ~200 chamadas `pode(...)` espalhadas pelo app nao mudam. Trocamos
+    quem responde a pergunta, nao a pergunta.
+    """
+    try:
+        acessos_v2.aplicar_na_sessao(usuario)
+    except Exception as e:
+        # Sessao sem capacidade nenhuma e ruim, mas login que explode e
+        # pior: a pessoa ao menos entra e ve a tela inicial.
+        print("Erro ao carregar permissoes:", e)
+        session['caps'] = {}
+        session['quadros'] = usuario.get('quadros') or []
+        session['areas'] = usuario.get('areas') or []
+
+
+def registrar(acao, recurso=None, alvo_id=None, detalhe=None):
+    """Grava na auditoria. Nunca interrompe a operação principal."""
+    try:
+        supabase.table("auditoria").insert({
+            "usuario": session.get('usuario_nome'),
+            "usuario_id": str(session.get('usuario_id', '')),
+            "acao": acao,
+            "recurso": recurso,
+            "alvo_id": str(alvo_id) if alvo_id is not None else None,
+            "detalhe": detalhe,
+        }).execute()
+    except Exception as e:
+        print("Aviso: auditoria nao registrada:", e)
+
+
+# ============================================================
+# MODO PARALELO — a ponte entre o modelo antigo e o novo
+#
+# Durante a migração, cada checagem antiga também consulta o modelo
+# novo e registra quando os dois discordam. Quem manda é sempre o
+# ANTIGO: o novo só observa. Alguns dias de uso real provam a
+# equivalência antes de trocar de verdade.
+#
+# Quando MODO_PARALELO virar False, o novo passa a mandar.
+# ============================================================
+
+MODO_PARALELO = True
+
+# Traduz o que o modelo antigo perguntava para a capacidade equivalente.
+MAPA_MODULO_CAP = {
+    'clientes':      'cliente.ver',
+    'agenda':        'tempo.registrar',
+    'planejamento':  'tempo.registrar',
+    'dashboard':     'dashboard.ver',
+    'okr':           'okr.ver',
+    'crm':           'crm.lead.ver',
+    'feed':          'feed.publicar',
+    'lixeira':       'lixeira.ver',
+    'configuracoes': 'papel.gerir',
+}
+
+
+def _comparar(rotulo, antigo, novo, extra=None):
+    """Registra divergência entre os dois modelos. Devolve sempre o antigo.
+
+    Só registra quando o usuário já tem papel — sem papel, o modelo novo
+    responde vazio por definição e a divergência não significa nada.
+    """
+    if not MODO_PARALELO or not session.get('caps'):
+        return antigo
+    if bool(antigo) != bool(novo):
+        try:
+            supabase.table("auditoria").insert({
+                "usuario": session.get('usuario_nome'),
+                "usuario_id": str(session.get('usuario_id', '')),
+                "acao": "divergencia_permissao",
+                "recurso": rotulo,
+                "detalhe": {
+                    "antigo": bool(antigo),
+                    "novo": bool(novo),
+                    "nivel": session.get('nivel_acesso'),
+                    "papel": session.get('papel_nome'),
+                    "extra": extra,
+                },
+            }).execute()
+        except Exception as e:
+            print("Aviso: divergencia nao registrada:", e)
+    return antigo
+
 
 @app.context_processor
 def injetar_permissoes():
     """Disponibiliza as permissões do usuário em TODOS os templates,
-    para a sidebar e telas decidirem o que mostrar."""
+    para a sidebar e telas decidirem o que mostrar.
+
+    `quadros_catalogo` sai daqui, e não de uma lista escrita à mão em
+    cada tela. A tela inicial mantinha a própria cópia da árvore de
+    quadros e ficou dois quadros atrasada -- Educação e Tecnologia
+    existiam no sistema e não apareciam no painel, nem com contagem
+    zerada: simplesmente não estavam lá.
+
+    Servindo do mesmo lugar que a barra lateral e a tela de acessos
+    leem, quadro novo em ARVORE_QUADROS aparece em todo lugar sozinho.
+    """
     return {
         "perm_modulos": session.get("perm_modulos") or [],
         "tipo_usuario": session.get("tipo_usuario", "interno"),
-        "papel_externo": session.get("papel_externo", "visualizador")
+        "papel_externo": session.get("papel_externo", "visualizador"),
+        "quadros_catalogo": [
+            {"chave": chave, "area": area, "icone": icone, "produto": produto}
+            for chave, area, produto, icone, _subs in ARVORE_QUADROS
+        ],
     }
 
 # --- HELPERS DE SEGURANÇA ---
@@ -88,63 +525,54 @@ def pode_acessar_modulo(modulo):
     colaborador (legado): quadros + agenda. personalizado/externo: conforme perm_modulos."""
     nivel = session.get('nivel_acesso')
     if nivel in ('admin', 'gestor'):
-        return True
+        return _comparar('modulo:' + modulo, True,
+                         pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
     if nivel == 'colaborador':
         # Legado: colaborador acessa quadros e agenda
         return modulo in ('recrutamento', 'rhestrategico', 'geral', 'agenda')
     # comum, personalizado e externo: usam a lista explícita de módulos
     modulos = session.get('perm_modulos') or []
-    return modulo in modulos
+    return _comparar('modulo:' + modulo, modulo in modulos,
+                     pode(MAPA_MODULO_CAP.get(modulo, '_')), modulo)
 
 def filtrar_projetos_permitidos(projetos):
-    """Recebe lista de projetos (dicts) e devolve só os que o usuário logado pode ver,
-    combinando as dimensões de cliente e projeto. Não afeta admin/gestor."""
-    nivel = session.get('nivel_acesso')
+    """Devolve só os projetos que a pessoa logada pode ver.
 
-    # Admin e Gestor veem tudo (comportamento atual preservado)
-    if nivel in ('admin', 'gestor'):
+    REESCRITA. A versão anterior decidia por `nivel_acesso` — 'admin',
+    'gestor', 'comum', 'colaborador' — níveis que o modelo novo não usa
+    mais. Todo mundo virou 'admin' ou 'personalizado', e 'personalizado'
+    caía num ramo granular baseado em `perm_clientes_ids` e
+    `perm_projetos_ids`, campos que nenhuma tela alimenta desde a
+    migração de acessos.
+
+    Resultado prático: a lista de projetos não respeitava os quadros nem
+    o alcance configurados. Agora a regra é uma só, e a mesma que o
+    `pode()` aplica em qualquer outro lugar.
+    """
+    if not projetos:
         return projetos
 
-    # Comum: vê TODOS os dados (o controle é só de módulos, não de dados)
-    if nivel == 'comum':
-        return projetos
+    # Portal do cliente continua com a lógica própria: ele não enxerga
+    # quadros, e sim os projetos do cliente a que está vinculado.
+    if session.get('tipo_usuario') == 'externo':
+        return _filtrar_projetos_externo(projetos)
 
-    # Colaborador (legado): só onde é responsável
-    if nivel == 'colaborador':
-        meu_nome = (session.get('usuario_nome') or '').strip().lower()
-        return [p for p in projetos if (p.get('responsavel') or '').strip().lower() == meu_nome]
+    return filtrar(projetos, 'projeto.ver')
 
-    # === PERSONALIZADO (interno) e EXTERNO (cliente): lógica granular ===
-    perm_cli_modo = session.get('perm_clientes_modo') or 'todos'
-    perm_cli_ids = set(str(x) for x in (session.get('perm_clientes_ids') or []))
-    perm_proj_modo = session.get('perm_projetos_modo') or 'todos'
-    perm_proj_ids = set(str(x) for x in (session.get('perm_projetos_ids') or []))
-    meu_nome = (session.get('usuario_nome') or '').strip().lower()
 
-    resultado = []
-    for p in projetos:
-        # Dimensão CLIENTE
-        if perm_cli_modo == 'proprios':
-            # "seus" = projetos onde ele é responsável
-            if (p.get('responsavel') or '').strip().lower() != meu_nome:
-                continue
-        elif perm_cli_modo == 'selecionados':
-            if str(p.get('cliente_id')) not in perm_cli_ids:
-                continue
-        # 'todos' não filtra por cliente
+def _filtrar_projetos_externo(projetos):
+    """Projetos visíveis a um usuário do portal do cliente.
 
-        # Dimensão PROJETO
-        if perm_proj_modo == 'selecionados':
-            if str(p.get('id')) not in perm_proj_ids:
-                continue
-        # 'todos' não filtra por projeto
+    Só o que pertence ao cliente vinculado, e só o que foi marcado como
+    visível para ele — a marcação é por projeto, na tela de edição.
+    """
+    cliente = str(session.get('cliente_vinculado_id') or '')
+    if not cliente:
+        return []
+    return [p for p in projetos
+            if str(p.get('cliente_id') or '') == cliente
+            and p.get('visivel_cliente') is True]
 
-        # Para EXTERNO: além de tudo, o projeto precisa estar marcado como visível
-        if is_externo() and not p.get('visivel_cliente'):
-            continue
-
-        resultado.append(p)
-    return resultado
 
 def projetos_visiveis_cliente():
     """Compatibilidade: retorna IDs de projetos visíveis para o externo logado."""
@@ -164,6 +592,10 @@ def login():
         dados = request.json
         email = dados.get('email')
         senha = dados.get('senha')
+        # "Manter conectado" estende a sessão para 7 dias. Sem ele, a sessão
+        # dura o navegador aberto. Sete e não trinta: a plataforma guarda
+        # dado de cliente e valor comercial.
+        session.permanent = bool(dados.get('lembrar'))
 
         # Busca o usuário só pelo e-mail
         res = supabase.table("usuarios").select("*").eq("email", email).execute()
@@ -172,6 +604,10 @@ def login():
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
 
         usuario = res.data[0]
+        if usuario.get("ativo") is False:
+            # Mesma mensagem do erro de senha: dizer "conta desativada"
+            # confirma que o e-mail existe.
+            return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
         autenticado = False
 
         # 1. Se já tem hash, valida pelo hash
@@ -182,7 +618,15 @@ def login():
             autenticado = True
             try:
                 novo_hash = gerar_hash(senha)
-                supabase.table("usuarios").update({"senha_hash": novo_hash}).eq("id", usuario["id"]).execute()
+                # Converte e apaga o texto puro no mesmo movimento: quem
+                # entra uma vez deixa de ter a senha legível no banco.
+                supabase.table("usuarios").update(
+                    # String vazia, e nao None: a coluna `senha` e NOT NULL,
+                    # entao gravar null derruba o update inteiro -- e como isto
+                    # vive dentro de um try/except, a falha era engolida e a
+                    # senha em texto puro continuava no banco.
+                    {"senha_hash": novo_hash, "senha": ""}
+                ).eq("id", usuario["id"]).execute()
             except Exception as e:
                 print(f"[AVISO] Falha ao converter senha para hash: {str(e)}")
 
@@ -198,14 +642,55 @@ def login():
             session['perm_clientes_ids'] = usuario.get('perm_clientes_ids') or []
             session['perm_projetos_modo'] = usuario.get('perm_projetos_modo') or 'todos'
             session['perm_projetos_ids'] = usuario.get('perm_projetos_ids') or []
+            # Modelo novo: carrega capacidades, quadros e equipe.
+            # Sem papel definido devolve vazio, e o sistema segue no modelo
+            # antigo — é o que permite migrar sem deslogar ninguém.
+            carregar_permissoes(usuario)
+            # Último acesso: alimenta o "nunca acessou" do portal do cliente.
+            try:
+                supabase.table("usuarios").update(
+                    {"ultimo_acesso": datetime.now(timezone.utc).isoformat()}
+                ).eq("id", usuario["id"]).execute()
+            except Exception as e:
+                print("Aviso: ultimo_acesso nao registrado:", e)
             return jsonify({"status": "sucesso"}), 200
         else:
             return jsonify({"status": "erro", "mensagem": "E-mail ou senha inválidos"}), 401
 
     return render_template('login.html')
 
+@app.route('/api/sessao')
+def diagnostico_sessao():
+    """Diz o que o SERVIDOR enxerga da sua sessao.
+
+    Existe para separar duas causas que, na tela, parecem a mesma coisa:
+    o cookie nao chegou ao servidor, ou chegou e esta vazio. Abra este
+    endereco logo depois de tentar entrar.
+    """
+    tem_cookie = bool(request.cookies.get(app.config.get("SESSION_COOKIE_NAME") or "session"))
+    return jsonify({
+        "cookie_chegou": tem_cookie,
+        "sessao_tem_usuario": "usuario_id" in session,
+        "usuario_nome": session.get("usuario_nome"),
+        "nivel_acesso": session.get("nivel_acesso"),
+        "admin": session.get("admin"),
+        "chaves_na_sessao": sorted(session.keys()),
+        "cookies_recebidos": sorted(request.cookies.keys()),
+        "secret_de_ambiente": bool(os.environ.get("FLASK_SECRET_KEY")),
+    }), 200
+
+
 @app.route('/logout')
 def logout():
+    """Encerra a sessao e volta para o login, SEM `proximo`.
+
+    Antes passava `request.path` -- que aqui vale `/logout`. A tela de
+    login guardava isso e, ao entrar com sucesso, navegava justamente
+    para /logout: a pessoa deslogava no instante em que logava, e a tela
+    parecia apenas recarregar. Um laco fechado.
+
+    Depois de sair, o destino certo e a raiz.
+    """
     session.clear()
     return redirect(url_for('login'))
 
@@ -214,20 +699,52 @@ def logout():
 @app.route('/')
 def index():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     # Cliente vai direto para a Agenda (portal dele)
     if is_cliente():
         return redirect(url_for('planejamento'))
     return render_template('index.html', usuario=session.get('usuario_nome'), usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/board/<nome_quadro>')
-def tela_projetos(nome_quadro):
+@app.route('/board/<nome_quadro>/<sub>')
+def tela_projetos(nome_quadro, sub=None):
+    """Abre a família inteira, ou já numa subdivisão.
+
+    /board/rhestrategico      -> abas Todos, Mensalista, PCCS, PCO, GD
+    /board/rhestrategico/pccs -> abre direto na aba PCCS
+    """
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    # Personalizado/externo: só acessa o quadro se tiver o módulo liberado
+        return redirect(url_for('login', proximo=request.path))
+    # Permissão é da família: quem vê RH Estratégico vê as quatro.
     if (is_personalizado() or is_externo()) and not pode_acessar_modulo(nome_quadro):
         return redirect(url_for('index'))
-    return render_template('projetos.html', quadro_atual=nome_quadro, usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+    # Subdivisão inventada na URL volta para a família, em vez de
+    # abrir uma aba que não existe.
+    if sub and not sub_valida(nome_quadro, sub):
+        return redirect(url_for('tela_projetos', nome_quadro=nome_quadro))
+    return render_template('projetos.html',
+                           quadro_atual=nome_quadro,
+                           sub_atual=sub or '',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+
+
+@app.route('/api/quadros/arvore', methods=['GET'])
+def arvore_quadros():
+    """A árvore de quadros, filtrada pelo que a pessoa pode ver."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    permitidos = quadros_permitidos()
+    tudo = session.get('nivel_acesso') in ('admin', 'gestor') and not is_personalizado()
+    saida = []
+    for chave, area, produto, icone, subs in ARVORE_QUADROS:
+        if not tudo and permitidos and chave not in permitidos:
+            continue
+        saida.append({
+            "chave": chave, "area": area, "produto": produto, "icone": icone,
+            "subs": [{"chave": s[0], "nome": s[1], "descricao": s[2]} for s in subs],
+        })
+    return jsonify({"status": "sucesso", "quadros": saida}), 200
 
 # --- API PROJETOS ---
 
@@ -306,6 +823,87 @@ def criar_projeto():
         print(f"[CRITICAL] Erro no POST Projetos: {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro ao criar o projeto."}), 500
 
+# ============================================================================
+# LEAD TIME E CYCLE TIME
+#
+#   Lead time  = entrada no Backlog  -> Finalizado
+#   Cycle time = saida do Backlog    -> Finalizado
+#
+# Pausado congela os dois. Na Conexao a pausa parte sempre do cliente --
+# ele pede, ou some com o material -- entao nao e justo cobrar do time.
+# Os dias parados nao somem: viram `tempo_parado_segundos`, medido a
+# parte, para responder "a entrega levou 15 dias nossos, mas o cliente
+# esperou 30".
+#
+# Cancelado fica fora dos indicadores. Entra no painel so para dizer por
+# que morreu e quem encerrou.
+# ============================================================================
+
+# Estados em que o card nao esta sendo trabalhado.
+PARADOS = ('Backlog', 'Não Iniciado', 'Pausado', 'Finalizado', 'Cancelado', 'Onboarding')
+
+# ----------------------------------------------------------------------------
+# ONDE O CICLO DE PRODUCAO TERMINA, POR AREA
+#
+# Cycle time mede o que NOS produzimos. Em quase todo quadro isso vai ate
+# a entrega -- Finalizado.
+#
+# Em R&S nao: o servico e entregar candidatos qualificados, e isso termina
+# quando o cliente entrevista. O que vem depois -- ele avaliar, dar
+# retorno, decidir -- e tempo dele, nao nosso. Cobrar isso do time seria
+# medir a agenda do cliente.
+#
+# O lead time continua indo ate Finalizado, porque e o que o cliente
+# viveu. A DIFERENCA entre os dois vira o numero mais util da tela:
+# quantos dias foram o cliente decidindo.
+#
+# Configuracao por area, e nao regra global: sem isso, o proximo quadro
+# criado herdaria a excecao do R&S sem ninguem perceber.
+# ----------------------------------------------------------------------------
+FIM_DO_CICLO = {
+    'Recrutamento e seleção': 'Entrevista com o cliente',
+}
+CICLO_PADRAO = 'Finalizado'
+
+
+def marco_fim_ciclo(area):
+    """Coluna que encerra o ciclo de producao daquele quadro."""
+    return FIM_DO_CICLO.get(area, CICLO_PADRAO)
+
+# Listas fechadas. Texto livre em campo de motivo vira dezoito grafias da
+# mesma coisa e nenhum agrupamento possivel no painel.
+MOTIVOS_PAUSA = (
+    'Cliente pediu para pausar',
+    'Aguardando material do cliente',
+    'Aguardando aprovação do cliente',
+    'Cliente sem disponibilidade de agenda',
+    'Mudança de prioridade do cliente',
+    'Pendência financeira',
+    'Outro',
+)
+MOTIVOS_CANCELAMENTO = (
+    'Cliente desistiu',
+    'Cliente sem verba',
+    'Mudança de prioridade do cliente',
+    'Contratou concorrente',
+    'Vaga/demanda deixou de existir',
+    'Escopo inviável',
+    'Aberto por engano ou duplicado',
+    'Outro',
+)
+
+
+@app.route('/api/motivos', methods=['GET'])
+def listar_motivos():
+    """As listas vivem no servidor para a tela nunca divergir do que a
+    validação aceita."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    return jsonify({"status": "sucesso",
+                    "pausa": list(MOTIVOS_PAUSA),
+                    "cancelamento": list(MOTIVOS_CANCELAMENTO)}), 200
+
+
 @app.route('/api/projetos/<projeto_id>', methods=['PUT'])
 def atualizar_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
@@ -313,15 +911,38 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
-        res_atual = supabase.table("projetos").select("status", "data_inicio").eq("id", projeto_id).execute()
+        res_atual = (supabase.table("projetos")
+                     .select("status", "data_inicio", "data_conclusao", "area",
+                             "nome_projeto", "empresa", "cliente_id", "origem_lead_id")
+                     .eq("id", projeto_id).execute())
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         
         if "status" in dados:
             novo_status = dados.get("status")
+
+            # Motivo exigido antes de qualquer gravação: aceitar a mudança
+            # e cobrar o motivo depois deixaria o card parado sem
+            # explicação, que é exatamente o buraco que o painel precisa
+            # tapar.
+            motivo = (dados.get("motivo") or "").strip()
+            motivo_detalhe = (dados.get("motivo_detalhe") or "").strip()
+            if novo_status in ('Pausado', 'Cancelado') and status_anterior != novo_status:
+                validos = MOTIVOS_PAUSA if novo_status == 'Pausado' else MOTIVOS_CANCELAMENTO
+                if motivo not in validos:
+                    return jsonify({
+                        "status": "erro",
+                        "mensagem": ("Escolha o motivo da pausa." if novo_status == 'Pausado'
+                                     else "Escolha o motivo do cancelamento."),
+                        "motivos": list(validos),
+                    }), 400
+                if motivo == 'Outro' and len(motivo_detalhe) < 3:
+                    return jsonify({"status": "erro",
+                                    "mensagem": "Descreva o motivo em poucas palavras."}), 400
+
             atualizacao["status"] = novo_status
             atualizacao["data_status_atual"] = agora_br()
 
-            status_pausa = ["Backlog", "Não Iniciado", "Pausado", "Finalizado", "Onboarding", "Cancelado"]
+            status_pausa = list(PARADOS)
             # data_conclusao só deve marcar finalização REAL (Finalizado/Cancelado),
             # não pausas — senão a data do comissionamento fica incorreta.
             if novo_status in ["Finalizado", "Cancelado"]:
@@ -332,8 +953,107 @@ def atualizar_projeto(projeto_id):
                 # voltou a um status ativo → limpa a conclusão
                 atualizacao["data_conclusao"] = None
 
-            if res_atual.data and not res_atual.data[0].get("data_inicio"):
+            atual = res_atual.data[0] if res_atual.data else {}
+
+            if not atual.get("data_inicio"):
                 atualizacao["data_inicio"] = agora_br()
+
+            # ---------------- RELÓGIOS ----------------
+            # `data_inicio` marca a primeira mexida no card, qualquer que
+            # seja -- inclusive Backlog -> Pausado. Não serve como início
+            # do cycle time. `data_saida_backlog` só marca quando o card
+            # entra de fato numa fase de trabalho.
+            trabalhando = novo_status not in PARADOS
+            if trabalhando and not atual.get("data_saida_backlog"):
+                atualizacao["data_saida_backlog"] = agora_br()
+
+            # Fim do ciclo de producao. Em R&S e a entrevista com o
+            # cliente; nos demais, o proprio Finalizado. Só a PRIMEIRA
+            # vez conta: card que volta e avanca de novo nao reinicia o
+            # marco, senao o ciclo encolheria a cada idas e vindas.
+            if (novo_status == marco_fim_ciclo(atual.get("area"))
+                    and not atual.get("data_fim_ciclo")):
+                atualizacao["data_fim_ciclo"] = agora_br()
+
+            # Pausa congela os dois relógios. Ao entrar em Pausado, guarda
+            # o instante; ao sair, soma o intervalo ao acumulado.
+            if novo_status == 'Pausado' and status_anterior != 'Pausado':
+                atualizacao["pausado_em"] = agora_br()
+            elif status_anterior == 'Pausado' and novo_status != 'Pausado':
+                desde = atual.get("pausado_em")
+                if desde:
+                    try:
+                        ini = datetime.fromisoformat(str(desde).replace('Z', '+00:00'))
+                        agora = datetime.now(timezone.utc)
+                        if ini.tzinfo is None:
+                            ini = ini.replace(tzinfo=timezone.utc)
+                        parado = max(0, int((agora - ini).total_seconds()))
+                    except (ValueError, TypeError):
+                        parado = 0
+                    atualizacao["tempo_parado_segundos"] = \
+                        int(atual.get("tempo_parado_segundos") or 0) + parado
+                atualizacao["pausado_em"] = None
+
+            # ------------------------------------------------------------
+            # TRILHA DE FASES — grava PRIMEIRO, e sozinha.
+            #
+            # Antes este insert estava dentro do mesmo try/except do
+            # disparo de fluxo. Qualquer excecao no fluxo (criar lead,
+            # criar cobranca, abrir quadros) era capturada pelo except e
+            # o insert nunca chegava a rodar.
+            #
+            # O diagnostico mostrou o efeito: historico_colunas com
+            # registros ate hoje, projeto_movimentos parada ha seis dias.
+            # A trilha do painel simplesmente deixou de ser alimentada,
+            # em silencio.
+            #
+            # Agora sao dois blocos independentes. A trilha e o registro
+            # do fato; o fluxo e consequencia. Consequencia que falha nao
+            # pode apagar o fato.
+            # ------------------------------------------------------------
+            if novo_status and novo_status != status_anterior:
+                try:
+                    supabase.table("projeto_movimentos").insert({
+                        "projeto_id": projeto_id,
+                        "de_status": status_anterior,
+                        "para_status": novo_status,
+                        "area": (res_atual.data[0].get("area") if res_atual.data else None),
+                        "autor": session.get('usuario_nome'),
+                        # `autor` responde quem; estes dois, por que.
+                        "motivo": motivo or None,
+                        "motivo_detalhe": motivo_detalhe or None,
+                    }).execute()
+                except Exception as e_mov:
+                    print("Aviso: movimento de projeto nao registrado:", e_mov)
+
+            # Fluxo de finalizacao: depende da trilha ja estar gravada.
+            if novo_status == 'Finalizado' and novo_status != status_anterior:
+                try:
+                    # O que acontece ao finalizar e escolha de quem finaliza:
+                    # nem toda entrega gera cobranca, e nem todo produto entra
+                    # em relacionamento. A tela pergunta, e o que vier marcado
+                    # chega aqui em `encerramento`.
+                    p = res_atual.data[0] if res_atual.data else {}
+                    enc = dados.get("encerramento") or {}
+                    disparar('projeto.finalizado', {
+                        "projeto_id": projeto_id,
+                        "projeto_nome": p.get("nome_projeto"),
+                        "area": p.get("area"),
+                        "cliente_id": p.get("cliente_id"),
+                        "cliente_nome": p.get("empresa"),
+                        "lead_id": p.get("origem_lead_id"),
+                        "quadro": next((q for q, a2 in QUADRO_AREA.items()
+                                        if a2 == p.get("area")), None),
+                        "com_relacionamento": bool(enc.get("relacionamento")),
+                        "com_cobranca": bool(enc.get("cobranca")),
+                        "valor": enc.get("valor"),
+                    })
+                except Exception as e_fluxo:
+                    print("Aviso: fluxo de finalizacao nao rodou:", e_fluxo)
+                    _registrar_execucao(None, 'projeto.finalizado',
+                                        {"projeto_id": projeto_id}, None,
+                                        f"falha antes de disparar: {str(e_fluxo)[:300]}")
+
 
             if novo_status and novo_status != status_anterior:
                 try:
@@ -370,7 +1090,10 @@ def excluir_projeto(projeto_id):
     if is_externo(): return jsonify({"erro": "Acesso negado"}), 403
     try:
         # SOFT DELETE: marca como excluído em vez de apagar (vai para a lixeira)
-        supabase.table("projetos").update({"excluido_em": datetime.now().isoformat()}).eq("id", projeto_id).execute()
+        supabase.table("projetos").update({
+            "excluido_em": datetime.now(timezone.utc).isoformat(),
+            "excluido_por": session.get('usuario_nome'),
+        }).eq("id", projeto_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir o projeto."}), 500
@@ -381,46 +1104,214 @@ def excluir_projeto(projeto_id):
 @app.route('/lixeira')
 def lixeira_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not is_admin():
+        return redirect(url_for('login', proximo=request.path))
+    if not pode_ver_lixeira():
         return redirect(url_for('index'))
-    return render_template('lixeira.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+    return render_template('lixeira.html',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso'),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
 
 @app.route('/api/lixeira', methods=['GET'])
 def listar_lixeira():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
+    """Tudo que foi excluído: projetos, clientes e leads.
+
+    Leads estavam de fora — a exclusão do CRM já gravava
+    `excluido_em`, mas a lixeira nunca olhava para lá, então todo
+    lead excluído ficava invisível para sempre.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_lixeira():
+        return jsonify({"erro": "Acesso negado"}), 403
     try:
-        res_proj = supabase.table("projetos").select("*").not_.is_("excluido_em", "null").execute()
-        res_cli = supabase.table("clientes").select("*").not_.is_("excluido_em", "null").execute()
-        return jsonify({"status": "sucesso", "projetos": res_proj.data or [], "clientes": res_cli.data or []}), 200
+        itens = []
+
+        proj = (supabase.table("projetos").select("*")
+                .not_.is_("excluido_em", "null").execute()).data or []
+        # Horas por projeto, para dizer o que se perde antes de apagar.
+        horas = {}
+        if proj:
+            try:
+                r = (supabase.table("time_logs")
+                     .select("projeto_id, tempo_segundos")
+                     .in_("projeto_id", [str(p["id"]) for p in proj]).execute())
+                for l in (r.data or []):
+                    pid = str(l.get("projeto_id"))
+                    horas[pid] = horas.get(pid, 0) + (l.get("tempo_segundos") or 0)
+            except Exception as e:
+                print("Aviso: horas da lixeira indisponiveis:", e)
+        for p in proj:
+            itens.append({
+                "id": p["id"], "tipo": "projeto",
+                "nome": p.get("nome_projeto"),
+                "detalhe": p.get("empresa") or "sem cliente",
+                "area": p.get("area"),
+                "status": p.get("status"),
+                "horas": round(horas.get(str(p["id"]), 0) / 3600.0),
+                "excluido_em": p.get("excluido_em"),
+                "excluido_por": p.get("excluido_por"),
+            })
+
+        cli = (supabase.table("clientes").select("*")
+               .not_.is_("excluido_em", "null").execute()).data or []
+        # Projetos que ficaram na lixeira junto com o cliente.
+        for c in cli:
+            juntos = sum(1 for p in proj if str(p.get("cliente_id")) == str(c["id"]))
+            itens.append({
+                "id": c["id"], "tipo": "cliente",
+                "nome": c.get("nome_empresa"),
+                "detalhe": c.get("cidade") or "sem cidade",
+                "area": None, "status": None,
+                "projetos_juntos": juntos,
+                "excluido_em": c.get("excluido_em"),
+                "excluido_por": c.get("excluido_por"),
+            })
+
+        try:
+            leads = (supabase.table("leads").select("*")
+                     .not_.is_("excluido_em", "null").execute()).data or []
+            for l in leads:
+                itens.append({
+                    "id": l["id"], "tipo": "lead",
+                    "nome": l.get("lead") or l.get("empresa") or "lead sem nome",
+                    "detalhe": (l.get("empresa") or "") + (
+                        " · " + str(l.get("coluna")) if l.get("coluna") else ""),
+                    "area": "CRM", "status": l.get("coluna"),
+                    "funil": l.get("funil"),
+                    "valor": l.get("valor_estimado"),
+                    "excluido_em": l.get("excluido_em"),
+                    "excluido_por": l.get("excluido_por"),
+                })
+        except Exception as e:
+            print("Aviso: leads da lixeira indisponiveis:", e)
+
+        itens.sort(key=lambda x: str(x.get("excluido_em") or ""), reverse=True)
+        return jsonify({
+            "status": "sucesso",
+            "itens": itens,
+            "pode_purgar": pode('lixeira.purgar') or is_admin(),
+        }), 200
     except Exception as e:
-        print(f"[CRITICAL] Erro na lixeira: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a lixeira."}), 500
+        print("Erro na lixeira:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a lixeira.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+TABELA_DO_TIPO = {"projeto": "projetos", "cliente": "clientes", "lead": "leads"}
+
 
 @app.route('/api/lixeira/<tipo>/<item_id>/restaurar', methods=['PUT'])
 def restaurar_item(tipo, item_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    tabela = "projetos" if tipo == "projeto" else "clientes" if tipo == "cliente" else None
-    if not tabela: return jsonify({"status": "erro", "mensagem": "Tipo invalido."}), 400
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_lixeira():
+        return jsonify({"erro": "Acesso negado"}), 403
+    tabela = TABELA_DO_TIPO.get(tipo)
+    if not tabela:
+        return jsonify({"status": "erro", "mensagem": "Tipo inválido."}), 400
     try:
-        supabase.table(tabela).update({"excluido_em": None}).eq("id", item_id).execute()
-        return jsonify({"status": "sucesso"}), 200
+        aviso = None
+        if tipo == "projeto":
+            # A fase pode ter deixado de existir enquanto o card estava
+            # na lixeira. Nesse caso volta para o Backlog, avisando.
+            r = (supabase.table("projetos").select("status, area")
+                 .eq("id", item_id).limit(1).execute())
+            if r.data:
+                st = r.data[0].get("status")
+                if st in ('Não Iniciado', 'Kick-off') and st != FASE_ENTRADA:
+                    supabase.table("projetos").update(
+                        {"status": FASE_ENTRADA}).eq("id", item_id).execute()
+                    aviso = f"A fase '{st}' não existe mais; o projeto voltou para {FASE_ENTRADA}."
+
+        supabase.table(tabela).update(
+            {"excluido_em": None, "excluido_por": None}).eq("id", item_id).execute()
+        registrar_auditoria('item_restaurado', tipo, item_id, {})
+        return jsonify({"status": "sucesso", "aviso": aviso}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+        print("Erro ao restaurar:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao restaurar.",
+                        "detalhe": str(e)[:300]}), 500
+
 
 @app.route('/api/lixeira/<tipo>/<item_id>/definitivo', methods=['DELETE'])
 def excluir_definitivo(tipo, item_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    tabela = "projetos" if tipo == "projeto" else "clientes" if tipo == "cliente" else None
-    if not tabela: return jsonify({"status": "erro", "mensagem": "Tipo invalido."}), 400
+    """Apaga do banco. Não tem volta.
+
+    Exige `lixeira.purgar`, que é capacidade sensível: quem tem
+    apenas `lixeira.ver` restaura, mas não apaga.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('lixeira.purgar') or is_admin()):
+        return jsonify({"status": "erro",
+                        "mensagem": "Só quem administra pode apagar em definitivo."}), 403
+    tabela = TABELA_DO_TIPO.get(tipo)
+    if not tabela:
+        return jsonify({"status": "erro", "mensagem": "Tipo inválido."}), 400
     try:
+        # Guarda o nome antes de apagar: depois não há como saber
+        # o que foi removido.
+        campo = {"projetos": "nome_projeto", "clientes": "nome_empresa", "leads": "lead"}[tabela]
+        r = supabase.table(tabela).select(campo).eq("id", item_id).limit(1).execute()
+        nome = (r.data or [{}])[0].get(campo)
+
         supabase.table(tabela).delete().eq("id", item_id).execute()
+        registrar_auditoria('item_purgado', tipo, item_id, {"nome": nome})
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+        print("Erro ao excluir em definitivo:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/lixeira/lote', methods=['POST'])
+def lixeira_lote():
+    """Restaura ou apaga vários itens de uma vez.
+
+    Cada item é tratado isolado: um que falhe não impede os outros,
+    e a resposta diz quantos deram certo.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_ver_lixeira():
+        return jsonify({"erro": "Acesso negado"}), 403
+    d = request.json or {}
+    acao = d.get("acao")
+    itens = d.get("itens") or []
+    if acao not in ("restaurar", "purgar"):
+        return jsonify({"status": "erro", "mensagem": "Ação inválida."}), 400
+    if acao == "purgar" and not (pode('lixeira.purgar') or is_admin()):
+        return jsonify({"status": "erro",
+                        "mensagem": "Só quem administra pode apagar em definitivo."}), 403
+    if len(itens) > 100:
+        return jsonify({"status": "erro", "mensagem": "Máximo de 100 itens por vez."}), 400
+
+    ok, falhas = 0, []
+    for it in itens:
+        tabela = TABELA_DO_TIPO.get(it.get("tipo"))
+        item_id = it.get("id")
+        if not tabela or not item_id:
+            falhas.append(it.get("nome") or "item")
+            continue
+        try:
+            if acao == "restaurar":
+                supabase.table(tabela).update(
+                    {"excluido_em": None, "excluido_por": None}).eq("id", item_id).execute()
+            else:
+                supabase.table(tabela).delete().eq("id", item_id).execute()
+            ok += 1
+        except Exception as e:
+            print(f"Erro no lote ({acao} {tabela} {item_id}):", e)
+            falhas.append(it.get("nome") or str(item_id))
+
+    registrar_auditoria(
+        'lote_restaurado' if acao == 'restaurar' else 'lote_purgado',
+        'lixeira', None, {"quantidade": ok, "falhas": len(falhas)})
+    return jsonify({"status": "sucesso", "feitos": ok, "falhas": falhas}), 200
+
 
 # --- API TIMER ---
 
@@ -436,7 +1327,10 @@ def salvar_tempo(projeto_id):
             "descricao_tarefa": dados.get("descricao_tarefa", "Atividade"),
             "tempo_segundos": int(dados.get("tempo_segundos", 0)),
             "data_inicio_atividade": dados.get("data_inicio_atividade"),
-            "data_fim_atividade": dados.get("data_fim_atividade")
+            "data_fim_atividade": dados.get("data_fim_atividade"),
+            # Preenchido quando o timer parte da Agenda; nulo quando parte do quadro.
+            # É o que separa "planejado e realizado" de "feito fora do plano".
+            "planejamento_id": dados.get("planejamento_id")
         }
         supabase.table("time_logs").insert(novo_log).execute()
         return jsonify({"status": "sucesso"}), 200
@@ -466,40 +1360,50 @@ def historico_tempo(projeto_id):
 
 @app.route('/api/notificacoes', methods=['GET'])
 def get_notificacoes():
+    """Duas fontes num sino só.
+
+    Comentário em projeto que a pessoa RESPONDE — igual sempre foi.
+    Card SEM DONO em quadro que a pessoa DIRECIONA — novo: sem isto,
+    ninguém era avisado que um card tinha chegado órfão na fila; era
+    preciso abrir Configurações por conta própria para descobrir.
+    """
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    usuario = session.get('usuario_nome')
+    usuario_id = str(session.get('usuario_id') or '')
+    usuario = session.get('usuario_nome') or ''
+    notificacoes = []
+
+    # --- comentários em projetos sob a responsabilidade da pessoa ---
     try:
-        # 1. Busca todos os projetos do banco
-        res_projetos = supabase.table('projetos').select('id, nome_projeto, responsavel').execute()
-        projetos_do_usuario = {}
-        
-        # Filtra na unha (Python) para evitar erro de maiúscula/minúscula/espaço
-        for p in res_projetos.data:
-            if p['responsavel'] and p['responsavel'].strip().lower() == usuario.strip().lower():
-                projetos_do_usuario[p['id']] = p['nome_projeto']
-
-        if not projetos_do_usuario:
-            return jsonify({"status": "sucesso", "notificacoes": []}), 200
-
-        proj_ids = list(projetos_do_usuario.keys())
-        
-        # 2. Busca comentários não lidos apenas desses projetos
-        res_comentarios = supabase.table('comentarios').select('*').in_('projeto_id', proj_ids).eq('lido_pelo_responsavel', False).execute()
-        
-        notificacoes = []
-        for c in res_comentarios.data:
-            # Não notifica se o autor for você mesmo
-            if c['autor'].strip().lower() != usuario.strip().lower():
-                c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
-                notificacoes.append(c)
-
-        # 3. Ordena para os mais novos ficarem no topo
-        notificacoes.sort(key=lambda x: x['criado_em'], reverse=True)
-        
-        return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
+        res_projetos = (supabase.table('projetos')
+                        .select('id, nome_projeto, responsavel').execute())
+        projetos_do_usuario = {
+            p['id']: p['nome_projeto'] for p in (res_projetos.data or [])
+            if p.get('responsavel')
+            and p['responsavel'].strip().lower() == usuario.strip().lower()
+        }
+        if projetos_do_usuario:
+            res_comentarios = (supabase.table('comentarios').select('*')
+                               .in_('projeto_id', list(projetos_do_usuario.keys()))
+                               .eq('lido_pelo_responsavel', False).execute())
+            for c in (res_comentarios.data or []):
+                if (c.get('autor') or '').strip().lower() != usuario.strip().lower():
+                    c['nome_projeto'] = projetos_do_usuario[c['projeto_id']]
+                    c['tipo'] = 'comentario'
+                    notificacoes.append(c)
     except Exception as e:
-        print(f"[CRITICAL] Erro em Notificacoes: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao buscar notificacoes"}), 500
+        print(f"[CRITICAL] Erro em Notificacoes (comentarios): {e}")
+
+    # --- cards sem dono, nos quadros que a pessoa direciona ---
+    try:
+        r = (supabase.table('notificacoes').select('*')
+             .eq('usuario_id', usuario_id).eq('lida', False)
+             .order('criado_em', desc=True).limit(60).execute())
+        notificacoes.extend(r.data or [])
+    except Exception as e:
+        print(f"[CRITICAL] Erro em Notificacoes (cards sem dono): {e}")
+
+    notificacoes.sort(key=lambda x: x.get('criado_em') or '', reverse=True)
+    return jsonify({"status": "sucesso", "notificacoes": notificacoes}), 200
 
 
 @app.route('/api/projetos/<projeto_id>/comentarios', methods=['GET'])
@@ -570,14 +1474,6 @@ def marcar_comentario_lido(comentario_id):
 
 # --- CONFIGURAÇÕES / USUÁRIOS (somente admin) ---
 
-@app.route('/configuracoes')
-def configuracoes_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not is_admin():
-        return redirect(url_for('index'))
-    return render_template('configuracoes.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
-
 @app.route('/api/usuarios', methods=['GET'])
 def listar_usuarios():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
@@ -632,7 +1528,8 @@ def criar_usuario():
             "cargo": dados.get("cargo"),
             "nivel_acesso": dados.get("nivel_acesso", "colaborador"),
             "tipo_usuario": dados.get("tipo_usuario", "interno"),
-            "senha": senha_texto,
+            # Só o hash é gravado. A coluna `senha` em texto puro é legado
+            # e deixa de receber valor a partir daqui.
             "senha_hash": gerar_hash(senha_texto)
         }
         # Permissões granulares (nível personalizado ou usuário externo)
@@ -659,7 +1556,8 @@ def atualizar_usuario(usuario_id):
         atualizacao.update(montar_permissoes(dados))
         # Se enviou nova senha, atualiza texto + hash
         if dados.get("senha"):
-            atualizacao["senha"] = dados["senha"]
+            # Ao trocar a senha, o texto puro antigo é apagado de vez.
+            atualizacao["senha"] = None
             atualizacao["senha_hash"] = gerar_hash(dados["senha"])
 
         supabase.table("usuarios").update(atualizacao).eq("id", usuario_id).execute()
@@ -709,88 +1607,10 @@ def projetos_para_selecao():
 
 # --- USUÁRIOS EXTERNOS (somente admin) ---
 
-@app.route('/externos')
-def externos_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not is_admin():
-        return redirect(url_for('index'))
-    return render_template('externos.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
 
-@app.route('/api/externos', methods=['GET'])
-def listar_externos():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        res = supabase.table("usuarios").select(
-            "id, nome, email, cargo, nivel_acesso, tipo_usuario, papel_externo, cliente_vinculado_id, perm_modulos, perm_clientes_modo, perm_clientes_ids, perm_projetos_modo, perm_projetos_ids, criado_em"
-        ).eq("tipo_usuario", "externo").order("nome", desc=False).execute()
-        return jsonify({"status": "sucesso", "externos": res.data}), 200
-    except Exception as e:
-        print(f"[CRITICAL] Erro no GET Externos: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar usuários externos."}), 500
 
-@app.route('/api/externos', methods=['POST'])
-def criar_externo():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    dados = request.json
-    try:
-        senha_texto = dados.get("senha")
-        if not senha_texto:
-            return jsonify({"status": "erro", "mensagem": "Senha é obrigatória."}), 400
-        if not dados.get("cliente_vinculado_id"):
-            return jsonify({"status": "erro", "mensagem": "Selecione qual cliente é este usuário."}), 400
 
-        novo = {
-            "nome": dados.get("nome"),
-            "email": dados.get("email"),
-            "cargo": dados.get("cargo"),
-            "nivel_acesso": "personalizado",   # externo usa a engine de permissões
-            "tipo_usuario": "externo",
-            "papel_externo": dados.get("papel_externo", "visualizador"),
-            "senha": senha_texto,
-            "senha_hash": gerar_hash(senha_texto)
-        }
-        novo.update(montar_permissoes({**dados, "tipo_usuario": "externo", "nivel_acesso": "personalizado"}))
-        supabase.table("usuarios").insert(novo).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[CRITICAL] Erro no POST Externo: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
-@app.route('/api/externos/<usuario_id>', methods=['PUT'])
-def atualizar_externo(usuario_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    dados = request.json
-    try:
-        atualizacao = {}
-        if "nome" in dados: atualizacao["nome"] = dados["nome"]
-        if "email" in dados: atualizacao["email"] = dados["email"]
-        if "cargo" in dados: atualizacao["cargo"] = dados["cargo"]
-        if "papel_externo" in dados: atualizacao["papel_externo"] = dados["papel_externo"]
-        atualizacao["tipo_usuario"] = "externo"
-        atualizacao["nivel_acesso"] = "personalizado"
-        atualizacao.update(montar_permissoes({**dados, "tipo_usuario": "externo", "nivel_acesso": "personalizado"}))
-        if dados.get("senha"):
-            atualizacao["senha"] = dados["senha"]
-            atualizacao["senha_hash"] = gerar_hash(dados["senha"])
-        supabase.table("usuarios").update(atualizacao).eq("id", usuario_id).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[CRITICAL] Erro no PUT Externo: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-@app.route('/api/externos/<usuario_id>', methods=['DELETE'])
-def excluir_externo(usuario_id):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not is_admin(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("usuarios").delete().eq("id", usuario_id).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 
 # --- CLIENTES ---
@@ -798,7 +1618,7 @@ def excluir_externo(usuario_id):
 @app.route('/clientes')
 def clientes_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if is_externo():
         return redirect(url_for('planejamento'))
     if is_personalizado() and not pode_acessar_modulo('clientes'):
@@ -848,6 +1668,8 @@ def criar_cliente():
     try:
         novo = {
             "nome_empresa": dados.get("nome_empresa"),
+            "responsavel": dados.get("responsavel"),
+            "observacoes": dados.get("observacoes"),
             "cnpj": dados.get("cnpj"),
             "cidade": dados.get("cidade"),
             "estado": dados.get("estado"),
@@ -892,10 +1714,266 @@ def excluir_cliente(cliente_id):
             return jsonify({"status": "erro", "mensagem": f"Cliente tem {len(ativos)} projeto(s) vinculado(s). Não pode ser excluído."}), 400
 
         # SOFT DELETE: vai para a lixeira
-        supabase.table("clientes").update({"excluido_em": datetime.now().isoformat()}).eq("id", cliente_id).execute()
+        supabase.table("clientes").update({
+            "excluido_em": datetime.now(timezone.utc).isoformat(),
+            "excluido_por": session.get('usuario_nome'),
+        }).eq("id", cliente_id).execute()
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+@app.route('/api/clientes/carteira', methods=['GET'])
+def carteira_clientes():
+    """Clientes com os números que a tela precisa, agrupados por situação.
+
+    Tudo é calculado aqui: a tela recebe pronto, e o escopo de permissão
+    é aplicado antes de qualquer dado sair do servidor.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        dias_parado = 60
+        try:
+            dias_parado = max(15, min(int(request.args.get('parado', 60)), 365))
+        except (TypeError, ValueError):
+            pass
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        corte = (datetime.now(timezone.utc) - timedelta(days=dias_parado)).isoformat()
+        mes = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+        clientes = (supabase.table("clientes").select("*")
+                    .order("nome_empresa").execute()).data or []
+        todos_proj = (supabase.table("projetos").select("*")
+                      .is_("excluido_em", "null").execute()).data or []
+        projetos = filtrar_projetos_permitidos(todos_proj)
+
+        # Horas por projeto, do mês e do total.
+        horas_mes, horas_total = {}, {}
+        try:
+            ids = [str(p["id"]) for p in projetos]
+            if ids:
+                passo, inicio = 1000, 0
+                while True:
+                    r = (supabase.table("time_logs")
+                         .select("projeto_id, tempo_segundos, criado_em")
+                         .in_("projeto_id", ids).range(inicio, inicio + passo - 1).execute())
+                    if not r.data:
+                        break
+                    for l in r.data:
+                        pid = str(l.get("projeto_id"))
+                        seg = l.get("tempo_segundos") or 0
+                        horas_total[pid] = horas_total.get(pid, 0) + seg
+                        if str(l.get("criado_em") or '') >= mes:
+                            horas_mes[pid] = horas_mes.get(pid, 0) + seg
+                    if len(r.data) < passo:
+                        break
+                    inicio += passo
+        except Exception as e:
+            print("Aviso: time_logs indisponivel na carteira:", e)
+
+        # Quem tem acesso ao portal, por cliente.
+        portal = {}
+        try:
+            ext = (supabase.table("usuarios")
+                   .select("cliente_vinculado_id, ativo")
+                   .eq("tipo_usuario", "externo").execute()).data or []
+            for u in ext:
+                cid = str(u.get("cliente_vinculado_id") or '')
+                if cid and u.get("ativo") is not False:
+                    portal[cid] = portal.get(cid, 0) + 1
+        except Exception as e:
+            print("Aviso: usuarios externos indisponiveis:", e)
+
+        por_cliente = {}
+        for p in projetos:
+            cid = str(p.get("cliente_id") or '')
+            if cid:
+                por_cliente.setdefault(cid, []).append(p)
+
+        saida = []
+        for c in clientes:
+            cid = str(c["id"])
+            meus = por_cliente.get(cid, [])
+            ativos = [p for p in meus if p.get("status") not in STATUS_ENCERRADOS]
+            concluidos = [p for p in meus if p.get("status") == "Finalizado"]
+
+            atrasados, prazo_prox = 0, None
+            for p in ativos:
+                prazo = str(p.get("prazo_data") or '')[:10]
+                if not prazo:
+                    continue
+                if prazo < hoje:
+                    atrasados += 1
+                if prazo_prox is None or prazo < prazo_prox:
+                    prazo_prox = prazo
+
+            hm = sum(horas_mes.get(str(p["id"]), 0) for p in meus) / 3600.0
+            ht = sum(horas_total.get(str(p["id"]), 0) for p in meus) / 3600.0
+
+            # Última atividade: a mudança de fase mais recente entre os projetos.
+            ultima = None
+            for p in meus:
+                for campo in ("data_status_atual", "atualizado_em", "criado_em"):
+                    v = p.get(campo)
+                    if v and (ultima is None or str(v) > ultima):
+                        ultima = str(v)
+                        break
+
+            if c.get("ativo") is False:
+                situacao = "encerrado"
+            elif atrasados:
+                situacao = "atraso"
+            elif ativos:
+                situacao = "em_dia"
+            elif ultima and ultima >= corte:
+                situacao = "em_dia"
+            else:
+                situacao = "parado"
+
+            saida.append({
+                "id": c["id"],
+                "nome": c.get("nome_empresa"),
+                "cnpj": c.get("cnpj"),
+                "cidade": c.get("cidade"),
+                "estado": c.get("estado"),
+                "email": c.get("email"),
+                "telefone": c.get("telefone"),
+                "responsavel": c.get("responsavel"),
+                "criado_em": c.get("criado_em"),
+                "ativo": c.get("ativo") is not False,
+                "situacao": situacao,
+                "projetos_ativos": len(ativos),
+                "projetos_concluidos": len(concluidos),
+                "atrasados": atrasados,
+                "prazo_proximo": prazo_prox,
+                "horas_mes": round(hm),
+                "horas_total": round(ht),
+                "portal": portal.get(cid, 0),
+                "dias_parado": _dias_desde(ultima) if ultima else None,
+                "areas": sorted({p.get("area") for p in ativos if p.get("area")}),
+            })
+
+        resumo = {
+            "total": len(saida),
+            "com_trabalho": sum(1 for c in saida if c["projetos_ativos"]),
+            "com_atraso": sum(1 for c in saida if c["situacao"] == "atraso"),
+            "parados": sum(1 for c in saida if c["situacao"] == "parado"),
+            "horas_mes": sum(c["horas_mes"] for c in saida),
+        }
+        return jsonify({"status": "sucesso", "clientes": saida,
+                        "resumo": resumo, "dias_parado": dias_parado}), 200
+    except Exception as e:
+        print("Erro em carteira_clientes:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a carteira.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/clientes/<cliente_id>/conta', methods=['GET'])
+def conta_cliente(cliente_id):
+    """Detalhe de um cliente: projetos, horas por área e portal."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        mes = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+        res = supabase.table("clientes").select("*").eq("id", cliente_id).limit(1).execute()
+        if not res.data:
+            return jsonify({"status": "erro", "mensagem": "Cliente não encontrado."}), 404
+        cliente = res.data[0]
+
+        todos = (supabase.table("projetos").select("*")
+                 .eq("cliente_id", cliente_id).is_("excluido_em", "null").execute()).data or []
+        projetos = filtrar_projetos_permitidos(todos)
+
+        horas_proj, horas_mes_proj = {}, {}
+        try:
+            ids = [str(p["id"]) for p in projetos]
+            if ids:
+                passo, inicio = 1000, 0
+                while True:
+                    r = (supabase.table("time_logs")
+                         .select("projeto_id, tempo_segundos, criado_em")
+                         .in_("projeto_id", ids).range(inicio, inicio + passo - 1).execute())
+                    if not r.data:
+                        break
+                    for l in r.data:
+                        pid = str(l.get("projeto_id"))
+                        seg = l.get("tempo_segundos") or 0
+                        horas_proj[pid] = horas_proj.get(pid, 0) + seg
+                        if str(l.get("criado_em") or '') >= mes:
+                            horas_mes_proj[pid] = horas_mes_proj.get(pid, 0) + seg
+                    if len(r.data) < passo:
+                        break
+                    inicio += passo
+        except Exception as e:
+            print("Aviso: time_logs indisponivel na conta:", e)
+
+        ativos, concluidos, por_area = [], [], {}
+        for p in projetos:
+            pid = str(p["id"])
+            h = round(horas_proj.get(pid, 0) / 3600.0)
+            item = {
+                "id": p["id"], "nome": p.get("nome_projeto"), "area": p.get("area"),
+                "status": p.get("status"), "responsavel": p.get("responsavel"),
+                "prazo": str(p.get("prazo_data") or '')[:10] or None, "horas": h,
+            }
+            if p.get("status") in STATUS_ENCERRADOS:
+                concluidos.append(item)
+            else:
+                ativos.append(item)
+            a = p.get("area") or "Sem área"
+            por_area[a] = por_area.get(a, 0) + h
+
+        ativos.sort(key=lambda x: (x["prazo"] or "9999", -x["horas"]))
+        prazo_prox = next((p["prazo"] for p in ativos if p["prazo"]), None)
+
+        pessoas = []
+        try:
+            ext = (supabase.table("usuarios")
+                   .select("id, nome, cargo, email, ativo, ultimo_acesso")
+                   .eq("tipo_usuario", "externo")
+                   .eq("cliente_vinculado_id", cliente_id).execute()).data or []
+            pessoas = [{"id": u["id"], "nome": u.get("nome"), "cargo": u.get("cargo"),
+                        "email": u.get("email"), "ativo": u.get("ativo") is not False,
+                        "ultimo_acesso": u.get("ultimo_acesso")} for u in ext]
+        except Exception as e:
+            print("Aviso: usuarios do portal indisponiveis:", e)
+
+        origem = None
+        if cliente.get("lead_id"):
+            try:
+                l = (supabase.table("leads").select("origem, responsavel, movido_em")
+                     .eq("id", cliente["lead_id"]).limit(1).execute())
+                if l.data:
+                    origem = l.data[0]
+            except Exception as e:
+                print("Aviso: lead de origem indisponivel:", e)
+
+        return jsonify({
+            "status": "sucesso",
+            "cliente": cliente,
+            "ativos": ativos,
+            "concluidos": concluidos[:10],
+            "total_concluidos": len(concluidos),
+            "horas_area": sorted(({"area": k, "horas": v} for k, v in por_area.items()
+                                  if v > 0), key=lambda x: -x["horas"]),
+            "horas_mes": round(sum(horas_mes_proj.values()) / 3600.0),
+            "horas_total": round(sum(horas_proj.values()) / 3600.0),
+            "prazo_proximo": prazo_prox,
+            "atrasados": sum(1 for p in ativos if p["prazo"] and p["prazo"] < hoje),
+            "pessoas": pessoas,
+            "origem": origem,
+        }), 200
+    except Exception as e:
+        print("Erro em conta_cliente:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar o cliente.",
+                        "detalhe": str(e)[:300]}), 500
+
 
 @app.route('/api/clientes/<cliente_id>/mapa', methods=['GET'])
 def mapa_cliente(cliente_id):
@@ -960,17 +2038,52 @@ def mapa_cliente(cliente_id):
 @app.route('/dashboard')
 def dashboard_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or pode_acessar_modulo('dashboard')
-    if not pode:
+        return redirect(url_for('login', proximo=request.path))
+    liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
+                or pode_acessar_modulo('dashboard'))
+    if not liberado:
         return redirect(url_for('index'))
-    return render_template('dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso'))
+    return render_template('dashboard.html',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso'),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+@app.route('/dashboard/comercial')
+def dashboard_comercial_page():
+    """Tela própria, não aba.
+
+    Operacional e comercial respondem a perguntas diferentes, para
+    públicos diferentes, com recortes de tempo diferentes -- o ciclo de
+    venda é de semanas, o de entrega é de dias. Compartilhar uma tela
+    obrigava as duas a caber no mesmo cabeçalho e no mesmo filtro, e
+    nenhuma das duas cabia direito.
+    """
+    if 'usuario_id' not in session:
+        return redirect(url_for('login', proximo=request.path))
+    # O dashboard do CRM tem tela própria: quem opera o funil não
+    # necessariamente pode ver receita e conversão por pessoa.
+    liberado = (session.get('admin') is True
+                or session.get('nivel_acesso') == 'admin'
+                or pode_acessar_modulo('crm_painel')
+                or pode('crm.painel.ver'))
+    if not liberado:
+        return redirect(url_for('index'))
+    return render_template('comercial.html',
+                           usuario_nome=session.get('usuario_nome'),
+                           nivel_acesso=session.get('nivel_acesso'),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
 
 @app.route('/api/dashboard', methods=['GET'])
 def dados_dashboard():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    pode = session.get('nivel_acesso') in ['admin', 'gestor'] or pode_acessar_modulo('dashboard')
-    if not pode:
+    liberado = (session.get('nivel_acesso') in ['admin', 'gestor']
+                or pode_acessar_modulo('dashboard'))
+    if not liberado:
         return jsonify({"erro": "Acesso negado"}), 403
     try:
         # Filtros opcionais
@@ -1521,8 +2634,3446 @@ def dados_dashboard():
 @app.route('/agenda')
 def planejamento():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     return render_template('planejamento.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
+
+@app.route('/crm')
+def pagina_crm():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login', proximo=request.path))
+    return render_template('crm.html',
+                           usuario_nome=session.get('usuario_nome', ''),
+                           nivel_acesso=session.get('nivel_acesso', ''),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+
+# Para onde o lead cai ao trocar de funil. Espelha ENTRADA no crm.html;
+# a validação fica aqui porque o cliente não pode ser a fonte da verdade.
+ENTRADA_FUNIL = {"qualificacao": "Prospecção", "fechamento": "Agendamento",
+                 "relacionamento": "Backlog", "nutricao": "Backlog"}
+FUNIS_VALIDOS = set(ENTRADA_FUNIL.keys())
+
+# Colunas de cada funil. O cliente não pode ser a fonte da verdade sobre
+# para onde um lead pode ir, então a lista vive aqui também.
+COLUNAS_FUNIL = {
+    "qualificacao": ["Prospecção", "Contato", "Follow up 1", "Follow up 2",
+                     "Follow up 3", "Follow up 4", "Ganho", "Nutrição", "Perdido"],
+    "fechamento":   ["Agendamento", "Proposta", "Negociação", "Ganho", "Nutrição"],
+    "relacionamento": ["Backlog", "Pesquisa de satisfação", "Follow up 1", "Follow up 2",
+                       "Follow up 3", "Follow up 4", "Ganho", "Nutrição"],
+    "nutricao":     ["Backlog"] + [f"Contato {i}" for i in range(1, 11)]
+                    + ["Ganho", "Encerrado"],
+}
+
+# Última tentativa de cada funil. Chegar nela sem avançar é o sinal de
+# que o lead esgotou o ciclo — a tela sugere a saída, sem mover sozinha.
+ULTIMO_FUP = {"qualificacao": "Follow up 4", "relacionamento": "Follow up 4",
+              "nutricao": "Contato 10"}
+
+
+@app.route('/api/leads', methods=['GET'])
+def listar_leads():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = (supabase.table("leads").select("*")
+               .is_("excluido_em", "null")
+               .order("movido_em", desc=True).execute())
+        return jsonify({"status": "sucesso", "leads": res.data or []}), 200
+    except Exception as e:
+        print("Erro em listar_leads:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar leads.", "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/leads', methods=['POST'])
+def criar_lead():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        if not (d.get("empresa") or d.get("contato")):
+            return jsonify({"status": "erro", "mensagem": "Informe a empresa ou o contato."}), 400
+        funil = d.get("funil", "qualificacao")
+        if funil not in FUNIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Funil inválido."}), 400
+
+        agora = datetime.now(timezone.utc).isoformat()
+        novo = {
+            "empresa": (d.get("empresa") or "").strip(),
+            "contato": (d.get("contato") or "").strip(),
+            "telefone": (d.get("telefone") or "").strip(),
+            "email": (d.get("email") or "").strip(),
+            "produto": d.get("produto") or None,
+            "responsavel": d.get("responsavel") or session.get('usuario_nome', ''),
+            "origem": d.get("origem") or None,
+            # Segmento e localização: o closer precisa dos dois para
+            # preparar a reunião. São exigidos no portão de Ganho.
+            "segmento": d.get("segmento") or None,
+            "cidade": (d.get("cidade") or "").strip() or None,
+            "estado": (d.get("estado") or "").strip().upper()[:2] or None,
+            "anotacoes": (d.get("anotacoes") or "").strip(),
+            "proximo_contato": d.get("proximo_contato") or None,
+            "valor_estimado": d.get("valor_estimado") or None,
+            "funil": funil,
+            "coluna": d.get("coluna") or ENTRADA_FUNIL[funil],
+            "movido_em": agora,
+        }
+        res = supabase.table("leads").insert(novo).execute()
+        return jsonify({"status": "sucesso", "lead": (res.data or [None])[0]}), 201
+    except Exception as e:
+        print("Erro em criar_lead:", e)
+        # Ferramenta interna e autenticada: devolver o motivo economiza
+        # uma ida ao log do servidor a cada erro.
+        return jsonify({"status": "erro", "mensagem": "Erro ao criar lead.", "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/leads/importar', methods=['POST'])
+def importar_leads():
+    """Cria leads em lote a partir de uma planilha.
+
+    QUEM FAZ O QUÊ
+    --------------
+    O navegador lê o arquivo (xlsx, xls, csv), deixa a pessoa dizer qual
+    coluna é qual, e manda JSON limpo para cá. Isso evita subir binário
+    de planilha para a função serverless e dá conferência imediata na
+    tela, antes de qualquer gravação.
+
+    Mas o servidor NÃO confia no que chega. Toda regra que vale para o
+    lead criado a mão vale aqui de novo: funil da lista fechada, coluna
+    de entrada, campos obrigatórios. Validação no cliente é conveniência;
+    validação aqui é o que garante o dado.
+
+    DUPLICADO É O RISCO REAL
+    ------------------------
+    Reimportar a mesma planilha dobraria o funil e estragaria toda a
+    taxa de conversão. Antes de gravar, comparamos com o que já existe
+    por e-mail, telefone e empresa+contato -- e também dentro do próprio
+    lote, porque planilha costuma repetir linha.
+
+    Devolve o que criou, o que pulou e por quê, linha a linha.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    try:
+        d = request.get_json(silent=True) or {}
+        linhas = d.get("linhas") or []
+        funil = d.get("funil") or "qualificacao"
+        coluna = d.get("coluna") or ENTRADA_FUNIL.get(funil)
+        pular_dup = d.get("pular_duplicados") is not False
+
+        if funil not in FUNIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Funil inválido."}), 400
+        if coluna not in COLUNAS_FUNIL.get(funil, []):
+            coluna = ENTRADA_FUNIL[funil]
+        if not linhas:
+            return jsonify({"status": "erro", "mensagem": "Nenhuma linha recebida."}), 400
+        # Teto por requisição: acima disso a função serverless estoura o
+        # tempo. A tela quebra em blocos e chama várias vezes.
+        if len(linhas) > 500:
+            return jsonify({"status": "erro",
+                            "mensagem": "Máximo de 500 linhas por vez."}), 400
+
+        existentes = _chaves_de_leads_existentes()
+        agora = datetime.now(timezone.utc).isoformat()
+        autor = session.get('usuario_nome', '')
+
+        novos, pulados, no_lote = [], [], set()
+
+        for item in linhas:
+            n = item.get("n")                      # linha da planilha, para o relatório
+            empresa = (item.get("empresa") or "").strip()
+            contato = (item.get("contato") or "").strip()
+
+            if not (empresa or contato):
+                pulados.append({"n": n, "empresa": empresa or contato,
+                                "motivo": "sem empresa e sem contato"})
+                continue
+
+            email = (item.get("email") or "").strip().lower()
+            telefone = _so_digitos(item.get("telefone"))
+
+            chaves = _chaves_do_lead(empresa, contato, email, telefone)
+            if pular_dup and (chaves & existentes):
+                pulados.append({"n": n, "empresa": empresa or contato,
+                                "motivo": "já existe no CRM"})
+                continue
+            if pular_dup and (chaves & no_lote):
+                pulados.append({"n": n, "empresa": empresa or contato,
+                                "motivo": "repetido na própria planilha"})
+                continue
+            no_lote |= chaves
+
+            novos.append({
+                "empresa": empresa,
+                "contato": contato,
+                "telefone": (item.get("telefone") or "").strip() or None,
+                "email": email or None,
+                "produto": (item.get("produto") or "").strip() or None,
+                "responsavel": (item.get("responsavel") or "").strip() or autor,
+                "origem": (item.get("origem") or "").strip() or None,
+                "segmento": (item.get("segmento") or "").strip() or None,
+                "cidade": (item.get("cidade") or "").strip() or None,
+                "estado": (item.get("estado") or "").strip().upper()[:2] or None,
+                "cnpj": (item.get("cnpj") or "").strip() or None,
+                "anotacoes": (item.get("anotacoes") or "").strip() or None,
+                "valor_estimado": _num_ou_nulo(item.get("valor_estimado")),
+                "proximo_contato": _data_ou_nulo(item.get("proximo_contato")),
+                "funil": funil,
+                "coluna": coluna,
+                "movido_em": agora,
+            })
+
+        criados = 0
+        if novos:
+            # Em blocos: um insert único de centenas de linhas costuma
+            # estourar o limite da requisição ao PostgREST.
+            for i in range(0, len(novos), 100):
+                r = supabase.table("leads").insert(novos[i:i + 100]).execute()
+                criados += len(r.data or [])
+
+        registrar_auditoria("leads_importados", "lead", None, {
+            "criados": criados, "pulados": len(pulados),
+            "funil": funil, "coluna": coluna,
+        })
+
+        return jsonify({
+            "status": "sucesso",
+            "criados": criados,
+            "pulados": pulados,
+            "total": len(linhas),
+        }), 201
+
+    except Exception as e:
+        print("Erro em importar_leads:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao importar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+def _so_digitos(v):
+    return "".join(c for c in str(v or "") if c.isdigit())
+
+
+def _chaves_do_lead(empresa, contato, email, telefone):
+    """Identidades possíveis de um lead, para comparar sem falso negativo.
+
+    Telefone só conta a partir de 10 dígitos: com menos, é ramal ou dado
+    truncado e uniria leads diferentes. E-mail é a chave mais confiável;
+    empresa+contato pega quem repete sem e-mail nem telefone.
+    """
+    ch = set()
+    if email:
+        ch.add("e:" + email)
+    if len(telefone) >= 10:
+        ch.add("t:" + telefone[-10:])          # ignora DDI e zero à esquerda
+    if empresa and contato:
+        ch.add("n:" + empresa.lower().strip() + "|" + contato.lower().strip())
+    elif empresa:
+        ch.add("n:" + empresa.lower().strip())
+    return ch
+
+
+def _chaves_de_leads_existentes():
+    """Índice de tudo que já está no CRM, inclusive na lixeira.
+
+    A lixeira entra de propósito: reimportar um lead que alguém excluiu
+    de propósito o traz de volta sem ninguém pedir.
+    """
+    idx = set()
+    try:
+        r = supabase.table("leads").select("empresa, contato, email, telefone").execute()
+        for l in (r.data or []):
+            idx |= _chaves_do_lead((l.get("empresa") or "").strip(),
+                                   (l.get("contato") or "").strip(),
+                                   (l.get("email") or "").strip().lower(),
+                                   _so_digitos(l.get("telefone")))
+    except Exception as e:
+        print("Aviso: nao foi possivel indexar leads existentes:", e)
+    return idx
+
+
+def _num_ou_nulo(v):
+    """Converte valor de planilha em float. Aceita 12.500,00, 12,500.00,
+    R$ 12500, 3.175 e 1200,50.
+
+    O CASO AMBÍGUO
+    --------------
+    "3.175" pode ser três mil e cento e setenta e cinco (Brasil) ou três
+    vírgula um sete cinco (Estados Unidos). Sem contexto não dá para
+    saber -- mas há um sinal confiável: separador decimal quase nunca
+    tem exatamente três casas, e separador de milhar sempre tem.
+
+    Então ponto seguido de exatamente 3 dígitos, sem vírgula na string,
+    é milhar. É a leitura certa para um CRM em reais, onde um lead de
+    "R$ 3.175" vale três mil e não três.
+    """
+    if v is None or v == "":
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+
+    t = "".join(c for c in str(v) if c.isdigit() or c in ",.-")
+    if not t or not any(c.isdigit() for c in t):
+        return None
+
+    if "," in t and "." in t:
+        # Tem os dois: o último a aparecer é o decimal.
+        if t.rfind(",") > t.rfind("."):
+            t = t.replace(".", "").replace(",", ".")     # 12.500,00
+        else:
+            t = t.replace(",", "")                       # 12,500.00
+    elif "," in t:
+        t = t.replace(",", ".")                          # 1200,50
+    elif "." in t:
+        depois = t.rsplit(".", 1)[1]
+        if len(depois) == 3:
+            t = t.replace(".", "")                       # 3.175 -> 3175
+        # senão o ponto fica: 1500.75 e 1.5 seguem decimais
+
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def _data_ou_nulo(v):
+    """Aceita 2026-08-18, 18/08/2026, 8/8/2026 e 18-08-2026.
+
+    Dia e mês com um dígito só são comuns em planilha digitada à mão --
+    exigir dois zeraria a coluna de metade das linhas.
+    """
+    t = str(v or "").strip()[:10]
+    if not t:
+        return None
+    # ISO já vem pronto
+    if len(t) == 10 and t[4] == "-" and t[7] == "-":
+        return t
+    for sep in ("/", "-"):
+        if sep not in t:
+            continue
+        p = t.split(sep)
+        if len(p) != 3 or len(p[2]) != 4:
+            continue
+        dia, mes, ano = p[0].strip(), p[1].strip(), p[2].strip()
+        if not (dia.isdigit() and mes.isdigit() and ano.isdigit()):
+            continue
+        if not (1 <= int(dia) <= 31 and 1 <= int(mes) <= 12):
+            continue
+        return f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}"
+    return None
+
+
+@app.route('/api/leads/<lead_id>', methods=['PUT'])
+def atualizar_lead(lead_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        # Lista fechada: funil e coluna só mudam pela rota de mover,
+        # que registra a trilha e aplica as passagens.
+        campos = ["empresa", "contato", "telefone", "email", "produto", "responsavel",
+                  "origem", "segmento", "cidade", "estado", "anotacoes",
+                  "proximo_contato", "valor_estimado", "cnpj", "canal_proposta"]
+        upd = {k: d[k] for k in campos if k in d}
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+        supabase.table("leads").update(upd).eq("id", lead_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao atualizar lead.", "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/leads/<lead_id>', methods=['DELETE'])
+def excluir_lead(lead_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('nivel_acesso') not in ('admin', 'gestor'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        # Exclusão lógica: o histórico de movimentos continua fazendo sentido.
+        supabase.table("leads").update(
+            {"excluido_em": datetime.now(timezone.utc).isoformat(),
+             "excluido_por": session.get('usuario_nome')}
+        ).eq("id", lead_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir lead."}), 500
+
+
+@app.route('/api/leads/<lead_id>/movimentos', methods=['GET'])
+def movimentos_lead(lead_id):
+    """Trilha do lead entre funis e colunas, do mais recente ao mais antigo.
+    A duração de cada etapa é calculada no cliente, pela diferença entre
+    movimentos consecutivos — não precisa de coluna nova."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = (supabase.table("lead_movimentos").select("*")
+               .eq("lead_id", lead_id)
+               .order("criado_em", desc=True).execute())
+        return jsonify({"status": "sucesso", "movimentos": res.data or []}), 200
+    except Exception as e:
+        print("Erro em movimentos_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar histórico.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/leads/<lead_id>/mover', methods=['POST'])
+def mover_lead(lead_id):
+    """Move o lead de coluna e, quando a coluna é de saída, troca de funil.
+    Registra a trilha em lead_movimentos — é dela que sai o tempo por etapa
+    e o relatório de objeções."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        coluna = d.get("coluna")
+        if not coluna:
+            return jsonify({"status": "erro", "mensagem": "Informe a coluna."}), 400
+
+        atual = supabase.table("leads").select("*").eq("id", lead_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
+        lead = atual.data[0]
+
+        destino = d.get("destino_funil")
+        if destino and destino not in FUNIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Funil de destino inválido."}), 400
+
+        agora = datetime.now(timezone.utc).isoformat()
+        upd = {"movido_em": agora}
+        if destino:
+            upd["funil"] = destino
+            upd["coluna"] = ENTRADA_FUNIL[destino]
+        else:
+            upd["coluna"] = coluna
+        if d.get("proximo_contato"):
+            upd["proximo_contato"] = d["proximo_contato"]
+
+        supabase.table("leads").update(upd).eq("id", lead_id).execute()
+
+        # Trilha. Falhar aqui não desfaz o movimento: o lead já andou.
+        try:
+            supabase.table("lead_movimentos").insert({
+                "lead_id": lead_id,
+                "de_funil": lead.get("funil"),
+                "de_coluna": lead.get("coluna"),
+                "para_funil": upd.get("funil", lead.get("funil")),
+                "para_coluna": upd["coluna"],
+                "objecao": d.get("objecao"),
+                "objecao_detalhe": (d.get("objecao_detalhe") or "").strip() or None,
+                "autor": session.get('usuario_nome', ''),
+            }).execute()
+        except Exception as e:
+            print("Aviso: movimento nao registrado em lead_movimentos:", e)
+
+        lead.update(upd)
+        return jsonify({"status": "sucesso", "lead": lead}), 200
+    except Exception as e:
+        print("Erro em mover_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao mover lead.", "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/feed')
+def pagina_feed():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login', proximo=request.path))
+    return render_template('feed.html',
+                           usuario_nome=session.get('usuario_nome', ''),
+                           nivel_acesso=session.get('nivel_acesso', ''),
+                           tipo_usuario=session.get('tipo_usuario', 'interno'),
+                           papel_externo=session.get('papel_externo', ''),
+                           perm_modulos=session.get('perm_modulos', []))
+
+
+# Comunicado é voz institucional: só admin e gestor publicam.
+# Os demais tipos ficam abertos ao time.
+TIPOS_POST = ('comunicado', 'evento', 'celebracao', 'post')
+BUCKET_FEED = 'feed'
+
+
+def _pode_publicar(tipo):
+    if session.get('tipo_usuario') == 'externo':
+        return False
+    if tipo == 'comunicado':
+        return session.get('nivel_acesso') in ('admin', 'gestor')
+    return True
+
+
+def _pode_mexer_no_post(post):
+    """Autor mexe no que é seu; admin e gestor mexem em tudo."""
+    if session.get('nivel_acesso') in ('admin', 'gestor'):
+        return True
+    return (post.get('autor') or '') == session.get('usuario_nome', '')
+
+
+@app.route('/api/permissoes/divergencias', methods=['GET'])
+def listar_divergencias():
+    """Divergências entre o modelo antigo e o novo, durante a migração.
+
+    Enquanto esta lista estiver vazia por alguns dias de uso real,
+    o modelo novo pode assumir com segurança.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('nivel_acesso') != 'admin':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        res = (supabase.table("auditoria").select("*")
+               .eq("acao", "divergencia_permissao")
+               .order("criado_em", desc=True).limit(300).execute())
+        linhas = res.data or []
+
+        # Agrupa por recurso + par de respostas: 200 divergências iguais
+        # são um problema só, e é assim que precisa aparecer.
+        resumo = {}
+        for l in linhas:
+            det = l.get("detalhe") or {}
+            chave = (l.get("recurso"), det.get("antigo"), det.get("novo"), det.get("nivel"))
+            if chave not in resumo:
+                resumo[chave] = {
+                    "recurso": l.get("recurso"),
+                    "antigo": det.get("antigo"),
+                    "novo": det.get("novo"),
+                    "nivel": det.get("nivel"),
+                    "papel": det.get("papel"),
+                    "ocorrencias": 0,
+                    "ultima": l.get("criado_em"),
+                    "usuarios": set(),
+                }
+            resumo[chave]["ocorrencias"] += 1
+            if l.get("usuario"):
+                resumo[chave]["usuarios"].add(l["usuario"])
+
+        saida = []
+        for v in resumo.values():
+            v["usuarios"] = sorted(v["usuarios"])
+            saida.append(v)
+        saida.sort(key=lambda x: -x["ocorrencias"])
+
+        return jsonify({
+            "status": "sucesso",
+            "total": len(linhas),
+            "distintas": len(saida),
+            "divergencias": saida,
+            "modo_paralelo": MODO_PARALELO,
+        }), 200
+    except Exception as e:
+        print("Erro em listar_divergencias:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+# ============================================================
+# ACESSOS — papéis, pessoas e auditoria
+# ============================================================
+
+def registrar_auditoria(acao, recurso, alvo_id, detalhe=None):
+    """Grava uma ação no registro de acessos.
+
+    Falha aqui nunca derruba a operação: perder um registro de
+    auditoria é ruim, mas impedir o cadastro de alguém é pior.
+    """
+    try:
+        supabase.table("auditoria").insert({
+            "usuario": session.get('usuario_nome'),
+            "usuario_id": str(session.get('usuario_id', '')),
+            "acao": acao,
+            "recurso": recurso,
+            "alvo_id": str(alvo_id) if alvo_id else None,
+            "detalhe": detalhe or {},
+        }).execute()
+    except Exception as e:
+        print("Aviso: auditoria nao registrada:", e)
+
+
+def pode_ver_lixeira():
+    """Ver e restaurar. Apagar em definitivo exige lixeira.purgar."""
+    return pode('lixeira.ver') or is_admin()
+
+
+# Capacidades que só o nível Administrador concede. Permitir que
+# virassem exceção individual esvaziaria o sentido dos níveis: qualquer
+# pessoa poderia acabar com poder de administrar sem que o nível dela
+# dissesse isso.
+CAPS_SO_ADMIN = ('usuario.gerir', 'papel.gerir', 'auditoria.ver', 'lixeira.purgar')
+
+# ============================================================
+# O QUE É BASE E O QUE É DECISÃO
+#
+# Oferecer as 28 capacidades como exceção transformava a tela numa
+# lista onde tudo parecia negociável, inclusive registrar tempo, que
+# é a razão de a plataforma existir.
+#
+# BASE: todo interno tem, sempre. Não aparece como exceção porque
+# não há decisão a tomar.
+#
+# OPCIONAIS: mudam de pessoa para pessoa e valem a pergunta.
+# ============================================================
+CAPS_BASE = (
+    'projeto.ver',        # ver o quadro em que atua
+    'projeto.solicitar',  # pedir card em outro quadro
+    'tempo.registrar',    # lançar o próprio tempo
+    'okr.ver',            # acompanhar os OKRs
+    'feed.publicar',      # postar no mural
+)
+
+# Estas não são "tem ou não tem": são "vê só o seu ou vê o do quadro
+# todo". O alcance é um seletor único que move todas de uma vez, em vez
+# de dez decisões independentes que ninguém quer tomar.
+CAPS_ALCANCE = (
+    'projeto.editar',
+    'tempo.ver',
+    'crm.lead.ver',
+    'crm.painel.ver',
+    'cliente.ver',
+)
+
+CAPS_OPCIONAIS = (
+    'crm.valor.ver',      # ver valor de contrato
+    'dashboard.ver',      # abrir o painel
+    'dados.exportar',     # exportar planilha
+    'projeto.atribuir',   # direcionar card para alguém
+    'projeto.excluir',    # mandar projeto para a lixeira
+    'cliente.gerir',      # cadastrar e editar cliente
+    'crm.lead.editar',    # trabalhar os funis
+    'okr.gerir',          # criar e editar OKR
+    'feed.comunicado',    # publicar comunicado geral
+    'feed.moderar',       # moderar o mural
+    'comentario.excluir', # apagar comentário de outro
+    'crm.lead.excluir',   # excluir lead
+    'cliente.portal.gerir', # liberar acesso do cliente ao portal
+    'lixeira.ver',        # ver a lixeira
+)
+
+
+def pode_gerir_acessos():
+    """So administrador configura acessos.
+
+    Delegado ao modulo para existir uma definicao so de "e admin" --
+    duas definicoes divergem no primeiro caso de borda.
+    """
+    return acessos_v2.sou_admin()
+
+
+# ============================================================
+# PAINEL — operação e comercial
+#
+# Todo cálculo acontece aqui, no servidor: a tela recebe números
+# prontos. Assim a mesma conta não é reescrita no JavaScript, e o
+# escopo de permissão é aplicado antes de qualquer dado sair.
+# ============================================================
+
+STATUS_ENCERRADOS = ('Finalizado', 'Cancelado')
+STATUS_PARADOS = ('Backlog', 'Não Iniciado', 'Pausado')
+
+
+def _dias_desde(valor):
+    """Dias entre a data informada e agora. None vira 0."""
+    if not valor:
+        return 0
+    try:
+        dt = datetime.fromisoformat(str(valor).replace('Z', '+00:00'))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return max(0, (datetime.now(timezone.utc) - dt).days)
+    except Exception:
+        return 0
+
+
+def _recorte(dias_padrao=30):
+    try:
+        dias = int(request.args.get('dias', dias_padrao))
+    except (TypeError, ValueError):
+        dias = dias_padrao
+    dias = max(1, min(dias, 730))
+    return dias, (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+
+
+def _mediana(valores):
+    if not valores:
+        return 0
+    v = sorted(valores)
+    meio = len(v) // 2
+    return v[meio] if len(v) % 2 else (v[meio - 1] + v[meio]) / 2
+
+
+# ============================================================
+# MOTOR DE FLUXOS
+#
+# As rotas não conhecem regra nenhuma: elas anunciam o que
+# aconteceu, e o despachante decide o que fazer. Fluxo novo
+# vira linha em `fluxo_regras`, não código espalhado.
+# ============================================================
+
+# Papéis operacionais por quadro. Vivem no código porque são a lista
+# real do que o motor sabe fazer — crescem quando um fluxo precisa.
+PAPEIS_QUADRO = [
+    ('direciona', 'Direciona os projetos',
+     'Recebe o aviso e escolhe quem fica com cada card novo'),
+    ('cobranca', 'Recebe as cobranças',
+     'Fica com o card de faturamento dos contratos deste quadro'),
+    ('relacionamento', 'Conduz o relacionamento',
+     'Aplica a pesquisa de satisfação depois da entrega'),
+]
+PAPEIS_VALIDOS = {p for p, _, _ in PAPEIS_QUADRO}
+
+# Quadro de destino sugerido por produto. O closer confirma ou troca.
+PRODUTO_QUADRO = {
+    'Recrutamento e Seleção': 'recrutamento',
+    'RH Estratégico': 'rhestrategico',
+    'CX Data': 'cxdata',
+    'Consultoria': 'projetos',
+    'Treinamento': 'projetos',
+    'Outro': 'projetos',
+}
+# Área correspondente a cada quadro, que é o que `projetos.area` guarda.
+# ============================================================
+# ÁRVORE DE QUADROS
+#
+# Dez famílias, dezoito quadros. A família é o que aparece na
+# barra lateral e o que carrega permissão e responsabilidade;
+# a subdivisão é aba dentro da tela.
+#
+# 'produto' separa o que o cliente compra do que sustenta a casa:
+# é o que permite medir horas faturáveis e impedir que um contrato
+# caia num quadro interno por engano.
+# ============================================================
+ARVORE_QUADROS = [
+    # chave           área (projetos.area)      produto  ícone        subdivisões
+    ('recrutamento',  'Recrutamento e seleção',  True,  'group_add', []),
+    ('rhestrategico', 'RH Estratégico',          True,  'insights', [
+        ('mensalista', 'Mensalista', 'Acompanhamento contínuo'),
+        ('pccs',       'PCCS',       'Plano de Cargos, Carreiras e Salários'),
+        ('pco',        'PCO',        'Pesquisa de Clima Organizacional'),
+        ('gd',         'GD',         'Gestão de Desempenho'),
+    ]),
+    ('educacao',      'Educação',                True,  'school', [
+        ('reaprendendo',  'Reaprendendo',  'Programa de formação'),
+        ('liderar',       'Liderar',       'Programa de liderança'),
+        ('personalizado', 'Personalizado', 'Programa sob medida'),
+    ]),
+    ('cxdata',        'CX Data',                 True,  'database', [
+        ('pontual',    'Pontual',    'Entrega única'),
+        ('mensalista', 'Mensalista', 'Acompanhamento contínuo'),
+    ]),
+    ('projetos',      'Projetos',                True,  'folder', []),
+
+    ('comercial',     'Comercial',               False, 'handshake', []),
+    ('marketing',     'Marketing',               False, 'campaign', []),
+    # 'Adm/Fin' é o valor que os cards já existentes usam. Gravar
+    # 'Financeiro' criava card invisível: nasce certo, some da tela.
+    ('financeiro',    'Adm/Fin',                 False, 'payments', []),
+    ('tecnologia',    'Tecnologia',              False, 'terminal', []),
+    ('rhinterno',     'RH Interno',              False, 'badge', [
+        ('endomarketing', 'Endomarketing', 'Comunicação e engajamento'),
+        ('admissao',      'Admissão',      'Entrada de pessoas'),
+        ('demissao',      'Demissão',      'Saída de pessoas'),
+    ]),
+]
+
+QUADRO_AREA = {c: a for c, a, _, _, _ in ARVORE_QUADROS}
+QUADROS_PRODUTO = [c for c, _, p, _, _ in ARVORE_QUADROS if p]
+QUADROS_INTERNOS = [c for c, _, p, _, _ in ARVORE_QUADROS if not p]
+SUBQUADROS = {c: [s[0] for s in subs] for c, _, _, _, subs in ARVORE_QUADROS if subs}
+# Onde o card cai quando ninguém escolheu subdivisão: a primeira da lista.
+SUB_PADRAO = {c: subs[0][0] for c, _, _, _, subs in ARVORE_QUADROS if subs}
+
+
+# A lista de quadros das telas de acesso vem da árvore, não de uma
+# cópia manual: duas fontes divergem no primeiro quadro novo.
+QUADROS[:] = [(chave, area) for chave, area, _, _, _ in ARVORE_QUADROS]
+
+
+def sub_valida(quadro, sub):
+    """True se a subdivisão pertence ao quadro. Sem sub também é válido."""
+    if not sub:
+        return True
+    return sub in SUBQUADROS.get(quadro, [])
+FASE_ENTRADA = 'Backlog'
+
+
+def responsavel_do_quadro(quadro, papel):
+    """Quem exerce um papel operacional num quadro. None se ninguém."""
+    try:
+        r = (supabase.table("quadro_responsaveis")
+             .select("usuario_id").eq("quadro", quadro).eq("papel", papel)
+             .limit(1).execute())
+        if r.data and r.data[0].get("usuario_id"):
+            u = (supabase.table("usuarios").select("id, nome")
+                 .eq("id", r.data[0]["usuario_id"]).limit(1).execute())
+            if u.data:
+                return u.data[0]
+    except Exception as e:
+        print("Aviso: responsavel_do_quadro:", e)
+    return None
+
+
+def _condicao_bate(condicao, dados):
+    """Testa a condição da regra contra os dados do evento."""
+    for chave, esperado in (condicao or {}).items():
+        valor = dados.get(chave)
+        if isinstance(esperado, list):
+            if valor not in esperado:
+                return False
+        elif valor != esperado:
+            return False
+    return True
+
+
+def disparar(evento, dados):
+    """Anuncia um evento e executa as regras que casam com ele.
+
+    Falha de regra nunca desfaz o que o usuário fez: fica registrada
+    em `fluxo_execucoes` para alguém resolver depois.
+    """
+    resultados = []
+    try:
+        r = (supabase.table("fluxo_regras").select("*")
+             .eq("evento", evento).eq("ativo", True).order("ordem").execute())
+        regras = r.data or []
+    except Exception as e:
+        print(f"ERRO: nao foi possivel ler fluxo_regras para '{evento}':", e)
+        _registrar_execucao(None, evento, dados, None,
+                            f"fluxo_regras indisponivel: {str(e)[:300]}")
+        return resultados
+
+    # Zero regras não é normal quando o evento existe no desenho do fluxo.
+    # Registrar aqui evita o ponto cego: sem isso, um contrato fechado
+    # que não abre quadro nenhum não deixa rastro em lugar algum.
+    if not regras:
+        print(f"AVISO: nenhuma regra ativa para o evento '{evento}'. "
+              f"Confira se fluxo.sql rodou e se o RLS libera leitura.")
+        _registrar_execucao(None, evento, dados, None,
+                            "nenhuma regra ativa encontrada para este evento")
+        return resultados
+
+    for regra in regras:
+        if not _condicao_bate(regra.get("condicao"), dados):
+            continue
+        for acao in (regra.get("acoes") or []):
+            tipo = acao.get("tipo")
+            try:
+                fn = ACOES.get(tipo)
+                if not fn:
+                    raise ValueError(f"ação desconhecida: {tipo}")
+                res = fn(acao, dados)
+                resultados.append({"regra": regra["nome"], "acao": tipo, "resultado": res})
+                _registrar_execucao(regra, evento, dados, res, None)
+            except Exception as e:
+                print(f"Erro na regra '{regra.get('nome')}' ({tipo}):", e)
+                _registrar_execucao(regra, evento, dados, None, str(e)[:400])
+    return resultados
+
+
+def _registrar_execucao(regra, evento, dados, resultado, erro):
+    """Guarda o que o motor tentou. `regra` pode vir None quando a
+    falha acontece antes de haver regra: é justamente esse o caso que
+    não deixava rastro nenhum."""
+    try:
+        supabase.table("fluxo_execucoes").insert({
+            "regra_id": (regra or {}).get("id"),
+            "evento": evento,
+            "gatilho_id": str(dados.get("lead_id") or dados.get("projeto_id") or ''),
+            "resultado": resultado,
+            "erro": erro,
+        }).execute()
+    except Exception as e:
+        print("Aviso: fluxo_execucoes:", e)
+
+
+# ---------- ações que o motor sabe executar ----------
+
+def _acao_criar_lead(acao, dados):
+    """Cria um lead novo ligado ao anterior.
+
+    Novo e não reaproveitado: um cliente que fecha três vezes precisa
+    virar três leads, senão a taxa de conversão fica errada.
+    """
+    if acao.get("funil") == "relacionamento" and not dados.get("com_relacionamento"):
+        return {"pulado": "relacionamento nao marcado por quem finalizou"}
+    novo = {
+        # A tabela `leads` nao tem coluna `lead`: o CRM mostra `empresa` no
+        # card e `contato` no detalhe. Gravar uma coluna inexistente fazia o
+        # insert inteiro falhar no Postgres, e o lead de relacionamento
+        # simplesmente nunca nascia.
+        "empresa": dados.get("cliente_nome") or dados.get("empresa"),
+        "contato": dados.get("contato") or dados.get("lead_nome"),
+        "funil": acao.get("funil", "relacionamento"),
+        "coluna": acao.get("coluna", FASE_ENTRADA),
+        "origem": "Cliente da casa",
+        "produto": dados.get("produto"),
+        "lead_pai_id": dados.get("lead_id"),
+        "cliente_id": dados.get("cliente_id"),
+        "contatos": 0,
+        "movido_em": datetime.now(timezone.utc).isoformat(),
+    }
+    quadro = dados.get("quadro")
+    if quadro:
+        resp = responsavel_do_quadro(quadro, "relacionamento")
+        if resp:
+            novo["responsavel"] = resp.get("nome")
+    for c in ("telefone", "email", "cnpj"):
+        if dados.get(c):
+            novo[c] = dados[c]
+    r = supabase.table("leads").insert(novo).execute()
+    return {"lead_id": (r.data or [{}])[0].get("id")}
+
+
+def _acao_mover_lead(acao, dados):
+    """Move o lead para outro funil e coluna."""
+    lead_id = dados.get("lead_id")
+    if not lead_id:
+        raise ValueError("sem lead_id")
+    destino_funil = acao.get("funil", "fechamento")
+    destino_coluna = acao.get("coluna", "Agendamento")
+    supabase.table("leads").update({
+        "funil": destino_funil, "coluna": destino_coluna, "contatos": 0,
+        "movido_em": datetime.now(timezone.utc).isoformat(),
+    }).eq("id", lead_id).execute()
+    try:
+        supabase.table("lead_movimentos").insert({
+            "lead_id": lead_id, "de_funil": dados.get("funil"),
+            "de_coluna": dados.get("coluna"), "para_funil": destino_funil,
+            "para_coluna": destino_coluna, "autor": "fluxo automático",
+        }).execute()
+    except Exception:
+        pass
+    return {"lead_id": lead_id, "funil": destino_funil, "coluna": destino_coluna}
+
+
+def _acao_criar_cobranca(acao, dados):
+    """Card de faturamento no Adm/Financeiro.
+
+    Só roda se quem finalizou marcou a cobrança. Criar cobrança que
+    ninguém pediu é pior que não criar nenhuma: alguém precisa
+    descobrir e apagar.
+    """
+    if acao.get("etapa") == "entrega" and not dados.get("com_cobranca"):
+        return {"pulado": "cobranca nao marcada por quem finalizou"}
+    resp = responsavel_do_quadro('financeiro', 'cobranca')
+    etapa = acao.get("etapa", "fechamento")
+    rotulo = "Emitir NF e boleto" if etapa == "fechamento" else "Faturar entrega"
+    novo = {
+        "nome_projeto": f"{rotulo} · {dados.get('projeto_nome') or dados.get('cliente_nome') or 'contrato'}",
+        "area": QUADRO_AREA['financeiro'],
+        "status": FASE_ENTRADA,
+        "empresa": dados.get("cliente_nome"),
+        "cliente_id": dados.get("cliente_id"),
+        "origem_lead_id": dados.get("lead_id"),
+        "vinculado_a": dados.get("lote_id"),
+        "valor": dados.get("valor"),
+        "responsavel": resp.get("nome") if resp else None,
+        "aguardando_responsavel": resp is None,
+        "data_status_atual": datetime.now(timezone.utc).isoformat(),
+    }
+    r = supabase.table("projetos").insert(novo).execute()
+    return {"projeto_id": (r.data or [{}])[0].get("id"), "responsavel": novo["responsavel"]}
+
+
+# Colunas que dependem de um SQL ter rodado. Se faltar alguma, o card
+# ainda precisa nascer: perder um contrato fechado por causa de coluna
+# ausente é pior que criar o card sem o dado extra.
+_COLUNAS_OPCIONAIS = ("subquadro", "origem_lead_id", "lote_id", "lote_pos",
+                      "lote_total", "aguardando_responsavel", "vinculado_a")
+
+
+def _inserir_projeto(novo):
+    """Insere o projeto e, se o banco recusar por coluna inexistente,
+    tenta de novo sem os campos opcionais, avisando no log."""
+    try:
+        return supabase.table("projetos").insert(novo).execute()
+    except Exception as e:
+        msg = str(e)
+        faltando = [c for c in _COLUNAS_OPCIONAIS if c in msg and c in novo]
+        if not faltando:
+            raise
+        print(f"Aviso: coluna(s) {faltando} nao existem em projetos. "
+              f"Rode quadros.sql e fluxo.sql. Criando o card sem elas.")
+        reduzido = {k: v for k, v in novo.items() if k not in faltando}
+        return supabase.table("projetos").insert(reduzido).execute()
+
+
+MODOS_QUADRO = ('direto', 'fila', 'rodizio')
+
+
+def config_do_quadro(quadro):
+    """Como o quadro distribui os cards que chegam.
+
+    Sem registro, responde 'fila': é o comportamento atual, então
+    quadro não configurado continua funcionando como antes.
+    """
+    try:
+        r = (supabase.table("quadro_config").select("modo")
+             .eq("quadro", quadro).limit(1).execute())
+        if r.data and r.data[0].get("modo") in MODOS_QUADRO:
+            return r.data[0]["modo"]
+    except Exception as e:
+        print("Aviso: quadro_config indisponivel:", e)
+    return 'fila'
+
+
+def executores_do_quadro(quadro):
+    """Quem pode receber card deste quadro, com nome resolvido."""
+    try:
+        r = (supabase.table("quadro_executores").select("usuario_id")
+             .eq("quadro", quadro).execute())
+        ids = [x["usuario_id"] for x in (r.data or []) if x.get("usuario_id")]
+        if not ids:
+            return []
+        u = (supabase.table("usuarios").select("id, nome, ativo")
+             .in_("id", ids).execute())
+        return [x for x in (u.data or []) if x.get("ativo") is not False]
+    except Exception as e:
+        print("Aviso: executores_do_quadro:", e)
+        return []
+
+
+def escolher_por_rodizio(quadro):
+    """Quem tem menos cards em aberto neste quadro.
+
+    Empate resolve pelo primeiro da lista, que é estável: o
+    critério não pode variar entre duas chamadas seguidas.
+    """
+    pessoas = executores_do_quadro(quadro)
+    if not pessoas:
+        return None
+    area = QUADRO_AREA.get(quadro)
+    carga = {p["nome"]: 0 for p in pessoas}
+    try:
+        r = (supabase.table("projetos").select("responsavel")
+             .eq("area", area).is_("excluido_em", "null").execute())
+        for p in (r.data or []):
+            nome = p.get("responsavel")
+            if nome in carga:
+                carga[nome] += 1
+    except Exception as e:
+        print("Aviso: carga para rodizio:", e)
+    return min(pessoas, key=lambda p: carga.get(p["nome"], 0))
+
+
+def definir_dono(quadro):
+    """Quem recebe o card novo, conforme o modo do quadro.
+
+    Devolve (pessoa, aguardando). `aguardando` True significa que
+    o card entra na fila de atribuicao.
+    """
+    modo = config_do_quadro(quadro)
+
+    if modo == 'direto':
+        # Quem recebe e escolhido em Configuracoes, entre os que foram
+        # marcados como responsaveis em Acessos. Cair no "primeiro
+        # cadastrado" fazia a escolha da tela nao valer nada.
+        escolhido = executor_padrao_do_quadro(quadro)
+        if escolhido:
+            return escolhido, False
+        pessoas = executores_do_quadro(quadro)
+        if pessoas:
+            return pessoas[0], False
+        # Sem ninguem, o direcionador assume em vez de virar orfao.
+        resp = responsavel_do_quadro(quadro, 'direciona')
+        return resp, resp is None
+
+    if modo == 'rodizio':
+        p = escolher_por_rodizio(quadro)
+        if p:
+            return p, False
+        resp = responsavel_do_quadro(quadro, 'direciona')
+        return resp, resp is None
+
+    # fila: o card espera alguem escolher
+    return None, True
+
+
+def executor_padrao_do_quadro(quadro):
+    """A pessoa escolhida em Configuracoes para o modo Direto.
+
+    Devolve None quando nao ha escolha, quando a pessoa foi desativada
+    ou quando ela perdeu a marcacao de responsavel em Acessos -- nesses
+    casos `definir_dono` cai no plano seguinte em vez de atribuir card
+    a quem nao deveria recebe-lo.
+    """
+    try:
+        c = (supabase.table("quadro_config").select("executor_padrao")
+             .eq("quadro", quadro).limit(1).execute())
+        uid = (c.data or [{}])[0].get("executor_padrao")
+        if not uid:
+            return None
+        marcado = (supabase.table("quadro_executores").select("id")
+                   .eq("quadro", quadro).eq("usuario_id", uid).limit(1).execute())
+        if not marcado.data:
+            return None
+        u = (supabase.table("usuarios").select("id, nome, ativo")
+             .eq("id", uid).limit(1).execute())
+        pessoa = (u.data or [None])[0]
+        if pessoa and pessoa.get("ativo") is not False:
+            return pessoa
+    except Exception as e:
+        print("Aviso: executor_padrao_do_quadro:", e)
+    return None
+
+
+def _acao_abrir_quadros(acao, dados):
+    """Cria os cards nos quadros escolhidos na janela de fechamento.
+
+    A escolha vem do closer, não de um mapa fixo: assim qualquer
+    produto futuro funciona sem mudar código.
+    """
+    criados = []
+    for pedido in (dados.get("quadros") or []):
+        quadro = pedido.get("quadro")
+        if quadro not in QUADRO_AREA:
+            continue
+        # A quantidade vem no nível de cima do pedido, não dentro de cada
+        # quadro. Ler só de dentro fazia todo contrato virar 1 card,
+        # mesmo quando a janela pedia 5.
+        qtd = max(1, min(int(pedido.get("quantidade") or dados.get("quantidade") or 1), 50))
+        # Subdivisão escolhida na janela; se vier inválida ou vazia,
+        # cai na padrão da família em vez de ficar sem lugar.
+        sub = pedido.get("sub")
+        if not sub_valida(quadro, sub):
+            sub = None
+        if not sub:
+            sub = SUB_PADRAO.get(quadro)
+        if quadro == 'financeiro':
+            criados.append(_acao_criar_cobranca({"etapa": "fechamento"}, dados))
+            continue
+        # Quem fica com o card depende do modo do quadro: em Direto e
+        # Rodízio ele já nasce com dono; em Fila, espera atribuição.
+        dono, aguardando = definir_dono(quadro)
+        direciona = responsavel_do_quadro(quadro, 'direciona')
+        lote = str(uuid.uuid4()) if qtd > 1 else None
+        for i in range(qtd):
+            nome = dados.get("projeto_nome") or dados.get("cliente_nome") or "Novo projeto"
+            if qtd > 1:
+                nome = f"{nome} ({i+1}/{qtd})"
+            novo = {
+                "nome_projeto": nome,
+                "area": QUADRO_AREA[quadro],
+                "subquadro": sub,
+                "status": FASE_ENTRADA,
+                "empresa": dados.get("cliente_nome"),
+                "cliente_id": dados.get("cliente_id"),
+                "origem_lead_id": dados.get("lead_id"),
+                "lote_id": lote,
+                "lote_pos": (i + 1) if qtd > 1 else None,
+                "lote_total": qtd if qtd > 1 else None,
+                "valor": dados.get("valor") if i == 0 else None,
+                "responsavel": dono.get("nome") if dono else None,
+                "aguardando_responsavel": aguardando,
+                "data_status_atual": datetime.now(timezone.utc).isoformat(),
+            }
+            r = _inserir_projeto(novo)
+            projeto_id = (r.data or [{}])[0].get("id")
+            # Card sem dono nenhum: avisa quem direciona o quadro, senão
+            # ele só é descoberto quando alguém abre a fila por conta
+            # própria.
+            if aguardando and projeto_id:
+                avisar_sem_dono(projeto_id, nome, quadro)
+            criados.append({
+                "projeto_id": projeto_id,
+                "quadro": quadro,
+                "responsavel": dono.get("nome") if dono else None,
+            })
+    return {"criados": len(criados), "itens": criados}
+
+
+ACOES = {
+    "criar_lead": _acao_criar_lead,
+    "mover_lead": _acao_mover_lead,
+    "criar_cobranca": _acao_criar_cobranca,
+    "abrir_quadros": _acao_abrir_quadros,
+}
+
+
+@app.route('/api/fluxo/fechar-lead/<lead_id>', methods=['POST'])
+def fechar_lead(lead_id):
+    """Fecha o contrato: move o lead para Ganho e abre os quadros escolhidos."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        d = request.json or {}
+        r = supabase.table("leads").select("*").eq("id", lead_id).limit(1).execute()
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
+        lead = r.data[0]
+
+        cliente_id = d.get("cliente_id") or lead.get("cliente_id")
+        cliente_nome = d.get("cliente_nome") or lead.get("empresa") or lead.get("contato")
+
+        # Cliente novo criado na hora, já ligado ao lead de origem.
+        if not cliente_id and d.get("criar_cliente"):
+            rc = supabase.table("clientes").insert({
+                "nome_empresa": cliente_nome,
+                "cnpj": d.get("cnpj") or lead.get("cnpj"),
+                "email": lead.get("email"),
+                "telefone": lead.get("telefone"),
+                "lead_id": lead_id,
+                "ativo": True,
+            }).execute()
+            cliente_id = (rc.data or [{}])[0].get("id")
+
+        atual_funil, atual_coluna = lead.get("funil"), lead.get("coluna")
+
+        # PASSAGEM DE BASTAO
+        # SDR qualifica, closer fecha -- e as vezes o SDR segue ate o
+        # fim. Quem fica com o lead depois do ganho e decisao comercial,
+        # e ate agora se perdia: o campo mantinha quem criou o lead.
+        # Campo ausente no corpo significa "nao mexeu", nao "apague".
+        resp_antes = lead.get("responsavel")
+        resp_novo = (d.get("responsavel") or "").strip() or resp_antes
+        houve_passagem = bool(resp_novo and resp_antes and resp_novo != resp_antes)
+
+        supabase.table("leads").update({
+            "funil": "fechamento", "coluna": "Ganho", "cliente_id": cliente_id,
+            "valor_estimado": d.get("valor") or lead.get("valor_estimado"),
+            "responsavel": resp_novo,
+            "movido_em": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", lead_id).execute()
+
+        # Registrada como interacao, e nao no movimento de coluna: a
+        # troca de dono e um fato do relacionamento, nao do funil. Assim
+        # ela aparece na linha do tempo do lead junto com as conversas.
+        if houve_passagem:
+            try:
+                supabase.table("lead_interacoes").insert({
+                    "lead_id": lead_id,
+                    "tipo": "passagem",
+                    "autor": session.get('usuario_nome'),
+                    "resumo": f"Responsavel passou de {resp_antes} para {resp_novo} no fechamento.",
+                }).execute()
+            except Exception as e:
+                print("Aviso: passagem de bastao nao registrada:", e)
+
+        try:
+            supabase.table("lead_movimentos").insert({
+                "lead_id": lead_id, "de_funil": atual_funil, "de_coluna": atual_coluna,
+                "para_funil": "fechamento", "para_coluna": "Ganho",
+                "autor": session.get('usuario_nome'),
+            }).execute()
+        except Exception:
+            pass
+
+        resultado = disparar('lead.ganho', {
+            "lead_id": lead_id, "funil": "fechamento",
+            "lead_nome": lead.get("lead"),
+            "cliente_id": cliente_id, "cliente_nome": cliente_nome,
+            "produto": d.get("produto") or lead.get("produto"),
+            "projeto_nome": d.get("projeto_nome") or lead.get("produto"),
+            "valor": d.get("valor") or lead.get("valor_estimado"),
+            "quadros": d.get("quadros") or [],
+            "telefone": lead.get("telefone"), "email": lead.get("email"),
+            "cnpj": d.get("cnpj") or lead.get("cnpj"),
+            # Disponivel para regras de fluxo que queiram avisar ou
+            # atribuir com base em quem fechou.
+            "responsavel": resp_novo,
+            "responsavel_anterior": resp_antes if houve_passagem else None,
+        })
+        return jsonify({"status": "sucesso", "cliente_id": cliente_id, "fluxo": resultado}), 200
+    except Exception as e:
+        print("Erro em fechar_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao fechar o contrato.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/quadros/fila', methods=['GET'])
+def fila_atribuicao():
+    """Cards esperando responsável, com quem pode recebê-los.
+
+    Filtra por quadro quando informado: a fila aparece dentro do
+    quadro, e mostrar card de outra área ali confundiria.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    quadro = request.args.get('quadro')
+    # A fila só aparece para quem direciona AQUELE quadro. Antes ela
+    # aparecia para todo mundo, em todo quadro.
+    if not pode_direcionar(quadro):
+        return jsonify({"status": "sucesso", "projetos": [], "pessoas": []}), 200
+    try:
+        q = (supabase.table("projetos").select("*")
+             .eq("aguardando_responsavel", True).is_("excluido_em", "null"))
+        if quadro and quadro in QUADRO_AREA:
+            q = q.eq("area", QUADRO_AREA[quadro])
+        r = q.order("criado_em").execute()
+        itens = filtrar_projetos_permitidos(r.data or [])
+
+        pessoas = []
+        if quadro:
+            pessoas = [{"id": str(p["id"]), "nome": p.get("nome")}
+                       for p in executores_do_quadro(quadro)]
+        return jsonify({"status": "sucesso", "projetos": itens,
+                        "pessoas": pessoas, "total": len(itens)}), 200
+    except Exception as e:
+        print("Erro em fila_atribuicao:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a fila.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/quadros/config', methods=['GET'])
+def listar_config_quadros():
+    """Como cada quadro distribui, quem direciona e quem executa."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        modos, resp, execs, carga = {}, {}, {}, {}
+        try:
+            for c in ((supabase.table("quadro_config").select("*").execute()).data or []):
+                modos[c["quadro"]] = c.get("modo") or 'fila'
+        except Exception as e:
+            print("Aviso: quadro_config:", e)
+        try:
+            for r in ((supabase.table("quadro_responsaveis").select("*").execute()).data or []):
+                resp.setdefault(r["quadro"], {})[r["papel"]] = str(r.get("usuario_id") or '')
+        except Exception as e:
+            print("Aviso: quadro_responsaveis:", e)
+        try:
+            for e_ in ((supabase.table("quadro_executores").select("*").execute()).data or []):
+                execs.setdefault(e_["quadro"], []).append(str(e_.get("usuario_id") or ''))
+        except Exception as e:
+            print("Aviso: quadro_executores:", e)
+
+        # Cards em aberto e esperando dono, por área.
+        try:
+            r = (supabase.table("projetos")
+                 .select("area, status, aguardando_responsavel")
+                 .is_("excluido_em", "null").execute())
+            for p in (r.data or []):
+                a = p.get("area")
+                if p.get("status") in ('Finalizado', 'Cancelado'):
+                    continue
+                d_ = carga.setdefault(a, {"abertos": 0, "esperando": 0})
+                d_["abertos"] += 1
+                if p.get("aguardando_responsavel"):
+                    d_["esperando"] += 1
+        except Exception as e:
+            print("Aviso: carga dos quadros:", e)
+
+        pessoas = (supabase.table("usuarios")
+                   .select("id, nome, quadros, ativo, tipo_usuario").execute()).data or []
+        internos = [p for p in pessoas
+                    if p.get("ativo") is not False
+                    and (p.get("tipo_usuario") or 'interno') == 'interno']
+
+        saida = []
+        for chave, area, produto, icone, subs in ARVORE_QUADROS:
+            c = carga.get(area, {})
+            # Só quem tem o quadro liberado pode receber card dele:
+            # atribuir a quem não consegue abrir o quadro é confusão
+            # silenciosa.
+            elegiveis = [{"id": str(p["id"]), "nome": p.get("nome")}
+                         for p in internos if chave in (p.get("quadros") or [])]
+            saida.append({
+                "chave": chave, "nome": area, "produto": produto, "icone": icone,
+                "modo": modos.get(chave, 'fila'),
+                "direciona": resp.get(chave, {}).get("direciona") or None,
+                "cobranca": resp.get(chave, {}).get("cobranca") or None,
+                "executores": execs.get(chave, []),
+                "elegiveis": elegiveis,
+                "abertos": c.get("abertos", 0),
+                "esperando": c.get("esperando", 0),
+            })
+        return jsonify({"status": "sucesso", "quadros": saida,
+                        "pessoas": [{"id": str(p["id"]), "nome": p.get("nome")}
+                                    for p in internos]}), 200
+    except Exception as e:
+        print("Erro em listar_config_quadros:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/quadros/config/<quadro>', methods=['PUT'])
+def salvar_config_quadro(quadro):
+    """Grava modo, direcionador, cobrança e executores de um quadro."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    if quadro not in QUADRO_AREA:
+        return jsonify({"status": "erro", "mensagem": "Quadro inválido."}), 400
+    try:
+        d = request.json or {}
+        modo = d.get("modo")
+        if modo not in MODOS_QUADRO:
+            return jsonify({"status": "erro", "mensagem": "Modo inválido."}), 400
+
+        executores = [str(x) for x in (d.get("executores") or []) if x]
+        # Direto com vários executores é ambíguo: quem receberia?
+        if modo == 'direto' and len(executores) > 1:
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Direto, escolha uma pessoa só."}), 400
+        if modo == 'direto' and not executores:
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Direto, escolha quem recebe os cards."}), 400
+        if modo == 'fila' and not d.get("direciona"):
+            return jsonify({"status": "erro",
+                            "mensagem": "No modo Fila, escolha quem direciona."}), 400
+        if modo == 'rodizio' and len(executores) < 2:
+            return jsonify({"status": "erro",
+                            "mensagem": "O rodízio precisa de pelo menos duas pessoas."}), 400
+
+        supabase.table("quadro_config").upsert({
+            "quadro": quadro, "modo": modo,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+            "atualizado_por": session.get('usuario_nome'),
+        }).execute()
+
+        for papel in ("direciona", "cobranca"):
+            if papel not in d:
+                continue
+            valor = d.get(papel) or None
+            supabase.table("quadro_responsaveis").upsert({
+                "quadro": quadro, "papel": papel, "usuario_id": valor,
+                "atualizado_em": datetime.now(timezone.utc).isoformat(),
+            }, on_conflict="quadro,papel").execute()
+
+        if "executores" in d:
+            supabase.table("quadro_executores").delete().eq("quadro", quadro).execute()
+            if executores:
+                supabase.table("quadro_executores").insert(
+                    [{"quadro": quadro, "usuario_id": u} for u in executores]).execute()
+
+        registrar_auditoria('quadro_configurado', 'quadro', quadro,
+                            {"modo": modo, "executores": len(executores)})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em salvar_config_quadro:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/modelos', methods=['GET'])
+def listar_modelos():
+    """Modelos de acesso e quantas pessoas usam cada um."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        modelos = (supabase.table("modelos_acesso").select("*")
+                   .order("nome").execute()).data or []
+        pessoas = (supabase.table("usuarios")
+                   .select("id, modelo_id, papel_id, quadros, areas").execute()).data or []
+        for m in modelos:
+            usam = [p for p in pessoas if str(p.get("modelo_id") or '') == str(m["id"])]
+            m["pessoas"] = len(usam)
+            # Divergência: quem veio do modelo mas já não bate com ele.
+            # Distinguir exceção deliberada de configuração esquecida.
+            divergentes = 0
+            for p in usam:
+                if (str(p.get("papel_id") or '') != str(m.get("papel_id") or '')
+                        or sorted(p.get("quadros") or []) != sorted(m.get("quadros") or [])
+                        or sorted(p.get("areas") or []) != sorted(m.get("areas") or [])):
+                    divergentes += 1
+            m["divergentes"] = divergentes
+        return jsonify({"status": "sucesso", "modelos": modelos}), 200
+    except Exception as e:
+        print("Erro em listar_modelos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar modelos.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/modelos/<modelo_id>/aplicar', methods=['POST'])
+def aplicar_modelo(modelo_id):
+    """Aplica um modelo a uma ou mais pessoas.
+
+    Substitui nível, quadros e áreas. Não mexe em ajustes
+    individuais: eles são exceções deliberadas.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        alvos = (request.json or {}).get("usuarios") or []
+        if not alvos:
+            return jsonify({"status": "erro", "mensagem": "Escolha ao menos uma pessoa."}), 400
+        r = (supabase.table("modelos_acesso").select("*")
+             .eq("id", modelo_id).limit(1).execute())
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Modelo não encontrado."}), 404
+        m = r.data[0]
+
+        upd = {
+            "papel_id": m.get("papel_id"),
+            "quadros": m.get("quadros") or [],
+            "areas": m.get("areas") or [],
+            "modelo_id": modelo_id,
+        }
+        feitos = 0
+        for uid in alvos:
+            try:
+                supabase.table("usuarios").update(upd).eq("id", uid).execute()
+                feitos += 1
+            except Exception as e:
+                print(f"Erro ao aplicar modelo em {uid}:", e)
+        registrar_auditoria('modelo_aplicado', 'modelo', modelo_id,
+                            {"nome": m.get("nome"), "pessoas": feitos})
+        return jsonify({"status": "sucesso", "feitos": feitos}), 200
+    except Exception as e:
+        print("Erro em aplicar_modelo:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao aplicar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/responsaveis', methods=['GET'])
+def listar_responsaveis():
+    """Papéis operacionais de cada quadro."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('papel.gerir') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        r = supabase.table("quadro_responsaveis").select("*").execute()
+        mapa = {}
+        for item in (r.data or []):
+            mapa.setdefault(item["quadro"], {})[item["papel"]] = item.get("usuario_id")
+        pessoas = (supabase.table("usuarios")
+                   .select("id, nome, email, ativo, tipo_usuario")
+                   .order("nome").execute()).data or []
+        return jsonify({
+            "status": "sucesso",
+            "quadros": [{"chave": c, "nome": n} for c, n in QUADROS],
+            "papeis": [{"chave": c, "nome": n, "descricao": dd} for c, n, dd in PAPEIS_QUADRO],
+            "definidos": mapa,
+            "pessoas": [p for p in pessoas
+                        if p.get("ativo") is not False
+                        and (p.get("tipo_usuario") or 'interno') != 'externo'],
+        }), 200
+    except Exception as e:
+        print("Erro em listar_responsaveis:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/responsaveis', methods=['PUT'])
+def definir_responsavel():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('papel.gerir') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.json or {}
+        quadro, papel = d.get("quadro"), d.get("papel")
+        if quadro not in QUADROS_VALIDOS or papel not in PAPEIS_VALIDOS:
+            return jsonify({"status": "erro", "mensagem": "Quadro ou papel inválido."}), 400
+        usuario_id = d.get("usuario_id") or None
+        supabase.table("quadro_responsaveis").upsert({
+            "quadro": quadro, "papel": papel, "usuario_id": usuario_id,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        }, on_conflict="quadro,papel").execute()
+        registrar('responsavel_definido', 'quadro', quadro,
+                            {"papel": papel, "usuario_id": usuario_id})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em definir_responsavel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/projetos/aguardando', methods=['GET'])
+def projetos_aguardando():
+    """Cards criados pelo fluxo que ainda não têm responsável."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        r = (supabase.table("projetos").select("*")
+             .eq("aguardando_responsavel", True).is_("excluido_em", "null")
+             .order("criado_em", desc=True).execute())
+        itens = filtrar_projetos_permitidos(r.data or [])
+        return jsonify({"status": "sucesso", "projetos": itens, "total": len(itens)}), 200
+    except Exception as e:
+        print("Erro em projetos_aguardando:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+# Aceita os dois verbos: a tela de projetos envia PUT (atribuir e
+# atualizar um card existente), e havia chamada antiga em POST.
+# Recusar um deles devolvia 405 com pagina HTML, que a tela
+# interpretava como queda de conexao.
+@app.route('/api/projetos/<projeto_id>/atribuir', methods=['POST', 'PUT'])
+def atribuir_projeto(projeto_id):
+    """Define o responsável. Com `lote`, vale para todos os cards do contrato."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        d = request.json or {}
+        responsavel = (d.get("responsavel") or '').strip()
+        if not responsavel:
+            return jsonify({"status": "erro", "mensagem": "Informe o responsável."}), 400
+
+        r = (supabase.table("projetos").select(
+             "lote_id, area, responsavel, aguardando_responsavel")
+             .eq("id", projeto_id).limit(1).execute())
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Projeto não encontrado."}), 404
+        lote = r.data[0].get("lote_id")
+
+        # A REGRA DA PLATAFORMA: quem enxerga o card, edita o card.
+        # Trocar responsável é editar, como mudar prazo -- não merece
+        # permissão própria.
+        #
+        # O card SEM dono é o único caso em que a regra geral não decide:
+        # sem responsável, "vê só os seus" não alcança o card e ele
+        # ficaria invisível para todo mundo. Aí vale quem enxerga a fila.
+        #
+        # Checado aqui e não só na tela: esconder o botão não impede
+        # ninguém de chamar a rota direto.
+        alvo = r.data[0]
+        quadro = next((q for q, a in QUADRO_AREA.items() if a == alvo.get("area")), None)
+        liberado = (pode_direcionar(quadro) if alvo.get("aguardando_responsavel")
+                    else pode('projeto.editar', alvo))
+        if not liberado:
+            return jsonify({"status": "erro",
+                            "mensagem": "Você não tem acesso a este card."}), 403
+
+        upd = {"responsavel": responsavel, "aguardando_responsavel": False}
+        if d.get("prazo"):
+            upd["prazo_data"] = d["prazo"]
+
+        if d.get("lote") and lote:
+            res = (supabase.table("projetos").update(upd)
+                   .eq("lote_id", lote).eq("aguardando_responsavel", True).execute())
+            n = len(res.data or [])
+        else:
+            supabase.table("projetos").update(upd).eq("id", projeto_id).execute()
+            n = 1
+        registrar('projeto_atribuido', 'projeto', projeto_id,
+                            {"responsavel": responsavel, "quantidade": n})
+        return jsonify({"status": "sucesso", "atribuidos": n}), 200
+    except Exception as e:
+        print("Erro em atribuir_projeto:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao atribuir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/painel/operacao', methods=['GET'])
+def painel_operacao():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        dias, desde = _recorte(30)
+        hoje = datetime.now(timezone.utc).date().isoformat()
+
+        todos = (supabase.table("projetos").select("*")
+                 .is_("excluido_em", "null").execute()).data or []
+        projetos = filtrar_projetos_permitidos(todos)
+
+        quadro = request.args.get('quadro')
+        if quadro:
+            areas_do_quadro = [n for c, n in QUADROS if c == quadro]
+            if areas_do_quadro:
+                projetos = [p for p in projetos if p.get('area') == areas_do_quadro[0]]
+        pessoa = request.args.get('pessoa')
+        if pessoa:
+            projetos = [p for p in projetos if (p.get('responsavel') or '') == pessoa]
+
+        ativos = [p for p in projetos if p.get('status') not in STATUS_ENCERRADOS]
+        concluidos = [p for p in projetos
+                      if p.get('status') == 'Finalizado'
+                      and str(p.get('data_conclusao') or '') >= desde]
+
+        # --- o que precisa de atenção ---
+        atrasados, vencendo = [], []
+        for p in ativos:
+            prazo = str(p.get('prazo_data') or '')[:10]
+            if not prazo:
+                continue
+            if prazo < hoje:
+                atrasados.append({
+                    "id": p.get('id'), "nome": p.get('nome_projeto'),
+                    "empresa": p.get('empresa'), "area": p.get('area'),
+                    "status": p.get('status'), "responsavel": p.get('responsavel'),
+                    "dias": (datetime.fromisoformat(hoje) - datetime.fromisoformat(prazo)).days,
+                })
+            elif (datetime.fromisoformat(prazo) - datetime.fromisoformat(hoje)).days <= 3:
+                vencendo.append({
+                    "id": p.get('id'), "nome": p.get('nome_projeto'),
+                    "empresa": p.get('empresa'), "area": p.get('area'),
+                    "status": p.get('status'), "responsavel": p.get('responsavel'),
+                    "dias": (datetime.fromisoformat(prazo) - datetime.fromisoformat(hoje)).days,
+                })
+        atrasados.sort(key=lambda x: -x['dias'])
+
+        parados = [p for p in ativos
+                   if p.get('status') not in STATUS_PARADOS
+                   and _dias_desde(p.get('data_status_atual')) > 14]
+
+        # --- por área, dividido por tempo na fase ---
+        por_area = {}
+        for p in ativos:
+            a = p.get('area') or 'Sem área'
+            faixa = por_area.setdefault(a, {"area": a, "total": 0, "ok": 0, "atencao": 0, "critico": 0})
+            faixa["total"] += 1
+            d = _dias_desde(p.get('data_status_atual'))
+            if d <= 7:
+                faixa["ok"] += 1
+            elif d <= 14:
+                faixa["atencao"] += 1
+            else:
+                faixa["critico"] += 1
+        areas = sorted(por_area.values(), key=lambda x: -x["total"])
+
+        # --- carga por pessoa ---
+        por_pessoa = {}
+        for p in ativos:
+            r = p.get('responsavel') or 'Sem responsável'
+            por_pessoa[r] = por_pessoa.get(r, 0) + 1
+        carga = sorted(({"pessoa": k, "total": v} for k, v in por_pessoa.items()),
+                       key=lambda x: -x["total"])
+
+        # --- tempo até concluir ---
+        duracoes = []
+        for p in concluidos:
+            ini, fim = p.get('data_inicio') or p.get('criado_em'), p.get('data_conclusao')
+            if ini and fim:
+                try:
+                    d0 = datetime.fromisoformat(str(ini).replace('Z', '+00:00'))
+                    d1 = datetime.fromisoformat(str(fim).replace('Z', '+00:00'))
+                    duracoes.append(max(0, (d1 - d0).days))
+                except Exception:
+                    pass
+
+        # --- horas por área e fora do plano ---
+        horas_area, horas_total, fora_plano = {}, 0, 0
+        try:
+            logs = (supabase.table("time_logs").select("*")
+                    .gte("criado_em", desde).execute()).data or []
+            mapa_area = {str(p.get('id')): p.get('area') for p in projetos}
+            permitidos = set(mapa_area.keys())
+            for l in logs:
+                pid = str(l.get('projeto_id') or '')
+                if pid not in permitidos:
+                    continue
+                seg = l.get('tempo_segundos') or 0
+                h = seg / 3600.0
+                horas_total += h
+                a = mapa_area.get(pid) or 'Sem área'
+                horas_area[a] = horas_area.get(a, 0) + h
+                if not l.get('planejamento_id'):
+                    fora_plano += h
+        except Exception as e:
+            print("Aviso: time_logs indisponivel no painel:", e)
+
+        # --- gargalo por fase ---
+        gargalo = []
+        try:
+            movs = (supabase.table("projeto_movimentos").select("*")
+                    .order("projeto_id").order("criado_em").execute()).data or []
+            area_filtro = areas[0]["area"] if areas else None
+            if quadro:
+                nomes = [n for c, n in QUADROS if c == quadro]
+                area_filtro = nomes[0] if nomes else area_filtro
+            duracao_fase = {}
+            anterior = {}
+            for m in movs:
+                if area_filtro and m.get('area') != area_filtro:
+                    continue
+                pid = str(m.get('projeto_id'))
+                ant = anterior.get(pid)
+                if ant:
+                    try:
+                        d0 = datetime.fromisoformat(str(ant['criado_em']).replace('Z', '+00:00'))
+                        d1 = datetime.fromisoformat(str(m['criado_em']).replace('Z', '+00:00'))
+                        fase = ant['para_status']
+                        duracao_fase.setdefault(fase, []).append(max(0, (d1 - d0).days))
+                    except Exception:
+                        pass
+                anterior[pid] = m
+            gargalo = [{"fase": f, "dias": round(_mediana(v), 1), "amostra": len(v)}
+                       for f, v in duracao_fase.items()]
+            gargalo.sort(key=lambda x: -x["dias"])
+        except Exception as e:
+            print("Aviso: projeto_movimentos indisponivel:", e)
+
+        # --- clientes com mais trabalho aberto ---
+        por_cliente = {}
+        for p in ativos:
+            c = p.get('empresa') or 'Sem cliente'
+            item = por_cliente.setdefault(c, {"cliente": c, "projetos": 0, "areas": set(), "prazo": None})
+            item["projetos"] += 1
+            if p.get('area'):
+                item["areas"].add(p['area'])
+            prazo = str(p.get('prazo_data') or '')[:10]
+            if prazo and (item["prazo"] is None or prazo < item["prazo"]):
+                item["prazo"] = prazo
+        clientes = sorted(por_cliente.values(), key=lambda x: -x["projetos"])[:6]
+        for c in clientes:
+            c["areas"] = sorted(c["areas"])
+
+        return jsonify({
+            "status": "sucesso",
+            "periodo_dias": dias,
+            "kpis": {
+                "ativos": len(ativos),
+                "concluidos": len(concluidos),
+                "atrasados": len(atrasados),
+                "mediana_conclusao": round(_mediana(duracoes)),
+                "horas": round(horas_total),
+                "fora_plano_pct": round(fora_plano / horas_total * 100) if horas_total else 0,
+            },
+            "atencao": {
+                "atrasados": atrasados[:6],
+                "vencendo": vencendo[:4],
+                "parados": len(parados),
+            },
+            "areas": areas,
+            "carga": carga,
+            "gargalo": gargalo[:8],
+            "horas_area": sorted(({"area": k, "horas": round(v)} for k, v in horas_area.items()),
+                                 key=lambda x: -x["horas"]),
+            "fora_plano_horas": round(fora_plano),
+            "clientes": clientes,
+        }), 200
+    except Exception as e:
+        print("Erro em painel_operacao:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+# ============================================================================
+# PAINEL COMERCIAL
+#
+# Duas óticas, porque são duas perguntas diferentes:
+#
+#   TRABALHO   O funil andou? Quantos leads entraram, quantos avançaram
+#              em cada etapa, quanto se perde entre uma e outra, e quanto
+#              tempo leva. Serve para corrigir processo.
+#
+#   RESULTADO  Quanto entrou de dinheiro, de onde e de quem. Serve para
+#              decidir onde investir.
+#
+# UMA DISTINÇÃO QUE MUDA TODOS OS NÚMEROS
+# ---------------------------------------
+# "Ganho" existe nos dois funis e significa coisas opostas:
+#
+#   qualificacao/Ganho  o lead foi qualificado e passou para o closer
+#   fechamento/Ganho    o contrato foi assinado
+#
+# Somar os dois como "ganhos" -- que é o que o painel antigo faz -- infla
+# a receita com leads que ainda nem receberam proposta. Aqui, venda é
+# só `funil='fechamento' AND coluna='Ganho'`.
+# ============================================================================
+
+# Etapas do funil comercial, na ordem em que o lead atravessa. A cascata
+# de conversão sai daqui, e não de uma lista repetida na tela.
+ETAPAS_COMERCIAL = [
+    ('leads',        None,             None,           'Leads gerados'),
+    ('contatos',     'qualificacao',   'Contato',      'Contatos'),
+    ('agendamentos', 'fechamento',     'Agendamento',  'Agendamentos'),
+    ('propostas',    'fechamento',     'Proposta',     'Propostas'),
+    ('negociacoes',  'fechamento',     'Negociação',   'Negociações'),
+    ('fechamentos',  'fechamento',     'Ganho',        'Fechamentos'),
+]
+
+
+def _periodo_comercial():
+    """Recorte do painel. Aceita ?de=&ate= ou ?dias=.
+
+    Devolve (de, ate, granularidade). A granularidade decide se a série
+    temporal é diária ou mensal: mais de 90 dias em barras diárias vira
+    um borrão ilegível.
+    """
+    from datetime import date, timedelta
+    hoje = date.today()
+    de_txt = (request.args.get('de') or '').strip()[:10]
+    ate_txt = (request.args.get('ate') or '').strip()[:10]
+
+    if len(de_txt) == 10 and len(ate_txt) == 10:
+        de, ate = de_txt, ate_txt
+    else:
+        try:
+            dias = max(1, min(int(request.args.get('dias') or 90), 1095))
+        except ValueError:
+            dias = 90
+        de = (hoje - timedelta(days=dias)).isoformat()
+        ate = hoje.isoformat()
+
+    if de > ate:
+        de, ate = ate, de
+    span = (date.fromisoformat(ate) - date.fromisoformat(de)).days
+    return de, ate, ('dia' if span <= 92 else 'mes')
+
+
+def _num(v):
+    try:
+        return float(v or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _dias_entre(inicio, fim):
+    """Dias inteiros entre dois ISO. None quando falta um dos lados."""
+    if not inicio or not fim:
+        return None
+    try:
+        a = datetime.fromisoformat(str(inicio).replace('Z', '+00:00'))
+        b = datetime.fromisoformat(str(fim).replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    d = (b - a).total_seconds() / 86400
+    return round(d, 1) if d >= 0 else None
+
+
+def _mediana(vals):
+    """Mediana, não média: um lead parado há 400 dias distorce a média do
+    ciclo inteiro e faz o time desconfiar do número."""
+    v = sorted(x for x in vals if x is not None)
+    if not v:
+        return None
+    n = len(v)
+    return round(v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2, 1)
+
+
+# ============================================================================
+# PAINEL OPERACIONAL
+#
+# Tres oticas, porque quinze indicadores numa tela so ninguem le:
+#
+#   ENTREGA   O trabalho anda? Quantos abertos, atrasados, onde travam,
+#             quanto tempo levam, quantos saem no prazo.
+#
+#   ESFORCO   Para onde vai a hora? Por quadro, projeto, tarefa e cliente.
+#
+#   TIME      Quem esta com o que, e quanto da jornada virou hora lancada.
+#
+# Vale para quadro de produto e interno igualmente -- a diferenca esta nos
+# numeros, nao na estrutura.
+# ============================================================================
+
+def _horas(seg):
+    return round((seg or 0) / 3600.0, 1)
+
+
+def _dias_uteis(de, ate):
+    """Dias uteis entre duas datas ISO, inclusive.
+
+    Sem calendario de feriados: o aproveitamento sai um pouco otimista em
+    meses com feriado. Melhor um numero levemente conservador e explicado
+    do que uma tabela de feriados que ninguem mantem.
+    """
+    from datetime import date, timedelta
+    d0 = date.fromisoformat(de)
+    d1 = date.fromisoformat(ate)
+    n, cur = 0, d0
+    while cur <= d1:
+        if cur.weekday() < 5:
+            n += 1
+        cur += timedelta(days=1)
+    return n
+
+
+def _paginar(tabela, colunas, filtro=None, teto=8000):
+    """Le tabela grande em blocos. O PostgREST devolve no maximo 1000 por
+    requisicao -- sem isto, `time_logs` viria truncada em silencio e o
+    painel mostraria menos horas do que existem."""
+    saida, off = [], 0
+    while off < teto:
+        q = supabase.table(tabela).select(colunas)
+        if filtro:
+            q = filtro(q)
+        r = q.range(off, off + 999).execute()
+        lote = r.data or []
+        saida.extend(lote)
+        if len(lote) < 1000:
+            break
+        off += 1000
+    return saida
+
+
+@app.route('/api/operacional/painel', methods=['GET'])
+def api_operacional_painel():
+    """Alimenta as tres oticas do painel operacional numa chamada."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    try:
+        de, ate, granul = _periodo_comercial()      # mesmo recorte do comercial
+        dias_uteis = _dias_uteis(de, ate)
+
+        projetos = _paginar("projetos", "*", lambda q: q.is_("excluido_em", "null"))
+        projetos = filtrar_projetos_permitidos(projetos)
+
+        # --- filtros da tela ---
+        f_quadro = request.args.get('quadro') or ''
+        f_resp = request.args.get('responsavel') or ''
+        f_cliente = request.args.get('cliente') or ''
+        area_do_quadro = QUADRO_AREA.get(f_quadro) if f_quadro else None
+        if area_do_quadro:
+            projetos = [p for p in projetos if p.get('area') == area_do_quadro]
+        if f_resp:
+            projetos = [p for p in projetos if (p.get('responsavel') or '') == f_resp]
+        if f_cliente:
+            projetos = [p for p in projetos if (p.get('empresa') or '') == f_cliente]
+
+        por_id = {str(p['id']): p for p in projetos}
+
+        logs = _paginar("time_logs",
+                        "projeto_id, colaborador, descricao_tarefa, tempo_segundos, "
+                        "criado_em, data_inicio_atividade")
+        # Hora lancada pertence ao dia em que o trabalho aconteceu, nao ao
+        # dia em que alguem clicou em parar.
+        def quando_log(l):
+            return str(l.get('data_inicio_atividade') or l.get('criado_em') or '')[:10]
+        logs = [l for l in logs
+                if str(l.get('projeto_id')) in por_id and de <= quando_log(l) <= ate]
+
+        dentro = lambda iso: bool(iso) and de <= str(iso)[:10] <= ate
+        ativo = lambda p: p.get('status') not in ('Finalizado', 'Cancelado')
+        hoje = datetime.now(timezone.utc).date().isoformat()
+
+        # ============================================================
+        # OTICA 1 · ENTREGA
+        # ============================================================
+        finalizados = [p for p in projetos
+                       if p.get('status') == 'Finalizado' and dentro(p.get('data_conclusao'))]
+        cancelados = [p for p in projetos
+                      if p.get('status') == 'Cancelado' and dentro(p.get('data_status_atual'))]
+        iniciados = [p for p in projetos if dentro(p.get('criado_em'))]
+
+        def atrasado(p):
+            if not p.get('prazo_data') or not ativo(p):
+                return False
+            return str(p['prazo_data'])[:10] < hoje
+
+        contadores = {
+            "em_andamento": sum(1 for p in projetos
+                                if ativo(p) and p.get('status') not in ('Backlog', 'Pausado')),
+            "backlog": sum(1 for p in projetos if p.get('status') == 'Backlog'),
+            "pausados": sum(1 for p in projetos if p.get('status') == 'Pausado'),
+            "atrasados": sum(1 for p in projetos if atrasado(p)),
+            "finalizados": len(finalizados),
+            "cancelados": len(cancelados),
+        }
+
+        # Onde o trabalho esta parado agora, e ha quanto tempo.
+        onde = {}
+        for p in projetos:
+            if not ativo(p):
+                continue
+            f = p.get('status') or 'sem fase'
+            it = onde.setdefault(f, {"fase": f, "qtd": 0, "dias": []})
+            it["qtd"] += 1
+            d = _dias_entre(p.get('data_status_atual'), datetime.now(timezone.utc).isoformat())
+            if d is not None:
+                it["dias"].append(d)
+        onde_esta = sorted(
+            ({"fase": v["fase"], "qtd": v["qtd"], "parado_mediano": _mediana(v["dias"])}
+             for v in onde.values()),
+            key=lambda x: -x["qtd"])
+
+        # Prazo: so entre os finalizados com prazo combinado.
+        no_prazo = fora = sem_prazo = 0
+        for p in finalizados:
+            if not p.get('prazo_data'):
+                sem_prazo += 1
+            elif str(p['data_conclusao'])[:10] <= str(p['prazo_data'])[:10]:
+                no_prazo += 1
+            else:
+                fora += 1
+        com_prazo = no_prazo + fora
+
+        # Lead e cycle time. Pausa nao conta em nenhum dos dois.
+        leads, cycles, esperas, decidindo = [], [], [], []
+        for p in finalizados:
+            parado = (p.get('tempo_parado_segundos') or 0) / 86400.0
+            lt = _dias_entre(p.get('criado_em'), p.get('data_conclusao'))
+            if lt is not None:
+                leads.append(max(0, lt - parado))
+            if p.get('data_saida_backlog'):
+                fim = p.get('data_fim_ciclo') or p.get('data_conclusao')
+                ct = _dias_entre(p.get('data_saida_backlog'), fim)
+                if ct is not None:
+                    cycles.append(max(0, ct - parado))
+                e = _dias_entre(p.get('criado_em'), p.get('data_saida_backlog'))
+                if e is not None:
+                    esperas.append(e)
+            if p.get('data_fim_ciclo') and p.get('data_conclusao'):
+                d2 = _dias_entre(p['data_fim_ciclo'], p['data_conclusao'])
+                if d2 is not None and d2 > 0:
+                    decidindo.append(d2)
+
+        # Fluxo: quantos entraram e quantos sairam, no tempo.
+        fluxo = {}
+        chave = lambda iso: str(iso)[:10] if granul == 'dia' else str(iso)[:7]
+        for p in iniciados:
+            k = chave(p['criado_em'])
+            fluxo.setdefault(k, {"quando": k, "iniciados": 0, "finalizados": 0})["iniciados"] += 1
+        for p in finalizados:
+            k = chave(p['data_conclusao'])
+            fluxo.setdefault(k, {"quando": k, "iniciados": 0, "finalizados": 0})["finalizados"] += 1
+
+        # Por quadro: a mesma leitura, quebrada.
+        por_quadro = []
+        for chv, area, _prod, _ico, _subs in ARVORE_QUADROS:
+            do_q = [p for p in projetos if p.get('area') == area]
+            if not do_q:
+                continue
+            fin_q = [p for p in do_q if p.get('status') == 'Finalizado'
+                     and dentro(p.get('data_conclusao'))]
+            lt_q = [max(0, _dias_entre(p.get('criado_em'), p.get('data_conclusao'))
+                        - (p.get('tempo_parado_segundos') or 0) / 86400.0)
+                    for p in fin_q if _dias_entre(p.get('criado_em'), p.get('data_conclusao')) is not None]
+            ct_q = [max(0, _dias_entre(p['data_saida_backlog'],
+                                       p.get('data_fim_ciclo') or p['data_conclusao'])
+                        - (p.get('tempo_parado_segundos') or 0) / 86400.0)
+                    for p in fin_q if p.get('data_saida_backlog')
+                    and _dias_entre(p['data_saida_backlog'],
+                                    p.get('data_fim_ciclo') or p['data_conclusao']) is not None]
+            np_q = sum(1 for p in fin_q if p.get('prazo_data')
+                       and str(p['data_conclusao'])[:10] <= str(p['prazo_data'])[:10])
+            cp_q = sum(1 for p in fin_q if p.get('prazo_data'))
+            por_quadro.append({
+                "quadro": chv, "area": area,
+                "abertos": sum(1 for p in do_q if ativo(p)),
+                "atrasados": sum(1 for p in do_q if atrasado(p)),
+                "finalizados": len(fin_q),
+                "lead": _mediana(lt_q), "cycle": _mediana(ct_q),
+                "cobertura_cycle": len(ct_q), "base_cycle": len(fin_q),
+                "pct_no_prazo": round(np_q / cp_q * 100, 1) if cp_q else None,
+                "horas": _horas(sum(l.get('tempo_segundos') or 0 for l in logs
+                                    if por_id.get(str(l['projeto_id']), {}).get('area') == area)),
+            })
+        por_quadro.sort(key=lambda x: -x["abertos"])
+
+        entrega = {
+            "contadores": contadores,
+            "onde_esta": onde_esta,
+            "prazo": {"no_prazo": no_prazo, "fora": fora, "sem_prazo": sem_prazo,
+                      "pct_no_prazo": round(no_prazo / com_prazo * 100, 1) if com_prazo else None},
+            "tempos": {
+                "lead": _mediana(leads), "cycle": _mediana(cycles),
+                "espera_backlog": _mediana(esperas), "apos_ciclo": _mediana(decidindo),
+                # A cobertura anda junto do numero: sem ela, uma media de
+                # 40% da operacao seria lida como se fosse 100%.
+                "base_lead": len(leads), "base_cycle": len(cycles),
+                "total_finalizados": len(finalizados),
+            },
+            "fluxo": sorted(fluxo.values(), key=lambda x: x["quando"]),
+            "por_quadro": por_quadro,
+        }
+
+        # ============================================================
+        # OTICA 2 · ESFORCO
+        # ============================================================
+        total_seg = sum(l.get('tempo_segundos') or 0 for l in logs)
+
+        def agrupar(chave_fn, rotulo_vazio):
+            g = {}
+            for l in logs:
+                k = chave_fn(l) or rotulo_vazio
+                it = g.setdefault(k, {"chave": k, "seg": 0, "lancamentos": 0, "projetos": set()})
+                it["seg"] += l.get('tempo_segundos') or 0
+                it["lancamentos"] += 1
+                it["projetos"].add(str(l.get('projeto_id')))
+            saida = []
+            for it in g.values():
+                saida.append({
+                    "chave": it["chave"], "horas": _horas(it["seg"]),
+                    "lancamentos": it["lancamentos"], "projetos": len(it["projetos"]),
+                    "media": _horas(it["seg"] / it["lancamentos"]) if it["lancamentos"] else 0,
+                    "fatia": round(it["seg"] / total_seg * 100, 1) if total_seg else 0,
+                })
+            return sorted(saida, key=lambda x: -x["horas"])
+
+        prj = lambda l: por_id.get(str(l.get('projeto_id')), {})
+
+        # Tarefa dentro de cada quadro: "Reuniao com cliente" custa uma
+        # coisa em R&S e outra em CX Data. A media geral esconde isso.
+        tarefa_tipo = {}
+        for l in logs:
+            p = prj(l)
+            k = ((p.get('area') or 'sem quadro'), (l.get('descricao_tarefa') or 'sem tarefa'))
+            it = tarefa_tipo.setdefault(k, {"area": k[0], "tarefa": k[1], "seg": 0, "n": 0})
+            it["seg"] += l.get('tempo_segundos') or 0
+            it["n"] += 1
+        por_tarefa_tipo = sorted(
+            ({"area": v["area"], "tarefa": v["tarefa"], "horas": _horas(v["seg"]),
+              "lancamentos": v["n"], "media": _horas(v["seg"] / v["n"])}
+             for v in tarefa_tipo.values()),
+            key=lambda x: -x["horas"])[:40]
+
+        esforco = {
+            "total_horas": _horas(total_seg),
+            "lancamentos": len(logs),
+            "por_area": agrupar(lambda l: prj(l).get('area'), 'sem quadro'),
+            "por_projeto": agrupar(
+                lambda l: (prj(l).get('nome_projeto') or 'projeto removido'), 'sem projeto')[:15],
+            "por_tarefa": agrupar(lambda l: l.get('descricao_tarefa'), 'sem tarefa')[:15],
+            "por_cliente": agrupar(lambda l: prj(l).get('empresa'), 'sem cliente')[:15],
+            "por_tarefa_tipo": por_tarefa_tipo,
+        }
+
+        # ============================================================
+        # OTICA 3 · TIME
+        # ============================================================
+        pessoas_bd = (supabase.table("usuarios")
+                      .select("nome, cargo, carga_semanal, ativo, tipo_usuario")
+                      .execute()).data or []
+        carga = {(u.get('nome') or '').strip(): (u.get('carga_semanal') or 40)
+                 for u in pessoas_bd
+                 if u.get('ativo') is not False
+                 and (u.get('tipo_usuario') or 'interno') == 'interno'}
+
+        seg_por_pessoa, lanc_por_pessoa = {}, {}
+        for l in logs:
+            nome = (l.get('colaborador') or '').strip() or 'sem responsável'
+            seg_por_pessoa[nome] = seg_por_pessoa.get(nome, 0) + (l.get('tempo_segundos') or 0)
+            lanc_por_pessoa[nome] = lanc_por_pessoa.get(nome, 0) + 1
+
+        pessoas = []
+        for nome in sorted(set(list(carga.keys()) + list(seg_por_pessoa.keys()))):
+            h_semana = carga.get(nome, 40)
+            # Jornada diaria x dias uteis do recorte. Sem feriados: o
+            # esperado fica um pouco alto, e o aproveitamento um pouco
+            # conservador.
+            esperado = round(h_semana / 5.0 * dias_uteis, 1)
+            lancado = _horas(seg_por_pessoa.get(nome, 0))
+            meus = [p for p in projetos if (p.get('responsavel') or '').strip() == nome]
+            pessoas.append({
+                "nome": nome,
+                "carga_semanal": h_semana,
+                "horas_esperadas": esperado,
+                "horas_lancadas": lancado,
+                "aproveitamento": round(lancado / esperado * 100, 1) if esperado else None,
+                "lancamentos": lanc_por_pessoa.get(nome, 0),
+                "projetos_abertos": sum(1 for p in meus if ativo(p)),
+                "atrasados": sum(1 for p in meus if atrasado(p)),
+                "finalizados": sum(1 for p in meus if p.get('status') == 'Finalizado'
+                                   and dentro(p.get('data_conclusao'))),
+                "cadastrado": nome in carga,
+            })
+        pessoas.sort(key=lambda x: -(x["horas_lancadas"] or 0))
+
+        time_ = {
+            "pessoas": pessoas,
+            "dias_uteis": dias_uteis,
+            "horas_esperadas_total": round(sum(p["horas_esperadas"] for p in pessoas
+                                               if p["cadastrado"]), 1),
+            "horas_lancadas_total": _horas(total_seg),
+        }
+
+        return jsonify({
+            "status": "sucesso",
+            "periodo": {"de": de, "ate": ate, "granularidade": granul, "dias_uteis": dias_uteis},
+            "entrega": entrega,
+            "esforco": esforco,
+            "time": time_,
+            "opcoes": {
+                "quadros": [{"chave": c, "nome": a} for c, a, _p, _i, _s in ARVORE_QUADROS],
+                "responsaveis": sorted({(p.get('responsavel') or '').strip()
+                                        for p in projetos} - {''}),
+                "clientes": sorted({(p.get('empresa') or '').strip() for p in projetos} - {''}),
+            },
+        }), 200
+
+    except Exception as e:
+        print("Erro em api_operacional_painel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/comercial/painel', methods=['GET'])
+def api_comercial_painel():
+    """Alimenta as duas óticas do painel comercial numa chamada só."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    try:
+        de, ate, granul = _periodo_comercial()
+        ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
+
+        leads = (supabase.table("leads").select("*")
+                 .is_("excluido_em", "null").execute()).data or []
+        movs = (supabase.table("lead_movimentos").select("*").execute()).data or []
+
+        # Escopo: quem só enxerga os próprios leads também só vê os
+        # próprios números. O painel não pode ser porta dos fundos.
+        if caps_da_sessao().get('crm.lead.ver') == 'proprio':
+            eu = (session.get('usuario_nome') or '').strip().lower()
+            leads = [l for l in leads
+                     if (l.get('responsavel') or '').strip().lower() == eu]
+
+        # --- filtros da tela ---
+        f_prod = request.args.get('produto') or ''
+        f_orig = request.args.get('origem') or ''
+        f_resp = request.args.get('responsavel') or ''
+        f_uf = (request.args.get('estado') or '').upper()[:2]
+        f_seg = request.args.get('segmento') or ''
+        if f_prod:
+            leads = [l for l in leads if (l.get('produto') or '') == f_prod]
+        if f_orig:
+            leads = [l for l in leads if (l.get('origem') or '') == f_orig]
+        if f_resp:
+            leads = [l for l in leads if (l.get('responsavel') or '') == f_resp]
+        if f_uf:
+            leads = [l for l in leads if (l.get('estado') or '').upper() == f_uf]
+        if f_seg:
+            leads = [l for l in leads if (l.get('segmento') or '') == f_seg]
+
+        por_id = {str(l['id']): l for l in leads}
+        movs = [m for m in movs if str(m.get('lead_id')) in por_id]
+
+        dentro = lambda iso: bool(iso) and de <= str(iso)[:10] <= ate
+
+        # ============================================================
+        # ÓTICA 1 · TRABALHO
+        # ============================================================
+
+        # Quem passou por cada etapa DENTRO do recorte. Conta lead único,
+        # não movimento: quem voltou e avançou de novo conta uma vez.
+        passou = {}
+        primeira_vez = {}          # (etapa, lead) -> quando chegou lá
+        for m in sorted(movs, key=lambda x: str(x.get('criado_em') or '')):
+            if not dentro(m.get('criado_em')):
+                continue
+            ch = (m.get('para_funil'), m.get('para_coluna'))
+            lid = str(m.get('lead_id'))
+            passou.setdefault(ch, set()).add(lid)
+            primeira_vez.setdefault((ch, lid), m.get('criado_em'))
+
+        gerados = [l for l in leads if dentro(l.get('criado_em'))]
+
+        # ------------------------------------------------------------
+        # DUAS LEITURAS DO MESMO FUNIL
+        #
+        # Um lead entra em 20/07 e fecha em 15/08. Onde ele aparece?
+        # Depende da pergunta -- e são duas perguntas diferentes:
+        #
+        #   PERÍODO  conta cada evento no mês em que aconteceu. A venda
+        #            é de agosto, porque o dinheiro entrou em agosto.
+        #            Responde "quanto andou o funil neste mês".
+        #            NÃO serve para conversão: as etapas misturam leads
+        #            de entradas diferentes, e a taxa passa de 100%.
+        #
+        #   ENTRADA  pega os leads que ENTRARAM no recorte e segue cada
+        #            um até onde chegou, em qualquer data. Responde "dos
+        #            leads de julho, quantos fecharam". A conversão só
+        #            faz sentido aqui, e por construção nunca sobe.
+        #            Em compensação, períodos recentes parecem piores:
+        #            os leads de agosto ainda não tiveram tempo de fechar.
+        #
+        # Nenhuma das duas é "a certa". A tela mostra qual está em uso.
+        # ------------------------------------------------------------
+        visao = 'entrada' if request.args.get('visao') == 'entrada' else 'periodo'
+
+        # Por onde cada lead JÁ passou, sem recorte de data. É o que
+        # permite seguir o lead até o fim, mesmo fechando meses depois.
+        passou_sempre = {}
+        for m in movs:
+            passou_sempre.setdefault((m.get('para_funil'), m.get('para_coluna')),
+                                     set()).add(str(m.get('lead_id')))
+
+        ids_entrada = {str(l['id']) for l in gerados}
+
+        funil, anterior = [], None
+        for chave, fnl, col, rotulo in ETAPAS_COMERCIAL:
+            if chave == 'leads':
+                ids = set(ids_entrada)
+            elif visao == 'entrada':
+                # Só quem entrou no recorte, chegue onde chegar, quando chegar.
+                ids = set(passou_sempre.get((fnl, col), set())) & ids_entrada
+                ids |= {str(l['id']) for l in gerados
+                        if l.get('funil') == fnl and l.get('coluna') == col}
+            else:
+                ids = set(passou.get((fnl, col), set()))
+                # Quem já está parado na etapa hoje conta, mesmo sem
+                # movimento no recorte -- senão um lead que entrou antes
+                # e não saiu sumiria da cascata.
+                ids |= {str(l['id']) for l in leads
+                        if l.get('funil') == fnl and l.get('coluna') == col
+                        and dentro(l.get('movido_em'))}
+            n = len(ids)
+            funil.append({
+                "chave": chave, "rotulo": rotulo, "qtd": n,
+                # Conversão da etapa anterior: é onde o funil vaza.
+                "conv": round(n / anterior * 100, 1) if anterior else None,
+                "valor": round(sum(_num(por_id[i].get('valor_estimado'))
+                                   for i in ids if i in por_id), 2) if ver_valor else None,
+            })
+            anterior = n if n else None
+
+        perdidos = [l for l in leads if l.get('coluna') == 'Perdido'
+                    and dentro(l.get('movido_em'))]
+        nutricao = [l for l in leads if l.get('funil') == 'nutricao']
+
+        # --- tempo de ciclo ---
+        # Do nascimento do lead até chegar na etapa. Mediana por etapa.
+        def tempos_ate(fnl, col):
+            fora = []
+            for lid, l in por_id.items():
+                quando = primeira_vez.get(((fnl, col), lid))
+                if quando:
+                    fora.append(_dias_entre(l.get('criado_em'), quando))
+            return _mediana(fora)
+
+        ciclo = {
+            "ate_agendamento": tempos_ate('fechamento', 'Agendamento'),
+            "ate_proposta":    tempos_ate('fechamento', 'Proposta'),
+            "ate_fechamento":  tempos_ate('fechamento', 'Ganho'),
+        }
+
+        # --- recortes do trabalho ---
+        def quebra(campo, universo, rotulo_vazio='Sem informação'):
+            """Agrupa por um campo do lead, com conversão e valor."""
+            g = {}
+            for l in universo:
+                k = (l.get(campo) or '').strip() or rotulo_vazio
+                it = g.setdefault(k, {"chave": k, "leads": 0, "ganhos": 0, "valor": 0.0})
+                it["leads"] += 1
+                if _venceu(l):
+                    it["ganhos"] += 1
+                    it["valor"] += _num(l.get('valor_estimado'))
+            saida = []
+            for it in g.values():
+                it["conv"] = round(it["ganhos"] / it["leads"] * 100, 1) if it["leads"] else 0
+                it["valor"] = round(it["valor"], 2) if ver_valor else None
+                saida.append(it)
+            return sorted(saida, key=lambda x: -x["leads"])
+
+        trabalho = {
+            "funil": funil,
+            "perdidos": len(perdidos),
+            "nutricao": len(nutricao),
+            # Sobre os leads do recorte: "12 perdidos" não diz nada sem
+            # saber de quantos. 12 de 20 é um problema; 12 de 400, não.
+            "base": len(gerados),
+            "pct_perdidos": round(len(perdidos) / len(gerados) * 100, 1) if gerados else None,
+            "pct_nutricao": round(len(nutricao) / len(gerados) * 100, 1) if gerados else None,
+            "ciclo": ciclo,
+            "por_produto": quebra('produto', gerados, 'Sem produto'),
+            "por_origem": quebra('origem', gerados, 'Sem origem'),
+            "por_segmento": quebra('segmento', gerados, 'Sem segmento'),
+            "por_estado": quebra('estado', gerados, 'Sem UF'),
+            "objecoes": _objecoes_no_periodo(movs, de, ate),
+        }
+
+        # ============================================================
+        # ÓTICA 2 · RESULTADO
+        # ============================================================
+        fechados = [l for l in leads if _venceu(l) and dentro(l.get('movido_em'))]
+        total = round(sum(_num(l.get('valor_estimado')) for l in fechados), 2)
+
+        # Série temporal: diária num mês, mensal num ano.
+        serie = {}
+        for l in fechados:
+            k = str(l.get('movido_em'))[:10] if granul == 'dia' else str(l.get('movido_em'))[:7]
+            it = serie.setdefault(k, {"quando": k, "qtd": 0, "valor": 0.0})
+            it["qtd"] += 1
+            it["valor"] += _num(l.get('valor_estimado'))
+        serie = sorted(({**v, "valor": round(v["valor"], 2)} for v in serie.values()),
+                       key=lambda x: x["quando"])
+
+        def receita_por(campo, vazio):
+            g = {}
+            for l in fechados:
+                k = (l.get(campo) or '').strip() or vazio
+                it = g.setdefault(k, {"chave": k, "qtd": 0, "valor": 0.0})
+                it["qtd"] += 1
+                it["valor"] += _num(l.get('valor_estimado'))
+            for it in g.values():
+                it["ticket"] = round(it["valor"] / it["qtd"], 2) if it["qtd"] else 0
+                it["valor"] = round(it["valor"], 2)
+                it["fatia"] = round(it["valor"] / total * 100, 1) if total else 0
+            return sorted(g.values(), key=lambda x: -x["valor"])
+
+        resultado = {
+            "total": total if ver_valor else None,
+            "qtd": len(fechados),
+            "ticket_medio": round(total / len(fechados), 2) if fechados and ver_valor else None,
+            "granularidade": granul,
+            "serie": serie if ver_valor else [],
+            "por_produto": receita_por('produto', 'Sem produto') if ver_valor else [],
+            "por_origem": receita_por('origem', 'Sem origem') if ver_valor else [],
+            "por_segmento": receita_por('segmento', 'Sem segmento') if ver_valor else [],
+            "por_estado": receita_por('estado', 'Sem UF') if ver_valor else [],
+            "por_responsavel": receita_por('responsavel', 'Sem responsável') if ver_valor else [],
+        }
+
+        return jsonify({
+            "status": "sucesso",
+            "periodo": {"de": de, "ate": ate, "granularidade": granul},
+            "visao": visao,
+            "ver_valor": ver_valor,
+            "trabalho": trabalho,
+            "resultado": resultado,
+            # Alimenta os seletores de filtro com o que existe de fato,
+            # em vez de uma lista fixa que envelhece.
+            "opcoes": {
+                "produtos": sorted({(l.get('produto') or '').strip() for l in leads} - {''}),
+                "origens": sorted({(l.get('origem') or '').strip() for l in leads} - {''}),
+                "responsaveis": sorted({(l.get('responsavel') or '').strip() for l in leads} - {''}),
+                "estados": sorted({(l.get('estado') or '').strip().upper() for l in leads} - {''}),
+                "segmentos": sorted({(l.get('segmento') or '').strip() for l in leads} - {''}),
+            },
+        }), 200
+
+    except Exception as e:
+        print("Erro em api_comercial_painel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+def _venceu(lead):
+    """Contrato assinado. Ganho na qualificação é só passagem de bastão."""
+    return lead.get('funil') == 'fechamento' and lead.get('coluna') == 'Ganho'
+
+
+def _objecoes_no_periodo(movs, de, ate):
+    """Por que os leads foram perdidos. Sai de lead_movimentos, onde o
+    portão de Perdido grava o motivo."""
+    g = {}
+    for m in movs:
+        if m.get('para_coluna') != 'Perdido' or not m.get('objecao'):
+            continue
+        if not (de <= str(m.get('criado_em') or '')[:10] <= ate):
+            continue
+        g[m['objecao']] = g.get(m['objecao'], 0) + 1
+    return sorted(({"chave": k, "qtd": v} for k, v in g.items()), key=lambda x: -x["qtd"])
+
+
+@app.route('/api/painel/comercial', methods=['GET'])
+def painel_comercial():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        dias, desde = _recorte(90)          # 90 dias: o ciclo de venda é de ~38
+        hoje = datetime.now(timezone.utc).date().isoformat()
+        ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
+
+        leads = (supabase.table("leads").select("*")
+                 .is_("excluido_em", "null").execute()).data or []
+        movs = (supabase.table("lead_movimentos").select("*")
+                .gte("criado_em", desde).execute()).data or []
+
+        # Escopo: quem só vê os próprios leads também só vê os próprios números.
+        esc = caps_da_sessao().get('crm.lead.ver')
+        if esc == 'proprio':
+            eu = (session.get('usuario_nome') or '').strip().lower()
+            leads = [l for l in leads if (l.get('responsavel') or '').strip().lower() == eu]
+        pessoa = request.args.get('pessoa')
+        if pessoa:
+            leads = [l for l in leads if (l.get('responsavel') or '') == pessoa]
+        ids_visiveis = {str(l['id']) for l in leads}
+        movs = [m for m in movs if str(m.get('lead_id')) in ids_visiveis]
+
+        def valor(l):
+            try:
+                return float(l.get('valor_estimado') or 0)
+            except (TypeError, ValueError):
+                return 0.0
+
+        ativos = [l for l in leads if l.get('coluna') not in ('Ganho', 'Perdido')]
+        ganhos = [l for l in leads if l.get('coluna') == 'Ganho'
+                  and str(l.get('movido_em') or '')[:10] >= desde[:10]]
+        perdidos = [l for l in leads if l.get('coluna') == 'Perdido'
+                    and str(l.get('movido_em') or '')[:10] >= desde[:10]]
+        nutricao = [l for l in leads if l.get('funil') == 'nutricao']
+
+        # --- precisa de atenção ---
+        contato_hoje = [l for l in ativos if str(l.get('proximo_contato') or '')[:10] <= hoje
+                        and l.get('proximo_contato')]
+        parados = [l for l in ativos if _dias_desde(l.get('movido_em') or l.get('criado_em')) > 14]
+        sem_contato = [l for l in ativos if not l.get('proximo_contato')
+                       and l.get('funil') == 'fechamento']
+
+        # --- estoque: onde o dinheiro está parado ---
+        estoque = {}
+        for l in ativos:
+            chave = (l.get('funil') or '?', l.get('coluna') or '?')
+            it = estoque.setdefault(chave, {"funil": chave[0], "etapa": chave[1],
+                                            "qtd": 0, "valor": 0.0})
+            it["qtd"] += 1
+            it["valor"] += valor(l)
+
+        # --- FLUXO: quantos leads distintos passaram por cada etapa ---
+        # É daqui que sai a taxa de conversão. Conta lead, não movimento:
+        # quem voltou e passou de novo conta uma vez só.
+        CASCATA = [
+            ('qualificacao', 'Prospecção'), ('qualificacao', 'Contato'),
+            ('qualificacao', 'Ganho'),
+            ('fechamento', 'Agendamento'), ('fechamento', 'Proposta'),
+            ('fechamento', 'Negociação'), ('fechamento', 'Fechamento'),
+        ]
+        passaram = {}
+        for m in movs:
+            chave = (m.get('para_funil'), m.get('para_coluna'))
+            passaram.setdefault(chave, set()).add(str(m.get('lead_id')))
+        # Leads que já estavam na etapa antes do recorte e seguem lá contam também.
+        for l in ativos:
+            chave = (l.get('funil'), l.get('coluna'))
+            if chave in [c for c in CASCATA]:
+                passaram.setdefault(chave, set()).add(str(l['id']))
+
+        cascata = []
+        topo = len(passaram.get(CASCATA[0], set())) or 1
+        for i, chave in enumerate(CASCATA):
+            qtd = len(passaram.get(chave, set()))
+            prox = len(passaram.get(CASCATA[i + 1], set())) if i + 1 < len(CASCATA) else None
+            cascata.append({
+                "funil": chave[0], "etapa": chave[1], "qtd": qtd,
+                "pct_topo": round(qtd / topo * 100, 1),
+                "conversao": (round(prox / qtd * 100) if qtd and prox is not None else None),
+                "sairam": (max(0, qtd - prox) if prox is not None else None),
+            })
+
+        # --- para onde foram os que saíram ---
+        destino = {"nutricao": len(nutricao), "perdido": len(perdidos),
+                   "ativos": len(ativos)}
+
+        # --- objeções e motivos de perda ---
+        # São coisas diferentes: objeção é "conversamos e ele disse não
+        # agora"; perda é "não deu para falar". Misturar as duas faria
+        # "contato não existe" competir com "preço" no mesmo gráfico.
+        MOTIVOS_PERDA = ('contato_invalido', 'nao_localizado', 'empresa_fechada',
+                         'duplicado', 'nao_e_publico', 'outra_perda')
+        objecoes, perdas = {}, {}
+        for m in movs:
+            o = m.get('objecao')
+            if not o:
+                continue
+            if o in MOTIVOS_PERDA or m.get('para_coluna') == 'Perdido':
+                perdas[o] = perdas.get(o, 0) + 1
+            else:
+                objecoes[o] = objecoes.get(o, 0) + 1
+
+        # --- origem que converte ---
+        por_origem = {}
+        for l in leads:
+            o = l.get('origem') or 'Não informada'
+            it = por_origem.setdefault(o, {"origem": o, "total": 0, "ganhos": 0})
+            it["total"] += 1
+            if l.get('coluna') == 'Ganho':
+                it["ganhos"] += 1
+        for it in por_origem.values():
+            it["taxa"] = round(it["ganhos"] / it["total"] * 100) if it["total"] else 0
+        origens = sorted(por_origem.values(), key=lambda x: -x["total"])
+
+        # --- por pessoa ---
+        por_pessoa = {}
+        for l in ativos:
+            r = l.get('responsavel') or 'Sem responsável'
+            it = por_pessoa.setdefault(r, {"pessoa": r, "leads": 0, "valor": 0.0, "ganhos": 0})
+            it["leads"] += 1
+            it["valor"] += valor(l)
+        for l in ganhos:
+            r = l.get('responsavel') or 'Sem responsável'
+            it = por_pessoa.setdefault(r, {"pessoa": r, "leads": 0, "valor": 0.0, "ganhos": 0})
+            it["ganhos"] += 1
+        equipe = sorted(por_pessoa.values(), key=lambda x: -x["leads"])
+
+        # --- ciclo de venda ---
+        ciclos = []
+        for l in ganhos:
+            ini, fim = l.get('criado_em'), l.get('movido_em')
+            if ini and fim:
+                try:
+                    d0 = datetime.fromisoformat(str(ini).replace('Z', '+00:00'))
+                    d1 = datetime.fromisoformat(str(fim).replace('Z', '+00:00'))
+                    ciclos.append(max(0, (d1 - d0).days))
+                except Exception:
+                    pass
+
+        valor_ganho = sum(valor(l) for l in ganhos)
+        saida = {
+            "status": "sucesso",
+            "periodo_dias": dias,
+            "ver_valor": ver_valor,
+            "kpis": {
+                "ativos": len(ativos),
+                "ganhos": len(ganhos),
+                "perdidos": len(perdidos),
+                "conversao": round(len(ganhos) / len(leads) * 100, 1) if leads else 0,
+                "ciclo": round(_mediana(ciclos)),
+            },
+            "atencao": {
+                "contato_hoje": len(contato_hoje),
+                "parados": len(parados),
+                "sem_contato": len(sem_contato),
+            },
+            "estoque": sorted(estoque.values(), key=lambda x: -x["qtd"]),
+            "cascata": cascata,
+            "destino": destino,
+            "objecoes": sorted(({"objecao": k, "qtd": v} for k, v in objecoes.items()),
+                               key=lambda x: -x["qtd"]),
+            "perdas": sorted(({"motivo": k, "qtd": v} for k, v in perdas.items()),
+                             key=lambda x: -x["qtd"]),
+            "origens": origens,
+            "equipe": equipe,
+            "nutricao": len(nutricao),
+        }
+        # Valores só saem do servidor para quem pode vê-los.
+        if ver_valor:
+            saida["kpis"]["valor_funil"] = round(sum(valor(l) for l in ativos))
+            saida["kpis"]["valor_ganho"] = round(valor_ganho)
+            saida["kpis"]["valor_perdido"] = round(sum(valor(l) for l in perdidos))
+            saida["kpis"]["ticket"] = round(valor_ganho / len(ganhos)) if ganhos else 0
+            saida["valor_parado"] = round(sum(valor(l) for l in parados))
+            saida["valor_nutricao"] = round(sum(valor(l) for l in nutricao))
+        else:
+            for it in saida["estoque"]:
+                it.pop("valor", None)
+            for it in saida["equipe"]:
+                it.pop("valor", None)
+        return jsonify(saida), 200
+    except Exception as e:
+        print("Erro em painel_comercial:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/catalogo', methods=['GET'])
+def catalogo_capacidades():
+    """O catálogo vive no código. A tela o consulta para saber o que
+    existe, em vez de manter uma cópia própria que sairia de sincronia."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    itens = []
+    for chave, (grupo, rotulo, desc, escopos, sensivel) in CATALOGO.items():
+        itens.append({
+            "chave": chave, "grupo": grupo, "rotulo": rotulo,
+            "descricao": desc, "escopos": list(escopos), "sensivel": sensivel,
+            # A tela usa isto para separar o que é base (todo mundo tem),
+            # o que é opcional (decisão por pessoa) e o que é só do
+            # Administrador.
+            "so_admin": chave in CAPS_SO_ADMIN,
+            "base": chave in CAPS_BASE,
+            "opcional": chave in CAPS_OPCIONAIS,
+            "alcance": chave in CAPS_ALCANCE,
+        })
+    return jsonify({
+        "status": "sucesso",
+        "capacidades": itens,
+        "grupos": GRUPOS_ORDEM,
+        "quadros": [{"chave": c, "nome": n} for c, n in QUADROS],
+        "areas": [{"chave": c, "nome": n, "icone": i, "descricao": d}
+                  for c, n, i, d in AREAS],
+    }), 200
+
+
+@app.route('/api/acessos/papeis', methods=['GET'])
+def listar_papeis():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        papeis = (supabase.table("papeis").select("*").order("ordem").execute()).data or []
+        caps = (supabase.table("papel_capacidades").select("*").execute()).data or []
+        usuarios = (supabase.table("usuarios").select("id, papel_id").execute()).data or []
+
+        por_papel = {}
+        for c in caps:
+            por_papel.setdefault(str(c["papel_id"]), {})[c["capacidade"]] = c["escopo"]
+        contagem = {}
+        for u in usuarios:
+            if u.get("papel_id"):
+                contagem[str(u["papel_id"])] = contagem.get(str(u["papel_id"]), 0) + 1
+
+        for p in papeis:
+            pid = str(p["id"])
+            p["capacidades"] = por_papel.get(pid, {})
+            # Quadros deixaram de ser do papel: cada pessoa tem os seus,
+            # em usuarios.quadros. A chave fica vazia por compatibilidade.
+            p["quadros"] = []
+            p["pessoas"] = contagem.get(pid, 0)
+
+        return jsonify({"status": "sucesso", "papeis": papeis}), 200
+    except Exception as e:
+        print("Erro em listar_papeis:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar papéis.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/papeis', methods=['POST'])
+def criar_papel():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        nome = (d.get("nome") or "").strip()
+        if not nome:
+            return jsonify({"status": "erro", "mensagem": "Informe o nome do papel."}), 400
+        res = supabase.table("papeis").insert({
+            "nome": nome,
+            "descricao": (d.get("descricao") or "").strip() or None,
+            "icone": d.get("icone") or "badge",
+            "externo": bool(d.get("externo")),
+            "ordem": int(d.get("ordem") or 99),
+        }).execute()
+        novo = (res.data or [None])[0]
+        registrar("papel_criado", "papeis", novo and novo.get("id"), {"nome": nome})
+        return jsonify({"status": "sucesso", "papel": novo}), 201
+    except Exception as e:
+        print("Erro em criar_papel:", e)
+        msg = "Já existe um papel com esse nome." if "duplicate" in str(e).lower() else "Erro ao criar papel."
+        return jsonify({"status": "erro", "mensagem": msg, "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/papeis/<papel_id>', methods=['PUT'])
+def atualizar_papel(papel_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        atual = supabase.table("papeis").select("*").eq("id", papel_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Papel não encontrado."}), 404
+        if atual.data[0].get("sistema"):
+            return jsonify({"status": "erro",
+                            "mensagem": "O papel de Administração não pode ser editado."}), 403
+
+        d = request.get_json() or {}
+        upd = {k: d[k] for k in ("nome", "descricao", "icone", "ordem") if k in d}
+        if upd:
+            supabase.table("papeis").update(upd).eq("id", papel_id).execute()
+
+        # Capacidades: substitui o conjunto inteiro em vez de comparar
+        # item a item. Com poucas dezenas, é mais simples e não deixa sobra.
+        if "capacidades" in d:
+            supabase.table("papel_capacidades").delete().eq("papel_id", papel_id).execute()
+            linhas = []
+            for cap, esc in (d["capacidades"] or {}).items():
+                if cap not in CATALOGO:
+                    continue          # ignora capacidade que não existe no código
+                escopos = CATALOGO[cap][3]
+                if escopos and esc not in escopos:
+                    esc = escopos[-1]
+                linhas.append({"papel_id": papel_id, "capacidade": cap,
+                               "escopo": esc if escopos else "tudo"})
+            if linhas:
+                supabase.table("papel_capacidades").insert(linhas).execute()
+
+        registrar("papel_alterado", "papeis", papel_id,
+                  {"campos": list(upd.keys()),
+                   "capacidades": len(d.get("capacidades") or {}) if "capacidades" in d else None})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_papel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/papeis/<papel_id>', methods=['DELETE'])
+def excluir_papel(papel_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        atual = supabase.table("papeis").select("*").eq("id", papel_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Papel não encontrado."}), 404
+        if atual.data[0].get("sistema"):
+            return jsonify({"status": "erro",
+                            "mensagem": "O papel de Administração não pode ser removido."}), 403
+
+        # Papel com gente dentro não some: as pessoas ficariam sem acesso
+        # nenhum e ninguém entenderia por quê.
+        uso = supabase.table("usuarios").select("id").eq("papel_id", papel_id).execute()
+        if uso.data:
+            return jsonify({"status": "erro",
+                            "mensagem": "Há %d pessoa(s) com este papel. Mova-as antes de excluir."
+                                        % len(uso.data)}), 400
+
+        supabase.table("papeis").delete().eq("id", papel_id).execute()
+        registrar("papel_excluido", "papeis", papel_id, {"nome": atual.data[0].get("nome")})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_papel:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas', methods=['GET'])
+def listar_pessoas_acessos():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        # Nunca selecionar '*' aqui: a tabela ainda tem a coluna `senha`
+        # em texto puro, e ela não pode sair do servidor.
+        res = (supabase.table("usuarios")
+               .select("id, nome, email, cargo, telefone, papel_id, equipe, ativo, "
+                       "nivel_acesso, tipo_usuario, quadros, areas, ajustes, "
+                       "ultimo_acesso, criado_em, senha_hash")
+               .order("nome").execute())
+        pessoas = res.data or []
+        # O hash não pode sair do servidor. Vira um booleano: a tela só
+        # precisa saber se a pessoa já tem senha definida.
+        for p in pessoas:
+            p["tem_senha"] = bool(p.pop("senha_hash", None))
+        equipes = sorted({p["equipe"] for p in pessoas if p.get("equipe")})
+        return jsonify({"status": "sucesso", "pessoas": pessoas, "equipes": equipes}), 200
+    except Exception as e:
+        print("Erro em listar_pessoas_acessos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar pessoas.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas', methods=['POST'])
+def criar_pessoa_acessos():
+    """Cadastra uma pessoa direto na tela de Acessos."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.json or {}
+        nome = (d.get("nome") or "").strip()
+        email = (d.get("email") or "").strip().lower()
+        senha = d.get("senha") or ""
+        if not nome or not email:
+            return jsonify({"status": "erro", "mensagem": "Nome e e-mail são obrigatórios."}), 400
+        if len(senha) < 8:
+            return jsonify({"status": "erro",
+                            "mensagem": "A senha precisa de pelo menos 8 caracteres."}), 400
+
+        existe = supabase.table("usuarios").select("id").eq("email", email).limit(1).execute()
+        if existe.data:
+            return jsonify({"status": "erro",
+                            "mensagem": "Já existe alguém com este e-mail."}), 409
+
+        novo = {
+            "nome": nome,
+            "email": email,
+            "cargo": (d.get("cargo") or "").strip() or None,
+            "telefone": (d.get("telefone") or "").strip() or None,
+            "equipe": (d.get("equipe") or "").strip() or None,
+            "papel_id": d.get("papel_id") or None,
+            "tipo_usuario": "interno",
+            "nivel_acesso": d.get("nivel_acesso") or "colaborador",
+            "ativo": True,
+            # Só o hash. A coluna `senha` em texto puro é legado e não
+            # recebe valor desde a correção do login.
+            "senha_hash": gerar_hash(senha),
+            "quadros": [q for q in (d.get("quadros") or []) if q in QUADRO_AREA],
+            "areas": [a for a in (d.get("areas") or []) if a in AREAS_VALIDAS],
+            "ajustes": {},
+            "perm_modulos": [],
+        }
+        res = supabase.table("usuarios").insert(novo).execute()
+        criado = (res.data or [{}])[0]
+        registrar_auditoria('pessoa_criada', 'usuario', criado.get("id"),
+                            {"nome": nome, "email": email})
+        criado.pop("senha_hash", None)
+        criado.pop("senha", None)
+        return jsonify({"status": "sucesso", "pessoa": criado}), 201
+    except Exception as e:
+        print("Erro em criar_pessoa_acessos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao cadastrar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas/<usuario_id>/alcance', methods=['PUT'])
+def definir_alcance(usuario_id):
+    """Define se a pessoa enxerga só o que é dela ou o quadro inteiro.
+
+    Move as cinco capacidades de alcance de uma vez. Deixá-las como
+    exceções separadas obrigaria a marcar cinco chips para dizer uma
+    coisa só.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    alcance = (request.json or {}).get("alcance")
+    if alcance not in ('proprio', 'quadro', 'padrao'):
+        return jsonify({"status": "erro", "mensagem": "Alcance inválido."}), 400
+    try:
+        r = (supabase.table("usuarios").select("ajustes")
+             .eq("id", usuario_id).limit(1).execute())
+        ajs = dict((r.data or [{}])[0].get("ajustes") or {})
+        agora = datetime.now(timezone.utc).isoformat()
+        autor = session.get('usuario_nome')
+
+        for cap in CAPS_ALCANCE:
+            if alcance == 'padrao':
+                # Volta ao que o nível define.
+                ajs.pop(cap, None)
+                continue
+            permitidos = CATALOGO[cap][3]
+            valor = alcance if alcance in permitidos else 'tudo'
+            ajs[cap] = {"valor": valor, "por": autor, "em": agora}
+
+        supabase.table("usuarios").update({"ajustes": ajs}).eq("id", usuario_id).execute()
+        registrar_auditoria('alcance_alterado', 'usuario', usuario_id, {"alcance": alcance})
+        return jsonify({"status": "sucesso", "ajustes": ajs}), 200
+    except Exception as e:
+        print("Erro em definir_alcance:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas/<usuario_id>/senha', methods=['PUT'])
+def redefinir_senha_acessos(usuario_id):
+    """Define uma senha nova para alguém.
+
+    Quem redefine nunca vê a senha antiga — ela não existe em texto
+    puro. A pessoa recebe a nova por fora e troca depois.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        senha = (request.json or {}).get("senha") or ""
+        if len(senha) < 8:
+            return jsonify({"status": "erro",
+                            "mensagem": "A senha precisa de pelo menos 8 caracteres."}), 400
+        supabase.table("usuarios").update({
+            "senha_hash": gerar_hash(senha),
+            "senha": "",            # NOT NULL: string vazia apaga sem quebrar
+        }).eq("id", usuario_id).execute()
+        registrar_auditoria('senha_redefinida', 'usuario', usuario_id, {})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em redefinir_senha_acessos:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao redefinir a senha.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/pessoas/<usuario_id>', methods=['PUT'])
+def atualizar_acesso_pessoa(usuario_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not pode_gerir_acessos():
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        d = request.get_json() or {}
+        upd = {}
+        if "papel_id" in d:
+            upd["papel_id"] = d["papel_id"] or None
+        # Perder o quadro tira a pessoa da lista de executores dele:
+        # senão ela continuaria recebendo card de um quadro que já não
+        # consegue abrir.
+        if "quadros" in d:
+            novos = set(d.get("quadros") or [])
+            try:
+                atuais = (supabase.table("quadro_executores").select("quadro")
+                          .eq("usuario_id", usuario_id).execute()).data or []
+                for r in atuais:
+                    if r.get("quadro") not in novos:
+                        (supabase.table("quadro_executores").delete()
+                         .eq("usuario_id", usuario_id).eq("quadro", r["quadro"]).execute())
+            except Exception as e:
+                print("Aviso: limpeza de executores:", e)
+
+        for campo in ("cargo", "telefone"):
+            if campo in d:
+                upd[campo] = (d[campo] or "").strip() or None
+        if "equipe" in d:
+            upd["equipe"] = (d["equipe"] or "").strip() or None
+        if "ativo" in d:
+            upd["ativo"] = bool(d["ativo"])
+        if "quadros" in d:
+            upd["quadros"] = [q for q in (d["quadros"] or []) if q in QUADROS_VALIDOS]
+        if "areas" in d:
+            upd["areas"] = [a for a in (d["areas"] or []) if a in AREAS_VALIDAS]
+        if "ajustes" in d:
+            # Só aceita capacidade que existe no catálogo do código.
+            # Exceção guarda quem deu e quando: "quem liberou valores
+            # para a Barbara?" precisa ter resposta.
+            # Capacidades de administração não viram exceção: se
+            # virassem, o nível deixaria de significar alguma coisa.
+            agora = datetime.now(timezone.utc).isoformat()
+            autor = session.get('usuario_nome')
+            antigos = {}
+            try:
+                r = (supabase.table("usuarios").select("ajustes")
+                     .eq("id", usuario_id).limit(1).execute())
+                if r.data:
+                    antigos = r.data[0].get("ajustes") or {}
+            except Exception as e:
+                print("Aviso: ajustes anteriores:", e)
+
+            limpos = {}
+            for k, v in (d["ajustes"] or {}).items():
+                if k not in CATALOGO or k in CAPS_SO_ADMIN:
+                    continue
+                antigo = antigos.get(k)
+                # Só carimba autor e data quando o valor muda de fato.
+                if isinstance(antigo, dict) and antigo.get("valor") == v:
+                    limpos[k] = antigo
+                else:
+                    limpos[k] = {"valor": v, "por": autor, "em": agora}
+            upd["ajustes"] = limpos
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+
+        # Trava: sempre precisa sobrar alguém com Administração ativo,
+        # senão ninguém mais consegue entrar para consertar.
+        if ("papel_id" in upd or upd.get("ativo") is False) and str(usuario_id):
+            adm = supabase.table("papeis").select("id").eq("sistema", True).limit(1).execute()
+            if adm.data:
+                adm_id = str(adm.data[0]["id"])
+                atual = (supabase.table("usuarios").select("papel_id, ativo")
+                         .eq("id", usuario_id).limit(1).execute())
+                era_adm = atual.data and str(atual.data[0].get("papel_id")) == adm_id
+                sai = ("papel_id" in upd and str(upd["papel_id"]) != adm_id) or (upd.get("ativo") is False)
+                if era_adm and sai:
+                    todos = (supabase.table("usuarios").select("id, ativo")
+                             .eq("papel_id", adm_id).execute()).data or []
+                    restantes = [u for u in todos
+                                 if str(u["id"]) != str(usuario_id) and u.get("ativo") is not False]
+                    if not restantes:
+                        return jsonify({"status": "erro",
+                                        "mensagem": "Precisa sobrar ao menos uma pessoa ativa "
+                                                    "com o papel de Administração."}), 400
+
+        supabase.table("usuarios").update(upd).eq("id", usuario_id).execute()
+        registrar("acesso_alterado", "usuarios", usuario_id, upd)
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_acesso_pessoa:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/acessos/auditoria', methods=['GET'])
+def listar_auditoria():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (pode('auditoria.ver') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        q = supabase.table("auditoria").select("*")
+        acao = request.args.get('acao')
+        if acao:
+            q = q.eq("acao", acao)
+        res = q.order("criado_em", desc=True).limit(200).execute()
+        return jsonify({"status": "sucesso", "registros": res.data or []}), 200
+    except Exception as e:
+        print("Erro em listar_auditoria:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar auditoria.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts', methods=['GET'])
+def listar_posts():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        res = (supabase.table("posts").select("*")
+               .is_("excluido_em", "null")
+               .order("criado_em", desc=True).limit(120).execute())
+        posts = res.data or []
+        if not posts:
+            return jsonify({"status": "sucesso", "posts": [], "reacoes": [],
+                            "comentarios": [], "presencas": []}), 200
+
+        ids = [p["id"] for p in posts]
+        # Uma consulta por tabela em vez de uma por post: com 120 posts
+        # seriam 360 idas ao banco.
+        reacoes = (supabase.table("post_reacoes").select("*")
+                   .in_("post_id", ids).execute()).data or []
+        coments = (supabase.table("post_comentarios").select("*")
+                   .in_("post_id", ids).is_("excluido_em", "null")
+                   .order("criado_em").execute()).data or []
+        presencas = (supabase.table("post_presencas").select("*")
+                     .in_("post_id", ids).execute()).data or []
+
+        return jsonify({"status": "sucesso", "posts": posts, "reacoes": reacoes,
+                        "comentarios": coments, "presencas": presencas}), 200
+    except Exception as e:
+        print("Erro em listar_posts:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar o feed.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts', methods=['POST'])
+def criar_post():
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        d = request.get_json() or {}
+        tipo = d.get("tipo", "post")
+        if tipo not in TIPOS_POST:
+            return jsonify({"status": "erro", "mensagem": "Tipo inválido."}), 400
+        if not _pode_publicar(tipo):
+            return jsonify({"status": "erro",
+                            "mensagem": "Só admin e gestor publicam comunicados."}), 403
+        corpo = (d.get("corpo") or "").strip()
+        if not corpo:
+            return jsonify({"status": "erro", "mensagem": "Escreva algo antes de publicar."}), 400
+        if tipo == "evento" and not d.get("evento_data"):
+            return jsonify({"status": "erro", "mensagem": "Evento precisa de data."}), 400
+
+        fixar = bool(d.get("fixado")) and session.get('nivel_acesso') in ('admin', 'gestor')
+        if fixar:
+            # Um fixado por vez: dois destaques não destacam nada.
+            supabase.table("posts").update({"fixado": False}).eq("fixado", True).execute()
+
+        novo = {
+            "tipo": tipo,
+            "titulo": (d.get("titulo") or "").strip() or None,
+            "corpo": corpo,
+            "autor": session.get('usuario_nome', ''),
+            "autor_id": str(session.get('usuario_id', '')),
+            "fixado": fixar,
+            "evento_data": d.get("evento_data") or None,
+            "evento_local": (d.get("evento_local") or "").strip() or None,
+            "anexos": d.get("anexos") or [],
+        }
+        res = supabase.table("posts").insert(novo).execute()
+        return jsonify({"status": "sucesso", "post": (res.data or [None])[0]}), 201
+    except Exception as e:
+        print("Erro em criar_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao publicar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>', methods=['PUT'])
+def atualizar_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        atual = supabase.table("posts").select("*").eq("id", post_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Post não encontrado."}), 404
+        if not _pode_mexer_no_post(atual.data[0]):
+            return jsonify({"status": "erro", "mensagem": "Você só edita os seus posts."}), 403
+
+        d = request.get_json() or {}
+        campos = ["titulo", "corpo", "evento_data", "evento_local", "anexos"]
+        upd = {k: d[k] for k in campos if k in d}
+
+        if "fixado" in d and session.get('nivel_acesso') in ('admin', 'gestor'):
+            if d["fixado"]:
+                supabase.table("posts").update({"fixado": False}).eq("fixado", True).execute()
+            upd["fixado"] = bool(d["fixado"])
+
+        if not upd:
+            return jsonify({"status": "erro", "mensagem": "Nada a atualizar."}), 400
+        upd["editado_em"] = datetime.now(timezone.utc).isoformat()
+        supabase.table("posts").update(upd).eq("id", post_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em atualizar_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao salvar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>', methods=['DELETE'])
+def excluir_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        atual = supabase.table("posts").select("*").eq("id", post_id).limit(1).execute()
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Post não encontrado."}), 404
+        if not _pode_mexer_no_post(atual.data[0]):
+            return jsonify({"status": "erro", "mensagem": "Você só exclui os seus posts."}), 403
+        supabase.table("posts").update(
+            {"excluido_em": datetime.now(timezone.utc).isoformat(),
+             }
+        ).eq("id", post_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>/reacao', methods=['POST'])
+def reagir_post(post_id):
+    """Alterna a reação: se já existe, remove; se não, cria."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        emoji = (request.get_json() or {}).get("emoji") or "👍"
+        usuario = session.get('usuario_nome', '')
+        ja = (supabase.table("post_reacoes").select("id")
+              .eq("post_id", post_id).eq("usuario", usuario)
+              .eq("emoji", emoji).limit(1).execute())
+        if ja.data:
+            supabase.table("post_reacoes").delete().eq("id", ja.data[0]["id"]).execute()
+            return jsonify({"status": "sucesso", "reagiu": False}), 200
+        supabase.table("post_reacoes").insert(
+            {"post_id": post_id, "usuario": usuario, "emoji": emoji}).execute()
+        return jsonify({"status": "sucesso", "reagiu": True}), 200
+    except Exception as e:
+        print("Erro em reagir_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao reagir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>/presenca', methods=['POST'])
+def presenca_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        usuario = session.get('usuario_nome', '')
+        ja = (supabase.table("post_presencas").select("id")
+              .eq("post_id", post_id).eq("usuario", usuario).limit(1).execute())
+        if ja.data:
+            supabase.table("post_presencas").delete().eq("id", ja.data[0]["id"]).execute()
+            return jsonify({"status": "sucesso", "confirmado": False}), 200
+        supabase.table("post_presencas").insert(
+            {"post_id": post_id, "usuario": usuario}).execute()
+        return jsonify({"status": "sucesso", "confirmado": True}), 200
+    except Exception as e:
+        print("Erro em presenca_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao confirmar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/<post_id>/comentarios', methods=['POST'])
+def comentar_post(post_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        corpo = ((request.get_json() or {}).get("corpo") or "").strip()
+        if not corpo:
+            return jsonify({"status": "erro", "mensagem": "Escreva algo."}), 400
+        novo = {
+            "post_id": post_id,
+            "autor": session.get('usuario_nome', ''),
+            "corpo": corpo,
+            "mencionados": (request.get_json() or {}).get("mencionados") or [],
+        }
+        res = supabase.table("post_comentarios").insert(novo).execute()
+        return jsonify({"status": "sucesso", "comentario": (res.data or [None])[0]}), 201
+    except Exception as e:
+        print("Erro em comentar_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao comentar.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/posts/comentarios/<int:comentario_id>', methods=['DELETE'])
+def excluir_comentario_post(comentario_id):
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        atual = (supabase.table("post_comentarios").select("*")
+                 .eq("id", comentario_id).limit(1).execute())
+        if not atual.data:
+            return jsonify({"status": "erro", "mensagem": "Comentário não encontrado."}), 404
+        c = atual.data[0]
+        if (session.get('nivel_acesso') not in ('admin', 'gestor')
+                and (c.get("autor") or '') != session.get('usuario_nome', '')):
+            return jsonify({"status": "erro", "mensagem": "Você só exclui os seus."}), 403
+        supabase.table("post_comentarios").update(
+            {"excluido_em": datetime.now(timezone.utc).isoformat(),
+             "excluido_por": session.get('usuario_nome')}
+        ).eq("id", comentario_id).execute()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em excluir_comentario_post:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/feed/upload', methods=['POST'])
+def upload_anexo():
+    """Sobe um arquivo para o Storage e devolve a URL pública.
+
+    O arquivo passa pela função serverless, que no Vercel tem limite de
+    ~4,5 MB por requisição. Acima disso o upload falha antes de chegar
+    aqui — por isso a tela recusa arquivos grandes com aviso claro.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        arq = request.files.get('arquivo')
+        if not arq or not arq.filename:
+            return jsonify({"status": "erro", "mensagem": "Nenhum arquivo recebido."}), 400
+
+        dados = arq.read()
+        if len(dados) > 4 * 1024 * 1024:
+            return jsonify({"status": "erro",
+                            "mensagem": "Arquivo acima de 4 MB. Envie por link."}), 413
+
+        # Nome único, preservando a extensão para o navegador saber abrir.
+        base, ponto, ext = arq.filename.rpartition('.')
+        ext = ('.' + ext.lower()) if ponto else ''
+        caminho = "%s/%s%s" % (
+            datetime.now(timezone.utc).strftime('%Y-%m'),
+            secrets.token_urlsafe(16), ext)
+
+        supabase.storage.from_(BUCKET_FEED).upload(
+            caminho, dados,
+            {"content-type": arq.mimetype or "application/octet-stream",
+             "cache-control": "3600"})
+        url = supabase.storage.from_(BUCKET_FEED).get_public_url(caminho)
+
+        return jsonify({"status": "sucesso", "anexo": {
+            "nome": arq.filename, "url": url,
+            "tipo": arq.mimetype or "", "tamanho": len(dados)}}), 201
+    except Exception as e:
+        print("Erro em upload_anexo:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao enviar o arquivo.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/timelogs', methods=['GET'])
+def listar_timelogs():
+    """Registros de tempo num intervalo de datas, com as permissões do usuário aplicadas.
+    Usado pela Agenda para mostrar o que foi realizado, inclusive o tempo
+    iniciado pelo quadro (que vem com planejamento_id nulo)."""
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    try:
+        de = request.args.get('de')
+        ate = request.args.get('ate')
+        if not de or not ate:
+            return jsonify({"status": "erro", "mensagem": "Informe de e ate."}), 400
+
+        res = (supabase.table("time_logs").select("*")
+               .gte("criado_em", de + "T00:00:00")
+               .lte("criado_em", ate + "T23:59:59")
+               .order("criado_em", desc=True).execute())
+        logs = res.data or []
+        if not logs:
+            return jsonify({"status": "sucesso", "logs": []}), 200
+
+        # Mesma regra de visibilidade dos projetos: ninguém vê tempo de
+        # projeto que já não poderia ver na listagem.
+        res_proj = supabase.table("projetos").select("*").execute()
+        projetos = [p for p in (res_proj.data or []) if not p.get("excluido_em")]
+        permitidos = {str(p.get("id")) for p in filtrar_projetos_permitidos(projetos)}
+        logs = [l for l in logs if str(l.get("projeto_id")) in permitidos]
+
+        return jsonify({"status": "sucesso", "logs": logs}), 200
+    except Exception as e:
+        print("Erro em /api/timelogs:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar registros."}), 500
+
 
 @app.route('/api/planejamento', methods=['GET'])
 def listar_planejamento():
@@ -1763,21 +6314,13 @@ def clientes_okr_permitidos():
     return todos, True, None
 
 @app.route('/okr')
-@app.route('/okr/gestao')
 def okr_page():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', proximo=request.path))
     if not pode_ver_okr():
         return redirect(url_for('index'))
     return render_template('okr.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
-@app.route('/okr/dashboard')
-def okr_dashboard_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not pode_ver_okr():
-        return redirect(url_for('index'))
-    return render_template('okr_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'colaborador'))
 
 @app.route('/api/okr/arvore', methods=['GET'])
 def okr_arvore():
@@ -1996,900 +6539,76 @@ def okr_excluir_item():
 # ============================================================
 import secrets
 
-def pode_ver_clima():
-    """Admin/gestor sempre; comum/personalizado conforme módulo 'clima' liberado."""
-    nivel = session.get('nivel_acesso')
-    if nivel in ('admin', 'gestor'):
-        return True
-    return pode_acessar_modulo('clima')
 
-@app.route('/clima')
-@app.route('/clima/gestao')
-def clima_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not pode_ver_clima():
-        return redirect(url_for('index'))
-    return render_template('clima.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
 
-@app.route('/clima/dashboard')
-def clima_dashboard_page():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not pode_ver_clima():
-        return redirect(url_for('index'))
-    return render_template('clima_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
 
-@app.route('/clima/apresentar/<pid>')
-def clima_apresentar_page(pid):
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    if not pode_ver_clima():
-        return redirect(url_for('index'))
-    return render_template('clima_apresentar.html', pesquisa_id=pid, nivel_acesso=session.get('nivel_acesso', 'comum'))
 
 # ===== MODELO BASE =====
-@app.route('/api/clima/modelo', methods=['GET'])
-def clima_modelo_get():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        res_dim = supabase.table("clima_modelo_dimensoes").select("*").order("ordem").execute()
-        dims = res_dim.data or []
-        dim_ids = [d["id"] for d in dims]
-        pergs_por_dim = {d["id"]: [] for d in dims}
-        if dim_ids:
-            res_p = supabase.table("clima_modelo_perguntas").select("*").in_("dimensao_id", dim_ids).order("ordem").execute()
-            for p in (res_p.data or []):
-                pergs_por_dim.setdefault(p["dimensao_id"], []).append(p)
-        for d in dims:
-            d["perguntas"] = pergs_por_dim.get(d["id"], [])
-        return jsonify({"status": "sucesso", "dimensoes": dims}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_modelo_get: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Não foi possível carregar o modelo."}), 500
 
-@app.route('/api/clima/modelo/dimensao', methods=['POST'])
-def clima_modelo_dim_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        if d.get("id"):
-            supabase.table("clima_modelo_dimensoes").update({"nome": d.get("nome"), "eh_lideranca": bool(d.get("eh_lideranca"))}).eq("id", d["id"]).execute()
-        else:
-            supabase.table("clima_modelo_dimensoes").insert({"nome": d.get("nome"), "ordem": d.get("ordem", 0), "eh_lideranca": bool(d.get("eh_lideranca"))}).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_modelo_dim_salvar: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
 
-@app.route('/api/clima/modelo/dimensao/<did>', methods=['DELETE'])
-def clima_modelo_dim_excluir(did):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_modelo_dimensoes").delete().eq("id", did).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
-@app.route('/api/clima/modelo/pergunta', methods=['POST'])
-def clima_modelo_perg_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        payload = {"texto": d.get("texto"), "tipo": d.get("tipo", "likert"), "obrigatoria": bool(d.get("obrigatoria", True))}
-        if d.get("id"):
-            supabase.table("clima_modelo_perguntas").update(payload).eq("id", d["id"]).execute()
-        else:
-            payload["dimensao_id"] = d.get("dimensao_id")
-            payload["ordem"] = d.get("ordem", 0)
-            supabase.table("clima_modelo_perguntas").insert(payload).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_modelo_perg_salvar: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
 
-@app.route('/api/clima/modelo/pergunta/<pid>', methods=['DELETE'])
-def clima_modelo_perg_excluir(pid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_modelo_perguntas").delete().eq("id", pid).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
 # ===== PESQUISAS =====
-@app.route('/api/clima/pesquisas', methods=['GET'])
-def clima_pesquisas_listar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        # Clientes permitidos (reusa a lógica do OKR)
-        clientes, mostra_seletor, cliente_travado = clientes_okr_permitidos()
-        ids_permitidos = {c["id"] for c in clientes}
-        res = supabase.table("clima_pesquisas").select("*").order("criado_em", desc=True).execute()
-        pesquisas = [p for p in (res.data or []) if str(p.get("cliente_id")) in ids_permitidos]
-        # Conta respostas de cada uma
-        for p in pesquisas:
-            rc = supabase.table("clima_respostas").select("id", count="exact").eq("pesquisa_id", p["id"]).execute()
-            p["total_respostas"] = rc.count or 0
-        return jsonify({"status": "sucesso", "pesquisas": pesquisas, "clientes": clientes, "mostra_seletor": mostra_seletor}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_pesquisas_listar: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Não foi possível carregar."}), 500
-
-@app.route('/api/clima/pesquisa', methods=['POST'])
-def clima_pesquisa_criar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        cliente_id = d.get("cliente_id")
-        # Valida acesso ao cliente
-        clientes, _, _ = clientes_okr_permitidos()
-        if str(cliente_id) not in {c["id"] for c in clientes}:
-            return jsonify({"erro": "Acesso negado a este cliente"}), 403
-        token = secrets.token_urlsafe(12)
-        nova = {"cliente_id": cliente_id, "titulo": d.get("titulo"), "descricao": d.get("descricao"), "status": "rascunho", "token": token}
-        res = supabase.table("clima_pesquisas").insert(nova).execute()
-        pesquisa_id = res.data[0]["id"]
-
-        # Copia o modelo base para dentro da pesquisa
-        res_dim = supabase.table("clima_modelo_dimensoes").select("*").order("ordem").execute()
-        for md in (res_dim.data or []):
-            nd = supabase.table("clima_dimensoes").insert({
-                "pesquisa_id": pesquisa_id, "nome": md["nome"], "ordem": md.get("ordem", 0), "eh_lideranca": md.get("eh_lideranca", False)
-            }).execute()
-            nova_dim_id = nd.data[0]["id"]
-            res_p = supabase.table("clima_modelo_perguntas").select("*").eq("dimensao_id", md["id"]).order("ordem").execute()
-            for mp in (res_p.data or []):
-                supabase.table("clima_perguntas").insert({
-                    "dimensao_id": nova_dim_id, "texto": mp["texto"], "tipo": mp["tipo"], "ordem": mp.get("ordem", 0), "obrigatoria": mp.get("obrigatoria", True)
-                }).execute()
-
-        return jsonify({"status": "sucesso", "pesquisa_id": pesquisa_id}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_pesquisa_criar: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao criar pesquisa."}), 500
-
-@app.route('/api/clima/pesquisa/<pid>', methods=['GET'])
-def clima_pesquisa_get(pid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        res = supabase.table("clima_pesquisas").select("*").eq("id", pid).execute()
-        if not res.data: return jsonify({"erro": "Não encontrada"}), 404
-        pesquisa = res.data[0]
-        # valida acesso ao cliente
-        clientes, _, _ = clientes_okr_permitidos()
-        if str(pesquisa.get("cliente_id")) not in {c["id"] for c in clientes}:
-            return jsonify({"erro": "Acesso negado"}), 403
-        pesquisa["dimensoes"] = _clima_montar_dimensoes(pid)
-        # líderes e setores do cliente
-        lid = supabase.table("clima_lideres").select("*").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
-        pesquisa["lideres"] = lid.data or []
-        setores = supabase.table("clima_setores").select("*").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
-        pesquisa["setores"] = setores.data or []
-        return jsonify({"status": "sucesso", "pesquisa": pesquisa}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_pesquisa_get: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao carregar."}), 500
-
-def _clima_montar_dimensoes(pesquisa_id):
-    res_dim = supabase.table("clima_dimensoes").select("*").eq("pesquisa_id", pesquisa_id).order("ordem").execute()
-    dims = res_dim.data or []
-    dim_ids = [d["id"] for d in dims]
-    pergs = {d["id"]: [] for d in dims}
-    if dim_ids:
-        res_p = supabase.table("clima_perguntas").select("*").in_("dimensao_id", dim_ids).order("ordem").execute()
-        for p in (res_p.data or []):
-            pergs.setdefault(p["dimensao_id"], []).append(p)
-    for d in dims:
-        d["perguntas"] = pergs.get(d["id"], [])
-    return dims
 
 
-@app.route('/api/clima/resultados/<pid>', methods=['GET'])
-def clima_resultados(pid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        res = supabase.table("clima_pesquisas").select("*").eq("id", pid).execute()
-        if not res.data: return jsonify({"erro": "Não encontrada"}), 404
-        pesquisa = res.data[0]
-        # valida acesso ao cliente
-        clientes, _, _ = clientes_okr_permitidos()
-        if str(pesquisa.get("cliente_id")) not in {c["id"] for c in clientes}:
-            return jsonify({"erro": "Acesso negado"}), 403
 
-        # Dimensões + perguntas
-        dimensoes = _clima_montar_dimensoes(pid)
-        # Mapa pergunta -> {dimensao, tipo, texto}
-        perg_info = {}
-        for d in dimensoes:
-            for pg in d.get("perguntas", []):
-                perg_info[pg["id"]] = {"dimensao_id": d["id"], "tipo": pg["tipo"], "texto": pg["texto"]}
 
-        # Líderes e setores do cliente
-        lid = supabase.table("clima_lideres").select("id, nome, cargo").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
-        lideres = lid.data or []
-        setores = supabase.table("clima_setores").select("id, nome").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
 
-        # Respostas (anônimas) da pesquisa
-        resp = supabase.table("clima_respostas").select("*").eq("pesquisa_id", pid).execute()
-        respostas = resp.data or []
-        resp_ids = [r["id"] for r in respostas]
 
-        # Vínculo resposta -> líderes
-        resp_lideres = {}
-        if resp_ids:
-            rl = supabase.table("clima_resposta_lideres").select("*").in_("resposta_id", resp_ids).execute()
-            for x in (rl.data or []):
-                resp_lideres.setdefault(x["resposta_id"], []).append(x["lider_id"])
 
-        # Itens (respostas de cada pergunta)
-        itens = []
-        if resp_ids:
-            # busca em blocos para evitar limite
-            for i in range(0, len(resp_ids), 50):
-                bloco = resp_ids[i:i+50]
-                it = supabase.table("clima_respostas_itens").select("*").in_("resposta_id", bloco).execute()
-                itens.extend(it.data or [])
-
-        return jsonify({
-            "status": "sucesso",
-            "pesquisa": {"id": pesquisa["id"], "titulo": pesquisa["titulo"], "status": pesquisa["status"], "cliente_id": pesquisa["cliente_id"]},
-            "dimensoes": dimensoes,
-            "lideres": lideres,
-            "setores": setores.data or [],
-            "respostas": respostas,           # cada uma: id, tempo_empresa, setor_id
-            "resposta_lideres": resp_lideres, # resposta_id -> [lider_id]
-            "itens": itens                    # resposta_id, pergunta_id, lider_id, valor_num, valor_texto
-        }), 200
-    except Exception as e:
-        print(f"[ERRO] clima_resultados: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Não foi possível carregar os resultados."}), 500
-
-@app.route('/api/clima/pesquisa/<pid>', methods=['PUT'])
-def clima_pesquisa_atualizar(pid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        upd = {}
-        for campo in ("titulo", "descricao", "status"):
-            if campo in d: upd[campo] = d[campo]
-        if d.get("status") == "encerrada":
-            upd["encerrada_em"] = "now()"
-        supabase.table("clima_pesquisas").update(upd).eq("id", pid).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao atualizar."}), 500
-
-@app.route('/api/clima/pesquisa/<pid>', methods=['DELETE'])
-def clima_pesquisa_excluir(pid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_pesquisas").delete().eq("id", pid).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
 # ===== DIMENSÕES / PERGUNTAS DA PESQUISA (editáveis) =====
-@app.route('/api/clima/dimensao', methods=['POST'])
-def clima_dim_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        if d.get("id"):
-            supabase.table("clima_dimensoes").update({"nome": d.get("nome"), "eh_lideranca": bool(d.get("eh_lideranca"))}).eq("id", d["id"]).execute()
-        else:
-            supabase.table("clima_dimensoes").insert({"pesquisa_id": d.get("pesquisa_id"), "nome": d.get("nome"), "ordem": d.get("ordem", 99), "eh_lideranca": bool(d.get("eh_lideranca"))}).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
 
-@app.route('/api/clima/dimensao/<did>', methods=['DELETE'])
-def clima_dim_excluir(did):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_dimensoes").delete().eq("id", did).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
-@app.route('/api/clima/pergunta', methods=['POST'])
-def clima_perg_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        payload = {"texto": d.get("texto"), "tipo": d.get("tipo", "likert"), "obrigatoria": bool(d.get("obrigatoria", True))}
-        if d.get("id"):
-            supabase.table("clima_perguntas").update(payload).eq("id", d["id"]).execute()
-        else:
-            payload["dimensao_id"] = d.get("dimensao_id")
-            payload["ordem"] = d.get("ordem", 99)
-            supabase.table("clima_perguntas").insert(payload).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
 
-@app.route('/api/clima/pergunta/<pid>', methods=['DELETE'])
-def clima_perg_excluir(pid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_perguntas").delete().eq("id", pid).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
 # ===== LÍDERES E SETORES =====
-@app.route('/api/clima/lider', methods=['POST'])
-def clima_lider_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        if d.get("id"):
-            supabase.table("clima_lideres").update({"nome": d.get("nome"), "cargo": d.get("cargo"), "ativo": bool(d.get("ativo", True))}).eq("id", d["id"]).execute()
-        else:
-            supabase.table("clima_lideres").insert({"cliente_id": d.get("cliente_id"), "nome": d.get("nome"), "cargo": d.get("cargo")}).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
 
-@app.route('/api/clima/lider/<lid>', methods=['DELETE'])
-def clima_lider_excluir(lid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_lideres").delete().eq("id", lid).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
-@app.route('/api/clima/setor', methods=['POST'])
-def clima_setor_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    d = request.json
-    try:
-        if d.get("id"):
-            supabase.table("clima_setores").update({"nome": d.get("nome")}).eq("id", d["id"]).execute()
-        else:
-            supabase.table("clima_setores").insert({"cliente_id": d.get("cliente_id"), "nome": d.get("nome")}).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao salvar."}), 500
 
-@app.route('/api/clima/setor/<sid>', methods=['DELETE'])
-def clima_setor_excluir(sid):
-    if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
-    if not pode_ver_clima(): return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        supabase.table("clima_setores").delete().eq("id", sid).execute()
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status": "erro", "mensagem": "Falha ao excluir."}), 500
 
 # ===== RESPOSTA PÚBLICA (anônima, sem login) =====
-@app.route('/clima/responder/<token>')
-def clima_responder_page(token):
-    # Página pública — não exige login
-    return render_template('clima_responder.html', token=token)
 
-@app.route('/api/clima/publico/<token>', methods=['GET'])
-def clima_publico_get(token):
-    # Retorna a pesquisa para responder (sem dados sensíveis)
-    try:
-        res = supabase.table("clima_pesquisas").select("*").eq("token", token).execute()
-        if not res.data: return jsonify({"erro": "Pesquisa não encontrada"}), 404
-        pesquisa = res.data[0]
-        if pesquisa.get("status") != "ativa":
-            return jsonify({"erro": "indisponivel", "status_pesquisa": pesquisa.get("status")}), 200
-        dados = {
-            "titulo": pesquisa["titulo"],
-            "descricao": pesquisa.get("descricao"),
-            "dimensoes": _clima_montar_dimensoes(pesquisa["id"]),
-        }
-        lid = supabase.table("clima_lideres").select("id, nome, cargo").eq("cliente_id", pesquisa["cliente_id"]).eq("ativo", True).order("nome").execute()
-        dados["lideres"] = lid.data or []
-        setores = supabase.table("clima_setores").select("id, nome").eq("cliente_id", pesquisa["cliente_id"]).order("nome").execute()
-        dados["setores"] = setores.data or []
-        return jsonify({"status": "sucesso", "pesquisa": dados}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_publico_get: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao carregar."}), 500
 
-@app.route('/api/clima/publico/<token>/responder', methods=['POST'])
-def clima_publico_responder(token):
-    # Grava uma resposta anônima
-    d = request.json
-    try:
-        res = supabase.table("clima_pesquisas").select("id, status, cliente_id").eq("token", token).execute()
-        if not res.data: return jsonify({"erro": "Pesquisa não encontrada"}), 404
-        pesquisa = res.data[0]
-        if pesquisa.get("status") != "ativa":
-            return jsonify({"erro": "Pesquisa não está ativa"}), 400
-
-        # Cria a resposta (anônima)
-        resp = supabase.table("clima_respostas").insert({
-            "pesquisa_id": pesquisa["id"],
-            "tempo_empresa": d.get("tempo_empresa"),
-            "setor_id": d.get("setor_id") or None
-        }).execute()
-        resposta_id = resp.data[0]["id"]
-
-        # Liga os líderes marcados
-        lideres = d.get("lideres") or []
-        for lid in lideres:
-            supabase.table("clima_resposta_lideres").insert({"resposta_id": resposta_id, "lider_id": lid}).execute()
-
-        # Grava os itens (respostas das perguntas)
-        itens = d.get("itens") or []
-        for it in itens:
-            registro = {
-                "resposta_id": resposta_id,
-                "pergunta_id": it.get("pergunta_id"),
-                "lider_id": it.get("lider_id") or None,
-            }
-            val = it.get("valor")
-            if it.get("tipo") in ("likert", "escala10"):
-                try: registro["valor_num"] = float(val) if val not in (None, "") else None
-                except: registro["valor_num"] = None
-            else:
-                registro["valor_texto"] = val
-            supabase.table("clima_respostas_itens").insert(registro).execute()
-
-        return jsonify({"status": "sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] clima_publico_responder: {str(e)}")
-        return jsonify({"status": "erro", "mensagem": "Falha ao enviar resposta."}), 500
 
 
 # ============================================================
 # --- MÓDULO GESTÃO DE DESEMPENHO ---
 # ============================================================
 
-def pode_ver_desempenho():
-    nivel = session.get('nivel_acesso')
-    if nivel in ('admin', 'gestor'):
-        return True
-    return pode_acessar_modulo('desempenho')
 
-@app.route('/desempenho')
-@app.route('/desempenho/gestao')
-def desempenho_page():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
-    if not pode_ver_desempenho(): return redirect(url_for('index'))
-    return render_template('desempenho.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
 
-@app.route('/desempenho/dashboard')
-def desempenho_dashboard_page():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
-    if not pode_ver_desempenho(): return redirect(url_for('index'))
-    return render_template('desempenho_dashboard.html', usuario_nome=session.get('usuario_nome'), nivel_acesso=session.get('nivel_acesso', 'comum'))
 
 # ===== CARGOS =====
-@app.route('/api/gd/cargos', methods=['GET'])
-def gd_cargos_listar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        cliente_id = request.args.get('cliente_id')
-        clientes, mostra_seletor, _ = clientes_okr_permitidos()
-        ids = {c["id"] for c in clientes}
-        q = supabase.table("gd_cargos").select("*").order("nome")
-        if cliente_id: q = q.eq("cliente_id", cliente_id)
-        cargos = [c for c in (q.execute().data or []) if str(c.get("cliente_id")) in ids]
-        # competências de cada cargo
-        cargo_ids = [c["id"] for c in cargos]
-        comp_por_cargo = {c["id"]: [] for c in cargos}
-        if cargo_ids:
-            comps = supabase.table("gd_competencias").select("*").in_("cargo_id", cargo_ids).order("ordem").execute()
-            for cp in (comps.data or []): comp_por_cargo.setdefault(cp["cargo_id"], []).append(cp)
-        for c in cargos: c["competencias"] = comp_por_cargo.get(c["id"], [])
-        return jsonify({"status":"sucesso", "cargos":cargos, "clientes":clientes, "mostra_seletor":mostra_seletor}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_cargos_listar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Não foi possível carregar."}), 500
 
-@app.route('/api/gd/cargo', methods=['POST'])
-def gd_cargo_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        if d.get("id"):
-            supabase.table("gd_cargos").update({"nome":d.get("nome"),"descricao":d.get("descricao")}).eq("id", d["id"]).execute()
-        else:
-            supabase.table("gd_cargos").insert({"cliente_id":d.get("cliente_id"),"nome":d.get("nome"),"descricao":d.get("descricao")}).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_cargo_salvar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
 
-@app.route('/api/gd/cargo/<cid>', methods=['DELETE'])
-def gd_cargo_excluir(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        supabase.table("gd_cargos").delete().eq("id", cid).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
 
 # ===== COMPETÊNCIAS =====
-@app.route('/api/gd/competencia', methods=['POST'])
-def gd_competencia_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        payload = {"nome":d.get("nome"),"descricao":d.get("descricao"),"tipo":d.get("tipo","comportamental"),"peso":int(d.get("peso",1) or 1)}
-        if d.get("id"):
-            supabase.table("gd_competencias").update(payload).eq("id", d["id"]).execute()
-        else:
-            payload["cargo_id"]=d.get("cargo_id"); payload["ordem"]=d.get("ordem",0)
-            supabase.table("gd_competencias").insert(payload).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_competencia_salvar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
 
-@app.route('/api/gd/competencia/<cid>', methods=['DELETE'])
-def gd_competencia_excluir(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        supabase.table("gd_competencias").delete().eq("id", cid).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
 
 # ===== PESSOAS =====
-@app.route('/api/gd/pessoas', methods=['GET'])
-def gd_pessoas_listar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        cliente_id = request.args.get('cliente_id')
-        clientes, _, _ = clientes_okr_permitidos()
-        ids = {c["id"] for c in clientes}
-        q = supabase.table("gd_pessoas").select("*").order("nome")
-        if cliente_id: q = q.eq("cliente_id", cliente_id)
-        pessoas = [p for p in (q.execute().data or []) if str(p.get("cliente_id")) in ids]
-        return jsonify({"status":"sucesso","pessoas":pessoas}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_pessoas_listar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Não foi possível carregar."}), 500
 
-@app.route('/api/gd/pessoa', methods=['POST'])
-def gd_pessoa_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        payload = {"nome":d.get("nome"),"cargo_id":d.get("cargo_id") or None,"gestor_id":d.get("gestor_id") or None,"email":d.get("email")}
-        if d.get("id"):
-            supabase.table("gd_pessoas").update(payload).eq("id", d["id"]).execute()
-        else:
-            payload["cliente_id"]=d.get("cliente_id")
-            supabase.table("gd_pessoas").insert(payload).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_pessoa_salvar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
 
-@app.route('/api/gd/pessoa/<pid>', methods=['DELETE'])
-def gd_pessoa_excluir(pid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        supabase.table("gd_pessoas").delete().eq("id", pid).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
 
 # ===== CICLOS =====
-@app.route('/api/gd/ciclos', methods=['GET'])
-def gd_ciclos_listar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        clientes, mostra_seletor, _ = clientes_okr_permitidos()
-        ids = {c["id"] for c in clientes}
-        ciclos = [c for c in (supabase.table("gd_ciclos").select("*").order("criado_em", desc=True).execute().data or []) if str(c.get("cliente_id")) in ids]
-        for c in ciclos:
-            partc = supabase.table("gd_ciclo_participantes").select("id", count="exact").eq("ciclo_id", c["id"]).execute()
-            c["total_participantes"] = partc.count or 0
-            avalc = supabase.table("gd_avaliacoes").select("id", count="exact").eq("ciclo_id", c["id"]).execute()
-            avalcc = supabase.table("gd_avaliacoes").select("id", count="exact").eq("ciclo_id", c["id"]).eq("status","concluida").execute()
-            c["total_avaliacoes"] = avalc.count or 0
-            c["avaliacoes_concluidas"] = avalcc.count or 0
-        return jsonify({"status":"sucesso","ciclos":ciclos,"clientes":clientes,"mostra_seletor":mostra_seletor}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_ciclos_listar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Não foi possível carregar."}), 500
 
-@app.route('/api/gd/ciclo', methods=['POST'])
-def gd_ciclo_criar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        clientes, _, _ = clientes_okr_permitidos()
-        if str(d.get("cliente_id")) not in {c["id"] for c in clientes}:
-            return jsonify({"erro":"Acesso negado a este cliente"}), 403
-        nova = {"cliente_id":d.get("cliente_id"),"titulo":d.get("titulo"),"formato":d.get("formato","90"),
-                "status":"rascunho","data_inicio":d.get("data_inicio") or None,"data_fim":d.get("data_fim") or None}
-        res = supabase.table("gd_ciclos").insert(nova).execute()
-        return jsonify({"status":"sucesso","ciclo_id":res.data[0]["id"]}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_ciclo_criar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao criar ciclo."}), 500
 
-@app.route('/api/gd/ciclo/<cid>', methods=['GET'])
-def gd_ciclo_get(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        res = supabase.table("gd_ciclos").select("*").eq("id", cid).execute()
-        if not res.data: return jsonify({"erro":"Não encontrado"}), 404
-        ciclo = res.data[0]
-        clientes, _, _ = clientes_okr_permitidos()
-        if str(ciclo.get("cliente_id")) not in {c["id"] for c in clientes}:
-            return jsonify({"erro":"Acesso negado"}), 403
-        # participantes com dados da pessoa
-        parts = supabase.table("gd_ciclo_participantes").select("*").eq("ciclo_id", cid).execute().data or []
-        pessoa_ids = [p["pessoa_id"] for p in parts]
-        pessoas = {}
-        if pessoa_ids:
-            for p in (supabase.table("gd_pessoas").select("*").in_("id", pessoa_ids).execute().data or []):
-                pessoas[p["id"]] = p
-        # avaliações do ciclo
-        avals = supabase.table("gd_avaliacoes").select("*").eq("ciclo_id", cid).execute().data or []
-        aval_por_pessoa = {}
-        for a in avals: aval_por_pessoa.setdefault(a["pessoa_id"], []).append(a)
-        participantes = []
-        for p in parts:
-            pe = pessoas.get(p["pessoa_id"], {})
-            participantes.append({
-                "pessoa_id": p["pessoa_id"], "nome": pe.get("nome","—"),
-                "cargo_id": pe.get("cargo_id"), "avaliacoes": aval_por_pessoa.get(p["pessoa_id"], [])
-            })
-        ciclo["participantes"] = participantes
-        return jsonify({"status":"sucesso","ciclo":ciclo}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_ciclo_get: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao carregar."}), 500
 
-@app.route('/api/gd/ciclo/<cid>', methods=['PUT'])
-def gd_ciclo_atualizar(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        upd = {}
-        for campo in ("titulo","formato","status","data_inicio","data_fim"):
-            if campo in d: upd[campo] = d[campo] or None
-        if d.get("status") == "encerrado": upd["encerrado_em"] = "now()"
-        supabase.table("gd_ciclos").update(upd).eq("id", cid).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao atualizar."}), 500
 
-@app.route('/api/gd/ciclo/<cid>', methods=['DELETE'])
-def gd_ciclo_excluir(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        supabase.table("gd_ciclos").delete().eq("id", cid).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
 
 # adicionar participante (copia competências do cargo + cria avaliações conforme formato)
-@app.route('/api/gd/ciclo/<cid>/participante', methods=['POST'])
-def gd_ciclo_add_participante(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        pessoa_id = d.get("pessoa_id")
-        ciclo = supabase.table("gd_ciclos").select("*").eq("id", cid).execute().data
-        if not ciclo: return jsonify({"erro":"Ciclo não encontrado"}), 404
-        ciclo = ciclo[0]
-        # evita duplicar
-        ex = supabase.table("gd_ciclo_participantes").select("id").eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute().data
-        if ex: return jsonify({"status":"sucesso","aviso":"já era participante"}), 200
-        supabase.table("gd_ciclo_participantes").insert({"ciclo_id":cid,"pessoa_id":pessoa_id}).execute()
-        # copia competências do cargo da pessoa (snapshot)
-        pessoa = supabase.table("gd_pessoas").select("*").eq("id", pessoa_id).execute().data[0]
-        if pessoa.get("cargo_id"):
-            comps = supabase.table("gd_competencias").select("*").eq("cargo_id", pessoa["cargo_id"]).order("ordem").execute().data or []
-            for cp in comps:
-                supabase.table("gd_ciclo_competencias").insert({
-                    "ciclo_id":cid,"pessoa_id":pessoa_id,"nome":cp["nome"],"tipo":cp.get("tipo","comportamental"),
-                    "peso":cp.get("peso",1),"ordem":cp.get("ordem",0)
-                }).execute()
-        # cria as avaliações conforme o formato
-        _gd_gerar_avaliacoes(cid, pessoa_id, ciclo.get("formato","90"), pessoa)
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_ciclo_add_participante: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao adicionar participante."}), 500
 
-def _gd_gerar_avaliacoes(ciclo_id, pessoa_id, formato, pessoa):
-    """Cria as avaliações conforme o formato (90/180/360)."""
-    import secrets as _s
-    def cria(papel, avaliador_id):
-        supabase.table("gd_avaliacoes").insert({
-            "ciclo_id":ciclo_id,"pessoa_id":pessoa_id,"avaliador_pessoa_id":avaliador_id,
-            "papel":papel,"status":"pendente","token":_s.token_urlsafe(12)
-        }).execute()
-    # gestor sempre avalia
-    cria("gestor", pessoa.get("gestor_id"))
-    if formato in ("180","360"):
-        cria("autoavaliacao", pessoa_id)
-    if formato == "360":
-        # pares = mesmo gestor; liderados = quem tem essa pessoa como gestor
-        if pessoa.get("gestor_id"):
-            pares = supabase.table("gd_pessoas").select("id").eq("gestor_id", pessoa["gestor_id"]).neq("id", pessoa_id).execute().data or []
-            for par in pares: cria("par", par["id"])
-        liderados = supabase.table("gd_pessoas").select("id").eq("gestor_id", pessoa_id).execute().data or []
-        for lid in liderados: cria("liderado", lid["id"])
 
-@app.route('/api/gd/ciclo/<cid>/participante/<pessoa_id>', methods=['DELETE'])
-def gd_ciclo_rem_participante(cid, pessoa_id):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        supabase.table("gd_ciclo_participantes").delete().eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute()
-        supabase.table("gd_ciclo_competencias").delete().eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute()
-        supabase.table("gd_avaliacoes").delete().eq("ciclo_id", cid).eq("pessoa_id", pessoa_id).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao remover."}), 500
 
 # ===== AVALIAÇÃO PÚBLICA (por token) =====
-@app.route('/desempenho/avaliar/<token>')
-def desempenho_avaliar_page(token):
-    return render_template('desempenho_avaliar.html', token=token)
 
-@app.route('/api/gd/avaliar/<token>', methods=['GET'])
-def gd_avaliar_get(token):
-    try:
-        aval = supabase.table("gd_avaliacoes").select("*").eq("token", token).execute().data
-        if not aval: return jsonify({"erro":"Avaliação não encontrada"}), 404
-        aval = aval[0]
-        ciclo = supabase.table("gd_ciclos").select("*").eq("id", aval["ciclo_id"]).execute().data[0]
-        if ciclo.get("status") != "ativo":
-            return jsonify({"erro":"indisponivel","status_ciclo":ciclo.get("status")}), 200
-        pessoa = supabase.table("gd_pessoas").select("nome").eq("id", aval["pessoa_id"]).execute().data
-        avaliador = supabase.table("gd_pessoas").select("nome").eq("id", aval["avaliador_pessoa_id"]).execute().data if aval.get("avaliador_pessoa_id") else None
-        comps = supabase.table("gd_ciclo_competencias").select("*").eq("ciclo_id", aval["ciclo_id"]).eq("pessoa_id", aval["pessoa_id"]).order("ordem").execute().data or []
-        # se já concluída, traz respostas
-        itens_ex = {}
-        if aval.get("status") == "concluida":
-            for it in (supabase.table("gd_avaliacao_itens").select("*").eq("avaliacao_id", aval["id"]).execute().data or []):
-                itens_ex[it["competencia_id"]] = it
-        return jsonify({"status":"sucesso","avaliacao":{
-            "papel":aval["papel"],"status":aval["status"],
-            "avaliado":pessoa[0]["nome"] if pessoa else "—",
-            "avaliador":avaliador[0]["nome"] if avaliador else None,
-            "eh_gestor":aval["papel"]=="gestor",
-            "titulo_ciclo":ciclo["titulo"],"escala_min":ciclo.get("escala_min",1),"escala_max":ciclo.get("escala_max",5),
-            "competencias":comps,"itens_existentes":itens_ex
-        }}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_avaliar_get: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao carregar."}), 500
 
-@app.route('/api/gd/avaliar/<token>', methods=['POST'])
-def gd_avaliar_enviar(token):
-    d = request.json
-    try:
-        aval = supabase.table("gd_avaliacoes").select("*").eq("token", token).execute().data
-        if not aval: return jsonify({"erro":"Avaliação não encontrada"}), 404
-        aval = aval[0]
-        ciclo = supabase.table("gd_ciclos").select("status").eq("id", aval["ciclo_id"]).execute().data[0]
-        if ciclo.get("status") != "ativo": return jsonify({"erro":"Ciclo não está ativo"}), 400
-        # limpa itens antigos (reenvio)
-        supabase.table("gd_avaliacao_itens").delete().eq("avaliacao_id", aval["id"]).execute()
-        for it in (d.get("itens") or []):
-            reg = {"avaliacao_id":aval["id"],"competencia_id":it.get("competencia_id"),"comentario":it.get("comentario")}
-            try: reg["nota"] = float(it.get("nota")) if it.get("nota") not in (None,"") else None
-            except: reg["nota"] = None
-            supabase.table("gd_avaliacao_itens").insert(reg).execute()
-        # potencial (só gestor)
-        if aval["papel"] == "gestor" and d.get("potencial") is not None:
-            supabase.table("gd_potencial").delete().eq("ciclo_id", aval["ciclo_id"]).eq("pessoa_id", aval["pessoa_id"]).execute()
-            try: pot = float(d.get("potencial"))
-            except: pot = None
-            if pot is not None:
-                supabase.table("gd_potencial").insert({"ciclo_id":aval["ciclo_id"],"pessoa_id":aval["pessoa_id"],"nota_potencial":pot}).execute()
-        supabase.table("gd_avaliacoes").update({"status":"concluida","concluida_em":"now()"}).eq("id", aval["id"]).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        print(f"[ERRO] gd_avaliar_enviar: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Falha ao enviar."}), 500
 
 # ===== PDI =====
-@app.route('/api/gd/pdi', methods=['POST'])
-def gd_pdi_salvar():
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    d = request.json
-    try:
-        payload = {"competencia_nome":d.get("competencia_nome"),"acao":d.get("acao"),"prazo":d.get("prazo") or None,"status":d.get("status","pendente")}
-        if d.get("id"):
-            supabase.table("gd_pdi").update(payload).eq("id", d["id"]).execute()
-        else:
-            payload["ciclo_id"]=d.get("ciclo_id"); payload["pessoa_id"]=d.get("pessoa_id")
-            supabase.table("gd_pdi").insert(payload).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao salvar."}), 500
 
-@app.route('/api/gd/pdi/<pid>', methods=['DELETE'])
-def gd_pdi_excluir(pid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        supabase.table("gd_pdi").delete().eq("id", pid).execute()
-        return jsonify({"status":"sucesso"}), 200
-    except Exception as e:
-        return jsonify({"status":"erro","mensagem":"Falha ao excluir."}), 500
 
 # ===== RESULTADOS (dashboard) =====
-@app.route('/api/gd/resultados/<cid>', methods=['GET'])
-def gd_resultados(cid):
-    if 'usuario_id' not in session: return jsonify({"erro":"Nao logado"}), 401
-    if not pode_ver_desempenho(): return jsonify({"erro":"Acesso negado"}), 403
-    try:
-        ciclo = supabase.table("gd_ciclos").select("*").eq("id", cid).execute().data
-        if not ciclo: return jsonify({"erro":"Não encontrado"}), 404
-        ciclo = ciclo[0]
-        clientes, _, _ = clientes_okr_permitidos()
-        if str(ciclo.get("cliente_id")) not in {c["id"] for c in clientes}:
-            return jsonify({"erro":"Acesso negado"}), 403
-        parts = supabase.table("gd_ciclo_participantes").select("*").eq("ciclo_id", cid).execute().data or []
-        pessoa_ids = [p["pessoa_id"] for p in parts]
-        pessoas = {}
-        cargos = {}
-        if pessoa_ids:
-            for p in (supabase.table("gd_pessoas").select("*").in_("id", pessoa_ids).execute().data or []): pessoas[p["id"]] = p
-            cargo_ids = list({p.get("cargo_id") for p in pessoas.values() if p.get("cargo_id")})
-            if cargo_ids:
-                for cg in (supabase.table("gd_cargos").select("*").in_("id", cargo_ids).execute().data or []): cargos[cg["id"]] = cg["nome"]
-        comps = supabase.table("gd_ciclo_competencias").select("*").eq("ciclo_id", cid).execute().data or []
-        avals = supabase.table("gd_avaliacoes").select("*").eq("ciclo_id", cid).execute().data or []
-        aval_ids = [a["id"] for a in avals]
-        itens = []
-        if aval_ids:
-            for i in range(0, len(aval_ids), 50):
-                bloco = aval_ids[i:i+50]
-                itens.extend(supabase.table("gd_avaliacao_itens").select("*").in_("avaliacao_id", bloco).execute().data or [])
-        potenciais = supabase.table("gd_potencial").select("*").eq("ciclo_id", cid).execute().data or []
-        pdis = supabase.table("gd_pdi").select("*").eq("ciclo_id", cid).execute().data or []
-        return jsonify({"status":"sucesso",
-            "ciclo":{"id":ciclo["id"],"titulo":ciclo["titulo"],"formato":ciclo["formato"],"status":ciclo["status"],"cliente_id":ciclo["cliente_id"]},
-            "pessoas":list(pessoas.values()),"cargos":cargos,"competencias":comps,
-            "avaliacoes":avals,"itens":itens,"potenciais":potenciais,"pdis":pdis
-        }), 200
-    except Exception as e:
-        print(f"[ERRO] gd_resultados: {str(e)}")
-        return jsonify({"status":"erro","mensagem":"Não foi possível carregar os resultados."}), 500
 
 
 # --- API RESUMO DO HUB ---
@@ -2897,27 +6616,14 @@ def gd_resultados(cid):
 def hub_resumo():
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
-    resumo = {"clientes": None, "clima_ativas": None, "desempenho_ativos": None, "projetos": None}
-    # Clientes (não excluídos)
+    resumo = {"clientes": None, "projetos": None}
+    # Clientes
     try:
-        cs = supabase.table("clientes").select("id", count="exact").is_("excluido_em", "null").execute()
-        resumo["clientes"] = cs.count or 0
+        if pode_acessar_modulo('clientes'):
+            rc = supabase.table("clientes").select("id", count="exact").execute()
+            resumo["clientes"] = rc.count or 0
     except Exception as e:
         print(f"[HUB] clientes: {str(e)}")
-    # Pesquisas de clima ativas
-    try:
-        if pode_ver_clima():
-            ca = supabase.table("clima_pesquisas").select("id", count="exact").eq("status", "ativa").execute()
-            resumo["clima_ativas"] = ca.count or 0
-    except Exception as e:
-        print(f"[HUB] clima: {str(e)}")
-    # Ciclos de desempenho ativos
-    try:
-        if pode_ver_desempenho():
-            da = supabase.table("gd_ciclos").select("id", count="exact").eq("status", "ativo").execute()
-            resumo["desempenho_ativos"] = da.count or 0
-    except Exception as e:
-        print(f"[HUB] desempenho: {str(e)}")
     # Projetos (não excluídos, respeitando permissões)
     try:
         res = supabase.table("projetos").select("*").execute()
@@ -2927,6 +6633,27 @@ def hub_resumo():
     except Exception as e:
         print(f"[HUB] projetos: {str(e)}")
     return jsonify({"status": "sucesso", "resumo": resumo}), 200
+
+
+# ============================================================
+# ACESSOS v2 -- ligacao com o modulo
+#
+# As dependencias sao injetadas em vez de importadas: `acessos_v2`
+# nao conhece o `app.py`, o que evita import circular e deixa o
+# modulo testavel isoladamente.
+#
+# Precisa ficar aqui, no fim: ARVORE_QUADROS, AREAS, CATALOGO e
+# gerar_hash so existem depois de todo o arquivo ser lido.
+# ============================================================
+acessos_v2.configurar(
+    supabase=supabase,
+    catalogo=CATALOGO,
+    arvore_quadros=ARVORE_QUADROS,
+    areas=AREAS,
+    gerar_hash=gerar_hash,
+    registrar_auditoria=registrar_auditoria,
+)
+app.register_blueprint(acessos_v2.acessos_bp)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

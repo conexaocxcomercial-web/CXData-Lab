@@ -1,443 +1,888 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
-    <style>
-        :root {
-            --bg-board:#eef0f4; --surface:#ffffff; --text-main:#1a1d29; --text-soft:#5a5f6e; --text-muted:#9AA0AE; --line:#e7e9ef;
-            --purple:#7371ff; --purple-soft:#f0efff; --lime:#bef533; --pink:#ff43c0; --green:#14b8a6; --amber:#f59e0b;
-            --pos:#2FA875; --neu:#F5D06B; --neg:#E5484D;
-        }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; border-radius: 0 !important; border: none; }
-        body { background-color: var(--bg-board); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding-left: 68px; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #cfd3dd; border-radius: 6px !important; } ::-webkit-scrollbar-track { background: transparent; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação | core.cx</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+:root{
+    --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+    --linha:#E4E4EA; --linha-2:#D3D3DC;
+    --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+    --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+    --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+    --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+    --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+    --azul:#1A5FA0; --azul-fraco:#E9F2FB;
+    --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+    --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+    --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
+body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+      min-height:100vh; -webkit-font-smoothing:antialiased; }
+.num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
+      letter-spacing:-.2px; }
+:focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
+@media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
 
-        .top-bar { background: var(--surface); height: 60px; min-height: 60px; flex-shrink: 0; padding: 0 28px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 var(--line); z-index: 30; }
-        .top-bar-logo { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; cursor: pointer; }
-        .top-bar-logo span { color: var(--purple); }
-        .top-bar-right { display: flex; align-items: center; gap: 14px; }
+.top-bar{ background:var(--papel); height:56px; padding:0 22px; display:flex;
+    justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha);
+    position:sticky; top:0; z-index:20; }
+.top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+.top-bar-logo span{ color:var(--acao); }
 
-        /* Filtros */
-        .filtros { background: var(--surface); padding: 11px 26px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); flex-shrink: 0; }
-        .filtro { display: flex; align-items: center; gap: 7px; background: var(--bg-board); padding: 0 6px 0 12px; height: 36px; border-radius: 9px !important; }
-        .filtro .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
-        .filtro label { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
-        .filtro select, .filtro input { border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--text-main); outline: none; cursor: pointer; padding: 7px 4px; font-family: 'Inter'; max-width: 150px; }
-        .filtro input[type=date] { cursor: text; width: 125px; }
-        .filtro-limpar { font-size: 12px; font-weight: 700; color: var(--purple); cursor: pointer; padding: 0 10px; height: 36px; display: flex; align-items: center; gap: 4px; border-radius: 9px !important; }
-        .filtro-limpar:hover { background: var(--purple-soft); }
+/* min-height, não height: com altura fixa e flex-wrap, o que quebra sai da
+   caixa e cai sobre o conteúdo. */
+.cmd{ display:flex; align-items:center; gap:11px; padding:0 22px; min-height:56px;
+    row-gap:8px; background:var(--papel); border-bottom:1px solid var(--linha);
+    flex-wrap:wrap; position:sticky; top:56px; z-index:15; }
+.cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+.cmd-sep{ width:1px; height:22px; background:var(--linha); }
+.cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
 
-        .dash-body { flex-grow: 1; display: flex; min-height: 0; padding-left: 22px; }
-        .nav-lateral { width: 210px; min-width: 210px; background: transparent; overflow-y: auto; padding: 20px 10px 20px 0; flex-shrink: 0; }
-        .nav-grupo { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin: 16px 0 8px; }
-        .nav-grupo:first-child { margin-top: 0; }
-        .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 9px !important; cursor: pointer; transition: 0.13s; margin-bottom: 2px; }
-        .nav-item:hover { background: var(--surface); }
-        .nav-item.ativo { background: var(--purple); box-shadow: 0 4px 12px rgba(115,113,255,0.3); }
-        .nav-item.ativo .nav-nome, .nav-item.ativo .material-symbols-rounded { color: #fff !important; }
-        .nav-item .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
-        .nav-nome { flex-grow: 1; font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; }
+.segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+.segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); cursor:pointer;
+    padding:6px 14px; border-radius:6px; white-space:nowrap; transition:.15s;
+    display:flex; align-items:center; gap:6px; }
+.segm-btn:hover{ color:var(--tinta); }
+.segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600;
+    box-shadow:0 1px 2px rgba(0,0,0,.07); }
+.segm-btn .material-symbols-rounded{ font-size:16px; }
 
-        .conteudo { flex-grow: 1; overflow-y: auto; padding: 22px 26px 60px; }
-        .tela-cab { margin-bottom: 20px; }
-        .tela-titulo { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 11px; }
-        .tela-titulo .material-symbols-rounded { color: var(--purple); font-size: 24px; }
-        .tela-sub { font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
-        .fade { animation: f 0.3s ease; } @keyframes f { from{opacity:0; transform:translateY(6px);} to{opacity:1;} }
+.btn{ font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center;
+    gap:6px; padding:8px 13px; border-radius:var(--r-ctrl); white-space:nowrap; transition:.14s; }
+.btn .material-symbols-rounded{ font-size:17px; }
+.btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+.btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+.btn-fant.on{ background:var(--acao-fraco); color:var(--acao); }
+.chip-n{ font-size:10.5px; font-weight:700; background:var(--acao); color:#fff;
+    min-width:16px; height:16px; padding:0 5px; border-radius:99px;
+    display:inline-flex; align-items:center; justify-content:center; }
 
-        .empty, .loading { text-align: center; padding: 90px 20px; color: var(--text-muted); }
-        .empty .material-symbols-rounded { font-size: 54px; opacity: 0.2; display: block; margin-bottom: 14px; }
-        .empty h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 5px; }
-        .empty p { font-size: 13px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
-        .spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--purple); border-radius: 50% !important; animation: sp 0.7s linear infinite; margin: 0 auto 16px; } @keyframes sp { to{transform:rotate(360deg);} }
+.sel{ font-size:12.5px; font-weight:500; padding:7px 11px; background:var(--papel-2);
+    border-radius:var(--r-ctrl); color:var(--tinta-2); cursor:pointer; outline:none;
+    max-width:230px; }
+.datas{ display:none; align-items:center; gap:7px; }
+.datas.on{ display:flex; }
+.datas input{ font-size:12.5px; padding:7px 9px; background:var(--papel-2);
+    border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta);
+    outline:none; cursor:pointer; }
+.datas input:focus{ background:var(--papel); border-color:var(--acao);
+    box-shadow:0 0 0 3px var(--acao-fraco); }
+.datas-ate{ font-size:12px; color:var(--tinta-3); }
 
-        .painel { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 18px; display: flex; flex-direction: column; }
-        .painel-tit { font-size: 12.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; line-height: 1.35; }
-        .painel-sub { font-size: 10.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
-        .grid { display: grid; gap: 14px; }
+.filtros{ display:none; gap:11px; align-items:flex-end; flex-wrap:wrap;
+    padding:13px 22px; background:var(--papel); border-bottom:1px solid var(--linha); }
+.filtros.on{ display:flex; }
+.fg{ display:flex; flex-direction:column; gap:6px; min-width:150px; }
+.fg label{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--tinta-3); }
+.fg select{ font-size:12.5px; padding:8px 10px; background:var(--papel-2);
+    border:1px solid transparent; border-radius:var(--r-ctrl); color:var(--tinta); outline:none; }
+.fg select:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
 
-        .kpis { display: grid; gap: 14px; margin-bottom: 14px; }
-        .kpi { background: var(--surface); border-radius: 12px !important; box-shadow: 0 1px 3px rgba(20,20,40,0.05), 0 0 0 1px var(--line); padding: 16px 18px; }
-        .kpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .kpi-ico { width: 30px; height: 30px; border-radius: 8px !important; display: flex; align-items: center; justify-content: center; }
-        .kpi-ico .material-symbols-rounded { font-size: 17px; }
-        .kpi-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
-        .kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -1.3px; line-height: 1; }
-        .kpi-desc { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 5px; }
+.wrap{ max-width:1280px; margin:0 auto; padding:18px 22px 80px; }
+.otica{ display:none; }
+.otica.on{ display:block; }
 
-        .echart { width: 100%; }
-        .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 22px 0 12px; }
+.sec{ margin-bottom:22px; }
+.sec-cab{ display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+.sec-tit{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--tinta-3); white-space:nowrap; }
+.sec-linha{ flex:1; height:1px; background:var(--linha); }
+.sec-nota{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
 
-        /* Tabelas/listas */
-        .lista { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; }
-        .lista-item { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); }
-        .lista-item:last-child { border-bottom: none; }
-        .lista-nome { flex-grow: 1; font-size: 12.5px; font-weight: 600; min-width: 0; }
-        .lista-nome small { display: block; font-size: 10.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
-        .lista-tag { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 50px !important; white-space: nowrap; }
-        .lista-data { font-size: 11.5px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
-        .badge-area { background: var(--purple-soft); color: var(--purple); }
+/* ===== PLACAR =====
+   Seis numeros de peso igual nao dizem onde olhar. Aqui eles se agrupam
+   por natureza -- o que anda, o que trava, o que saiu -- e so o grupo do
+   meio ganha cor quando ha algo a resolver. Cor sem motivo vira ruido; a
+   quarta vez que tudo esta vermelho, ninguem mais ve vermelho. */
+.placar{ display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-bottom:22px; }
+@media(max-width:900px){ .placar{ grid-template-columns:1fr; } }
+.pl-grupo{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    padding:14px 17px 16px; }
+.pl-rot{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--tinta-3); margin-bottom:12px; display:flex; align-items:center; gap:7px; }
+.pl-rot .material-symbols-rounded{ font-size:14px; }
+.pl-itens{ display:flex; gap:22px; }
+.pl-i{ flex:1; min-width:0; }
+.pl-n{ font-size:27px; font-weight:700; letter-spacing:-1.1px; line-height:1; }
+.pl-n.ok{ color:var(--ok); } .pl-n.aviso{ color:var(--atencao); }
+.pl-n.ruim{ color:var(--critico); } .pl-n.zero{ color:var(--linha-2); }
+.pl-l{ font-size:11.5px; color:var(--tinta-2); font-weight:500; margin-top:5px; line-height:1.35; }
+.pl-l small{ display:block; color:var(--tinta-3); font-size:10.5px; font-weight:400; margin-top:1px; }
+.pl-grupo.alerta{ background:var(--cr-fundo); box-shadow:0 0 0 1px var(--cr-borda); }
+.pl-grupo.alerta .pl-rot{ color:#8A1F1F; }
+.pl-grupo.alerta .pl-l{ color:#8A1F1F; }
+.pl-grupo.alerta .pl-l small{ color:#A85252; }
 
-        .dot { width: 8px; height: 8px; border-radius: 50% !important; display: inline-block; }
-    </style>
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px;
+    margin-bottom:22px; }
+.kpi{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:15px 17px; }
+.kpi-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--tinta-3); margin-bottom:7px; }
+.kpi-v{ font-size:24px; font-weight:700; letter-spacing:-.9px; line-height:1; }
+.kpi-v.ok{ color:var(--ok); } .kpi-v.aviso{ color:var(--atencao); } .kpi-v.ruim{ color:var(--critico); }
+.kpi-p{ font-size:11.5px; color:var(--tinta-3); font-weight:500; margin-top:6px; line-height:1.4; }
+
+/* ===== JORNADA DO CARD =====
+   Lead time E a soma de espera + producao + espera do cliente. Tres
+   numeros soltos escondem exatamente a relacao que interessa; uma barra
+   empilhada mostra a proporcao antes de qualquer leitura de numero. */
+.jor{ display:flex; height:38px; border-radius:9px; overflow:hidden; background:var(--papel-2); }
+.jor-f{ display:flex; align-items:center; justify-content:center; font-size:12px;
+    font-weight:650; color:#fff; min-width:0; transition:.25s; position:relative; }
+.jor-f span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 8px; }
+.jor-espera{ background:#B8B2E8; } .jor-ciclo{ background:var(--acao); }
+.jor-cliente{ background:#E5BE7F; color:#5C3A05; }
+.jor-leg{ display:flex; gap:20px; margin-top:14px; flex-wrap:wrap; }
+.jor-li{ display:flex; align-items:flex-start; gap:8px; min-width:0; }
+.jor-pt{ width:10px; height:10px; border-radius:3px; margin-top:4px; flex-shrink:0; }
+.jor-txt{ min-width:0; }
+.jor-v{ font-size:15px; font-weight:700; letter-spacing:-.4px; }
+.jor-r{ font-size:11px; color:var(--tinta-3); line-height:1.4; margin-top:1px; }
+.jor-total{ display:flex; align-items:baseline; gap:9px; margin-bottom:14px; }
+.jor-total b{ font-size:26px; font-weight:700; letter-spacing:-1px; }
+.jor-total span{ font-size:12px; color:var(--tinta-3); }
+
+/* ===== ANEL DE PRAZO =====
+   Uma proporcao unica pede uma figura unica. Duas barras somando 100%
+   custam duas leituras para dizer o que o anel diz numa. */
+.anel-cx{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.anel{ width:132px; height:132px; flex-shrink:0; transform:rotate(-90deg); }
+.anel-tr{ fill:none; stroke:var(--papel-2); }
+.anel-ar{ fill:none; stroke-linecap:round; transition:stroke-dasharray .5s; }
+.anel-mid{ position:relative; width:132px; height:132px; flex-shrink:0; }
+.anel-num{ position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; }
+.anel-num b{ font-size:26px; font-weight:700; letter-spacing:-1px; line-height:1; }
+.anel-num small{ font-size:10.5px; color:var(--tinta-3); margin-top:3px; }
+.anel-det{ flex:1; min-width:150px; display:flex; flex-direction:column; gap:11px; }
+.anel-l{ display:flex; align-items:center; gap:10px; font-size:12.5px; }
+.anel-p{ width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+.anel-l b{ margin-left:auto; font-weight:650; font-family:'IBM Plex Mono',monospace; }
+.anel-l small{ color:var(--tinta-3); font-size:11px; min-width:34px; text-align:right; }
+
+.cartao{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    padding:17px 19px; }
+.cartao-t{ font-size:13px; font-weight:650; letter-spacing:-.15px; margin-bottom:3px; }
+.cartao-d{ font-size:11.5px; color:var(--tinta-3); line-height:1.5; margin-bottom:15px; }
+.duas{ display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+.tres{ display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+@media(max-width:940px){ .duas,.tres{ grid-template-columns:1fr; } }
+
+/* Barras horizontais. display:block obrigatório: são <span>, e span
+   inline ignora height e margem vertical. */
+/* Rotulo e numero na MESMA linha, acima da barra: antes o numero ficava
+   na outra ponta e o olho precisava atravessar a linha inteira para
+   ligar um ao outro. */
+.bh{ display:flex; flex-direction:column; gap:13px; }
+.bh-l{ display:block; }
+.bh-c{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+.bh-t{ flex:1; min-width:0; font-size:12.5px; font-weight:550; color:var(--tinta);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bh-t small{ color:var(--tinta-3); font-weight:400; font-size:11px; }
+.bh-v{ font-size:12.5px; font-weight:650; white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace; }
+.bh-v small{ font-family:'Inter',sans-serif; font-weight:500; color:var(--tinta-3);
+    font-size:10.5px; margin-left:6px; }
+.bh-b{ display:block; height:8px; background:var(--papel-2); border-radius:99px; overflow:hidden; }
+.bh-f{ display:block; height:100%; border-radius:99px; background:var(--acao); transition:width .35s; }
+.bh-mais{ font-size:11.5px; color:var(--tinta-3); padding-top:4px; }
+
+/* Série com duas medidas por período: abertos e entregues lado a lado.
+   Ver as duas juntas é o que revela se a fila cresce ou encolhe. */
+/* Linhas de referencia atras das barras dao escala sem eixo numerico. */
+.serie-cx{ position:relative; }
+.serie-grade{ position:absolute; inset:0 0 26px 0; display:flex; flex-direction:column;
+    justify-content:space-between; pointer-events:none; }
+.serie-grade i{ display:block; height:1px; background:var(--papel-2); }
+.serie{ display:flex; align-items:flex-end; justify-content:flex-start; gap:5px;
+    height:196px; position:relative; }
+.sb{ flex:1 1 0; min-width:6px; max-width:58px; display:flex; flex-direction:column;
+    justify-content:flex-end; align-items:center; gap:6px; position:relative; }
+.sb-par{ display:flex; align-items:flex-end; gap:3px; width:100%; }
+.sb-b{ flex:1; border-radius:4px 4px 0 0; min-height:2px; transition:.2s; }
+.sb-b.ini{ background:#C7C2F5; } .sb-b.fim{ background:var(--acao); }
+.sb:hover .sb-b.ini{ background:#B0A9F0; } .sb:hover .sb-b.fim{ background:#5a4bd4; }
+.sb-x{ font-size:9.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap; }
+.sb-dica{ position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+    background:var(--tinta); color:#fff; font-size:11px; padding:5px 9px; border-radius:7px;
+    white-space:nowrap; opacity:0; pointer-events:none; transition:.14s; margin-bottom:5px; z-index:5; }
+.sb:hover .sb-dica{ opacity:1; }
+.leg{ display:flex; gap:16px; margin-top:13px; padding-top:13px; border-top:1px solid var(--papel-2);
+    flex-wrap:wrap; }
+.leg-i{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--tinta-3); }
+.leg-p{ width:10px; height:10px; border-radius:3px; }
+
+.tb{ border:1px solid var(--linha); border-radius:var(--r-ctrl); overflow:hidden; }
+.tb-h,.tb-l{ display:grid; gap:11px; padding:9px 13px; align-items:center; font-size:12.5px; }
+.tb-h{ background:var(--papel-2); border-bottom:1px solid var(--linha); font-size:10.5px;
+    font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--tinta-3); }
+.tb-l{ border-bottom:1px solid var(--papel-2); }
+.tb-l:last-child{ border:none; }
+.tb-l span,.tb-h span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tb-h .d,.tb-l .d{ text-align:right; }
+.tb-l .d{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.tb-nome{ font-weight:550; }
+.tb-sub{ font-size:10.5px; color:var(--tinta-3); font-weight:400; }
+
+.apr{ display:block; height:6px; background:var(--papel-2); border-radius:99px;
+    overflow:hidden; margin-top:5px; }
+.apr i{ display:block; height:100%; border-radius:99px; }
+.apr-ok i{ background:var(--ok); } .apr-baixo i{ background:var(--atencao); }
+.apr-alto i{ background:var(--azul); }
+.apr-linha{ display:flex; justify-content:space-between; font-size:11.5px; gap:8px; }
+
+.pil{ font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.p-aviso{ background:var(--at-fundo); color:var(--atencao); }
+
+.vazio{ text-align:center; padding:34px 20px; color:var(--tinta-3); }
+.vazio .material-symbols-rounded{ font-size:30px; opacity:.3; display:block; margin-bottom:9px; }
+.vazio p{ font-size:12.5px; line-height:1.6; max-width:340px; margin:0 auto; }
+
+.esq{ height:96px; background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+    position:relative; overflow:hidden; }
+.esq::after{ content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
+    animation:br 1.4s infinite; }
+@keyframes br{ from{transform:translateX(-100%);} to{transform:translateX(100%);} }
+
+.faixa{ border-radius:var(--r-card); padding:13px 16px; display:flex; gap:11px;
+    align-items:flex-start; font-size:12.5px; line-height:1.55; }
+.faixa .material-symbols-rounded{ font-size:18px; flex-shrink:0; margin-top:1px; }
+.faixa.info{ background:var(--acao-fraco); color:#3C3489; }
+.faixa.alerta{ background:var(--at-fundo); color:#7A4A0C; }
+.faixa b{ font-weight:650; }
+
+@media (max-width:900px){
+    .top-bar{ padding:0 16px 0 60px; }
+    .cmd{ padding:10px 16px; }
+    .cmd-tit,.cmd-sep{ display:none; }
+    .segm{ width:100%; } .segm-btn{ flex:1; justify-content:center; padding:6px 8px; }
+    .cmd-dir{ width:100%; margin-left:0; }
+    .cmd-dir .sel{ flex:1 1 100%; max-width:none; }
+    .cmd-dir .btn{ flex:1 1 100%; justify-content:center; }
+    .filtros{ padding:13px 16px; gap:9px; }
+    .fg{ flex:1 1 46%; min-width:0; } .fg select{ width:100%; }
+    .wrap{ padding:14px 16px 70px; }
+    .kpis{ grid-template-columns:1fr 1fr; gap:9px; margin-bottom:18px; }
+    .kpi{ padding:12px 14px; } .kpi-v{ font-size:20px; }
+    .cartao{ padding:15px 16px; } .sec{ margin-bottom:18px; }
+    .duas,.tres{ gap:9px; }
+    .serie{ height:140px; } .sb-x{ font-size:9px; }
+    .bh-l{ grid-template-columns:1fr 74px; gap:9px; }
+    .faixa{ padding:11px 13px; font-size:12px; }
+    .tb-h,.tb-l{ padding:9px 11px; gap:8px; }
+}
+@media (max-width:420px){ .kpis{ grid-template-columns:1fr; } .sb-x{ display:none; } }
+</style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="top-bar-logo" onclick="window.location.href='/'">CX<span>Projetos</span></div>
-        <div class="top-bar-right">{% include '_usermenu.html' %}</div>
+<div class="top-bar">
+    <div class="top-bar-logo" onclick="window.location.href='/'">core<span>.cx</span></div>
+    {% include '_usermenu.html' %}
+</div>
+{% include '_sidebar.html' %}
+
+<div class="cmd">
+    <span class="cmd-tit">Operação</span>
+    <div class="cmd-sep"></div>
+    <div class="segm" role="tablist">
+        <button class="segm-btn on" id="ot-entrega" role="tab" aria-selected="true"
+                onclick="Painel.otica('entrega')">
+            <span class="material-symbols-rounded">rocket_launch</span>Entrega</button>
+        <button class="segm-btn" id="ot-esforco" role="tab" aria-selected="false"
+                onclick="Painel.otica('esforco')">
+            <span class="material-symbols-rounded">timer</span>Esforço</button>
+        <button class="segm-btn" id="ot-time" role="tab" aria-selected="false"
+                onclick="Painel.otica('time')">
+            <span class="material-symbols-rounded">groups</span>Time</button>
     </div>
-    {% include '_sidebar.html' %}
-
-    <div class="filtros" id="filtros">
-        <div class="filtro"><span class="material-symbols-rounded">domain</span><label>Área</label><select id="fArea"><option value="">Todas</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">person</span><label>Resp.</label><select id="fResp"><option value="">Todos</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">apartment</span><label>Cliente</label><select id="fCliente"><option value="">Todos</option></select></div>
-        <div class="filtro"><span class="material-symbols-rounded">event_available</span><label>Aberto em</label><input type="date" id="fAbIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fAbFim"></div>
-        <div class="filtro"><span class="material-symbols-rounded">event_busy</span><label>Fechado em</label><input type="date" id="fFeIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fFeFim"></div>
-        <div class="filtro"><span class="material-symbols-rounded">timer</span><label>Horas em</label><input type="date" id="fHoIni"><span style="color:var(--text-muted);font-size:11px;">→</span><input type="date" id="fHoFim"></div>
-        <div class="filtro-limpar" id="fLimpar" onclick="limparFiltros()"><span class="material-symbols-rounded" style="font-size:15px;">close</span> Limpar</div>
+    <div class="cmd-dir">
+        <select class="sel" id="periodo" onchange="Painel.periodo(this.value)">
+            <option value="semana">Esta semana</option>
+            <option value="mes">Este mês</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+            <option value="180">Últimos 6 meses</option>
+            <option value="365">Últimos 12 meses</option>
+            <option value="ano">Este ano</option>
+            <option value="custom">Escolher datas…</option>
+        </select>
+        <span class="datas" id="datas">
+            <input type="date" id="dDe" onchange="Painel.datas()" aria-label="Data inicial">
+            <span class="datas-ate">até</span>
+            <input type="date" id="dAte" onchange="Painel.datas()" aria-label="Data final">
+        </span>
+        <button class="btn btn-fant" id="btnFiltros" onclick="Painel.toggleFiltros()">
+            <span class="material-symbols-rounded">tune</span>Filtros<span
+                class="chip-n" id="chipF" style="display:none">0</span></button>
     </div>
+</div>
 
-    <div class="dash-body">
-        <div class="nav-lateral" id="nav"></div>
-        <div class="conteudo" id="conteudo"><div class="loading"><div class="spinner"></div>Carregando dashboard...</div></div>
-    </div>
+<div class="filtros" id="gaveta">
+    <div class="fg"><label for="fQuadro">Quadro</label>
+        <select id="fQuadro" onchange="Painel.filtrar()"><option value="">Todos</option></select></div>
+    <div class="fg"><label for="fResp">Responsável</label>
+        <select id="fResp" onchange="Painel.filtrar()"><option value="">Todos</option></select></div>
+    <div class="fg"><label for="fCliente">Cliente</label>
+        <select id="fCliente" onchange="Painel.filtrar()"><option value="">Todos</option></select></div>
+    <div class="fg" style="min-width:0"><label>&nbsp;</label>
+        <button class="btn btn-fant" onclick="Painel.limpar()">Limpar</button></div>
+</div>
 
-    <script>
-        const NIVEL_ACESSO = "{{ nivel_acesso }}";
-        let dados = null, telaAtiva = 'geral';
-        let filtros = { area:'', resp:'', cliente:'', abIni:'', abFim:'', feIni:'', feFim:'', hoIni:'', hoFim:'' };
+<div class="wrap">
+    <div class="otica on" id="abaEntrega"></div>
+    <div class="otica" id="abaEsforco"></div>
+    <div class="otica" id="abaTime"></div>
+</div>
 
-        const FONT = 'Inter, sans-serif';
-        const CHART_ANIM = { animationDuration: 700, animationEasing: 'cubicOut' };
-        function escH(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-        function fmtHoras(seg){ if(!seg) return '0h'; const h=Math.floor(seg/3600), m=Math.floor((seg%3600)/60); return h>0?`${h}h${m>0?' '+m+'min':''}`:`${m}min`; }
-        function fmtDias(d){ if(d===null||d===undefined) return '—'; return d+ (d===1?' dia':' dias'); }
+<script>
+"use strict";
+/* ===========================================================================
+   PAINEL OPERACIONAL · três óticas
 
-        // ===== SISTEMA ECHARTS =====
-        let chartQueue=[], chartInstances=[];
-        function limparCharts(){ chartInstances.forEach(c=>{try{c.dispose();}catch(e){}}); chartInstances=[]; chartQueue=[]; }
-        function agendarChart(id, option){ chartQueue.push({id, option}); }
-        function montarCharts(){ chartQueue.forEach(({id,option})=>{ const el=document.getElementById(id); if(!el)return; const inst=echarts.init(el,null,{renderer:'svg'}); inst.setOption(option); chartInstances.push(inst); }); chartQueue=[]; }
-        window.addEventListener('resize', ()=>{ chartInstances.forEach(c=>{try{c.resize();}catch(e){}}); });
+   ENTREGA   o trabalho anda? onde trava? sai no prazo?
+   ESFORÇO   para onde vai a hora?
+   TIME      quem está com o quê, e quanto da jornada virou hora lançada?
 
-        document.addEventListener('DOMContentLoaded', ()=>{ montarNav(); carregar(); });
+   Vale igual para quadro de produto e interno — a diferença está nos
+   números, não na estrutura.
 
-        // ===== CARGA =====
-        async function carregar() {
-            document.getElementById('conteudo').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dashboard...</div>';
-            const qs = new URLSearchParams();
-            if(filtros.area) qs.set('area', filtros.area);
-            if(filtros.resp) qs.set('responsavel', filtros.resp);
-            if(filtros.cliente) qs.set('cliente_id', filtros.cliente);
-            if(filtros.abIni) qs.set('abertura_ini', filtros.abIni);
-            if(filtros.abFim) qs.set('abertura_fim', filtros.abFim);
-            if(filtros.feIni) qs.set('fechamento_ini', filtros.feIni);
-            if(filtros.feFim) qs.set('fechamento_fim', filtros.feFim);
-            if(filtros.hoIni) qs.set('horas_ini', filtros.hoIni);
-            if(filtros.hoFim) qs.set('horas_fim', filtros.hoFim);
-            try {
-                const res = await fetch('/api/dashboard?'+qs.toString());
-                if(res.status===403){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
-                dados = await res.json();
-                if(dados.status!=='sucesso'){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro ao carregar</h3><p>'+escH(dados.mensagem||'')+'</p></div>'; return; }
-                popularFiltros(); render();
-            } catch(e){ document.getElementById('conteudo').innerHTML='<div class="empty"><h3>Erro de conexão</h3></div>'; }
-        }
+   Uma regra atravessa a tela toda: número parcial anda junto da sua
+   cobertura. Uma média que descreve 40% da operação, lida como se fosse
+   100%, leva a decisão errada.
+   =========================================================================== */
+const Painel = (function(){
 
-        function popularFiltros(){
-            const f = dados.filtros||{};
-            const setSel=(id, arr, val, lblAll)=>{ const el=document.getElementById(id); if(!el)return; const cur=filtros[val]; el.innerHTML=`<option value="">${lblAll}</option>`+arr.map(x=>typeof x==='object'?`<option value="${x.id}" ${String(cur)===String(x.id)?'selected':''}>${escH(x.nome)}</option>`:`<option value="${escH(x)}" ${cur===x?'selected':''}>${escH(x)}</option>`).join(''); };
-            setSel('fArea', f.areas||[], 'area', 'Todas');
-            setSel('fResp', f.responsaveis||[], 'resp', 'Todos');
-            setSel('fCliente', f.clientes||[], 'cliente', 'Todos');
-            // listeners (uma vez)
-            if(!window._filtrosLig){
-                document.getElementById('fArea').onchange=e=>{filtros.area=e.target.value; carregar();};
-                document.getElementById('fResp').onchange=e=>{filtros.resp=e.target.value; carregar();};
-                document.getElementById('fCliente').onchange=e=>{filtros.cliente=e.target.value; carregar();};
-                document.getElementById('fAbIni').onchange=e=>{filtros.abIni=e.target.value; carregar();};
-                document.getElementById('fAbFim').onchange=e=>{filtros.abFim=e.target.value; carregar();};
-                document.getElementById('fFeIni').onchange=e=>{filtros.feIni=e.target.value; carregar();};
-                document.getElementById('fFeFim').onchange=e=>{filtros.feFim=e.target.value; carregar();};
-                document.getElementById('fHoIni').onchange=e=>{filtros.hoIni=e.target.value; carregar();};
-                document.getElementById('fHoFim').onchange=e=>{filtros.hoFim=e.target.value; carregar();};
-                window._filtrosLig=true;
-            }
-            const algum = Object.values(filtros).some(v=>v);
-            document.getElementById('fLimpar').style.display = algum?'flex':'none';
-        }
-        function limparFiltros(){ filtros={area:'',resp:'',cliente:'',abIni:'',abFim:'',feIni:'',feFim:'',hoIni:'',hoFim:''}; ['fAbIni','fAbFim','fFeIni','fFeFim','fHoIni','fHoFim'].forEach(id=>document.getElementById(id).value=''); carregar(); }
+  const st = { dados:null, otica:'entrega', periodo:'30', de:'', ate:'',
+               filtros:{}, carregando:false };
 
-        // ===== NAV =====
-        function montarNav(){
-            const nav=document.getElementById('nav');
-            const items=[
-                {g:'Panorama'},
-                {id:'geral', ic:'dashboard', nome:'Visão Geral'},
-                {id:'fluxo', ic:'timeline', nome:'Fluxo & Tempos'},
-                {id:'entrega', ic:'compare_arrows', nome:'Iniciados × Finalizados'},
-                {g:'Equipe'},
-                {id:'produtividade', ic:'schedule', nome:'Produtividade'},
-                {id:'projetos', ic:'folder_open', nome:'Projetos'},
-                {g:'Confiança'},
-                {id:'saude', ic:'verified', nome:'Saúde dos Dados'},
-            ];
-            nav.innerHTML=items.map(it=>it.g?`<div class="nav-grupo">${it.g}</div>`:`<div class="nav-item ${telaAtiva===it.id?'ativo':''}" onclick="irPara('${it.id}')"><span class="material-symbols-rounded">${it.ic}</span><span class="nav-nome">${it.nome}</span></div>`).join('');
-        }
-        function irPara(id){ telaAtiva=id; montarNav(); render(); document.getElementById('conteudo').scrollTop=0; }
+  const esc = v => String(v ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const n = (v, casas=0) => v == null ? '—'
+    : Number(v).toLocaleString('pt-BR', {minimumFractionDigits:casas, maximumFractionDigits:casas});
+  const pct = v => v == null ? '—' : n(v,1) + '%';
+  const dias = v => v == null ? '—' : n(v,1) + (Math.abs(v) === 1 ? ' dia' : ' dias');
+  const hrs = v => v == null ? '—' : n(v,1) + 'h';
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
 
-        function render(){
-            limparCharts();
-            if(!dados){ return; }
-            if(telaAtiva==='geral') renderGeral();
-            else if(telaAtiva==='fluxo') renderFluxo();
-            else if(telaAtiva==='entrega') renderEntrega();
-            else if(telaAtiva==='produtividade') renderProdutividade();
-            else if(telaAtiva==='projetos') renderProjetos();
-            else if(telaAtiva==='saude') renderSaude();
-            requestAnimationFrame(montarCharts);
-        }
+  const MES = {'01':'jan','02':'fev','03':'mar','04':'abr','05':'mai','06':'jun',
+               '07':'jul','08':'ago','09':'set','10':'out','11':'nov','12':'dez'};
+  const rotX = q => st.dados.periodo.granularidade === 'dia'
+      ? q.slice(8,10)+'/'+q.slice(5,7) : MES[q.slice(5,7)]+'/'+q.slice(2,4);
 
-        // ===== COMPONENTES ECHARTS =====
-        let cc=0;
-        function chartBarH(itens, cor, sufixo, fmt){
-            // itens: [{nome, valor}]
-            const id='ch_'+(cc++);
-            const nomes=itens.map(x=>x.nome).reverse();
-            const vals=itens.map(x=>({value:x.valor, itemStyle:{color:typeof cor==='function'?cor(x):cor, borderRadius:[0,5,5,0]}})).reverse();
-            const alt=Math.max(120, itens.length*40);
-            agendarChart(id,{ ...CHART_ANIM, grid:{left:4,right:50,top:6,bottom:4,containLabel:true},
-                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].name}<br/><b>${fmt?fmt(p[0].value):p[0].value}${sufixo||''}</b>`},
-                xAxis:{type:'value',splitLine:{show:false},axisLabel:{show:false},axisLine:{show:false},axisTick:{show:false}},
-                yAxis:{type:'category',data:nomes,axisLine:{show:false},axisTick:{show:false},axisLabel:{fontSize:12,fontWeight:600,color:'#1a1d29',fontFamily:FONT}},
-                series:[{type:'bar',data:vals,barWidth:14,label:{show:true,position:'right',fontSize:11.5,fontWeight:800,fontFamily:FONT,color:'#1a1d29',formatter:p=>(fmt?fmt(p.value):p.value)+(sufixo||'')},showBackground:true,backgroundStyle:{color:'#eef0f4',borderRadius:5}}]
-            });
-            return `<div id="${id}" class="echart" style="height:${alt}px;"></div>`;
-        }
-        function chartDonut(itens){
-            const id='ch_'+(cc++);
-            const total=itens.reduce((a,b)=>a+b.valor,0);
-            agendarChart(id,{ ...CHART_ANIM,
-                tooltip:{trigger:'item',textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p.name}<br/><b>${p.value}</b> (${p.percent}%)`},
-                legend:{type:'scroll',orient:'vertical',right:6,top:'center',textStyle:{fontFamily:FONT,fontSize:11,color:'#5a5f6e'},itemWidth:9,itemHeight:9,itemGap:9},
-                series:[{type:'pie',radius:['52%','78%'],center:['32%','50%'],avoidLabelOverlap:true,itemStyle:{borderColor:'#fff',borderWidth:2,borderRadius:3},label:{show:false},labelLine:{show:false},
-                    data:itens.map(x=>({value:x.valor,name:x.nome,itemStyle:{color:x.cor}}))}],
-                graphic:[{type:'text',left:'30%',top:'44%',style:{text:String(total),fontSize:24,fontWeight:800,fill:'#1a1d29',fontFamily:FONT,textAlign:'center'}},{type:'text',left:'30%',top:'56%',style:{text:'total',fontSize:9,fontWeight:700,fill:'#9AA0AE',fontFamily:FONT,textAlign:'center'}}]
-            });
-            return `<div id="${id}" class="echart" style="height:200px;"></div>`;
-        }
-        function chartLinhaDupla(serie){
-            // serie: [{periodo, iniciados, finalizados}]
-            const id='ch_'+(cc++);
-            const cats=serie.map(x=>x.periodo);
-            agendarChart(id,{ ...CHART_ANIM,
-                tooltip:{trigger:'axis',textStyle:{fontFamily:FONT,fontSize:12}},
-                legend:{data:['Iniciados','Finalizados'],right:0,top:0,textStyle:{fontFamily:FONT,fontSize:11,fontWeight:600},icon:'roundRect',itemWidth:11,itemHeight:11},
-                grid:{left:4,right:8,top:36,bottom:4,containLabel:true},
-                xAxis:{type:'category',data:cats,boundaryGap:false,axisLine:{lineStyle:{color:'#e7e9ef'}},axisTick:{show:false},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
-                yAxis:{type:'value',splitLine:{lineStyle:{color:'#f2f3f6'}},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
-                series:[
-                    {name:'Iniciados',type:'line',smooth:true,data:serie.map(x=>x.iniciados),lineStyle:{width:3,color:'#7371ff'},itemStyle:{color:'#7371ff'},areaStyle:{color:'rgba(115,113,255,0.10)'},symbol:'circle',symbolSize:7},
-                    {name:'Finalizados',type:'line',smooth:true,data:serie.map(x=>x.finalizados),lineStyle:{width:3,color:'#2FA875'},itemStyle:{color:'#2FA875'},areaStyle:{color:'rgba(47,168,117,0.10)'},symbol:'circle',symbolSize:7}
-                ]
-            });
-            return `<div id="${id}" class="echart" style="height:300px;"></div>`;
-        }
-        function chartFaixas(faixasObj, cor){
-            const id='ch_'+(cc++);
-            const cats=Object.keys(faixasObj); const vals=Object.values(faixasObj);
-            agendarChart(id,{ ...CHART_ANIM, grid:{left:6,right:6,top:20,bottom:4,containLabel:true},
-                tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontFamily:FONT,fontSize:12},formatter:p=>`${p[0].axisValue}<br/><b>${p[0].value}</b> projeto${p[0].value!==1?'s':''}`},
-                xAxis:{type:'category',data:cats,axisLine:{lineStyle:{color:'#e7e9ef'}},axisTick:{show:false},axisLabel:{fontSize:10.5,color:'#9AA0AE',fontFamily:FONT}},
-                yAxis:{type:'value',splitLine:{lineStyle:{color:'#f2f3f6'}},axisLabel:{show:false}},
-                series:[{type:'bar',data:vals,barWidth:'55%',itemStyle:{color:cor,borderRadius:[5,5,0,0]},label:{show:true,position:'top',fontSize:11,fontWeight:700,color:'#5a5f6e',fontFamily:FONT,formatter:p=>p.value||''}}]
-            });
-            return `<div id="${id}" class="echart" style="height:180px;"></div>`;
-        }
-        function kpi(lbl,val,desc,ic,cor,bg){ return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:${bg};"><span class="material-symbols-rounded" style="color:${cor};">${ic}</span></div><span class="kpi-lbl">${lbl}</span></div><div class="kpi-val" style="color:${cor};">${val}</div><div class="kpi-desc">${desc}</div></div>`; }
+  /* ---------- carga ---------- */
+  function params(){
+    const p = new URLSearchParams(); const h = new Date();
+    if(st.periodo === 'semana'){
+      // Semana começa na segunda: sábado e domingo pertencem à semana
+      // que terminou, não à que vai começar.
+      const dow = (h.getDay() + 6) % 7;
+      const seg = new Date(h); seg.setDate(h.getDate() - dow);
+      p.set('de', iso(seg)); p.set('ate', iso(h));
+    }else if(st.periodo === 'mes'){
+      p.set('de', iso(new Date(h.getFullYear(), h.getMonth(), 1))); p.set('ate', iso(h));
+    }else if(st.periodo === 'ano'){
+      p.set('de', h.getFullYear() + '-01-01'); p.set('ate', iso(h));
+    }else if(st.periodo === 'custom'){
+      p.set('de', st.de || iso(h)); p.set('ate', st.ate || iso(h));
+    }else{ p.set('dias', st.periodo); }
+    Object.entries(st.filtros).forEach(([k,v]) => { if(v) p.set(k,v); });
+    return p.toString();
+  }
 
-        const CORES_STATUS = {'Backlog':'#9AA0AE','Não Iniciado':'#9AA0AE','Onboarding':'#3b82f6','Kick-off':'#3b82f6','Pausado':'#f59e0b','Finalizado':'#2FA875','Cancelado':'#E5484D'};
-        function corStatus(s){ return CORES_STATUS[s] || '#7371ff'; }
-        const PALETA = ['#7371ff','#14b8a6','#ff43c0','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#10b981','#6366f1'];
+  async function carregar(){
+    if(st.carregando) return;
+    st.carregando = true;
+    ['abaEntrega','abaEsforco','abaTime'].forEach(id =>
+      document.getElementById(id).innerHTML =
+        '<div class="kpis">' + '<div class="esq"></div>'.repeat(4) + '</div>');
+    try{
+      const r = await fetch('/api/operacional/painel?' + params());
+      if(r.status === 401){ location.href = '/login?proximo=/dashboard'; return; }
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.mensagem || 'Falha ao carregar.');
+      st.dados = d;
+      preencherOpcoes(d.opcoes);
+      pintarEntrega(); pintarEsforco(); pintarTime();
+    }catch(e){
+      document.getElementById('abaEntrega').innerHTML = `
+        <div class="cartao"><div class="vazio">
+          <span class="material-symbols-rounded">cloud_off</span>
+          <p>${esc(e.message)}</p></div></div>`;
+    }finally{ st.carregando = false; }
+  }
 
-        // ===== TELA: VISÃO GERAL =====
-        function renderGeral(){
-            const k=dados.kpis||{}; const mf=dados.metricas_fluxo||{};
-            const porStatus=Object.entries(dados.por_status||{}).map(([nome,valor])=>({nome,valor,cor:corStatus(nome)})).sort((a,b)=>b.valor-a.valor);
-            const porArea=Object.entries(dados.por_area||{}).map(([nome,valor],i)=>({nome,valor,cor:PALETA[i%PALETA.length]})).sort((a,b)=>b.valor-a.valor);
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">dashboard</span> Visão Geral</div><div class="tela-sub">Panorama de projetos e produtividade</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(6,1fr);">
-                    ${kpi('Projetos', k.total_projetos||0, 'No total', 'folder_open', '#1a1d29', '#eef0f4')}
-                    ${kpi('Ativos', k.ativos||0, 'Em andamento', 'bolt', '#7371ff', '#f0efff')}
-                    ${kpi('Finalizados', k.finalizados||0, 'Concluídos', 'check_circle', '#2FA875', '#2FA87522')}
-                    ${kpi('Atrasados', k.atrasados||0, 'Fora do prazo', 'warning', k.atrasados>0?'#E5484D':'#9AA0AE', (k.atrasados>0?'#E5484D':'#9AA0AE')+'22')}
-                    ${kpi('Lead time', fmtDias(mf.lead_medio), 'Médio (abertura→fim)', 'timeline', '#f59e0b', '#fef3e2')}
-                    ${kpi('Cycle time', fmtDias(mf.cycle_medio), 'Médio (trabalho)', 'speed', '#14b8a6', '#e7fbf5')}
-                </div>
-                <div class="grid" style="grid-template-columns:1fr 1fr;">
-                    <div class="painel"><div class="painel-tit">Projetos por status</div><div class="painel-sub">Distribuição atual no fluxo</div>${porStatus.length?chartDonut(porStatus):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Projetos por área</div><div class="painel-sub">Volume por quadro</div>${porArea.length?chartBarH(porArea, x=>PALETA[porArea.indexOf(x)%PALETA.length], ''):'<div class="painel-sub">Sem dados</div>'}</div>
-                </div>
-                <div class="sec-lbl">Iniciados × Finalizados</div>
-                <div class="painel"><div class="painel-tit">Evolução mensal</div><div class="painel-sub">Projetos abertos e concluídos ao longo do tempo</div>${(mf.serie_iniciados_finalizados||[]).length?chartLinhaDupla(mf.serie_iniciados_finalizados):'<div class="painel-sub">Sem dados no período</div>'}</div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
+  // Os seletores oferecem só o que existe de fato: lista fixa envelhece
+  // e passa a filtrar por coisa que ninguém usa.
+  function preencherOpcoes(op){
+    const q = document.getElementById('fQuadro'), a = q.value;
+    q.innerHTML = '<option value="">Todos</option>' +
+      (op.quadros||[]).map(x => `<option value="${esc(x.chave)}">${esc(x.nome)}</option>`).join('');
+    q.value = a;
+    [['fResp', op.responsaveis], ['fCliente', op.clientes]].forEach(([id, lista]) => {
+      const el = document.getElementById(id), v = el.value;
+      el.innerHTML = '<option value="">Todos</option>' +
+        (lista||[]).map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+      el.value = v;
+    });
+  }
 
-        // ===== TELA: FLUXO & TEMPOS =====
-        function renderFluxo(){
-            const mf=dados.metricas_fluxo||{};
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">timeline</span> Fluxo & Tempos</div><div class="tela-sub">Lead time, cycle time e tempo de tarefa</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(4,1fr);">
-                    ${kpi('Lead time médio', fmtDias(mf.lead_medio), 'Abertura → finalização', 'timeline', '#f59e0b', '#fef3e2')}
-                    ${kpi('Cycle time médio', fmtDias(mf.cycle_medio), 'Trabalho efetivo', 'speed', '#14b8a6', '#e7fbf5')}
-                    ${kpi('Tempo médio/tarefa', fmtHoras(mf.tempo_medio_tarefa_seg), 'Por apontamento de timer', 'timer', '#7371ff', '#f0efff')}
-                    ${kpi('Finalizados', mf.total_finalizados_periodo||0, 'Com tempo medido', 'check_circle', '#2FA875', '#2FA87522')}
-                </div>
-                <div class="grid" style="grid-template-columns:1fr 1fr;">
-                    <div class="painel"><div class="painel-tit">Distribuição do Lead time</div><div class="painel-sub">Quantos projetos em cada faixa (abertura → fim)</div>${mf.lead_faixas?chartFaixas(mf.lead_faixas,'#f59e0b'):''}</div>
-                    <div class="painel"><div class="painel-tit">Distribuição do Cycle time</div><div class="painel-sub">Tempo de trabalho efetivo</div>${mf.cycle_faixas?chartFaixas(mf.cycle_faixas,'#14b8a6'):''}</div>
-                </div>
-                <div class="sec-lbl">Detalhamento por projeto</div>
-                <div class="painel"><div class="painel-tit">Tempos por projeto finalizado</div><div class="painel-sub">Ordenado pelo maior lead time · R&S usa corte na entrevista com cliente</div>
-                    ${(mf.detalhe_tempos||[]).length?listaTempos(mf.detalhe_tempos):'<div class="painel-sub">Sem projetos finalizados no período.</div>'}
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
-        function listaTempos(arr){
-            return `<div class="lista">${arr.map(d=>`<div class="lista-item">
-                <span class="dot" style="background:${d.eh_rs?'#ff43c0':'#7371ff'};"></span>
-                <div class="lista-nome">${escH(d.nome)}<small>${escH(d.area)} · aberto ${escH(d.abertura||'—')} · fechado ${escH(d.conclusao||'—')}</small></div>
-                <div style="text-align:right;"><div class="lista-data" style="color:#f59e0b;">Lead ${fmtDias(d.lead)}</div><div class="lista-data" style="color:#14b8a6;font-size:10.5px;">Cycle ${fmtDias(d.cycle)}</div></div>
-            </div>`).join('')}</div>`;
-        }
+  /* ---------- ótica 1 · entrega ---------- */
+  function pintarEntrega(){
+    const e = st.dados.entrega, c = e.contadores, t = e.tempos;
+    const maxFluxo = Math.max(1, ...e.fluxo.map(x => Math.max(x.iniciados, x.finalizados)));
+    const totalPrazo = e.prazo.no_prazo + e.prazo.fora;
+    const temProblema = c.atrasados > 0;
 
-        // ===== TELA: INICIADOS × FINALIZADOS =====
-        function renderEntrega(){
-            const mf=dados.metricas_fluxo||{};
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">compare_arrows</span> Iniciados × Finalizados</div><div class="tela-sub">Fluxo de entrada e saída de projetos</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
-                    ${kpi('Iniciados', mf.qtd_iniciados||0, 'No período filtrado', 'play_circle', '#7371ff', '#f0efff')}
-                    ${kpi('Finalizados', mf.qtd_finalizados||0, 'No período filtrado', 'check_circle', '#2FA875', '#2FA87522')}
-                    ${kpi('Saldo', ((mf.qtd_iniciados||0)-(mf.qtd_finalizados||0)>=0?'+':'')+((mf.qtd_iniciados||0)-(mf.qtd_finalizados||0)), 'Iniciados − finalizados', 'balance', '#f59e0b', '#fef3e2')}
-                </div>
-                <div class="painel" style="margin-bottom:14px;"><div class="painel-tit">Evolução mensal</div><div class="painel-sub">Comparativo ao longo do tempo</div>${(mf.serie_iniciados_finalizados||[]).length?chartLinhaDupla(mf.serie_iniciados_finalizados):'<div class="painel-sub">Sem dados</div>'}</div>
-                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                    <div class="painel"><div class="painel-tit">Projetos iniciados</div><div class="painel-sub">${(mf.lista_iniciados||[]).length} no período · mais recentes primeiro</div>${listaProjetos(mf.lista_iniciados, 'iniciado')}</div>
-                    <div class="painel"><div class="painel-tit">Projetos finalizados</div><div class="painel-sub">${(mf.lista_finalizados||[]).length} no período · mais recentes primeiro</div>${listaProjetos(mf.lista_finalizados, 'finalizado')}</div>
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
-        function listaProjetos(arr, tipo){
-            if(!arr||!arr.length) return '<div class="painel-sub">Nenhum projeto.</div>';
-            return `<div class="lista">${arr.map(p=>`<div class="lista-item">
-                <span class="dot" style="background:${tipo==='finalizado'?'#2FA875':'#7371ff'};"></span>
-                <div class="lista-nome">${escH(p.nome)}<small>${escH(p.cliente||'—')} · ${escH(p.responsavel||'—')}</small></div>
-                <span class="lista-tag badge-area">${escH(p.area)}</span>
-                <div class="lista-data">${escH(p.data)}</div>
-            </div>`).join('')}</div>`;
-        }
+    document.getElementById('abaEntrega').innerHTML = `
+      <div class="placar">
+        <div class="pl-grupo">
+          <div class="pl-rot"><span class="material-symbols-rounded">bolt</span>Em curso</div>
+          <div class="pl-itens">
+            ${plItem(c.em_andamento, 'Em andamento', 'sendo trabalhados')}
+            ${plItem(c.backlog, 'No backlog', 'esperando começar')}
+          </div>
+        </div>
+        <div class="pl-grupo${temProblema ? ' alerta' : ''}">
+          <div class="pl-rot"><span class="material-symbols-rounded">${
+            temProblema ? 'warning' : 'check_circle'}</span>Precisa de atenção</div>
+          <div class="pl-itens">
+            ${plItem(c.atrasados, 'Atrasados', 'passaram do prazo',
+                     c.atrasados ? 'ruim' : 'zero')}
+            ${plItem(c.pausados, 'Pausados', 'decisão do cliente',
+                     c.pausados ? 'aviso' : 'zero')}
+          </div>
+        </div>
+        <div class="pl-grupo">
+          <div class="pl-rot"><span class="material-symbols-rounded">flag</span>Saíram no período</div>
+          <div class="pl-itens">
+            ${plItem(c.finalizados, 'Entregues', 'concluídos', 'ok')}
+            ${plItem(c.cancelados, 'Cancelados', 'sem entrega', c.cancelados ? '' : 'zero')}
+          </div>
+        </div>
+      </div>
 
-        // ===== TELA: SAÚDE DOS DADOS =====
-        function renderSaude(){
-            const sd=dados.saude_dados||{};
-            const inds=sd.indicadores||[];
-            const score=sd.score!==undefined?sd.score:null;
-            const corScore=score>=85?'#2FA875':score>=60?'#f59e0b':'#E5484D';
-            const lblScore=score>=85?'Dados confiáveis':score>=60?'Atenção a alguns registros':'Registros incompletos';
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">verified</span> Saúde dos Dados</div><div class="tela-sub">Confiabilidade dos registros que alimentam as métricas</div></div>`;
-            h+=`<div class="painel" style="margin-bottom:16px; display:flex; align-items:center; gap:28px; flex-wrap:wrap;">
-                <div style="display:flex; align-items:center; gap:20px;">
-                    <div style="width:96px; height:96px; border-radius:50% !important; background:conic-gradient(${corScore} ${score*3.6}deg, #eef0f4 0deg); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <div style="width:76px; height:76px; border-radius:50% !important; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                            <span style="font-size:26px; font-weight:800; letter-spacing:-1.5px; color:${corScore};">${score!==null?score+'%':'—'}</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div style="font-size:17px; font-weight:800; color:${corScore}; margin-bottom:4px;">${lblScore}</div>
-                        <div style="font-size:12.5px; color:var(--text-soft); font-weight:500; line-height:1.5; max-width:420px;">Índice de confiabilidade baseado nos registros preenchidos. Quanto maior, mais as métricas refletem a realidade.</div>
-                    </div>
-                </div>
-                <div style="margin-left:auto; display:flex; gap:26px;">
-                    <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--text-main);">${sd.total_projetos||0}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">Projetos</div></div>
-                    <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--text-main);">${sd.total_finalizados||0}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">Finalizados</div></div>
-                    <div style="text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--text-main);">${sd.com_timer||0}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">Com timer</div></div>
-                </div>
-            </div>`;
-            h+=`<div class="sec-lbl">Verificações</div><div class="grid" style="grid-template-columns:1fr;">`;
-            inds.forEach(ind=>{
-                const ok=ind.qtd===0;
-                const sevCor=ind.severidade==='alta'?'#E5484D':ind.severidade==='media'?'#f59e0b':'#9AA0AE';
-                const cor=ok?'#2FA875':sevCor;
-                h+=`<div class="painel" style="border-left:3px solid ${cor} !important;">
-                    <div style="display:flex; align-items:flex-start; gap:14px;">
-                        <div style="width:38px; height:38px; border-radius:10px !important; background:${cor}18; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span class="material-symbols-rounded" style="color:${cor}; font-size:21px;">${ok?'check_circle':'error'}</span></div>
-                        <div style="flex-grow:1; min-width:0;">
-                            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                                <div style="font-size:13.5px; font-weight:800;">${escH(ind.titulo)}</div>
-                                <div style="font-size:12px; font-weight:800; color:${cor};">${ok?'Tudo certo':ind.qtd+(ind.qtd===1?' projeto':' projetos')}</div>
-                            </div>
-                            <div style="font-size:12px; color:var(--text-muted); font-weight:500; margin-top:3px;">${escH(ind.descricao)}</div>
-                            ${!ok?`<div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:7px;">${(ind.projetos||[]).map(p=>`<span style="font-size:11px; font-weight:600; background:var(--bg-board); padding:5px 11px; border-radius:50px !important; color:var(--text-soft);">${escH(p.nome)} <span style="color:var(--text-muted);">· ${escH(p.area)}</span></span>`).join('')}${ind.qtd>(ind.projetos||[]).length?`<span style="font-size:11px; font-weight:700; color:var(--text-muted); padding:5px 4px;">+${ind.qtd-(ind.projetos||[]).length} outros</span>`:''}</div>`:''}
-                        </div>
-                    </div>
-                </div>`;
-            });
-            h+=`</div></div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
+      <div class="sec">
+        <div class="sec-cab"><span class="sec-tit">A jornada de um card</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">mediana, pausas descontadas</span></div>
+        <div class="cartao">${jornada(t)}</div>
+      </div>
 
-        // ===== TELA: PRODUTIVIDADE =====
-        function renderProdutividade(){
-            const k=dados.kpis||{};
-            const rankColab=(dados.ranking_colaboradores||[]).slice(0,10).map(c=>({nome:c.nome,valor:Math.round(c.segundos/3600)}));
-            const ocup=(dados.ocupacao||[]).slice(0,10).map(o=>({nome:o.nome,valor:o.percentual}));
-            const topAtiv=(dados.top_atividades||[]).slice(0,10).map(a=>({nome:a.atividade,valor:Math.round(a.segundos/3600)}));
-            const topCli=(dados.top_clientes||[]).slice(0,8).map(c=>({nome:c.cliente,valor:Math.round(c.segundos/3600)}));
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">schedule</span> Produtividade</div><div class="tela-sub">Tempo registrado e ocupação da equipe</div></div>
-                <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
-                    ${kpi('Tempo total', fmtHoras(k.tempo_total_segundos), 'Registrado no timer', 'timer', '#7371ff', '#f0efff')}
-                    ${kpi('Apontamentos', k.total_sessoes||0, 'Sessões de timer', 'touch_app', '#14b8a6', '#e7fbf5')}
-                    ${kpi('Dias úteis', dados.dias_uteis||0, 'No período', 'today', '#f59e0b', '#fef3e2')}
-                </div>
-                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                    <div class="painel"><div class="painel-tit">Horas por colaborador</div><div class="painel-sub">Tempo registrado</div>${rankColab.length?chartBarH(rankColab,'#7371ff','h'):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Ocupação (%)</div><div class="painel-sub">Base: dias úteis × 8h</div>${ocup.length?chartBarH(ocup, x=>x.valor>=80?'#2FA875':x.valor>=50?'#F5D06B':'#E5484D','%'):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Principais atividades</div><div class="painel-sub">Por horas registradas</div>${topAtiv.length?chartBarH(topAtiv,'#14b8a6','h'):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Horas por cliente</div><div class="painel-sub">Onde o tempo foi investido</div>${topCli.length?chartBarH(topCli,'#ff43c0','h'):'<div class="painel-sub">Sem dados</div>'}</div>
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
+      <div class="duas">
+        <div class="cartao">
+          <div class="cartao-t">Onde o trabalho está</div>
+          <div class="cartao-d">Cards abertos por fase. O tom âmbar marca fase com card
+          parado há mais de duas semanas.</div>
+          ${e.onde_esta.length ? listaFases(e.onde_esta) : semDados('Nenhum card aberto.')}
+        </div>
 
-        // ===== TELA: PROJETOS =====
-        function renderProjetos(){
-            const atras=dados.lista_atrasados||[];
-            const porColab=(dados.proj_por_colab||[]).map(c=>({nome:c.nome,valor:c.qtd}));
-            let h=`<div class="fade">
-                <div class="tela-cab"><div class="tela-titulo"><span class="material-symbols-rounded">folder_open</span> Projetos</div><div class="tela-sub">Carga da equipe e projetos atrasados</div></div>
-                <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
-                    <div class="painel"><div class="painel-tit">Projetos ativos por responsável</div><div class="painel-sub">Carga atual de trabalho</div>${porColab.length?chartBarH(porColab,'#7371ff',''):'<div class="painel-sub">Sem dados</div>'}</div>
-                    <div class="painel"><div class="painel-tit">Projetos atrasados</div><div class="painel-sub">${atras.length} fora do prazo</div>
-                        ${atras.length?`<div class="lista">${atras.map(a=>`<div class="lista-item"><span class="dot" style="background:#E5484D;"></span><div class="lista-nome">${escH(a.nome)}<small>${escH(a.responsavel)} · ${escH(a.area)}</small></div><span class="lista-tag" style="background:#E5484D22;color:#E5484D;">${a.dias_atraso}d atraso</span></div>`).join('')}</div>`:'<div class="empty" style="padding:40px;"><span class="material-symbols-rounded" style="color:#2FA875;opacity:0.4;">check_circle</span><h3>Nada atrasado</h3><p>Todos os projetos estão dentro do prazo.</p></div>'}
-                    </div>
-                </div>
-            </div>`;
-            document.getElementById('conteudo').innerHTML=h;
-        }
-    </script>
+        <div class="cartao">
+          <div class="cartao-t">Entregas no prazo</div>
+          <div class="cartao-d">Entre as ${totalPrazo} entregas com prazo combinado.</div>
+          ${totalPrazo ? anelPrazo(e.prazo, totalPrazo)
+                       : semDados('Nenhuma entrega com prazo combinado no período.')}
+        </div>
+      </div>
+
+      <div class="sec" style="margin-top:22px">
+        <div class="sec-cab"><span class="sec-tit">Entrou e saiu</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">${st.dados.periodo.granularidade === 'dia' ? 'por dia' : 'por mês'}
+          · entrando mais do que saindo, a fila cresce</span></div>
+        <div class="cartao">
+          ${e.fluxo.length ? `
+            <div class="serie-cx">
+              <div class="serie-grade">${'<i></i>'.repeat(5)}</div>
+              <div class="serie">
+                ${e.fluxo.map(x => `<div class="sb">
+                  <span class="sb-dica">${rotX(x.quando)} · ${x.iniciados} aberto${
+                    x.iniciados!==1?'s':''} · ${x.finalizados} entregue${x.finalizados!==1?'s':''}</span>
+                  <span class="sb-par">
+                    <span class="sb-b ini" style="height:${Math.max(3, x.iniciados/maxFluxo*152)}px"></span>
+                    <span class="sb-b fim" style="height:${Math.max(3, x.finalizados/maxFluxo*152)}px"></span>
+                  </span>
+                  <span class="sb-x">${rotX(x.quando)}</span>
+                </div>`).join('')}
+              </div>
+            </div>
+            <div class="leg">
+              <span class="leg-i"><span class="leg-p" style="background:#C7C2F5"></span>abertos</span>
+              <span class="leg-i"><span class="leg-p" style="background:var(--acao)"></span>entregues</span>
+            </div>` : semDados('Sem movimentação no período.')}
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-cab"><span class="sec-tit">Por quadro</span><span class="sec-linha"></span>
+          <span class="sec-nota">produto e interno na mesma régua</span></div>
+        <div class="cartao">
+          ${e.por_quadro.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.6fr .6fr .6fr .65fr .7fr .7fr .8fr">
+              <span>Quadro</span><span class="d">Abertos</span><span class="d">Atras.</span>
+              <span class="d">Entreg.</span><span class="d">Lead</span><span class="d">Cycle</span>
+              <span class="d">No prazo</span></div>
+            ${e.por_quadro.map(q => `
+              <div class="tb-l" style="grid-template-columns:1.6fr .6fr .6fr .65fr .7fr .7fr .8fr">
+                <span class="tb-nome">${esc(q.area)}${q.horas
+                  ? `<span class="tb-sub"> · ${hrs(q.horas)}</span>` : ''}</span>
+                <span class="d">${q.abertos}</span>
+                <span class="d" style="color:${q.atrasados?'var(--critico)':'var(--linha-2)'}">${q.atrasados||'—'}</span>
+                <span class="d">${q.finalizados}</span>
+                <span class="d">${q.lead != null ? n(q.lead,1)+'d' : '—'}</span>
+                <span class="d">${q.cycle != null ? n(q.cycle,1)+'d' : '—'}</span>
+                <span class="d">${q.pct_no_prazo != null ? pilPrazo(q.pct_no_prazo) : '—'}</span>
+              </div>`).join('')}
+          </div>` : semDados('Nenhum quadro com movimento no período.')}
+        </div>
+      </div>`;
+  }
+
+  function plItem(valor, rot, sub, tom){
+    return `<div class="pl-i">
+      <div class="pl-n num ${tom || (valor ? '' : 'zero')}">${n(valor)}</div>
+      <div class="pl-l">${esc(rot)}<small>${esc(sub)}</small></div></div>`;
+  }
+
+  /* A jornada como barra empilhada. Lead time É a soma das partes --
+     três números soltos escondem justamente essa relação, que é onde
+     está a decisão: reduzir fila é obra diferente de acelerar produção. */
+  function jornada(t){
+    const espera = t.espera_backlog || 0;
+    const ciclo = t.cycle || 0;
+    const pos = t.apos_ciclo || 0;
+    const soma = espera + ciclo + pos;
+    if(!soma) return semDados('Ainda não há entregas suficientes para medir o tempo.');
+    const p = v => Math.max(v ? 8 : 0, v / soma * 100);   // fatia mínima legível
+    const parcial = t.base_cycle != null && t.total_finalizados != null
+                    && t.base_cycle < t.total_finalizados;
+
+    return `
+      <div class="jor-total">
+        <b class="num">${dias(t.lead)}</b>
+        <span>do card nascer até o cliente receber</span>
+      </div>
+      <div class="jor">
+        ${espera ? `<span class="jor-f jor-espera" style="width:${p(espera)}%"
+          title="Esperando começar"><span>${n(espera,1)}d</span></span>` : ''}
+        ${ciclo ? `<span class="jor-f jor-ciclo" style="width:${p(ciclo)}%"
+          title="Produção"><span>${n(ciclo,1)}d</span></span>` : ''}
+        ${pos ? `<span class="jor-f jor-cliente" style="width:${p(pos)}%"
+          title="Com o cliente"><span>${n(pos,1)}d</span></span>` : ''}
+      </div>
+      <div class="jor-leg">
+        <span class="jor-li"><span class="jor-pt" style="background:#B8B2E8"></span>
+          <span class="jor-txt"><span class="jor-v num">${dias(espera)}</span>
+            <span class="jor-r">na fila, antes de alguém começar</span></span></span>
+        <span class="jor-li"><span class="jor-pt" style="background:var(--acao)"></span>
+          <span class="jor-txt"><span class="jor-v num">${dias(ciclo)}</span>
+            <span class="jor-r">produzindo — o cycle time</span></span></span>
+        ${pos ? `<span class="jor-li"><span class="jor-pt" style="background:#E5BE7F"></span>
+          <span class="jor-txt"><span class="jor-v num">${dias(pos)}</span>
+            <span class="jor-r">com o cliente, após a entrega do ciclo</span></span></span>` : ''}
+      </div>
+      ${parcial ? `<div class="faixa alerta" style="margin-top:16px">
+        <span class="material-symbols-rounded">info</span>
+        <span>O ciclo é medido em <b>${t.base_cycle} das ${t.total_finalizados} entregas</b>.
+        As outras foram do Backlog direto para Finalizado, sem passar por fase de
+        trabalho — não há como saber quando o trabalho começou.</span>
+      </div>` : ''}`;
+  }
+
+  /* Fases: as oito maiores, e o resto somado. Quinze linhas com barras de
+     um card viram fiapo e alongam o cartão sem informar nada. */
+  function listaFases(lista){
+    const topo = lista.slice(0, 8);
+    const resto = lista.slice(8);
+    const max = lista[0].qtd;
+    return `<div class="bh">
+      ${topo.map(f => `
+        <div class="bh-l">
+          <span class="bh-c">
+            <span class="bh-t">${esc(f.fase)}${f.parado_mediano != null
+              ? `<small> · parado há ${n(f.parado_mediano,0)}d</small>` : ''}</span>
+            <span class="bh-v">${f.qtd}</span>
+          </span>
+          <span class="bh-b"><span class="bh-f" style="width:${Math.max(3, f.qtd/max*100)}%;
+            background:${f.parado_mediano > 14 ? 'var(--atencao)' : 'var(--acao)'}"></span></span>
+        </div>`).join('')}
+      ${resto.length ? `<div class="bh-mais">mais ${resto.length} fase${resto.length!==1?'s':''}
+        com ${resto.reduce((a,b) => a + b.qtd, 0)} card${
+        resto.reduce((a,b) => a + b.qtd, 0)!==1?'s':''}</div>` : ''}
+    </div>`;
+  }
+
+  /* Anel: uma proporção única pede uma figura única. Duas barras somando
+     100% custam duas leituras para dizer o que o anel diz numa. */
+  function anelPrazo(p, total){
+    const r = 54, circ = 2 * Math.PI * r;
+    const frac = total ? p.no_prazo / total : 0;
+    const cor = p.pct_no_prazo >= 80 ? 'var(--ok)'
+              : p.pct_no_prazo >= 60 ? 'var(--atencao)' : 'var(--critico)';
+    return `
+      <div class="anel-cx">
+        <span class="anel-mid">
+          <svg class="anel" viewBox="0 0 132 132" aria-hidden="true">
+            <circle class="anel-tr" cx="66" cy="66" r="${r}" stroke-width="13"/>
+            <circle class="anel-ar" cx="66" cy="66" r="${r}" stroke-width="13"
+                    stroke="${cor}" stroke-dasharray="${(circ*frac).toFixed(1)} ${circ.toFixed(1)}"/>
+          </svg>
+          <span class="anel-num"><b class="num" style="color:${cor}">${pct(p.pct_no_prazo)}</b>
+            <small>no prazo</small></span>
+        </span>
+        <span class="anel-det">
+          <span class="anel-l"><span class="anel-p" style="background:${cor}"></span>
+            No prazo <small>${n(p.no_prazo/total*100,0)}%</small><b>${p.no_prazo}</b></span>
+          <span class="anel-l"><span class="anel-p" style="background:var(--papel-2)"></span>
+            Fora do prazo <small>${n(p.fora/total*100,0)}%</small><b>${p.fora}</b></span>
+          ${p.sem_prazo ? `<span class="cartao-d" style="margin:4px 0 0">
+            ${p.sem_prazo} entrega${p.sem_prazo!==1?'s':''} sem prazo combinado
+            ${p.sem_prazo!==1?'ficaram':'ficou'} fora desta conta.</span>` : ''}
+        </span>
+      </div>`;
+  }
+
+  function pilPrazo(v){
+    const cor = v >= 80 ? 'var(--ok)' : v >= 60 ? 'var(--atencao)' : 'var(--critico)';
+    return `<span style="color:${cor};font-weight:650">${pct(v)}</span>`;
+  }
+
+  /* ---------- ótica 2 · esforço ---------- */
+  function pintarEsforco(){
+    const s = st.dados.esforco;
+    document.getElementById('abaEsforco').innerHTML = `
+      <div class="kpis">
+        ${kpi('Horas lançadas', hrs(s.total_horas), 'no período')}
+        ${kpi('Lançamentos', n(s.lancamentos), 'sessões de trabalho registradas')}
+        ${kpi('Média por sessão', hrs(s.lancamentos ? s.total_horas/s.lancamentos : 0),
+              'duração típica de um lançamento')}
+        ${kpi('Quadro que mais consome', s.por_area[0] ? s.por_area[0].chave : '—',
+              s.por_area[0] ? hrs(s.por_area[0].horas) + ' · ' + pct(s.por_area[0].fatia)
+                            : 'nenhuma hora lançada')}
+      </div>
+
+      <div class="duas">
+        <div class="cartao">
+          <div class="cartao-t">Horas por quadro</div>
+          <div class="cartao-d">Onde o esforço da operação foi gasto.</div>
+          ${s.por_area.length ? `<div class="bh">
+            ${s.por_area.map(x => barraH(x, s.por_area[0].horas, x.chave, pct(x.fatia))).join('')}
+          </div>` : semDados('Nenhuma hora lançada no período.')}
+        </div>
+
+        <div class="cartao">
+          <div class="cartao-t">Horas por cliente</div>
+          <div class="cartao-d">Quanto esforço cada cliente consome.</div>
+          ${s.por_cliente.length ? `<div class="bh">
+            ${s.por_cliente.slice(0,8).map(x => barraH(x, s.por_cliente[0].horas,
+              esc(x.chave) + ` <small>· ${x.projetos} projeto${x.projetos!==1?'s':''}</small>`,
+              pct(x.fatia), true)).join('')}
+          </div>` : semDados('Sem horas por cliente no período.')}
+        </div>
+      </div>
+
+      <div class="duas" style="margin-top:11px">
+        <div class="cartao">
+          <div class="cartao-t">Projetos que mais consumiram</div>
+          <div class="cartao-d">Os quinze com mais horas no período.</div>
+          ${s.por_projeto.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.7fr .7fr .7fr">
+              <span>Projeto</span><span class="d">Horas</span><span class="d">Sessões</span></div>
+            ${s.por_projeto.map(x => `
+              <div class="tb-l" style="grid-template-columns:1.7fr .7fr .7fr">
+                <span class="tb-nome">${esc(x.chave)}</span>
+                <span class="d">${hrs(x.horas)}</span><span class="d">${x.lancamentos}</span>
+              </div>`).join('')}
+          </div>` : semDados('Sem lançamentos no período.')}
+        </div>
+
+        <div class="cartao">
+          <div class="cartao-t">Tarefas que mais consumiram</div>
+          <div class="cartao-d">Total e duração média de cada tipo de atividade.</div>
+          ${s.por_tarefa.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.7fr .7fr .7fr">
+              <span>Tarefa</span><span class="d">Horas</span><span class="d">Média</span></div>
+            ${s.por_tarefa.map(x => `
+              <div class="tb-l" style="grid-template-columns:1.7fr .7fr .7fr">
+                <span class="tb-nome">${esc(x.chave)}<span class="tb-sub"> · ${x.lancamentos}x</span></span>
+                <span class="d">${hrs(x.horas)}</span><span class="d">${hrs(x.media)}</span>
+              </div>`).join('')}
+          </div>` : semDados('Sem lançamentos no período.')}
+        </div>
+      </div>
+
+      <div class="sec" style="margin-top:22px">
+        <div class="sec-cab"><span class="sec-tit">Quanto custa cada tarefa, por quadro</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">a mesma tarefa custa diferente em cada lugar</span></div>
+        <div class="cartao">
+          ${s.por_tarefa_tipo.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1fr 1.5fr .55fr .7fr .7fr">
+              <span>Quadro</span><span>Tarefa</span><span class="d">Vezes</span>
+              <span class="d">Total</span><span class="d">Média</span></div>
+            ${s.por_tarefa_tipo.slice(0,18).map(x => `
+              <div class="tb-l" style="grid-template-columns:1fr 1.5fr .55fr .7fr .7fr">
+                <span class="tb-sub" style="font-size:12px">${esc(x.area)}</span>
+                <span class="tb-nome">${esc(x.tarefa)}</span>
+                <span class="d">${x.lancamentos}</span>
+                <span class="d">${hrs(x.horas)}</span><span class="d">${hrs(x.media)}</span>
+              </div>`).join('')}
+          </div>` : semDados('Sem lançamentos no período.')}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- ótica 3 · time ---------- */
+  function pintarTime(){
+    const t = st.dados.time;
+    const cadastradas = t.pessoas.filter(p => p.cadastrado);
+    const media = cadastradas.length
+      ? cadastradas.reduce((a,b) => a + (b.aproveitamento||0), 0) / cadastradas.length : null;
+    const semLancar = cadastradas.filter(p => !p.horas_lancadas).length;
+
+    document.getElementById('abaTime').innerHTML = `
+      <div class="kpis">
+        ${kpi('Horas lançadas', hrs(t.horas_lancadas_total), 'somando todo o time')}
+        ${kpi('Horas esperadas', hrs(t.horas_esperadas_total),
+              t.dias_uteis + ' dias úteis no período')}
+        ${kpi('Aproveitamento médio', pct(media), 'do que se espera da jornada',
+              media == null ? '' : media >= 70 ? 'ok' : media >= 45 ? 'aviso' : 'ruim')}
+        ${kpi('Sem lançar hora', semLancar,
+              semLancar ? 'pessoas sem registro no período' : 'todo mundo lançou',
+              semLancar ? 'aviso' : 'ok')}
+      </div>
+
+      <div class="sec">
+        <div class="sec-cab"><span class="sec-tit">Jornada e aproveitamento</span>
+          <span class="sec-linha"></span>
+          <span class="sec-nota">horas lançadas sobre a jornada contratada</span></div>
+        <div class="cartao">
+          ${t.pessoas.length ? `<div class="tb">
+            <div class="tb-h" style="grid-template-columns:1.4fr .6fr 1.5fr .6fr .55fr .6fr">
+              <span>Pessoa</span><span class="d">Jornada</span><span>Aproveitamento</span>
+              <span class="d">Abertos</span><span class="d">Atras.</span><span class="d">Entreg.</span></div>
+            ${t.pessoas.map(p => {
+              const a = p.aproveitamento;
+              const tom = a == null ? 'apr-baixo' : a >= 110 ? 'apr-alto'
+                        : a >= 60 ? 'apr-ok' : 'apr-baixo';
+              return `<div class="tb-l" style="grid-template-columns:1.4fr .6fr 1.5fr .6fr .55fr .6fr">
+                <span class="tb-nome">${esc(p.nome)}${p.cadastrado ? ''
+                  : '<span class="tb-sub"> · fora do cadastro</span>'}</span>
+                <span class="d">${p.carga_semanal}h</span>
+                <span>
+                  <span class="apr-linha">
+                    <span class="num" style="font-weight:650">${hrs(p.horas_lancadas)}</span>
+                    <span style="color:var(--tinta-3)">${a != null ? pct(a) : '—'} de ${hrs(p.horas_esperadas)}</span>
+                  </span>
+                  <span class="apr ${tom}"><i style="width:${Math.min(100, a||0)}%"></i></span>
+                </span>
+                <span class="d">${p.projetos_abertos}</span>
+                <span class="d" style="color:${p.atrasados?'var(--critico)':'var(--tinta-3)'}">${p.atrasados||'—'}</span>
+                <span class="d">${p.finalizados}</span>
+              </div>`;
+            }).join('')}
+          </div>` : semDados('Nenhuma pessoa com atividade no período.')}
+
+          <div class="faixa info" style="margin-top:15px">
+            <span class="material-symbols-rounded">calculate</span>
+            <span><b>Como o esperado é calculado:</b> jornada semanal ÷ 5 × ${t.dias_uteis}
+            dias úteis do período. Feriados não entram na conta, então o esperado fica um
+            pouco alto e o aproveitamento, conservador.
+            <b>Aproveitamento baixo raramente significa pouco trabalho</b> — costuma
+            significar hora não lançada.</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ---------- peças ---------- */
+  function kpi(rot, valor, pe, tom){
+    return `<div class="kpi"><div class="kpi-r">${esc(rot)}</div>
+      <div class="kpi-v num ${tom||''}">${esc(valor)}</div>
+      <div class="kpi-p">${esc(pe)}</div></div>`;
+  }
+  /* A cobertura anda junto do número. Uma média que descreve 40% da
+     operação, lida como se fosse 100%, leva a decisão errada. */
+  function barraH(x, maximo, rotulo, sub, jaEscapado){
+    return `<div class="bh-l">
+      <span class="bh-c">
+        <span class="bh-t">${jaEscapado ? rotulo : esc(rotulo)}</span>
+        <span class="bh-v">${hrs(x.horas)}<small>${sub}</small></span>
+      </span>
+      <span class="bh-b"><span class="bh-f" style="width:${
+        Math.max(3, maximo ? x.horas/maximo*100 : 0)}%"></span></span></div>`;
+  }
+  function semDados(txt){
+    return `<div class="vazio"><span class="material-symbols-rounded">inbox</span>
+      <p>${esc(txt)}</p></div>`;
+  }
+
+  /* ---------- navegação ---------- */
+  function otica(qual){
+    st.otica = qual;
+    ['entrega','esforco','time'].forEach(o => {
+      const b = document.getElementById('ot-'+o);
+      const p = document.getElementById('aba' + o[0].toUpperCase() + o.slice(1));
+      b.classList.toggle('on', o === qual);
+      b.setAttribute('aria-selected', o === qual);
+      p.classList.toggle('on', o === qual);
+    });
+  }
+  function periodo(v){
+    st.periodo = v;
+    document.getElementById('datas').classList.toggle('on', v === 'custom');
+    if(v === 'custom' && !st.de){
+      // Nasce com o mês corrente: campo em branco não diz o que esperar.
+      const h = new Date();
+      st.de = iso(new Date(h.getFullYear(), h.getMonth(), 1)); st.ate = iso(h);
+      document.getElementById('dDe').value = st.de;
+      document.getElementById('dAte').value = st.ate;
+    }
+    carregar();
+  }
+  function datas(){
+    const a = document.getElementById('dDe').value, b = document.getElementById('dAte').value;
+    if(!a || !b) return;
+    // Invertido é engano comum: corrige em vez de devolver vazio.
+    st.de = a <= b ? a : b; st.ate = a <= b ? b : a;
+    document.getElementById('dDe').value = st.de;
+    document.getElementById('dAte').value = st.ate;
+    st.periodo = 'custom'; carregar();
+  }
+  function toggleFiltros(){ document.getElementById('gaveta').classList.toggle('on'); }
+  function filtrar(){
+    st.filtros = {
+      quadro: document.getElementById('fQuadro').value,
+      responsavel: document.getElementById('fResp').value,
+      cliente: document.getElementById('fCliente').value,
+    };
+    const q = Object.values(st.filtros).filter(Boolean).length;
+    const chip = document.getElementById('chipF');
+    chip.style.display = q ? 'inline-flex' : 'none';
+    chip.textContent = q;
+    document.getElementById('btnFiltros').classList.toggle('on', q > 0);
+    carregar();
+  }
+  function limpar(){
+    ['fQuadro','fResp','fCliente'].forEach(i => document.getElementById(i).value = '');
+    filtrar();
+  }
+
+  document.addEventListener('DOMContentLoaded', carregar);
+  return { otica, periodo, datas, toggleFiltros, filtrar, limpar };
+})();
+</script>
 </body>
 </html>

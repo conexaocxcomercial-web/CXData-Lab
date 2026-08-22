@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM | core.cx</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --wpp:#25D366;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+            --e3:0 16px 44px rgba(23,23,26,.14), 0 0 0 1px var(--linha);
+            --e-pop:0 12px 34px rgba(23,23,26,.16), 0 0 0 1px var(--linha);
+            --accent-lime:#BEF533; --accent-pink:#FF43C0;
+        }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select,textarea{ font-family:inherit; border:none; }
+        body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+              height:100vh; overflow:hidden; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; height:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
+
+        .top-bar{ background:var(--papel); height:56px; min-height:56px; flex-shrink:0; padding:0 22px;
+            display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--linha); z-index:10; }
+        .top-bar-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .top-bar-logo span{ color:var(--acao); }
+
+        /* min-height, nao height. Com altura fixa E flex-wrap, o que quebra
+           para a segunda linha sai da caixa e cai por cima do quadro --
+           falha silenciosa que aparecia so quando alguem somava um botao.
+           Assim a barra cresce, em vez de transbordar. */
+        .cmd{ display:flex; align-items:center; gap:11px; padding:0 22px;
+            min-height:56px; flex-shrink:0; row-gap:8px;
+            background:var(--papel); border-bottom:1px solid var(--linha); flex-wrap:wrap; }
+        .cmd-tit{ font-size:16px; font-weight:650; letter-spacing:-.35px; white-space:nowrap; }
+        .cmd-sep{ width:1px; height:22px; background:var(--linha); }
+        .segm{ display:flex; background:var(--papel-2); border-radius:var(--r-ctrl); padding:3px; gap:2px; }
+        .segm-btn{ font-size:12.5px; font-weight:500; color:var(--tinta-2); background:none; cursor:pointer;
+            padding:6px 13px; border-radius:6px; white-space:nowrap; transition:.15s; }
+        .segm-btn.on{ background:var(--papel); color:var(--tinta); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.07); }
+        .cmd-cont{ font-size:12px; font-weight:600; color:var(--tinta-2); background:var(--papel-2); padding:4px 10px; border-radius:var(--r-pill); white-space:nowrap; }
+        .cmd-dir{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+        .busca{ position:relative; width:200px; }
+        .busca .material-symbols-rounded{ position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--tinta-3); pointer-events:none; }
+        .busca input{ width:100%; font-size:13px; padding:8px 12px 8px 35px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; color:var(--tinta); }
+        .busca input:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .btn{ font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+            padding:8px 14px; border-radius:var(--r-ctrl); transition:.15s; white-space:nowrap; }
+        .btn .material-symbols-rounded{ font-size:18px; }
+        .btn-fant{ background:var(--papel-2); color:var(--tinta-2); }
+        .btn-fant:hover{ background:var(--linha); color:var(--tinta); }
+        .btn-fant.on{ background:var(--acao-fraco); color:var(--acao); }
+        .btn-acao{ background:var(--acao); color:#fff; }
+        .btn-acao:hover{ background:#5a4bd4; }
+        .chip-n{ font-size:11px; font-weight:600; background:var(--critico); color:#fff; min-width:17px; height:17px;
+            padding:0 5px; border-radius:var(--r-pill); display:inline-flex; align-items:center; justify-content:center; }
+
+        /* fases no celular */
+        .m-fases{ display:none; gap:6px; padding:9px 16px; overflow-x:auto; background:var(--papel);
+            border-bottom:1px solid var(--linha); flex-shrink:0; }
+        .m-fases::-webkit-scrollbar{ display:none; }
+        .m-fase{ font-size:12px; font-weight:550; padding:8px 13px; border-radius:var(--r-pill); background:var(--papel-2);
+            color:var(--tinta-2); white-space:nowrap; display:flex; align-items:center; gap:6px; flex-shrink:0; cursor:pointer; border:none; }
+        .m-fase-pt{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+        .m-fase.on{ background:var(--tinta); color:#fff; }
+        .m-fase-q{ font-size:11px; opacity:.7; }
+
+        .board{ display:flex; padding:14px 22px 20px; gap:10px; overflow-x:auto; flex-grow:1; align-items:flex-start; }
+        /* 246px: o rodapé do card carrega avatar, nome, valor e dias.
+           Com 216 o nome truncava em "Jhonatt...". Como os funis agora
+           têm até 13 colunas, a rolagem horizontal é inevitável de
+           qualquer forma; melhor colunas legíveis do que muitas ilegíveis. */
+        .col{ width:246px; min-width:246px; display:flex; flex-direction:column; max-height:100%;
+            background:rgba(255,255,255,.5); border-radius:var(--r-card); padding:8px; transition:background .18s, box-shadow .18s; }
+        .col.drag-over{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .col-h{ display:flex; align-items:center; gap:7px; padding:4px 6px 10px; flex-shrink:0; }
+        .col-pt{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+        .col-n{ font-size:12px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .col-q{ margin-left:auto; font-size:11px; font-weight:600; color:var(--tinta-3); flex-shrink:0; }
+        .col-cards{ flex-grow:1; overflow-y:auto; display:flex; flex-direction:column; gap:7px; padding:1px 2px 6px; min-height:50px; }
+        .col-vazia{ border:1.5px dashed var(--linha-2); border-radius:9px; padding:15px 10px; text-align:center;
+            font-size:11.5px; color:var(--tinta-3); font-weight:500; flex-shrink:0; }
+
+        /* ===== CARD DE LEAD ===== */
+        .lc{ background:var(--papel); border-radius:10px; box-shadow:0 1px 2px rgba(0,0,0,.04),0 0 0 1px var(--linha);
+            padding:10px 11px; cursor:grab; transition:box-shadow .15s, transform .15s, background .15s; flex-shrink:0; position:relative; }
+        .lc:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .lc:active{ cursor:grabbing; }
+        .lc.dragging{ opacity:.4; }
+        .lc.parado{ background:var(--at-fundo); box-shadow:0 1px 2px rgba(0,0,0,.04),0 0 0 1px var(--at-borda); }
+        .lc-emp{ font-size:10px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; color:var(--tinta-3);
+            margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lc-nome{ font-size:12.5px; font-weight:600; line-height:1.3; margin-bottom:5px; color:var(--tinta); }
+        .lc-prod{ font-size:10.5px; font-weight:600; color:var(--acao); background:var(--acao-fraco);
+            padding:2px 7px; border-radius:99px; display:inline-block; margin-bottom:8px; }
+        .lc-acoes{ display:flex; gap:5px; margin-bottom:8px; }
+        .ac{ width:26px; height:26px; min-width:26px; border-radius:7px; display:flex; align-items:center;
+            justify-content:center; cursor:pointer; transition:.15s; border:none; }
+        .ac .material-symbols-rounded{ font-size:15px; }
+        .ac-wpp{ background:rgba(37,211,102,.13); color:#128C4A; }
+        .ac-wpp:hover{ background:var(--wpp); color:#fff; }
+        .ac-mail{ background:var(--papel-2); color:var(--tinta-2); }
+        .ac-mail:hover{ background:var(--acao); color:#fff; }
+        .ac-fone{ background:var(--papel-2); color:var(--tinta-2); }
+        .ac-fone:hover{ background:var(--tinta); color:#fff; }
+        .lc-pe{ display:flex; align-items:center; gap:6px; }
+        .lc-av{ width:19px; height:19px; min-width:19px; border-radius:50%; display:flex; align-items:center;
+            justify-content:center; font-size:8px; font-weight:600; }
+        /* O nome cede espaço em vez de disputá-lo: com flex:1 ele tentava
+           ocupar tudo e era o primeiro a ser cortado quando o valor
+           entrava. Agora só encolhe se realmente faltar largura. */
+        .lc-quem{ font-size:10.5px; color:var(--tinta-3); font-weight:500; white-space:nowrap;
+            overflow:hidden; text-overflow:ellipsis; min-width:0; flex:0 1 auto; }
+        .lc-dias{ margin-left:auto; font-size:10px; color:var(--tinta-3); font-weight:500;
+            font-family:'IBM Plex Mono',monospace; white-space:nowrap; flex-shrink:0; }
+        .lc-dias.alerta{ color:var(--atencao); font-weight:600; }
+        .lc-prox{ display:flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:var(--acao); margin-top:6px; }
+        .lc-prox .material-symbols-rounded{ font-size:12px; }
+        .lc-prox.hoje{ color:var(--critico); }
+        .lc-valor{ font-size:11.5px; font-weight:650; font-family:'IBM Plex Mono',monospace;
+            color:var(--ok); white-space:nowrap; flex-shrink:0; }
+        .lc-mover{ position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:7px;
+            background:rgba(0,0,0,.05); color:var(--tinta-3); display:none; align-items:center; justify-content:center; cursor:pointer; border:none; }
+        .lc-mover .material-symbols-rounded{ font-size:15px; }
+
+        .loading{ text-align:center; padding:56px; color:var(--tinta-3); font-size:13px; font-weight:500; width:100%; }
+        .empty{ text-align:center; padding:60px 24px; color:var(--tinta-3); width:100%; }
+        .empty .material-symbols-rounded{ font-size:44px; opacity:.25; display:block; margin-bottom:13px; }
+        .empty h3{ font-size:15px; font-weight:650; color:var(--tinta-2); margin-bottom:6px; }
+        .empty p{ font-size:13px; font-weight:500; line-height:1.6; max-width:380px; margin:0 auto 16px; }
+
+        /* ===== MENU DE AÇÕES SECUNDÁRIAS =====
+           Importar é ação rara: não disputa espaço com "Novo lead", que é
+           o que a pessoa vem fazer todo dia. Cinco botões lado a lado
+           estouravam a barra em 1366px -- e nenhum deles ficava legível.
+           O que se usa uma vez por mês mora aqui dentro. */
+        .cmd-mais{ position:relative; }
+        .cmd-mais-btn{ width:34px; height:34px; border-radius:var(--r-ctrl);
+            background:var(--papel-2); color:var(--tinta-2); border:none; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; transition:.15s; }
+        .cmd-mais-btn:hover{ background:var(--linha); color:var(--tinta); }
+        .cmd-mais.on .cmd-mais-btn{ background:var(--linha); color:var(--tinta); }
+        .cmd-mais-btn .material-symbols-rounded{ font-size:19px; }
+        .cmd-menu{ position:absolute; top:calc(100% + 6px); right:0; min-width:212px;
+            background:var(--papel); border-radius:12px; box-shadow:0 12px 34px rgba(23,23,26,.16);
+            border:1px solid var(--linha); overflow:hidden; z-index:200;
+            opacity:0; visibility:hidden; transform:translateY(-5px); transition:.16s; }
+        .cmd-mais.on .cmd-menu{ opacity:1; visibility:visible; transform:none; }
+        .cmd-menu-i{ display:flex; align-items:flex-start; gap:11px; padding:11px 14px;
+            font-size:13px; font-weight:550; color:var(--tinta-2); cursor:pointer;
+            transition:.14s; text-align:left; width:100%; background:none; border:none; }
+        .cmd-menu-i:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cmd-menu-i .material-symbols-rounded{ font-size:18px; color:var(--tinta-3); margin-top:1px; }
+        .cmd-menu-i:hover .material-symbols-rounded{ color:var(--acao); }
+        .cmd-menu-i small{ display:block; font-size:11px; color:var(--tinta-3);
+            font-weight:400; margin-top:2px; line-height:1.4; }
+
+        /* ===== IMPORTADOR DE PLANILHA ===== */
+        .imp-passos{ display:flex; gap:6px; align-items:center; margin-bottom:4px; }
+        .imp-passo{ display:flex; align-items:center; gap:7px; font-size:11.5px;
+            font-weight:600; color:var(--tinta-3); }
+        .imp-passo b{ width:19px; height:19px; border-radius:50%; background:var(--papel-2);
+            display:flex; align-items:center; justify-content:center; font-size:10px; }
+        .imp-passo.on{ color:var(--acao); }
+        .imp-passo.on b{ background:var(--acao); color:#fff; }
+        .imp-passo.feito b{ background:var(--ok-fraco); color:var(--ok); }
+        .imp-tr{ flex:1; height:1px; background:var(--linha); }
+
+        .imp-solta{ border:1.5px dashed var(--linha-2); border-radius:var(--r-card);
+            padding:34px 20px; text-align:center; cursor:pointer; transition:.15s;
+            background:var(--papel-2); }
+        .imp-solta:hover,.imp-solta.sobre{ border-color:var(--acao); background:var(--acao-fraco); }
+        .imp-solta .material-symbols-rounded{ font-size:34px; color:var(--tinta-3);
+            display:block; margin-bottom:10px; }
+        .imp-solta.sobre .material-symbols-rounded{ color:var(--acao); }
+        .imp-solta-t{ font-size:13.5px; font-weight:650; margin-bottom:4px; }
+        .imp-solta-d{ font-size:12px; color:var(--tinta-3); line-height:1.5; }
+
+        .imp-arq{ display:flex; align-items:center; gap:11px; background:var(--papel-2);
+            border-radius:var(--r-ctrl); padding:11px 13px; }
+        .imp-arq .material-symbols-rounded{ font-size:20px; color:var(--ok); }
+        .imp-arq-n{ font-size:13px; font-weight:600; flex:1; min-width:0;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .imp-arq-d{ font-size:11.5px; color:var(--tinta-3); }
+
+        /* Mapeamento: uma linha por campo do CRM. */
+        .imp-map{ display:flex; flex-direction:column; gap:1px; background:var(--linha);
+            border-radius:var(--r-ctrl); overflow:hidden; }
+        .imp-linha{ display:grid; grid-template-columns:1fr 18px 1.2fr; gap:9px;
+            align-items:center; background:var(--papel); padding:9px 12px; }
+        .imp-campo{ font-size:12.5px; font-weight:550; }
+        .imp-campo small{ display:block; font-size:10.5px; color:var(--tinta-3);
+            font-weight:400; margin-top:1px; }
+        .imp-campo.obg::after{ content:' *'; color:var(--critico); font-weight:700; }
+        .imp-seta{ color:var(--linha-2); display:flex; justify-content:center; }
+        .imp-seta .material-symbols-rounded{ font-size:16px; }
+        .imp-sel{ width:100%; font-size:12.5px; padding:7px 9px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:7px; color:var(--tinta);
+            outline:none; cursor:pointer; }
+        .imp-sel:focus{ background:var(--papel); border-color:var(--acao); }
+        .imp-sel.vazio{ color:var(--tinta-3); }
+
+        .imp-resumo{ display:flex; gap:9px; flex-wrap:wrap; }
+        .imp-bloco{ flex:1; min-width:96px; background:var(--papel-2); border-radius:var(--r-ctrl);
+            padding:11px 13px; }
+        .imp-bloco-n{ font-size:19px; font-weight:650; font-family:'IBM Plex Mono',monospace;
+            letter-spacing:-.5px; }
+        .imp-bloco-r{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:1px; }
+        .imp-bloco.ok .imp-bloco-n{ color:var(--ok); }
+        .imp-bloco.alerta .imp-bloco-n{ color:var(--atencao); }
+
+        .imp-tabela{ border:1px solid var(--linha); border-radius:var(--r-ctrl);
+            overflow:hidden; max-height:230px; overflow-y:auto; }
+        .imp-th,.imp-tr2{ display:grid; grid-template-columns:26px 1.3fr 1fr 1.1fr;
+            gap:9px; padding:7px 11px; align-items:center; font-size:12px; }
+        .imp-th{ background:var(--papel-2); border-bottom:1px solid var(--linha);
+            font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.4px; color:var(--tinta-3); position:sticky; top:0; }
+        .imp-tr2{ border-bottom:1px solid var(--papel-2); }
+        .imp-tr2:last-child{ border:none; }
+        .imp-tr2 span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .imp-n{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--tinta-3); }
+        .imp-tr2.ruim{ background:#FEF7F7; }
+        .imp-motivo{ font-size:11px; color:var(--critico); }
+        .imp-tr2.pula .imp-motivo{ color:var(--atencao); }
+
+        .imp-aviso{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px;
+            border-radius:var(--r-ctrl); font-size:12px; line-height:1.55; }
+        .imp-aviso .material-symbols-rounded{ font-size:17px; flex-shrink:0; margin-top:1px; }
+        .imp-aviso.info{ background:var(--acao-fraco); color:#3C3489; }
+        .imp-aviso.alerta{ background:var(--at-fundo); color:#7A4A0C; }
+        .imp-aviso.erro{ background:var(--cr-fundo); color:#8A1F1F; }
+        .imp-aviso b{ font-weight:650; }
+
+        .imp-barra{ height:5px; background:var(--papel-2); border-radius:99px; overflow:hidden; }
+        .imp-barra i{ display:block; height:100%; background:var(--acao); width:0;
+            transition:width .2s; }
+
+        .imp-modelo{ font-size:12px; font-weight:600; color:var(--acao); cursor:pointer;
+            background:none; border:none; padding:0; text-decoration:underline; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
+            justify-content:center; align-items:center; padding:20px; }
+        .modal-overlay.show{ display:flex; }
+        .modal{ background:var(--papel); border-radius:16px; width:100%; max-width:480px; max-height:92vh;
+            overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(23,23,26,.22); }
+        .md-head{ padding:17px 20px 15px; border-bottom:1px solid var(--linha); display:flex; align-items:flex-start; gap:12px; flex-shrink:0; }
+        .md-eyebrow{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:4px; }
+        .md-tit{ font-size:16px; font-weight:650; letter-spacing:-.3px; }
+        .md-sub{ font-size:12.5px; color:var(--tinta-3); margin-top:4px; line-height:1.5; }
+        .md-x{ margin-left:auto; width:28px; height:28px; border-radius:8px; background:var(--papel-2); color:var(--tinta-3);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; border:none; }
+        .md-x .material-symbols-rounded{ font-size:17px; }
+        .md-corpo{ padding:18px 20px 24px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; flex:1; }
+        .ig label{ display:block; font-size:11px; font-weight:600; color:var(--tinta-3); text-transform:uppercase;
+            letter-spacing:.5px; margin-bottom:7px; }
+        .ig input,.ig select,.ig textarea{ width:100%; font-size:13px; color:var(--tinta); padding:9px 11px;
+            background:var(--papel-2); border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; transition:.15s; }
+        .ig textarea{ resize:vertical; min-height:70px; line-height:1.5; }
+        .ig input:focus,.ig select:focus,.ig textarea:focus{ background:var(--papel); border-color:var(--acao); box-shadow:0 0 0 3px var(--acao-fraco); }
+        .ig2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .campo-acao{ display:flex; gap:8px; align-items:center; }
+        .campo-acao input{ flex:1; min-width:0; }
+        .md-pe{ padding:13px 20px; border-top:1px solid var(--linha); display:flex; gap:9px; justify-content:flex-end;
+            background:var(--papel-2); flex-shrink:0; flex-wrap:wrap; }
+
+        /* objeções */
+        .obj-grade{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .obj{ border:1px solid var(--linha); border-radius:var(--r-ctrl); padding:11px 12px; cursor:pointer;
+            display:flex; align-items:center; gap:9px; transition:.15s; background:var(--papel); text-align:left; }
+        .obj:hover{ border-color:var(--linha-2); background:var(--papel-2); }
+        .obj.on{ border-color:var(--acao); background:var(--acao-fraco); }
+        .obj .material-symbols-rounded{ font-size:17px; color:var(--tinta-3); flex-shrink:0; }
+        .obj.on .material-symbols-rounded{ color:var(--acao); }
+        .obj-txt{ font-size:12.5px; font-weight:550; color:var(--tinta-2); }
+        .obj.on .obj-txt{ color:var(--acao); font-weight:600; }
+
+        /* folha de mover (celular) */
+        .folha-veu{ position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:900; display:none; align-items:flex-end; }
+        .folha-veu.on{ display:flex; }
+        .folha{ width:100%; background:var(--papel); border-radius:18px 18px 0 0; padding-bottom:10px; max-height:80vh;
+            display:flex; flex-direction:column; }
+        .folha-alca{ width:38px; height:4px; background:var(--linha-2); border-radius:99px; margin:9px auto 6px; flex-shrink:0; }
+        .folha-cab{ padding:6px 16px 12px; border-bottom:1px solid var(--linha); flex-shrink:0; }
+        .folha-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:4px; }
+        .folha-tit{ font-size:13.5px; font-weight:650; letter-spacing:-.15px; line-height:1.35; }
+        .folha-lista{ overflow-y:auto; padding:6px; }
+        .folha-grupo{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3); padding:9px 10px 5px; }
+        .folha-item{ display:flex; align-items:center; gap:11px; padding:13px 10px; border-radius:9px;
+            font-size:13px; font-weight:500; color:var(--tinta-2); cursor:pointer; }
+        .folha-item:active{ background:var(--papel-2); }
+        .folha-item .pt{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .folha-item.atual{ background:var(--papel-2); color:var(--tinta-3); cursor:default; }
+        .folha-item .marca{ margin-left:auto; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+
+        /* toast */
+        /* portão e fechamento */
+        .pt-ajuda{ font-size:12px; color:var(--tinta-2); line-height:1.55; background:var(--papel-2);
+            padding:11px 13px; border-radius:var(--r-ctrl); }
+        .ig-dica{ font-size:11px; color:var(--tinta-3); line-height:1.5; margin-top:6px; }
+        /* Lista vertical, uma linha por quadro. Com pílulas soltas, os
+           que tinham subdivisão viravam blocos de alturas diferentes e
+           não dava para varrer a coluna do que está marcado. */
+        .qds{ display:flex; flex-direction:column; gap:1px; background:var(--linha);
+            border-radius:var(--r-ctrl); overflow:hidden; box-shadow:inset 0 0 0 1px var(--linha); }
+        .qd{ display:flex; align-items:center; gap:10px; padding:10px 12px; width:100%;
+            background:var(--papel); cursor:pointer; transition:.12s; text-align:left;
+            font-family:inherit; }
+        .qd:hover{ background:var(--papel-2); }
+        .qd.on{ background:var(--acao-fraco); }
+        .qd-cx{ width:16px; height:16px; min-width:16px; border-radius:5px; transition:.12s;
+            box-shadow:inset 0 0 0 1.5px var(--linha-2); display:flex;
+            align-items:center; justify-content:center; }
+        .qd.on .qd-cx{ background:var(--acao); box-shadow:none; }
+        .qd.on .qd-cx::after{ content:''; width:4px; height:8px; border:solid #fff;
+            border-width:0 2px 2px 0; transform:rotate(45deg) translate(-1px,-1px); }
+        .qd-nome{ font-size:12.5px; font-weight:550; color:var(--tinta-2); }
+        .qd.on .qd-nome{ color:var(--tinta); font-weight:600; }
+        .qd-p{ font-size:9.5px; font-weight:600; padding:2px 7px; border-radius:99px;
+            background:var(--acao-fraco); color:var(--acao); white-space:nowrap; }
+        .qd.on .qd-p{ background:rgba(108,92,231,.16); }
+        .qd-dir{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+        .previa{ background:var(--acao-fraco); border-radius:var(--r-ctrl); padding:13px 14px; }
+        .previa-t{ font-size:11px; font-weight:650; color:var(--acao); text-transform:uppercase;
+            letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+        .previa-t .material-symbols-rounded{ font-size:14px; }
+        .pv{ display:flex; align-items:flex-start; gap:9px; padding:5px 0; font-size:12.5px;
+            color:#3C3489; line-height:1.5; }
+        .pv .material-symbols-rounded{ font-size:15px; color:var(--acao); flex-shrink:0; margin-top:1px; }
+        .pv b{ font-weight:650; }
+        .ig3{ display:grid; grid-template-columns:1fr 108px; gap:12px; }
+        .ig-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; color:var(--tinta-3); padding-top:6px; margin-bottom:9px;
+            border-top:1px solid var(--linha); padding-top:14px; }
+        @media(max-width:520px){ .ig3{ grid-template-columns:1fr; } }
+
+        .toast-container{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:10001;
+            display:flex; flex-direction:column; gap:9px; }
+        .toast{ background:rgba(23,23,26,.95); color:#fff; padding:11px 20px; border-radius:var(--r-pill);
+            font-size:12.5px; font-weight:500; box-shadow:0 10px 30px rgba(0,0,0,.2); display:flex; align-items:center; gap:9px; }
+
+
+        /* ===== DETALHE DO LEAD ===== */
+        .modal.largo{ max-width:960px; }
+        /* position:relative + fechar absoluto: com flex-wrap o botão caía
+           para uma linha própria e abria um vão no cabeçalho. */
+        .det-cab{ position:relative; padding:20px 54px 18px 24px; border-bottom:1px solid var(--linha);
+            display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; flex-shrink:0; }
+        .det-cab > .md-x{ position:absolute; top:16px; right:16px; margin:0; }
+        .det-av{ width:48px; height:48px; min-width:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:650; }
+        .det-id{ flex:1; min-width:180px; }
+        .det-emp{ font-size:10.5px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--tinta-3); margin-bottom:3px; }
+        .det-nome{ font-size:20px; font-weight:700; letter-spacing:-.5px; line-height:1.2; }
+        .det-chips{ display:flex; gap:7px; margin-top:9px; flex-wrap:wrap; }
+        .chip{ font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+        .chip .material-symbols-rounded{ font-size:13px; }
+        .c-funil-q{ background:#E4F4FD; color:#0EA5E9; }
+        .c-funil-f{ background:var(--acao-fraco); color:var(--acao); }
+        .c-funil-n{ background:var(--at-fundo); color:var(--atencao); }
+        .c-col{ background:var(--papel-2); color:var(--tinta-2); }
+        .c-prod{ background:var(--acao-fraco); color:var(--acao); }
+        .c-orig{ background:var(--papel-2); color:var(--tinta-3); }
+        .det-acoes{ display:flex; gap:7px; flex-shrink:0; }
+        .det-acoes .ac{ width:36px; height:36px; min-width:36px; border-radius:10px; }
+        .det-acoes .ac .material-symbols-rounded{ font-size:18px; }
+
+        /* auto-fill deixava célula vazia quando o total era ímpar;
+           flex faz o último item ocupar o espaço restante. */
+        .det-num{ display:flex; flex-wrap:wrap; gap:1px; background:var(--linha);
+            border-bottom:1px solid var(--linha); flex-shrink:0; }
+        .det-num .dn{ flex:1 1 132px; min-width:0; }
+        .dn{ background:var(--papel); padding:13px 17px; }
+        .dn-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:6px; }
+        .dn-val{ font-size:19px; font-weight:700; letter-spacing:-.6px; line-height:1; }
+        .dn-pe{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+
+        .det-corpo{ display:grid; grid-template-columns:1fr 320px; overflow-y:auto; flex:1; min-height:0; }
+        .det-esq{ padding:20px 24px; border-right:1px solid var(--linha); min-width:0; }
+        .det-dir{ padding:20px 22px; background:var(--papel-2); min-width:0; }
+        .det-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:14px; }
+
+        .tl{ position:relative; padding-left:26px; }
+        .tl::before{ content:''; position:absolute; left:7px; top:6px; bottom:14px; width:2px; background:var(--linha); }
+        .tp{ position:relative; padding-bottom:20px; }
+        .tp:last-child{ padding-bottom:0; }
+        .tp-pt{ position:absolute; left:-26px; top:3px; width:16px; height:16px; border-radius:50%; background:var(--papel);
+            box-shadow:0 0 0 2px var(--linha); display:flex; align-items:center; justify-content:center; }
+        .tp-pt i{ width:7px; height:7px; border-radius:50%; display:block; }
+        .tp.destaque .tp-pt{ box-shadow:0 0 0 2px var(--acao); }
+        .tp-topo{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:3px; }
+        .tp-mov{ font-size:13px; font-weight:600; letter-spacing:-.1px; }
+        .tp-mov b{ font-weight:650; }
+        .tp-seta{ color:var(--tinta-3); font-size:11px; }
+        .tp-quando{ font-size:11px; color:var(--tinta-3); font-weight:500; font-family:'IBM Plex Mono',monospace; margin-left:auto; white-space:nowrap; }
+        .tp-meta{ font-size:11.5px; color:var(--tinta-3); font-weight:500; }
+        .tp-dur{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:2px 8px;
+            border-radius:99px; background:var(--papel-2); color:var(--tinta-2); margin-top:7px; }
+        .tp-dur.longo{ background:var(--at-fundo); color:var(--atencao); }
+        .tp-dur .material-symbols-rounded{ font-size:12px; }
+        .tp-obj{ margin-top:8px; background:var(--cr-fundo); border-radius:9px; padding:9px 11px; box-shadow:0 0 0 1px var(--cr-borda); }
+        .tp-obj-t{ font-size:11px; font-weight:650; color:#8A1F1F; display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+        .tp-obj-t .material-symbols-rounded{ font-size:13px; }
+        .tp-obj-d{ font-size:12px; color:#8A1F1F; line-height:1.5; opacity:.85; }
+        .tp-funil{ display:inline-flex; align-items:center; font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; margin-left:6px; }
+        .tf-q{ background:#E4F4FD; color:#0EA5E9; }
+        .tf-f{ background:var(--acao-fraco); color:var(--acao); }
+        .tf-n{ background:var(--at-fundo); color:var(--atencao); }
+
+        .campo{ margin-bottom:14px; }
+        .campo-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:5px; }
+        .campo-v{ font-size:13px; color:var(--tinta); font-weight:500; line-height:1.5; word-break:break-word; }
+        .campo-v.vazio{ color:var(--tinta-3); font-style:italic; font-weight:400; }
+        .anot{ background:var(--papel); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.55; color:var(--tinta-2); box-shadow:var(--e1); }
+        .btn-ok{ background:var(--ok); color:#fff; }
+        .btn-perigo{ background:var(--papel); color:var(--critico); box-shadow:inset 0 0 0 1px var(--cr-borda); }
+
+        /* ===== PAINEL DE FILTROS ===== */
+        .pf-veu{ position:fixed; inset:0; z-index:55; display:none; }
+        .pf-veu.on{ display:block; }
+        .pf{ position:fixed; z-index:60; width:330px; background:var(--papel); border-radius:14px;
+            box-shadow:var(--e-pop); overflow:hidden; display:none; flex-direction:column; }
+        .pf.on{ display:flex; }
+        .pf-cab{ padding:13px 16px; border-bottom:1px solid var(--linha); display:flex; align-items:center; gap:9px; }
+        .pf-tit{ font-size:13.5px; font-weight:650; flex:1; }
+        .pf-corpo{ padding:14px 16px; max-height:400px; overflow-y:auto; }
+        .pf-g{ margin-bottom:16px; }
+        .pf-g:last-child{ margin-bottom:0; }
+        .pf-r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:8px; }
+        .pf-atalhos{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:9px; }
+        .pf-a{ font-size:11.5px; font-weight:550; padding:5px 10px; border-radius:99px; background:var(--papel-2);
+            color:var(--tinta-2); cursor:pointer; border:none; transition:.15s; }
+        .pf-a:hover{ background:var(--linha); }
+        .pf-a.on{ background:var(--acao); color:#fff; }
+        .pf-sel{ width:100%; font-size:13px; color:var(--tinta); padding:9px 11px; background:var(--papel-2);
+            border:1px solid transparent; border-radius:var(--r-ctrl); outline:none; cursor:pointer; }
+        .pf-datas{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
+        .pf-datas span{ font-size:12px; color:var(--tinta-3); }
+        .pf-d{ width:100%; font-size:12.5px; padding:8px 9px; background:var(--papel-2); border:1px solid transparent;
+            border-radius:var(--r-ctrl); outline:none; color:var(--tinta); }
+        .pf-radio{ display:flex; flex-direction:column; gap:6px; }
+        .pf-op{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:var(--r-ctrl);
+            background:var(--papel-2); cursor:pointer; font-size:12.5px; font-weight:500; color:var(--tinta-2); border:none; text-align:left; width:100%; }
+        .pf-op.on{ background:var(--acao-fraco); color:var(--acao); font-weight:600; }
+        .pf-op i{ width:14px; height:14px; border-radius:50%; box-shadow:inset 0 0 0 1.5px var(--linha-2); flex-shrink:0; display:block; }
+        .pf-op.on i{ box-shadow:inset 0 0 0 4px var(--acao); }
+        .pf-pe{ padding:12px 16px; border-top:1px solid var(--linha); display:flex; gap:9px; background:var(--papel-2); }
+        .pf-pe .btn{ flex:1; justify-content:center; }
+
+        .chips-barra{ display:none; align-items:center; gap:7px; padding:9px 22px; background:var(--papel);
+            border-bottom:1px solid var(--linha); flex-wrap:wrap; flex-shrink:0; }
+        .chips-barra.on{ display:flex; }
+        .chips-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+        .chip-f{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:550;
+            background:var(--acao-fraco); color:var(--acao); padding:5px 7px 5px 10px; border-radius:99px; }
+        .chip-f b{ font-weight:600; }
+        .chip-f .x{ display:flex; cursor:pointer; opacity:.7; border-radius:50%; padding:1px; }
+        .chip-f .x:hover{ opacity:1; background:rgba(108,92,231,.16); }
+        .chip-f .material-symbols-rounded{ font-size:14px; }
+        .chips-limpar{ font-size:12px; font-weight:600; color:var(--tinta-3); cursor:pointer; padding:5px 9px;
+            border-radius:var(--r-ctrl); margin-left:auto; background:none; border:none; }
+        .chips-limpar:hover{ background:#FDEDED; color:var(--critico); }
+
+        .folha-g{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--tinta-3);
+            padding:11px 10px 5px; display:flex; align-items:center; gap:7px; }
+        .folha-g .pt{ width:6px; height:6px; border-radius:50%; }
+        .folha-item .material-symbols-rounded{ margin-left:auto; font-size:16px; color:var(--tinta-3); }
+
+        @media (max-width:900px){
+            .modal.largo{ max-width:none; }
+            .det-corpo{ grid-template-columns:1fr; }
+            .det-esq{ border-right:none; border-bottom:1px solid var(--linha); }
+            .det-num{ grid-template-columns:1fr 1fr; }
+            .pf{ left:12px !important; right:12px; width:auto; top:auto !important; bottom:0;
+                 border-radius:16px 16px 0 0; max-height:82vh; }
+            .chips-barra{ padding:9px 16px; }
+            body{ height:auto; min-height:100vh; overflow:visible; }
+            .top-bar{ padding:0 16px 0 60px; }
+            .cmd{ padding:10px 16px; height:auto; row-gap:9px; }
+            /* Sem flex-wrap os 4 botões não quebravam linha e o último
+               saía da tela. A busca vira ícone para caber tudo. */
+            .cmd-dir{ width:100%; margin-left:0; flex-wrap:wrap; gap:7px; }
+            .busca{ width:44px; flex:0 0 44px; }
+            .busca input{ padding:8px 0 8px 35px; }
+            .busca input::placeholder{ color:transparent; }
+            .busca.aberta{ flex:1 1 100%; width:auto; }
+            .busca.aberta input{ padding:8px 12px 8px 35px; }
+            .busca.aberta input::placeholder{ color:var(--tinta-3); }
+            .cmd-dir .btn{ flex:1; justify-content:center; padding:8px 10px; }
+            /* "Contatos de hoje" precisa de ~142px e só há ~99px por botão */
+            .rot-longo{ display:none; }
+            .cmd-tit{ font-size:15px; }
+            .cmd-sep{ display:none; }
+            .segm{ order:-1; width:100%; }
+            .segm-btn{ flex:1; text-align:center; justify-content:center; }
+            .cmd-cont{ order:-1; }
+            .m-fases{ display:flex; }
+            .board{ flex-direction:column; padding:12px 16px 22px; overflow-x:visible; }
+            .col{ width:100%; min-width:0; max-height:none; background:transparent; padding:0; display:none; }
+            .col.fase-ativa{ display:flex; }
+            .col .col-h{ display:none; }
+            .col-cards{ overflow-y:visible; }
+            .lc{ cursor:pointer; }
+            .lc-mover{ display:flex; }
+            .modal-overlay{ padding:0; align-items:flex-end; }
+            .modal{ max-width:none; border-radius:18px 18px 0 0; }
+            .obj-grade{ grid-template-columns:1fr; }
+        }
+    
+        .qd-sub{ font-size:11.5px; font-weight:550; padding:5px 9px; border-radius:6px;
+            background:var(--papel-2); color:var(--tinta-2); cursor:pointer;
+            font-family:inherit; border:none; outline:none; max-width:150px; }
+        .qd-sub:focus{ box-shadow:0 0 0 2px var(--acao-fraco); }
+        .qd.on .qd-sub{ background:var(--papel); color:var(--acao); font-weight:600; }
+        .qd.off .qd-sub{ opacity:.45; }
+</style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-logo" onclick="window.location.href='/'">core<span>.cx</span></div>
+        {% include '_usermenu.html' %}
+    </div>
+    {% include '_sidebar.html' %}
+
+    <div class="cmd">
+        <span class="cmd-tit">CRM</span>
+        <div class="cmd-sep"></div>
+        <div class="segm" role="tablist">
+            <button class="segm-btn on" id="tab-qualificacao" onclick="mudarFunil('qualificacao')">Qualificação</button>
+            <button class="segm-btn" id="tab-fechamento" onclick="mudarFunil('fechamento')">Fechamento</button>
+            <button class="segm-btn" id="tab-relacionamento" onclick="mudarFunil('relacionamento')">Relacionamento</button>
+            <button class="segm-btn" id="tab-nutricao" onclick="mudarFunil('nutricao')">Nutrição</button>
+        </div>
+        <span class="cmd-cont" id="contador">0 leads</span>
+        <div class="cmd-dir">
+            <div class="busca">
+                <span class="material-symbols-rounded">search</span>
+                <input type="text" id="busca" placeholder="Buscar empresa ou contato"
+                       oninput="render()" onfocus="abrirBusca(true)" onblur="abrirBusca(false)">
+            </div>
+            <button class="btn btn-fant" id="btnFiltros" onclick="toggleFiltros()">
+                <span class="material-symbols-rounded">tune</span>Filtros<span class="chip-n" id="chipFiltros" style="display:none">0</span>
+            </button>
+            <button class="btn btn-fant" id="btnHoje" onclick="alternarHoje()">
+                <span class="material-symbols-rounded">today</span><span class="rot-longo">Contatos de </span>hoje<span class="chip-n" id="chipHoje" style="display:none">0</span>
+            </button>
+            <div class="cmd-mais" id="cmdMais">
+                <button class="cmd-mais-btn" onclick="alternarMais(event)"
+                        aria-label="Mais ações" title="Mais ações" aria-haspopup="true">
+                    <span class="material-symbols-rounded">more_horiz</span>
+                </button>
+                <div class="cmd-menu" role="menu">
+                    <button class="cmd-menu-i" role="menuitem" onclick="alternarMais(event,false);Importar.abrir()">
+                        <span class="material-symbols-rounded">upload_file</span>
+                        <span>Importar leads<small>De uma planilha Excel ou CSV</small></span>
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-acao" onclick="abrirLead(null)"><span class="material-symbols-rounded">add</span>Novo lead</button>
+        </div>
+    </div>
+
+    <div class="chips-barra" id="chipsFiltros"></div>
+
+    <div class="pf-veu" id="pfVeu" onclick="toggleFiltros(false)"></div>
+    <div class="pf" id="painelFiltros" role="dialog" aria-label="Filtros">
+        <div class="pf-cab">
+            <span class="pf-tit">Filtros</span>
+            <button class="md-x" onclick="toggleFiltros(false)" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div class="pf-corpo">
+            <div class="pf-g">
+                <div class="pf-r">Qual data?</div>
+                <div class="pf-radio" id="pfQualData">
+                    <button class="pf-op on" data-campo="criado_em" onclick="escolherData('criado_em')"><i></i>Entrada do lead</button>
+                    <button class="pf-op" data-campo="movido_em" onclick="escolherData('movido_em')"><i></i>Última movimentação</button>
+                    <button class="pf-op" data-campo="proximo_contato" onclick="escolherData('proximo_contato')"><i></i>Próximo contato</button>
+                </div>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Período</div>
+                <div class="pf-atalhos" id="pfPeriodo">
+                    <button class="pf-a" data-dias="7" onclick="atalhoPeriodo(7)">7 dias</button>
+                    <button class="pf-a" data-dias="30" onclick="atalhoPeriodo(30)">30 dias</button>
+                    <button class="pf-a" data-dias="90" onclick="atalhoPeriodo(90)">90 dias</button>
+                    <button class="pf-a" data-dias="mes" onclick="atalhoPeriodo('mes')">Este mês</button>
+                    <button class="pf-a" data-dias="ano" onclick="atalhoPeriodo('ano')">Este ano</button>
+                </div>
+                <div class="pf-datas">
+                    <input type="date" id="fDe" class="pf-d" onchange="limparAtalhoPeriodo()">
+                    <span>até</span>
+                    <input type="date" id="fAte" class="pf-d" onchange="limparAtalhoPeriodo()">
+                </div>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Tempo parado</div>
+                <div class="pf-atalhos" id="pfParado">
+                    <button class="pf-a on" data-parado="0" onclick="escolherParado(0)">Qualquer</button>
+                    <button class="pf-a" data-parado="7" onclick="escolherParado(7)">+7 dias</button>
+                    <button class="pf-a" data-parado="14" onclick="escolherParado(14)">+14 dias</button>
+                    <button class="pf-a" data-parado="30" onclick="escolherParado(30)">+30 dias</button>
+                </div>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Responsável</div>
+                <select class="pf-sel" id="fResp"><option value="">Todos</option></select>
+            </div>
+            <div class="pf-g">
+                <div class="pf-r">Produto</div>
+                <select class="pf-sel" id="fProd"><option value="">Todos</option></select>
+            </div>
+        </div>
+        <div class="pf-pe">
+            <button class="btn btn-fant" onclick="limparFiltros()">Limpar</button>
+            <button class="btn btn-acao" onclick="aplicarFiltros()">Aplicar</button>
+        </div>
+    </div>
+
+    <div class="m-fases" id="mFases"></div>
+    <div class="board" id="board"><div class="loading">Carregando...</div></div>
+
+    <!-- DETALHE DO LEAD -->
+    <div class="modal-overlay" id="modalDetalhe" onclick="fundoModal(event,'modalDetalhe')">
+        <div class="modal largo">
+            <div class="det-cab">
+                <span class="det-av" id="dAv"></span>
+                <div class="det-id">
+                    <div class="det-emp" id="dEmpresa"></div>
+                    <div class="det-nome" id="dContato"></div>
+                    <div class="det-chips" id="dChips"></div>
+                </div>
+                <div class="det-acoes" id="dAcoes"></div>
+                <button class="md-x" onclick="fecharModal('modalDetalhe')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="det-num" id="dNumeros"></div>
+            <div class="det-corpo">
+                <div class="det-esq">
+                    <div class="det-rot">Por onde passou</div>
+                    <div id="dTimeline"><div class="loading">Carregando histórico...</div></div>
+                </div>
+                <div class="det-dir">
+                    <div class="det-rot">Dados</div>
+                    <div id="dDados"></div>
+                    <button class="btn btn-fant" style="width:100%;justify-content:center" onclick="editarDoDetalhe()">
+                        <span class="material-symbols-rounded">edit</span>Editar dados</button>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="moverDoDetalhe()"><span class="material-symbols-rounded">swap_horiz</span>Mover</button>
+                <button class="btn btn-perigo" style="margin-left:auto" onclick="excluirDoDetalhe()">
+                    <span class="material-symbols-rounded">delete</span>Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE LEAD -->
+    <div class="modal-overlay" id="modalLead" onclick="fundoModal(event,'modalLead')">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow" id="leadEyebrow">Qualificação</div>
+                    <div class="md-tit" id="leadTitulo">Novo lead</div>
+                    <div class="md-sub" id="leadSub">Nasce em Prospecção e já pode receber contato.</div>
+                </div>
+                <button class="md-x" onclick="fecharModal('modalLead')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <input type="hidden" id="leadId">
+                <div class="ig2">
+                    <div class="ig"><label for="fEmpresa">Empresa</label><input type="text" id="fEmpresa" placeholder="Nome da empresa"></div>
+                    <div class="ig"><label for="fContato">Contato</label><input type="text" id="fContato" placeholder="Nome da pessoa"></div>
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="fSegmento">Segmento</label>
+                        <select id="fSegmento"><option value="">—</option></select></div>
+                    <div class="ig2" style="gap:9px">
+                        <div class="ig"><label for="fCidade">Cidade</label>
+                            <input type="text" id="fCidade" placeholder="Natal"></div>
+                        <div class="ig" style="max-width:92px"><label for="fEstado">UF</label>
+                            <select id="fEstado"><option value="">—</option></select></div>
+                    </div>
+                </div>
+                <div class="ig">
+                    <label for="fTelefone">Telefone</label>
+                    <div class="campo-acao">
+                        <input type="text" id="fTelefone" placeholder="(84) 99999-0000" oninput="atualizarAtalhos()">
+                        <button class="ac ac-wpp" id="atWpp" onclick="abrirWpp(document.getElementById('fTelefone').value)" title="Abrir no WhatsApp"><span class="material-symbols-rounded">chat</span></button>
+                        <button class="ac ac-fone" id="atFone" onclick="ligar(document.getElementById('fTelefone').value)" title="Ligar"><span class="material-symbols-rounded">call</span></button>
+                    </div>
+                </div>
+                <div class="ig">
+                    <label for="fEmail">E-mail</label>
+                    <div class="campo-acao">
+                        <input type="text" id="fEmail" placeholder="contato@empresa.com.br" oninput="atualizarAtalhos()">
+                        <button class="ac ac-mail" id="atMail" onclick="abrirEmail(document.getElementById('fEmail').value)" title="Escrever e-mail"><span class="material-symbols-rounded">mail</span></button>
+                    </div>
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="fProduto">Produto</label><select id="fProduto"></select></div>
+                    <div class="ig"><label for="fResponsavel">Responsável</label><select id="fResponsavel"></select></div>
+                </div>
+                <div class="ig2">
+                    <div class="ig"><label for="fOrigem">Origem</label>
+                        <select id="fOrigem"><option value="">—</option></select></div>
+                    <div class="ig"><label for="fProximo">Próximo contato</label><input type="date" id="fProximo"></div>
+                </div>
+                <div class="ig"><label for="fValor">Valor estimado (opcional)</label><input type="number" id="fValor" step="any" placeholder="0,00"></div>
+                <div class="ig"><label for="fAnotacoes">Anotações</label><textarea id="fAnotacoes" placeholder="Origem, contexto, o que foi conversado…"></textarea></div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" id="btnExcluirLead" onclick="excluirLead()" style="margin-right:auto;display:none;color:var(--critico)">
+                    <span class="material-symbols-rounded">delete</span>Excluir</button>
+                <button class="btn btn-fant" onclick="fecharModal('modalLead')">Cancelar</button>
+                <button class="btn btn-acao" id="btnSalvarLead" onclick="salvarLead()"><span class="material-symbols-rounded">check</span>Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE OBJEÇÃO -->
+    <!-- PORTÃO: dado obrigatório antes de avançar -->
+    <div class="modal-overlay" id="modalPortao">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow" id="ptEyebrow"></div>
+                    <div class="md-tit" id="ptTitulo"></div>
+                </div>
+                <button class="md-x" onclick="cancelarPortao()" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <div class="pt-ajuda" id="ptAjuda"></div>
+                <div id="ptCampos" style="display:flex;flex-direction:column;gap:14px"></div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="cancelarPortao()">Cancelar</button>
+                <button class="btn btn-acao" id="ptSalvar" onclick="confirmarPortao()">
+                    <span class="material-symbols-rounded">check</span>Salvar e mover</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FECHAMENTO: abre os quadros de trabalho -->
+    <div class="modal-overlay" id="modalFechamento">
+        <div class="modal">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow" id="fcEyebrow"></div>
+                    <div class="md-tit" id="fcTitulo">Fechar contrato</div>
+                </div>
+                <button class="md-x" onclick="cancelarFechamento()" aria-label="Fechar">
+                    <span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="md-corpo">
+                <div class="ig3">
+                    <div class="ig"><label for="fcProjeto">Nome do projeto</label>
+                        <input type="text" id="fcProjeto" oninput="atualizarPrevia()"></div>
+                    <div class="ig"><label for="fcQtd">Quantidade</label>
+                        <input type="number" id="fcQtd" min="1" max="50" value="1" oninput="atualizarPrevia()"></div>
+                </div>
+                <div class="ig3">
+                    <div class="ig"><label for="fcCnpj">CNPJ do contratante</label>
+                        <input type="text" id="fcCnpj" inputmode="numeric" maxlength="18"
+                               placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)"></div>
+                    <div class="ig"><label for="fcValor">Valor</label>
+                        <input type="number" id="fcValor" step="0.01" min="0" oninput="atualizarPrevia()"></div>
+                </div>
+                <div class="ig">
+                    <div class="ig-secao">Onde o trabalho vai acontecer</div>
+                    <div class="qds" id="fcQuadros"></div>
+                    <div class="ig-dica">O quadro do produto e o Financeiro já vêm marcados.
+                        Marque outros se a execução envolver mais áreas.</div>
+                </div>
+                <div class="previa">
+                    <div class="previa-t"><span class="material-symbols-rounded">bolt</span>O que vai acontecer</div>
+                    <div id="fcPrevia"></div>
+                </div>
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="cancelarFechamento()">Cancelar</button>
+                <button class="btn btn-ok" id="fcSalvar" onclick="confirmarFechamento()">
+                    <span class="material-symbols-rounded">check</span>Fechar contrato</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalObjecao">
+        <div class="modal" style="max-width:440px">
+            <div class="md-head">
+                <div style="min-width:0">
+                    <div class="md-eyebrow" id="objEyebrow"></div>
+                    <div class="md-tit" id="objTitulo">Qual foi a objeção?</div>
+                    <div class="md-sub" id="objSub">Sem isso não há como saber por que se perde.</div>
+                </div>
+            </div>
+            <div class="md-corpo">
+                <div class="obj-grade" id="objGrade"></div>
+                <div class="ig"><label for="objDetalhe">Detalhe (opcional)</label><textarea id="objDetalhe" placeholder="O que foi dito, com as palavras dele"></textarea></div>
+
+            </div>
+            <div class="md-pe">
+                <button class="btn btn-fant" onclick="cancelarObjecao()">Voltar</button>
+                <button class="btn btn-acao" id="objConfirmar" onclick="confirmarObjecao()">
+                    <span class="material-symbols-rounded" id="objIcone">water_drop</span>
+                    <span id="objBotao">Enviar para nutrição</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOLHA DE MOVER (celular) -->
+    <div class="folha-veu" id="folhaMover" onclick="fecharFolha(event)">
+        <div class="folha" onclick="event.stopPropagation()">
+            <div class="folha-alca"></div>
+            <div class="folha-cab"><div class="folha-rot">Mover para</div><div class="folha-tit" id="folhaTitulo"></div></div>
+            <div class="folha-lista" id="folhaLista"></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        const USUARIO = "{{ usuario_nome }}";
+        const NIVEL = "{{ nivel_acesso }}";
+
+        /* ==========================================================
+           OS TRÊS FUNIS
+           Colunas de saída (ganho / nutrição) disparam passagem para
+           outro funil — a regra fica aqui e no backend, que valida.
+           ========================================================== */
+        /* ==========================================================
+           PORTÕES
+           Movimentos que exigem preencher algo antes de avançar.
+           Tudo que é pedido aqui fica no próprio lead — é dado que
+           ficaria vazio para sempre se não fosse cobrado na hora.
+           ========================================================== */
+        /* Segmento e localização mudam a conversa do closer: setor define
+           a dor típica, cidade define se a reunião é presencial. */
+        /* Estado é lista fechada: "R.N.", "rn" e "Rio Grande do Norte" são
+           o erro humano mais comum, e a lista resolve. Cidade fica livre
+           para digitar — são 5.570 no Brasil, e qualquer sugestão vira
+           uma lista longa que atrapalha mais do que ajuda. */
+        const ESTADOS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+                         'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+
+        const SEGMENTOS = [
+            'Indústria',
+            'Varejo e vestuário',
+            'Comércio atacadista',
+            'Concessionária de veículos',
+            'Construção civil',
+            'Contabilidade',
+            'Serviços profissionais',
+            'Saúde',
+            'Educação',
+            'Tecnologia',
+            'Agronegócio',
+            'Transporte e logística',
+            'Alimentação',
+            'Financeiro',
+            'Terceiro setor',
+            'Outro'
+        ];
+
+        const PORTOES = [
+            { funil:'qualificacao', para:'Contato',
+              titulo:'De onde veio este lead?',
+              ajuda:'Sem a origem, o painel não sabe qual canal converte.',
+              campos:[ {k:'origem', r:'Origem', tipo:'select', obrig:true} ] },
+            { funil:'qualificacao', para:'Ganho',
+              titulo:'O lead passa para o closer',
+              ajuda:'Sem contato e contexto, quem recebe recomeça a conversa do zero.',
+              campos:[ {k:'telefone', r:'Telefone', tipo:'tel', obrig:true},
+                       {k:'email', r:'E-mail', tipo:'email', obrig:true},
+                       {k:'segmento', r:'Segmento', tipo:'select', obrig:true,
+                        opcoes:SEGMENTOS},
+                       {k:'cidade', r:'Cidade', tipo:'cidade', obrig:true,
+                        dica:'Define se a reunião pode ser presencial.'},
+                       {k:'estado', r:'Estado', tipo:'select', obrig:true, opcoes:ESTADOS},
+                       {k:'anotacoes', r:'O que já sabemos', tipo:'textarea', obrig:true,
+                        dica:'Necessidade, quem decide, prazo — o que ajudar o closer.'} ] },
+            { funil:'fechamento', para:'Proposta',
+              titulo:'Proposta apresentada',
+              ajuda:'O valor daqui alimenta o painel comercial.',
+              campos:[ {k:'canal_proposta', r:'Como foi apresentada', tipo:'select', obrig:true,
+                        opcoes:['E-mail','WhatsApp','Ligação','Reunião online','Reunião presencial']},
+                       {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true} ] },
+            /* CNPJ só aqui: na proposta o closer costuma não ter ainda.
+               Em negociação já há intenção de contrato, e o dado vira o
+               cadastro do cliente. Quem pula direto para Ganho encontra
+               a mesma exigência na janela de fechamento. */
+            { funil:'fechamento', para:'Negociação',
+              titulo:'Entrando em negociação',
+              ajuda:'O CNPJ vira o cadastro do cliente e a emissão da nota.',
+              campos:[ {k:'cnpj', r:'CNPJ', tipo:'cnpj', obrig:true} ] }
+        ];
+        /* ==================== CNPJ ====================
+           Um CNPJ inválido no cadastro do cliente vira problema na
+           emissão da nota. Validar aqui, no momento em que o dado
+           entra, é mais barato que descobrir depois. */
+        function mascaraCNPJ(el){
+            var d = el.value.replace(/\D/g, '').slice(0, 14);
+            var s = d;
+            if(d.length > 12) s = d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, '$1.$2.$3/$4-$5');
+            else if(d.length > 8) s = d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/, '$1.$2.$3/$4');
+            else if(d.length > 5) s = d.replace(/^(\d{2})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+            else if(d.length > 2) s = d.replace(/^(\d{2})(\d{0,3})$/, '$1.$2');
+            el.value = s;
+            el.classList.toggle('erro', d.length === 14 && !cnpjValido(d));
+        }
+
+        function cnpjValido(cnpj){
+            var d = String(cnpj || '').replace(/\D/g, '');
+            if(d.length !== 14) return false;
+            // 00000000000000, 11111111111111 e afins passam no cálculo
+            // dos dígitos mas não existem.
+            if(/^(\d)\1{13}$/.test(d)) return false;
+            var calc = function(base){
+                var peso = base.length - 7, soma = 0, i;
+                for(i = 0; i < base.length; i++){
+                    soma += parseInt(base.charAt(i), 10) * peso;
+                    peso = peso - 1 < 2 ? 9 : peso - 1;
+                }
+                var r = soma % 11;
+                return r < 2 ? 0 : 11 - r;
+            };
+            return calc(d.slice(0, 12)) === parseInt(d.charAt(12), 10)
+                && calc(d.slice(0, 13)) === parseInt(d.charAt(13), 10);
+        }
+
+        /* Pular etapas não pode pular exigências.
+           Ir de Agendamento direto para Negociação deixaria o lead sem
+           valor nem canal — e o painel comercial passaria a ter
+           negociação de valor zero. O portão junta tudo que ficou para
+           trás no caminho, não só o da coluna de destino. */
+        function portaoDe(funil, coluna, colunaAtual){
+            const cols = (FUNIS[funil] || {}).colunas || [];
+            const idx = function(c){ return cols.findIndex(function(x){ return x.id === c; }); };
+            const iDestino = idx(coluna);
+            const iAtual = colunaAtual === undefined ? -1 : idx(colunaAtual);
+
+            // Só acumula quando avança. Voltar não deve cobrar nada.
+            const acumula = iDestino > iAtual;
+            const aplicaveis = PORTOES.filter(function(p){
+                if(p.funil !== funil) return false;
+                if(!acumula) return p.para === coluna;
+                const i = idx(p.para);
+                return i > iAtual && i <= iDestino;
+            });
+            if(!aplicaveis.length) return null;
+            if(aplicaveis.length === 1) return aplicaveis[0];
+
+            // Vários portões viram um só: uma janela, sem campo repetido.
+            const vistos = {}, campos = [];
+            aplicaveis.forEach(function(p){
+                p.campos.forEach(function(c){
+                    if(vistos[c.k]) return;
+                    vistos[c.k] = true;
+                    campos.push(c);
+                });
+            });
+            const ultimo = aplicaveis[aplicaveis.length - 1];
+            return {
+                funil: funil, para: coluna,
+                titulo: ultimo.titulo,
+                ajuda: 'Este movimento pula etapas — confirme o que ficou para trás.',
+                campos: campos
+            };
+        }
+
+        const FUNIS = {
+            qualificacao: {
+                titulo:'Qualificação',
+                colunas:[
+                    { id:'Prospecção',  cor:'#94A3B8' },
+                    { id:'Contato',     cor:'#0EA5E9' },
+                    { id:'Follow up 1', cor:'#38BDF8', fup:1 },
+                    { id:'Follow up 2', cor:'#5AC8F5', fup:2 },
+                    { id:'Follow up 3', cor:'#7DD3FC', fup:3 },
+                    { id:'Follow up 4', cor:'#A5DEF9', fup:4, ultimoFup:true },
+                    { id:'Ganho',       cor:'#0E9F6E', saida:'fechamento' },
+                    { id:'Nutrição',    cor:'#C2660B', saida:'nutricao', objecao:true },
+                    { id:'Perdido',     cor:'#D42F2F', objecao:true }
+                ]
+            },
+            fechamento: {
+                titulo:'Fechamento',
+                colunas:[
+                    { id:'Agendamento', cor:'#6366F1' },
+                    { id:'Proposta',    cor:'#8B5CF6' },
+                    { id:'Negociação',  cor:'#A855F7' },
+                    { id:'Ganho',       cor:'#0E9F6E', ganhoFinal:true },
+                    { id:'Nutrição',    cor:'#C2660B', saida:'nutricao', objecao:true }
+                ]
+            },
+            relacionamento: {
+                titulo:'Relacionamento',
+                colunas:[
+                    { id:'Backlog',                cor:'#94A3B8' },
+                    { id:'Pesquisa de satisfação', cor:'#DB2777' },
+                    { id:'Follow up 1',            cor:'#EC4899', fup:1 },
+                    { id:'Follow up 2',            cor:'#F062A6', fup:2 },
+                    { id:'Follow up 3',            cor:'#F472B6', fup:3 },
+                    { id:'Follow up 4',            cor:'#F9A8D4', fup:4, ultimoFup:true },
+                    { id:'Ganho',                  cor:'#0E9F6E', saida:'fechamento' },
+                    { id:'Nutrição',               cor:'#C2660B', saida:'nutricao', objecao:true }
+                ]
+            },
+            nutricao: {
+                titulo:'Nutrição',
+                colunas:[
+                    { id:'Backlog',    cor:'#94A3B8' },
+                    { id:'Contato 1',  cor:'#C2660B', fup:1 },
+                    { id:'Contato 2',  cor:'#CB7118', fup:2 },
+                    { id:'Contato 3',  cor:'#D47C25', fup:3 },
+                    { id:'Contato 4',  cor:'#DD8732', fup:4 },
+                    { id:'Contato 5',  cor:'#E5923F', fup:5 },
+                    { id:'Contato 6',  cor:'#E89D4F', fup:6 },
+                    { id:'Contato 7',  cor:'#EBA85F', fup:7 },
+                    { id:'Contato 8',  cor:'#EEB36F', fup:8 },
+                    { id:'Contato 9',  cor:'#F1BE7F', fup:9 },
+                    { id:'Contato 10', cor:'#F4C98F', fup:10, ultimoFup:true },
+                    { id:'Ganho',      cor:'#0E9F6E', saida:'fechamento' },
+                    { id:'Encerrado',  cor:'#7C7C88', objecao:true }
+                ]
+            }
+        };
+        const ENTRADA = { fechamento:'Agendamento', nutricao:'Backlog',
+                          qualificacao:'Prospecção', relacionamento:'Backlog' };
+        // A última coluna de follow up de cada funil. Chegar nela sem avançar
+        // é o sinal de que o lead esgotou as tentativas — a tela sugere a
+        // saída, mas quem move é a pessoa.
+        function ultimoFupDe(funil){
+            const c = (FUNIS[funil] || {}).colunas || [];
+            const u = c.filter(x => x.ultimoFup);
+            return u.length ? u[u.length-1].id : null;
+        }
+        function ehFup(funil, coluna){
+            const c = ((FUNIS[funil] || {}).colunas || []).find(x => x.id === coluna);
+            return c ? (c.fup || 0) : 0;
+        }
+
+        // Origens possíveis de um lead. Alimenta o "de onde vêm os que
+        // fecham" no painel comercial, por isso é lista fechada.
+        /* Fonte única das origens: o formulário do card e o portão de
+           Prospecção → Contato leem daqui. Estavam em três lugares
+           diferentes e já haviam divergido entre si. */
+        const ORIGENS = ['BNI','Indicação','Prospecção fria','Base de clientes',
+                         'Eventos','Redes sociais','Site'];
+
+
+        // Quadros oferecidos na janela de fechamento: só entregas ao
+        // cliente, mais o Financeiro para a cobrança. Um contrato não
+        // tem por que virar card de Endomarketing.
+        const QUADROS_TRABALHO = [
+            ['recrutamento','Recrutamento e Seleção'], ['rhestrategico','RH Estratégico'],
+            ['educacao','Educação'], ['cxdata','CX Data'], ['projetos','Projetos'],
+            ['financeiro','Adm/Financeiro']
+        ];
+        // Subdivisões oferecidas quando o quadro tem mais de um destino.
+        const SUBS_FECHAMENTO = {
+            rhestrategico: [['mensalista','Mensalista'],['pccs','PCCS'],['pco','PCO'],['gd','GD']],
+            educacao: [['reaprendendo','Reaprendendo'],['liderar','Liderar'],['personalizado','Personalizado']],
+            cxdata: [['pontual','Pontual'],['mensalista','Mensalista']]
+        };
+
+        // Produtos que a Conexão vende, alinhados aos quadros de entrega.
+        // OKR saiu: é ferramenta interna, não entrega.
+        const PRODUTOS = ['Recrutamento e Seleção','RH Estratégico mensal','PCCS','PCO',
+                          'Gestão de Desempenho','Educação','CX Data','Outro'];
+        // Quadro e subdivisão sugeridos ao fechar. O closer confirma ou troca.
+        const PRODUTO_QUADRO = {
+            'Recrutamento e Seleção': ['recrutamento', null],
+            'RH Estratégico mensal':  ['rhestrategico', 'mensalista'],
+            'PCCS':                   ['rhestrategico', 'pccs'],
+            'PCO':                    ['rhestrategico', 'pco'],
+            'Gestão de Desempenho':   ['rhestrategico', 'gd'],
+            'Educação':               ['educacao', 'reaprendendo'],
+            'CX Data':                ['cxdata', 'pontual'],
+            'Outro':                  ['projetos', null]
+        };
+        // Produtos que voltam ao Relacionamento quando o card é finalizado
+        const PRODUTO_POS = ['Recrutamento e Seleção','RH Estratégico mensal','PCCS','PCO',
+                             'Gestão de Desempenho','CX Data'];
+        const RESPONSAVEIS = ['Jhonattan Luiz','Gabriela Farias','Mirian Meireles','Itiana Andrade',
+            'Matheus Alves','Clara Viana','Alisson Maciel','Juliete Cadete','Ana Medeiros',
+            'Thallya Rodrigues','Patrick Guilherme','Bárbara Cazé'];
+        /* Nutrição e Perdido não são a mesma coisa.
+           Nutrição: houve conversa e o lead disse não agora — volta depois.
+           Perdido: não deu nem para falar. Número errado, e-mail que volta,
+           empresa que fechou. Nutrir quem não tem contato válido é gastar
+           o time com quem não existe. */
+        const OBJECOES = [
+            { id:'preco',       nome:'Preço',              ico:'payments' },
+            { id:'momento',     nome:'Momento',            ico:'schedule' },
+            { id:'sem_verba',   nome:'Sem verba',          ico:'account_balance_wallet' },
+            { id:'concorrente', nome:'Já tem fornecedor',  ico:'business' },
+            { id:'nao_decisor', nome:'Não é decisor',      ico:'person_off' },
+            { id:'sem_interesse',nome:'Sem interesse',     ico:'do_not_disturb' },
+            { id:'sem_resposta',nome:'Não respondeu',      ico:'phone_missed' },
+            { id:'outra',       nome:'Outra',              ico:'more_horiz' }
+        ];
+
+        const MOTIVOS_PERDA = [
+            { id:'contato_invalido', nome:'Contato não existe',  ico:'phone_disabled' },
+            { id:'nao_localizado',   nome:'Não localizado',      ico:'person_search' },
+            { id:'empresa_fechada',  nome:'Empresa fechou',      ico:'domain_disabled' },
+            { id:'duplicado',        nome:'Lead duplicado',      ico:'content_copy' },
+            { id:'nao_e_publico',    nome:'Fora do perfil',      ico:'block' },
+            { id:'outra_perda',      nome:'Outro motivo',        ico:'more_horiz' }
+        ];
+        const PALETA = [['#EEEDFE','#3C3489'],['#E1F5EE','#0F6E56'],['#FAECE7','#993C1D'],
+            ['#FBEAF0','#993556'],['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
+
+        let leads = [], funilAtual = 'qualificacao', soHoje = false;
+        let faseMobile = null, moverLeadId = null, objCtx = null, objSelecionada = null;
+
+        document.addEventListener('DOMContentLoaded', iniciar);
+
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+        function cor(nome){ let h=0; for(let i=0;i<(nome||'').length;i++) h=nome.charCodeAt(i)+((h<<5)-h); return PALETA[Math.abs(h)%PALETA.length]; }
+        function iniciais(n){ return (n||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
+        function hoje0(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+        function dataDe(s){ if(!s) return null; const p=String(s).split('T')[0].split('-'); if(p.length!==3) return null;
+            const d=new Date(+p[0],+p[1]-1,+p[2]); d.setHours(0,0,0,0); return d; }
+        function isoHoje(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+        function diasDesde(s){ const d=dataDe(s); if(!d) return 0; return Math.round((hoje0()-d)/86400000); }
+
+        /* ---- atalhos de contato ---- */
+        function soDigitos(t){ return String(t||'').replace(/\D/g,''); }
+        function numeroWpp(tel){
+            let n = soDigitos(tel);
+            if(!n) return null;
+            if(n.length <= 11) n = '55' + n;      // sem DDI: assume Brasil
+            return n;
+        }
+        function abrirWpp(tel){
+            const n = numeroWpp(tel);
+            if(!n){ showToast('Este lead não tem telefone.','error'); return; }
+            window.open('https://wa.me/'+n, '_blank');
+        }
+        function ligar(tel){
+            const n = soDigitos(tel);
+            if(!n){ showToast('Este lead não tem telefone.','error'); return; }
+            window.location.href = 'tel:+'+ (n.length<=11 ? '55'+n : n);
+        }
+        function abrirEmail(mail){
+            if(!mail){ showToast('Este lead não tem e-mail.','error'); return; }
+            window.location.href = 'mailto:'+mail;
+        }
+        function atualizarAtalhos(){
+            const temTel = !!soDigitos(document.getElementById('fTelefone').value);
+            const temMail = !!document.getElementById('fEmail').value.trim();
+            ['atWpp','atFone'].forEach(id=>{ const e=document.getElementById(id); e.style.opacity = temTel?'1':'.4'; });
+            const m=document.getElementById('atMail'); m.style.opacity = temMail?'1':'.4';
+        }
+
+        /* ==================== CARGA ==================== */
+        async function iniciar(){
+            document.getElementById('fProduto').innerHTML = '<option value="">—</option>' + PRODUTOS.map(p=>`<option>${escH(p)}</option>`).join('');
+            document.getElementById('fResponsavel').innerHTML = RESPONSAVEIS.map(r=>`<option ${r===USUARIO?'selected':''}>${escH(r)}</option>`).join('');
+            document.getElementById('objGrade').innerHTML = OBJECOES.map(o=>
+                `<button class="obj" data-obj="${o.id}" onclick="escolherObjecao('${o.id}')">
+                    <span class="material-symbols-rounded">${o.ico}</span><span class="obj-txt">${escH(o.nome)}</span></button>`).join('');
+            document.getElementById('fResp').innerHTML = '<option value="">Todos</option>' +
+                RESPONSAVEIS.map(r=>`<option>${escH(r)}</option>`).join('');
+            document.getElementById('fProd').innerHTML = '<option value="">Todos</option>' +
+                PRODUTOS.map(p=>`<option>${escH(p)}</option>`).join('');
+            await carregar();
+        }
+
+        async function carregar(){
+            try{
+                const r = await fetch('/api/leads');
+                if(r.status===403){ document.getElementById('board').innerHTML='<div class="empty"><h3>Acesso negado</h3></div>'; return; }
+                if(!r.ok){
+                    // Quadro vazio por erro parecia quadro vazio por falta de leads.
+                    leads = [];
+                    render();
+                    showToast(await motivoErro(r,'Erro ao carregar leads.'),'error');
+                    return;
+                }
+                const d = await r.json();
+                leads = d.leads || [];
+            }catch(e){ leads = []; showToast('Sem conexão com o servidor.','error'); }
+            render();
+        }
+
+        /* ==================== RENDER ==================== */
+        function mudarFunil(f){
+            funilAtual = f; faseMobile = null;
+            Object.keys(FUNIS).forEach(x => {
+                const t = document.getElementById('tab-'+x);
+                if(t) t.classList.toggle('on', x===f);
+            });
+            render();
+        }
+        // No celular a busca fica reduzida a ícone; expande ao focar.
+        function abrirBusca(abrir){
+            const c = document.querySelector('.busca');
+            if(!c) return;
+            if(!abrir && document.getElementById('busca').value.trim()) return;
+            c.classList.toggle('aberta', abrir);
+        }
+        function alternarHoje(){
+            soHoje = !soHoje;
+            document.getElementById('btnHoje').classList.toggle('on', soHoje);
+            render();
+        }
+
+        function leadsVisiveis(){
+            const q = (document.getElementById('busca').value||'').trim().toLowerCase();
+            return leads.filter(l=>{
+                if(l.funil !== funilAtual) return false;
+                if(q && !((l.empresa||'').toLowerCase().includes(q) || (l.contato||'').toLowerCase().includes(q))) return false;
+                if(soHoje){ const d=dataDe(l.proximo_contato); if(!d || d>hoje0()) return false; }
+                if(!passaFiltros(l)) return false;
+                return true;
+            });
+        }
+
+        function render(){
+            const cfg = FUNIS[funilAtual];
+            const visiveis = leadsVisiveis();
+            const board = document.getElementById('board');
+
+            const paraHoje = leads.filter(l=>{ const d=dataDe(l.proximo_contato); return d && d<=hoje0(); }).length;
+            const chip = document.getElementById('chipHoje');
+            chip.innerText = paraHoje; chip.style.display = paraHoje ? 'inline-flex' : 'none';
+            // "14 de 42": a diferença entre os números denuncia o filtro ativo
+            const totalFunil = leads.filter(l=>l.funil===funilAtual).length;
+            document.getElementById('contador').innerText = (visiveis.length===totalFunil)
+                ? visiveis.length + ' lead' + (visiveis.length!==1?'s':'')
+                : visiveis.length + ' de ' + totalFunil + ' leads';
+            montarChips();
+
+            board.innerHTML = cfg.colunas.map(c=>{
+                const doCol = visiveis.filter(l=>l.coluna===c.id);
+                const cards = doCol.length ? doCol.map(cardLead).join('')
+                    : '<div class="col-vazia">Arraste um lead para cá</div>';
+                return `<div class="col" data-coluna="${escA(c.id)}"
+                             ondrop="soltar(event)" ondragover="permitir(event)"
+                             ondragenter="entrar(event)" ondragleave="sair(event)">
+                    <div class="col-h">
+                        <span class="col-pt" style="background:${c.cor}"></span>
+                        <span class="col-n">${escH(c.id)}</span>
+                        <span class="col-q">${doCol.length}</span>
+                    </div>
+                    <div class="col-cards">${cards}</div>
+                </div>`;
+            }).join('');
+
+            montarFases(visiveis);
+        }
+
+        function cardLead(l){
+            const [bg,fg] = cor(l.responsavel);
+            const dias = diasDesde(l.movido_em || l.criado_em);
+            const parado = dias >= 10;
+            const prox = dataDe(l.proximo_contato);
+            const proxHoje = prox && prox <= hoje0();
+            const temTel = !!soDigitos(l.telefone), temMail = !!(l.email||'').trim();
+
+            return `<div class="lc ${parado?'parado':''}" draggable="true" data-id="${escA(l.id)}"
+                         ondragstart="arrastar(event)" ondragend="fimArraste(event)"
+                         onclick="abrirDetalhe('${escA(l.id)}')">
+                <button class="lc-mover" title="Mover" onclick="abrirMover(event,'${escA(l.id)}')">
+                    <span class="material-symbols-rounded">swap_horiz</span></button>
+                <div class="lc-emp">${escH(l.empresa)||'Sem empresa'}</div>
+                <div class="lc-nome">${escH(l.contato)||'Sem contato'}</div>
+                ${l.produto ? `<span class="lc-prod">${escH(l.produto)}</span>` : ''}
+                <div class="lc-acoes" onclick="event.stopPropagation()">
+                    <button class="ac ac-wpp" ${temTel?'':'style="opacity:.35"'} title="WhatsApp" onclick="abrirWpp('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">chat</span></button>
+                    <button class="ac ac-mail" ${temMail?'':'style="opacity:.35"'} title="E-mail" onclick="abrirEmail('${escA(l.email||'')}')"><span class="material-symbols-rounded">mail</span></button>
+                    <button class="ac ac-fone" ${temTel?'':'style="opacity:.35"'} title="Ligar" onclick="ligar('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">call</span></button>
+                </div>
+                <div class="lc-pe">
+                    <span class="lc-av" style="background:${bg};color:${fg}">${iniciais(l.responsavel)}</span>
+                    <span class="lc-quem">${escH((l.responsavel||'').split(' ')[0])}</span>
+                    ${l.valor_estimado ? `<span class="lc-valor">R$ ${Number(l.valor_estimado).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>` : ''}
+                    <span class="lc-dias ${parado?'alerta':''}">${parado ? dias+'d parado' : dias+'d'}</span>
+                </div>
+                ${prox ? `<div class="lc-prox ${proxHoje?'hoje':''}">
+                    <span class="material-symbols-rounded">${proxHoje?'notifications_active':'event'}</span>
+                    ${proxHoje ? 'Retornar hoje' : 'Retornar '+prox.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</div>` : ''}
+            </div>`;
+        }
+
+        function montarFases(visiveis){
+            const barra = document.getElementById('mFases');
+            const cfg = FUNIS[funilAtual];
+            if(!faseMobile || !cfg.colunas.some(c=>c.id===faseMobile)) faseMobile = cfg.colunas[0].id;
+            barra.innerHTML = cfg.colunas.map(c=>{
+                const n = visiveis.filter(l=>l.coluna===c.id).length;
+                return `<button class="m-fase ${faseMobile===c.id?'on':''}" onclick="selecionarFase('${escA(c.id)}')">
+                    <span class="m-fase-pt" style="background:${c.cor}"></span>${escH(c.id)}<span class="m-fase-q">${n}</span></button>`;
+            }).join('');
+            aplicarFase();
+        }
+        function selecionarFase(id){ faseMobile = id; montarFases(leadsVisiveis()); }
+        function aplicarFase(){
+            document.querySelectorAll('.col').forEach(c=>
+                c.classList.toggle('fase-ativa', c.getAttribute('data-coluna')===faseMobile));
+        }
+
+        /* ==================== ARRASTAR ==================== */
+        let arrastandoId = null;
+        function arrastar(e){ arrastandoId = e.currentTarget.getAttribute('data-id'); e.currentTarget.classList.add('dragging'); }
+        function fimArraste(e){ e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over')); }
+        function permitir(e){ e.preventDefault(); }
+        function entrar(e){ const c=e.currentTarget.closest('.col'); if(c) c.classList.add('drag-over'); }
+        function sair(e){ const c=e.currentTarget.closest('.col'); if(c && !c.contains(e.relatedTarget)) c.classList.remove('drag-over'); }
+        function soltar(e){
+            e.preventDefault();
+            const col = e.currentTarget.closest('.col');
+            document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
+            if(!col || !arrastandoId) return;
+            mover(arrastandoId, col.getAttribute('data-coluna'));
+            arrastandoId = null;
+        }
+
+        /* ==================== MOVER ==================== */
+        function colunaCfg(funil, id){ return (FUNIS[funil].colunas||[]).find(c=>c.id===id); }
+
+        async function mover(leadId, novaColuna){
+            const l = leads.find(x=>String(x.id)===String(leadId));
+            if(!l || l.coluna===novaColuna) return;
+            const cfg = colunaCfg(funilAtual, novaColuna);
+            if(!cfg) return;
+
+            // Ganho no fechamento abre a janela que cria os quadros
+            if(cfg.ganhoFinal){ abrirFechamento(leadId); return; }
+
+            // Portão: falta algum dado obrigatório para este movimento?
+            const portao = portaoDe(funilAtual, novaColuna, l.coluna);
+            if(portao){
+                const faltando = portao.campos.filter(c => !String(l[c.k]||'').trim());
+                if(faltando.length){ abrirPortao(leadId, novaColuna, portao, cfg.saida||null); return; }
+            }
+
+            // Colunas que pedem objeção abrem o registro antes de mover
+            if(cfg.objecao){
+                const ehPerda = (novaColuna === 'Perdido');
+                objCtx = { leadId, coluna:novaColuna, destinoFunil: cfg.saida || null, ehPerda };
+                objSelecionada = null;
+
+                // Perdido não é objeção comercial: é ausência de contato.
+                // Mesma janela, conteúdo diferente.
+                const lista = ehPerda ? MOTIVOS_PERDA : OBJECOES;
+                document.getElementById('objGrade').innerHTML = lista.map(o =>
+                    `<button class="obj" data-obj="${o.id}" onclick="escolherObjecao('${o.id}')">
+                        <span class="material-symbols-rounded">${o.ico}</span>
+                        <span class="obj-txt">${escH(o.nome)}</span></button>`).join('');
+
+                document.getElementById('objTitulo').innerText = ehPerda
+                    ? 'Por que não deu para falar?'
+                    : 'Qual foi a objeção?';
+                document.getElementById('objSub').innerText = ehPerda
+                    ? 'Perdido é para quem não se consegue contato. Se houve conversa e ele disse não agora, use Nutrição.'
+                    : 'Sem isso não há como saber por que se perde.';
+                document.getElementById('objBotao').innerText = ehPerda
+                    ? 'Marcar como perdido' : 'Enviar para nutrição';
+                document.getElementById('objIcone').innerText = ehPerda ? 'person_off' : 'water_drop';
+                document.getElementById('objConfirmar').className = 'btn ' + (ehPerda ? 'btn-perigo' : 'btn-acao');
+
+                document.getElementById('objDetalhe').value = '';
+                document.getElementById('objEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
+                document.getElementById('modalObjecao').classList.add('show');
+                return;
+            }
+            await enviarMovimento(leadId, novaColuna, cfg.saida || null, null, null);
+        }
+
+        /* ==================== PORTÕES ==================== */
+        let portaoCtx = null;
+
+        function abrirPortao(leadId, coluna, portao, destinoFunil){
+            const l = leads.find(x=>String(x.id)===String(leadId)); if(!l) return;
+            portaoCtx = { leadId, coluna, portao, destinoFunil };
+            document.getElementById('ptEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
+            document.getElementById('ptTitulo').innerText = portao.titulo;
+            document.getElementById('ptAjuda').innerText = portao.ajuda;
+            document.getElementById('ptCampos').innerHTML = portao.campos.map(c => {
+                const v = escA(l[c.k] || '');
+                let campo;
+                if(c.tipo === 'textarea'){
+                    campo = `<textarea id="pt-${escA(c.k)}" rows="3"
+                        placeholder="${escA(c.dica||'')}">${escH(l[c.k]||'')}</textarea>`;
+                } else if(c.tipo === 'select'){
+                    const ops = c.opcoes || ORIGENS;
+                    campo = `<select id="pt-${escA(c.k)}"><option value="">Selecione…</option>` +
+                        ops.map(o=>`<option ${l[c.k]===o?'selected':''}>${escH(o)}</option>`).join('') + '</select>';
+                } else if(c.tipo === 'cidade'){
+                    // Lista aberta com sugestão: o Brasil tem 5.570 cidades,
+                    // mas as que a Conexão atende se repetem.
+                    campo = `<input id="pt-${escA(c.k)}" type="text"
+                        placeholder="Natal" value="${v}">`;
+                } else if(c.tipo === 'cnpj'){
+                    // inputmode numérico abre o teclado de números no celular
+                    campo = `<input id="pt-${escA(c.k)}" type="text" inputmode="numeric"
+                        maxlength="18" placeholder="00.000.000/0000-00" value="${v}"
+                        oninput="mascaraCNPJ(this)">`;
+                } else if(c.tipo === 'moeda'){
+                    campo = `<input id="pt-${escA(c.k)}" type="number" step="0.01" min="0"
+                        placeholder="0,00" value="${v}">`;
+                } else {
+                    campo = `<input id="pt-${escA(c.k)}" type="${escA(c.tipo)}" value="${v}">`;
+                }
+                return `<div class="ig"><label for="pt-${escA(c.k)}">${escH(c.r)}</label>${campo}
+                    ${c.dica && c.tipo!=='textarea' ? `<div class="ig-dica">${escH(c.dica)}</div>`:''}</div>`;
+            }).join('');
+            document.getElementById('modalPortao').classList.add('show');
+            const primeiro = document.getElementById('pt-' + portao.campos[0].k);
+            if(primeiro) setTimeout(()=>primeiro.focus(), 60);
+        }
+
+        function cancelarPortao(){
+            document.getElementById('modalPortao').classList.remove('show');
+            portaoCtx = null; render();
+        }
+
+        async function confirmarPortao(){
+            const c = portaoCtx; if(!c) return;
+            const valores = {};
+            for(const campo of c.portao.campos){
+                const el = document.getElementById('pt-' + campo.k);
+                const v = (el ? el.value : '').trim();
+                if(campo.obrig && !v){ showToast('Preencha: ' + campo.r, 'error'); if(el) el.focus(); return; }
+                // CNPJ errado aqui vira nota fiscal recusada depois.
+                if(campo.tipo === 'cnpj' && v && !cnpjValido(v)){
+                    showToast('CNPJ inválido. Confira os números.', 'error');
+                    if(el){ el.classList.add('erro'); el.focus(); }
+                    return;
+                }
+                valores[campo.k] = v;
+            }
+            const l = leads.find(x=>String(x.id)===String(c.leadId));
+            const antes = Object.assign({}, l);
+            Object.assign(l, valores);      // otimista
+            const btn = document.getElementById('ptSalvar'); btn.disabled = true;
+            try{
+                const r = await fetch('/api/leads/'+c.leadId, { method:'PUT',
+                    headers:{'Content-Type':'application/json'}, body: JSON.stringify(valores) });
+                if(!r.ok){
+                    Object.assign(l, antes); render();
+                    showToast(await motivoErro(r,'Não foi possível salvar.'),'error');
+                    return;
+                }
+            }catch(e){
+                Object.assign(l, antes); render();
+                showToast('Sem conexão com o servidor.','error');
+                return;
+            } finally { btn.disabled = false; }
+            document.getElementById('modalPortao').classList.remove('show');
+            portaoCtx = null;
+            await enviarMovimento(c.leadId, c.coluna, c.destinoFunil, null, null);
+        }
+
+        /* ==================== FECHAMENTO ==================== */
+        let fechCtx = null;
+
+        function abrirFechamento(leadId){
+            const l = leads.find(x=>String(x.id)===String(leadId)); if(!l) return;
+            fechCtx = { leadId };
+            const [sugerido, subSugerida] = PRODUTO_QUADRO[l.produto] || ['projetos', null];
+
+            document.getElementById('fcEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
+            document.getElementById('fcTitulo').innerText = 'Fechar contrato';
+            document.getElementById('fcProjeto').value = l.produto ? (l.produto + ' · ' + (l.empresa||'')) : (l.empresa||'');
+            document.getElementById('fcValor').value = l.valor_estimado || '';
+            document.getElementById('fcQtd').value = 1;
+            document.getElementById('fcCnpj').value = l.cnpj || '';
+
+            // Quadros: o do produto e o Financeiro já vêm marcados.
+            document.getElementById('fcQuadros').innerHTML = QUADROS_TRABALHO.map(([c,n]) => {
+                const marcado = (c === sugerido || c === 'financeiro');
+                const porque = c === sugerido ? 'do produto' : (c === 'financeiro' ? 'cobrança' : '');
+                const subs = SUBS_FECHAMENTO[c];
+                // O select fica à direita, alinhado com os outros, e só
+                // reage quando o quadro está marcado.
+                const seletor = subs ? `<select class="qd-sub" data-sub-de="${escA(c)}"
+                        onclick="event.stopPropagation()" onchange="atualizarPrevia()">
+                        ${subs.map(([sc,sn]) =>
+                            `<option value="${escA(sc)}" ${c===sugerido&&sc===subSugerida?'selected':''}>${escH(sn)}</option>`
+                        ).join('')}</select>` : '';
+                return `<button type="button" class="qd ${marcado?'on':'off'}" data-q="${escA(c)}"
+                        role="checkbox" aria-checked="${marcado}" onclick="alternarQuadro(this)">
+                    <span class="qd-cx"></span>
+                    <span class="qd-nome">${escH(n)}</span>
+                    ${porque?`<span class="qd-p">${porque}</span>`:''}
+                    <span class="qd-dir">${seletor}</span></button>`;
+            }).join('');
+
+            atualizarPrevia();
+            document.getElementById('modalFechamento').classList.add('show');
+        }
+
+        function alternarQuadro(el){
+            const on = el.classList.toggle('on');
+            el.classList.toggle('off', !on);
+            el.setAttribute('aria-checked', on ? 'true' : 'false');
+            atualizarPrevia();
+        }
+
+        function quadrosMarcados(){
+            return [...document.querySelectorAll('#fcQuadros .qd.on')].map(b=>b.getAttribute('data-q'));
+        }
+
+        function subDoQuadro(q){
+            const s = document.querySelector(`#fcQuadros [data-sub-de="${q}"]`);
+            return s ? s.value : null;
+        }
+
+        function atualizarPrevia(){
+            const qtd = Math.max(1, parseInt(document.getElementById('fcQtd').value) || 1);
+            const nome = document.getElementById('fcProjeto').value.trim() || 'Projeto';
+            const valor = document.getElementById('fcValor').value;
+            const marcados = quadrosMarcados();
+            const linhas = [];
+            marcados.filter(q => q !== 'financeiro').forEach(q => {
+                const n = (QUADROS_TRABALHO.find(x=>x[0]===q)||[])[1] || q;
+                linhas.push(`<div class="pv"><span class="material-symbols-rounded">add_task</span>
+                    <span><b>${qtd} ${qtd===1?'card':'cards'}</b> em ${escH(n)}, no Backlog
+                    ${qtd>1?`<br><span style="opacity:.72">${escH(nome)} (1/${qtd}) … (${qtd}/${qtd})</span>`:''}</span></div>`);
+            });
+            if(marcados.includes('financeiro')){
+                linhas.push(`<div class="pv"><span class="material-symbols-rounded">receipt_long</span>
+                    <span><b>1 card</b> em Adm/Financeiro para cobrança${valor?' de '+moedaBR(valor):''}</span></div>`);
+            }
+            linhas.push(`<div class="pv"><span class="material-symbols-rounded">person_alert</span>
+                <span>Quem direciona cada quadro será avisado para definir os responsáveis</span></div>`);
+            if(!marcados.length){
+                linhas.length = 0;
+                linhas.push(`<div class="pv" style="opacity:.7"><span class="material-symbols-rounded">info</span>
+                    <span>Nenhum quadro marcado: o lead vai para Ganho sem gerar trabalho.</span></div>`);
+            }
+            document.getElementById('fcPrevia').innerHTML = linhas.join('');
+        }
+
+        function moedaBR(v){
+            const n = parseFloat(v); if(isNaN(n)) return '';
+            return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+        }
+
+        function cancelarFechamento(){
+            document.getElementById('modalFechamento').classList.remove('show');
+            fechCtx = null; render();
+        }
+
+        async function confirmarFechamento(){
+            const c = fechCtx; if(!c) return;
+            const nome = document.getElementById('fcProjeto').value.trim();
+            if(!nome){ showToast('Informe o nome do projeto.','error'); return; }
+            const qtd = Math.max(1, parseInt(document.getElementById('fcQtd').value) || 1);
+            if(qtd > 50){ showToast('Máximo de 50 cards por contrato.','error'); return; }
+            // Quem pulou Negociação chega aqui sem CNPJ: a exigência é a
+            // mesma, senão o cliente nasce sem o dado que a nota precisa.
+            const cnpjEl = document.getElementById('fcCnpj');
+            const cnpj = cnpjEl.value.trim();
+            if(!cnpj){
+                showToast('Informe o CNPJ: ele vira o cadastro do cliente.','error');
+                cnpjEl.classList.add('erro'); cnpjEl.focus(); return;
+            }
+            if(!cnpjValido(cnpj)){
+                showToast('CNPJ inválido. Confira os números.','error');
+                cnpjEl.classList.add('erro'); cnpjEl.focus(); return;
+            }
+
+            const btn = document.getElementById('fcSalvar'); btn.disabled = true;
+            const l = leads.find(x=>String(x.id)===String(c.leadId));
+            try{
+                const r = await fetch('/api/fluxo/fechar-lead/'+c.leadId, {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        projeto_nome: nome,
+                        quantidade: qtd,
+                        valor: document.getElementById('fcValor').value || null,
+                        cnpj: document.getElementById('fcCnpj').value.trim(),
+                        quadros: quadrosMarcados().map(q => ({ quadro: q, sub: subDoQuadro(q) })),
+                        criar_cliente: true
+                    })});
+                if(!r.ok){ showToast(await motivoErro(r,'Não foi possível fechar o contrato.'),'error'); return; }
+                const d = await r.json();
+                document.getElementById('modalFechamento').classList.remove('show');
+                fechCtx = null;
+                if(l){ l.coluna = 'Ganho'; l.movido_em = new Date().toISOString(); }
+                const n = d.criados || 0;
+                showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
+                            : 'Contrato fechado.', 'success');
+                await carregar();
+            }catch(e){
+                showToast('Sem conexão com o servidor.','error');
+            } finally { btn.disabled = false; }
+        }
+
+        function escolherObjecao(id){
+            objSelecionada = id;
+            document.querySelectorAll('.obj').forEach(o=>o.classList.toggle('on', o.getAttribute('data-obj')===id));
+        }
+        function cancelarObjecao(){ document.getElementById('modalObjecao').classList.remove('show'); objCtx=null; render(); }
+        async function confirmarObjecao(){
+            if(!objSelecionada){ showToast('Escolha a objeção.','error'); return; }
+            const c = objCtx;
+            document.getElementById('modalObjecao').classList.remove('show');
+            await enviarMovimento(c.leadId, c.coluna, c.destinoFunil, objSelecionada,
+                document.getElementById('objDetalhe').value.trim());
+            objCtx = null;
+        }
+
+        /* A data de retomada saiu daqui: o funil de nutrição já define o
+           ritmo de contato, e uma data paralela seria uma segunda fonte
+           de verdade sobre a mesma coisa. Quem quiser marcar um retorno
+           específico usa o campo do card. */
+        async function enviarMovimento(leadId, coluna, destinoFunil, objecao, detalhe){
+            const l = leads.find(x=>String(x.id)===String(leadId));
+            const antes = { funil:l.funil, coluna:l.coluna };
+            // otimista: move na tela e desfaz se o servidor recusar
+            l.coluna = coluna;
+            if(destinoFunil){ l.funil = destinoFunil; l.coluna = ENTRADA[destinoFunil]; }
+            l.movido_em = new Date().toISOString();
+            render();
+            try{
+                const r = await fetch(`/api/leads/${leadId}/mover`, { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ coluna, destino_funil:destinoFunil, objecao, objecao_detalhe:detalhe })});
+                if(!r.ok){
+                    Object.assign(l, antes); render();
+                    showToast(await motivoErro(r,'Não foi possível mover.'),'error');
+                    return;
+                }
+                const d = await r.json();
+                if(d.lead){ Object.assign(l, d.lead); render(); }
+                if(destinoFunil) showToast('Movido para o funil de ' + FUNIS[destinoFunil].titulo + '.','success');
+            }catch(e){
+                Object.assign(l, antes); render();
+                showToast('Não foi possível mover.','error');
+            }
+        }
+
+        /* mover pelo celular */
+        function abrirMover(ev, id){
+            ev.stopPropagation();
+            const l = leads.find(x=>String(x.id)===String(id)); if(!l) return;
+            moverLeadId = id;
+            document.getElementById('folhaTitulo').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
+            const cfg = FUNIS[funilAtual];
+            const CORFUNIL = { qualificacao:'#0EA5E9', fechamento:'#6C5CE7',
+                               relacionamento:'#DB2777', nutricao:'#C2660B' };
+            let html = `<div class="folha-g"><span class="pt" style="background:${CORFUNIL[funilAtual]}"></span>${escH(cfg.titulo)} · funil atual</div>` +
+                cfg.colunas.map(c=>{
+                    const atual = c.id===l.coluna;
+                    const troca = !!c.saida;
+                    return `<div class="folha-item ${atual?'atual':''}" ${atual?'':`onclick="confirmarMover('${escA(c.id)}')"`}>
+                        <span class="pt" style="background:${c.cor}"></span>${escH(c.id)}
+                        ${atual?'<span class="marca">atual</span>':(troca?'<span class="material-symbols-rounded">arrow_forward</span>':'')}</div>`;
+                }).join('');
+            // Outros funis, só na coluna de entrada: não faz sentido jogar
+            // um lead direto em "Follow up 3" de outro funil.
+            const outros = Object.keys(FUNIS).filter(f=>f!==funilAtual);
+            if(outros.length){
+                html += `<div class="folha-g"><span class="pt" style="background:var(--linha-2)"></span>Outros funis</div>` +
+                    outros.map(f=>`<div class="folha-item" onclick="confirmarMoverFunil('${escA(f)}')">
+                        <span class="pt" style="background:${CORFUNIL[f]}"></span>${escH(FUNIS[f].titulo)} · ${escH(ENTRADA[f])}
+                        <span class="material-symbols-rounded">arrow_forward</span></div>`).join('');
+            }
+            document.getElementById('folhaLista').innerHTML = html;
+            document.getElementById('folhaMover').classList.add('on');
+        }
+        function fecharFolha(ev){ if(ev && ev.target.id!=='folhaMover') return;
+            document.getElementById('folhaMover').classList.remove('on'); moverLeadId=null; }
+        function confirmarMoverFunil(destino){
+            const id = moverLeadId;
+            document.getElementById('folhaMover').classList.remove('on');
+            moverLeadId = null;
+            if(id) enviarMovimento(id, ENTRADA[destino], destino, null, null);
+        }
+        function confirmarMover(coluna){
+            const id = moverLeadId;
+            document.getElementById('folhaMover').classList.remove('on');
+            moverLeadId = null;
+            if(id) mover(id, coluna);
+        }
+
+
+        /* ==========================================================
+           FILTROS
+           "Quando" tem três significados num funil: entrada, última
+           movimentação e próximo contato. Filtrar os três com um campo
+           só daria a resposta errada em dois deles.
+           ========================================================== */
+        let fCampoData = 'criado_em', fParado = 0;
+
+        function toggleFiltros(abrir){
+            const p = document.getElementById('painelFiltros');
+            const v = document.getElementById('pfVeu');
+            const b = document.getElementById('btnFiltros');
+            const vai = (abrir === undefined) ? !p.classList.contains('on') : abrir;
+            p.classList.toggle('on', vai);
+            v.classList.toggle('on', vai);
+            b.classList.toggle('on', vai);
+            if(!vai || window.innerWidth <= 900) return;
+            const r = b.getBoundingClientRect();
+            let top = r.bottom + 6;
+            if(top + p.offsetHeight > window.innerHeight - 10) top = Math.max(10, r.top - p.offsetHeight - 6);
+            p.style.top = top + 'px';
+            p.style.left = Math.max(12, r.right - p.offsetWidth) + 'px';
+        }
+        function aplicarFiltros(){ render(); toggleFiltros(false); }
+
+        function escolherData(campo){
+            fCampoData = campo;
+            document.querySelectorAll('#pfQualData .pf-op').forEach(o =>
+                o.classList.toggle('on', o.getAttribute('data-campo') === campo));
+            render();
+        }
+        function escolherParado(dias){
+            fParado = dias;
+            document.querySelectorAll('#pfParado .pf-a').forEach(a =>
+                a.classList.toggle('on', a.getAttribute('data-parado') === String(dias)));
+            render();
+        }
+        function atalhoPeriodo(v){
+            const hj = new Date(); let ini;
+            if(v === 'mes') ini = new Date(hj.getFullYear(), hj.getMonth(), 1);
+            else if(v === 'ano') ini = new Date(hj.getFullYear(), 0, 1);
+            else { ini = new Date(hj); ini.setDate(ini.getDate() - v); }
+            const f = x => x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+            document.getElementById('fDe').value = f(ini);
+            document.getElementById('fAte').value = f(hj);
+            document.querySelectorAll('#pfPeriodo .pf-a').forEach(a =>
+                a.classList.toggle('on', a.getAttribute('data-dias') === String(v)));
+            render();
+        }
+        function limparAtalhoPeriodo(){
+            document.querySelectorAll('#pfPeriodo .pf-a').forEach(a => a.classList.remove('on'));
+            render();
+        }
+        function limparFiltros(){
+            document.getElementById('fDe').value = '';
+            document.getElementById('fAte').value = '';
+            document.getElementById('fResp').value = '';
+            document.getElementById('fProd').value = '';
+            escolherParado(0);
+            escolherData('criado_em');
+            limparAtalhoPeriodo();
+        }
+
+        function rotuloPeriodo(){
+            const a = document.querySelector('#pfPeriodo .pf-a.on');
+            if(a){ const v = a.getAttribute('data-dias');
+                return v==='mes' ? 'este mês' : v==='ano' ? 'este ano' : 'últimos '+v+' dias'; }
+            const de = document.getElementById('fDe').value, ate = document.getElementById('fAte').value;
+            if(!de && !ate) return null;
+            const br = s => { const p=String(s).split('-'); return p.length===3 ? p[2]+'/'+p[1] : s; };
+            return (de?br(de):'…') + ' a ' + (ate?br(ate):'…');
+        }
+        const ROTULO_DATA = { criado_em:'Criado', movido_em:'Movimentado', proximo_contato:'Contato' };
+
+        function montarChips(){
+            const chips = [];
+            const per = rotuloPeriodo();
+            if(per) chips.push({ rot: ROTULO_DATA[fCampoData], val: per, ac:'limparPeriodo()' });
+            if(fParado) chips.push({ rot:'Parados há', val:'mais de '+fParado+' dias', ac:'escolherParado(0)' });
+            const resp = document.getElementById('fResp');
+            if(resp.value) chips.push({ rot:'Responsável', val:resp.value, ac:"limparUm('fResp')" });
+            const prod = document.getElementById('fProd');
+            if(prod.value) chips.push({ rot:'Produto', val:prod.value, ac:"limparUm('fProd')" });
+
+            const chip = document.getElementById('chipFiltros');
+            chip.innerText = chips.length;
+            chip.style.display = chips.length ? 'inline-flex' : 'none';
+
+            const barra = document.getElementById('chipsFiltros');
+            barra.classList.toggle('on', chips.length > 0);
+            barra.innerHTML = !chips.length ? '' :
+                '<span class="chips-rot">Filtrando por</span>' +
+                chips.map(c => '<span class="chip-f">' + escH(c.rot) + ': <b>' + escH(c.val) + '</b>' +
+                    '<span class="x" onclick="' + c.ac + '" title="Remover"><span class="material-symbols-rounded">close</span></span></span>').join('') +
+                '<button class="chips-limpar" onclick="limparFiltros()">Limpar tudo</button>';
+        }
+        function limparPeriodo(){ document.getElementById('fDe').value=''; document.getElementById('fAte').value=''; limparAtalhoPeriodo(); }
+        function limparUm(id){ document.getElementById(id).value=''; render(); }
+
+        function passaFiltros(l){
+            const de = document.getElementById('fDe').value, ate = document.getElementById('fAte').value;
+            if(de || ate){
+                const v = l[fCampoData];
+                if(!v) return false;
+                const s = String(v).split('T')[0];
+                if(de && s < de) return false;
+                if(ate && s > ate) return false;
+            }
+            if(fParado && diasDesde(l.movido_em || l.criado_em) < fParado) return false;
+            const resp = document.getElementById('fResp').value;
+            if(resp && (l.responsavel||'') !== resp) return false;
+            const prod = document.getElementById('fProd').value;
+            if(prod && (l.produto||'') !== prod) return false;
+            return true;
+        }
+
+        /* ==========================================================
+           DETALHE DO LEAD
+           A linha do tempo sai de lead_movimentos; a duração de cada
+           etapa é a diferença entre movimentos consecutivos.
+           ========================================================== */
+        let detalheId = null;
+
+        const FUNIL_CLASSE = { qualificacao:'q', fechamento:'f', nutricao:'n' };
+        function chipFunil(f){ return 'tf-' + (FUNIL_CLASSE[f] || 'q'); }
+        function nomeFunil(f){ return (FUNIS[f] && FUNIS[f].titulo) || f || '—'; }
+        function fmtDias(n){ return n === 1 ? '1 dia' : n + ' dias'; }
+        function fmtDataHora(s){
+            const d = new Date(s);
+            if(isNaN(d)) return '—';
+            return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' · ' +
+                   d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        }
+
+        async function abrirDetalhe(id){
+            const l = leads.find(x => String(x.id) === String(id));
+            if(!l) return;
+            detalheId = id;
+            const [bg,fg] = cor(l.responsavel);
+            document.getElementById('dAv').style.background = bg;
+            document.getElementById('dAv').style.color = fg;
+            document.getElementById('dAv').innerText = iniciais(l.contato || l.empresa);
+            document.getElementById('dEmpresa').innerText = l.empresa || 'Sem empresa';
+            document.getElementById('dContato').innerText = l.contato || 'Sem contato';
+
+            document.getElementById('dChips').innerHTML =
+                `<span class="chip c-funil-${FUNIL_CLASSE[l.funil]||'q'}">${escH(nomeFunil(l.funil))}</span>
+                 <span class="chip c-col">${escH(l.coluna)}</span>
+                 ${l.produto ? `<span class="chip c-prod">${escH(l.produto)}</span>` : ''}
+                 ${l.origem ? `<span class="chip c-orig">${escH(l.origem)}</span>` : ''}`;
+
+            const temTel = !!soDigitos(l.telefone), temMail = !!(l.email||'').trim();
+            document.getElementById('dAcoes').innerHTML =
+                `<button class="ac ac-wpp" ${temTel?'':'style="opacity:.35"'} title="WhatsApp" onclick="abrirWpp('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">chat</span></button>
+                 <button class="ac ac-mail" ${temMail?'':'style="opacity:.35"'} title="E-mail" onclick="abrirEmail('${escA(l.email||'')}')"><span class="material-symbols-rounded">mail</span></button>
+                 <button class="ac ac-fone" ${temTel?'':'style="opacity:.35"'} title="Ligar" onclick="ligar('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">call</span></button>`;
+
+            document.getElementById('dDados').innerHTML = `
+                <div class="campo"><div class="campo-r">Telefone</div><div class="campo-v num ${temTel?'':'vazio'}">${temTel?escH(l.telefone):'não informado'}</div></div>
+                <div class="campo"><div class="campo-r">E-mail</div><div class="campo-v ${temMail?'':'vazio'}">${temMail?escH(l.email):'não informado'}</div></div>
+                <div class="campo"><div class="campo-r">Responsável</div><div class="campo-v">${escH(l.responsavel)||'—'}</div></div>
+                <div class="campo"><div class="campo-r">Origem</div><div class="campo-v ${l.origem?'':'vazio'}">${escH(l.origem)||'não informada'}</div></div>
+                <div class="campo"><div class="campo-r">Segmento</div><div class="campo-v ${l.segmento?'':'vazio'}">${escH(l.segmento)||'não informado'}</div></div>
+                <div class="campo"><div class="campo-r">Localização</div><div class="campo-v ${l.cidade?'':'vazio'}">${l.cidade ? escH(l.cidade) + (l.estado ? ', ' + escH(l.estado) : '') : 'não informada'}</div></div>
+                <div class="campo" style="margin-bottom:18px"><div class="campo-r">Anotações</div>
+                    ${l.anotacoes ? `<div class="anot">${escH(l.anotacoes)}</div>` : '<div class="campo-v vazio">sem anotações</div>'}</div>`;
+
+            document.getElementById('dNumeros').innerHTML = '';
+            document.getElementById('dTimeline').innerHTML = '<div class="loading">Carregando histórico...</div>';
+            document.getElementById('modalDetalhe').classList.add('show');
+
+            let movs = [];
+            try{
+                const r = await fetch('/api/leads/'+id+'/movimentos');
+                if(r.ok){ const dd = await r.json(); movs = dd.movimentos || []; }
+            }catch(e){}
+            renderNumeros(l, movs);
+            renderTimeline(l, movs);
+        }
+
+        function renderNumeros(l, movs){
+            const noFunil = diasDesde(l.criado_em);
+            const naEtapa = diasDesde(l.movido_em || l.criado_em);
+            const funisTocados = new Set(movs.map(m => m.para_funil).filter(Boolean));
+            funisTocados.add(l.funil);
+            const prox = dataDe(l.proximo_contato);
+            const proxTxt = !prox ? '—' : (prox <= hoje0() ? 'hoje' : fmtDias(Math.round((prox - hoje0())/86400000)));
+            document.getElementById('dNumeros').innerHTML = `
+                <div class="dn"><div class="dn-rot">No funil há</div><div class="dn-val num">${fmtDias(noFunil)}</div>
+                    <div class="dn-pe">desde ${prox===null?'':''}${(dataDe(l.criado_em)||new Date()).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</div></div>
+                <div class="dn"><div class="dn-rot">Nesta etapa</div>
+                    <div class="dn-val num" ${naEtapa>=10?'style="color:var(--atencao)"':''}>${fmtDias(naEtapa)}</div>
+                    <div class="dn-pe">${escH(l.coluna)}</div></div>
+                <div class="dn"><div class="dn-rot">Movimentos</div><div class="dn-val num">${movs.length}</div>
+                    <div class="dn-pe">em ${funisTocados.size} funil${funisTocados.size!==1?'s':''}</div></div>
+                <div class="dn"><div class="dn-rot">Próximo contato</div>
+                    <div class="dn-val num" ${prox && prox<=hoje0()?'style="color:var(--critico)"':''}>${proxTxt}</div>
+                    <div class="dn-pe">${prox?prox.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'não agendado'}</div></div>
+                ${l.valor_estimado ? `<div class="dn"><div class="dn-rot">Valor estimado</div>
+                    <div class="dn-val num">R$ ${Number(l.valor_estimado).toLocaleString('pt-BR',{maximumFractionDigits:0})}</div>
+                    <div class="dn-pe">não confirmado</div></div>` : ''}`;
+        }
+
+        function renderTimeline(l, movs){
+            const alvo = document.getElementById('dTimeline');
+            if(!movs.length){
+                alvo.innerHTML = `<div class="col-vazia">Nenhum movimento registrado ainda.<br>
+                    O histórico começa a partir da primeira mudança de coluna.</div>`;
+                return;
+            }
+            // movs vem do mais recente para o mais antigo
+            const html = movs.map((m, i) => {
+                const trocouFunil = m.de_funil && m.para_funil && m.de_funil !== m.para_funil;
+                // duração: até o movimento seguinte (ou até agora, se for o mais recente)
+                const fim = i === 0 ? new Date() : new Date(movs[i-1].criado_em);
+                const ini = new Date(m.criado_em);
+                const dias = Math.max(0, Math.round((fim - ini)/86400000));
+                const aberto = i === 0;
+                const obj = m.objecao ? (OBJECOES.find(o => o.id === m.objecao) || {nome:m.objecao}) : null;
+                return `<div class="tp ${aberto?'destaque':''}">
+                    <span class="tp-pt"><i style="background:${aberto?'var(--acao)':'var(--linha-2)'}"></i></span>
+                    <div class="tp-topo">
+                        <span class="tp-mov">
+                            ${trocouFunil ? `<span class="tp-funil ${chipFunil(m.de_funil)}">${escH(nomeFunil(m.de_funil))}</span> ` : ''}
+                            ${escH(m.de_coluna||'—')} <span class="tp-seta">→</span> <b>${escH(m.para_coluna||'—')}</b>
+                            ${trocouFunil ? `<span class="tp-funil ${chipFunil(m.para_funil)}">${escH(nomeFunil(m.para_funil))}</span>` : ''}
+                        </span>
+                        <span class="tp-quando">${fmtDataHora(m.criado_em)}</span>
+                    </div>
+                    ${m.autor ? `<div class="tp-meta">por ${escH(m.autor)}</div>` : ''}
+                    ${obj ? `<div class="tp-obj">
+                        <div class="tp-obj-t"><span class="material-symbols-rounded">block</span>Objeção: ${escH(obj.nome)}</div>
+                        ${m.objecao_detalhe ? `<div class="tp-obj-d">${escH(m.objecao_detalhe)}</div>` : ''}
+                    </div>` : ''}
+                    <div class="tp-dur ${dias>=14?'longo':''}"><span class="material-symbols-rounded">schedule</span>
+                        ${fmtDias(dias)}${aberto?' aqui, ainda em aberto':''}</div>
+                </div>`;
+            }).join('');
+            alvo.innerHTML = `<div class="tl">${html}</div>`;
+        }
+
+        function editarDoDetalhe(){ const id = detalheId; fecharModal('modalDetalhe'); abrirLead(id); }
+        function moverDoDetalhe(){ const id = detalheId; fecharModal('modalDetalhe'); abrirMover({stopPropagation(){}}, id); }
+        async function excluirDoDetalhe(){
+            const id = detalheId;
+            if(!id || !confirm('Excluir este lead? A ação não pode ser desfeita.')) return;
+            try{
+                const r = await fetch('/api/leads/'+id, { method:'DELETE' });
+                if(!r.ok){ showToast(await motivoErro(r,'Erro ao excluir.'),'error'); return; }
+                showToast('Lead excluído.','success');
+                fecharModal('modalDetalhe');
+                await carregar();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+        }
+
+        /* ==================== CADASTRO ==================== */
+        function abrirLead(id){
+            const l = id ? leads.find(x=>String(x.id)===String(id)) : null;
+            document.getElementById('leadId').value = l ? l.id : '';
+            document.getElementById('leadEyebrow').innerText = l ? FUNIS[l.funil].titulo + ' · ' + l.coluna : FUNIS[funilAtual].titulo;
+            document.getElementById('leadTitulo').innerText = l ? 'Editar lead' : 'Novo lead';
+            document.getElementById('leadSub').innerText = l ? 'As alterações valem na hora.'
+                : 'Nasce em ' + FUNIS[funilAtual].colunas[0].id + ' e já pode receber contato.';
+            document.getElementById('fEmpresa').value = l ? (l.empresa||'') : '';
+            document.getElementById('fContato').value = l ? (l.contato||'') : '';
+            document.getElementById('fCidade').value = l ? (l.cidade||'') : '';
+            var uf = l ? (l.estado || '') : '';
+            document.getElementById('fEstado').innerHTML = '<option value="">—</option>'
+                + ESTADOS.map(function(e){
+                    return '<option' + (e === uf ? ' selected' : '') + '>' + e + '</option>';
+                  }).join('');
+            var seg = l ? (l.segmento || '') : '';
+            var segs = SEGMENTOS.slice();
+            if(seg && segs.indexOf(seg) < 0) segs.push(seg);
+            document.getElementById('fSegmento').innerHTML = '<option value="">—</option>'
+                + segs.map(function(s){
+                    return '<option' + (s === seg ? ' selected' : '') + '>' + escH(s) + '</option>';
+                  }).join('');
+            document.getElementById('fTelefone').value = l ? (l.telefone||'') : '';
+            document.getElementById('fEmail').value = l ? (l.email||'') : '';
+            document.getElementById('fProduto').value = l ? (l.produto||'') : '';
+            document.getElementById('fResponsavel').value = l ? (l.responsavel||USUARIO) : USUARIO;
+            // Monta as opções a partir de ORIGENS. Se o lead tiver uma
+            // origem antiga que saiu da lista, ela entra também — senão
+            // o select viria vazio e a informação se perderia ao salvar.
+            var atual = l ? (l.origem || '') : '';
+            var lista = ORIGENS.slice();
+            if(atual && lista.indexOf(atual) < 0) lista.push(atual);
+            document.getElementById('fOrigem').innerHTML = '<option value="">—</option>'
+                + lista.map(function(o){
+                    return '<option' + (o === atual ? ' selected' : '') + '>' + escH(o) + '</option>';
+                  }).join('');
+            document.getElementById('fProximo').value = l && l.proximo_contato ? String(l.proximo_contato).split('T')[0] : '';
+            document.getElementById('fValor').value = l && l.valor_estimado ? l.valor_estimado : '';
+            document.getElementById('fAnotacoes').value = l ? (l.anotacoes||'') : '';
+            document.getElementById('btnExcluirLead').style.display = l ? 'inline-flex' : 'none';
+            atualizarAtalhos();
+            document.getElementById('modalLead').classList.add('show');
+        }
+
+        async function salvarLead(){
+            const id = document.getElementById('leadId').value;
+            const payload = {
+                empresa: document.getElementById('fEmpresa').value.trim(),
+                contato: document.getElementById('fContato').value.trim(),
+                telefone: document.getElementById('fTelefone').value.trim(),
+                email: document.getElementById('fEmail').value.trim(),
+                produto: document.getElementById('fProduto').value,
+                responsavel: document.getElementById('fResponsavel').value,
+                origem: document.getElementById('fOrigem').value,
+                segmento: document.getElementById('fSegmento').value,
+                cidade: document.getElementById('fCidade').value.trim(),
+                estado: document.getElementById('fEstado').value,
+                proximo_contato: document.getElementById('fProximo').value || null,
+                valor_estimado: document.getElementById('fValor').value || null,
+                anotacoes: document.getElementById('fAnotacoes').value.trim()
+            };
+            if(!payload.empresa && !payload.contato){ showToast('Informe a empresa ou o contato.','error'); return; }
+            if(!id){ payload.funil = funilAtual; payload.coluna = FUNIS[funilAtual].colunas[0].id; }
+
+            const btn = document.getElementById('btnSalvarLead');
+            btn.disabled = true;
+            try{
+                const r = await fetch(id ? '/api/leads/'+id : '/api/leads',
+                    { method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(!r.ok){ showToast(await motivoErro(r,'Erro ao salvar.'),'error'); return; }
+                showToast(id?'Lead atualizado.':'Lead criado.','success');
+                fecharModal('modalLead');
+                await carregar();
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+            finally{ btn.disabled = false; }
+        }
+
+        async function excluirLead(){
+            const id = document.getElementById('leadId').value;
+            if(!id || !confirm('Excluir este lead? A ação não pode ser desfeita.')) return;
+            try{
+                const r = await fetch('/api/leads/'+id, { method:'DELETE' });
+                if(!r.ok){ showToast(await motivoErro(r,'Erro ao excluir.'),'error'); return; }
+                showToast('Lead excluído.','success');
+                fecharModal('modalLead');
+                await carregar();
+            }catch(e){ showToast('Erro ao excluir.','error'); }
+        }
+
+        // Extrai o motivo real devolvido pelo servidor. Sem isto, todo
+        // erro vira "Erro ao salvar" e não há como saber o que houve.
+        async function motivoErro(resp, padrao){
+            try{
+                const d = await resp.json();
+                if(d && d.detalhe) return (d.mensagem || padrao) + ' ' + d.detalhe;
+                if(d && d.mensagem) return d.mensagem;
+            }catch(e){}
+            return padrao + ' (HTTP ' + resp.status + ')';
+        }
+
+        function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
+        function fundoModal(e,id){ if(e.target.id===id) fecharModal(id); }
+        function showToast(msg,tipo){
+            const c=document.getElementById('toastContainer');
+            const t=document.createElement('div'); t.className='toast';
+            t.innerHTML = `<span class="material-symbols-rounded" style="font-size:16px;color:${tipo==='error'?'var(--accent-pink)':'var(--accent-lime)'}">${tipo==='error'?'error':'check_circle'}</span>${msg}`;
+            c.appendChild(t); setTimeout(()=>t.remove(),3200);
+        }
+        document.addEventListener('keydown',function(e){
+            if(e.key==='Escape'){
+                document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+                document.getElementById('folhaMover').classList.remove('on');
+            }
+        });
+    </script>
+
+<!-- ===== IMPORTADOR DE PLANILHA ===== -->
+<div class="modal-overlay" id="modalImportar" onclick="if(event.target.id==='modalImportar')Importar.fechar()">
+    <div class="modal" style="max-width:620px">
+        <div class="md-head">
+            <div style="flex:1;min-width:0">
+                <div class="md-eyebrow">CRM</div>
+                <div class="md-tit" id="impTitulo">Importar leads</div>
+            </div>
+            <button class="md-x" onclick="Importar.fechar()" aria-label="Fechar">
+                <span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div class="md-corpo" id="impCorpo"></div>
+        <div class="md-pe" id="impPe"></div>
+    </div>
+</div>
+<input type="file" id="impArquivo" accept=".xlsx,.xls,.csv,.txt" style="display:none">
+
+
+<script>
+/* Menu de ações secundárias da barra de comando. */
+function alternarMais(ev, forcar){
+    if(ev) ev.stopPropagation();
+    const m = document.getElementById('cmdMais');
+    if(!m) return;
+    if(forcar === false) m.classList.remove('on');
+    else m.classList.toggle('on');
+}
+document.addEventListener('click', function(e){
+    const m = document.getElementById('cmdMais');
+    if(m && !m.contains(e.target)) m.classList.remove('on');
+});
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') alternarMais(null, false);
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+"use strict";
+/* ===========================================================================
+   IMPORTADOR DE LEADS
+   ---------------------------------------------------------------------------
+   Tres passos: escolher o arquivo, dizer qual coluna e qual, conferir e gravar.
+
+   POR QUE O NAVEGADOR LE A PLANILHA
+   Enviar o .xlsx para a funcao serverless exigiria uma biblioteca de leitura
+   no servidor e um upload binario, num ambiente com limite apertado de
+   tamanho e tempo. Lendo aqui, a pessoa ve a previa antes de qualquer
+   gravacao -- e o servidor recebe JSON limpo, que ele valida de novo.
+
+   O SERVIDOR NAO CONFIA NESTA TELA. Toda regra aplicada aqui existe la
+   tambem. O que se faz aqui e conveniencia; o que garante o dado e o backend.
+   =========================================================================== */
+const Importar = (function(){
+
+  /* Campos do CRM que a planilha pode preencher. `chaves` sao os nomes de
+     coluna que reconhecemos sozinhos -- sem acento e em minusculas. */
+  const CAMPOS = [
+    { id:'empresa',        rot:'Empresa',          obg:true,
+      dica:'ou o contato, um dos dois',
+      chaves:['empresa','razao social','cliente','nome da empresa','companhia','company'] },
+    { id:'contato',        rot:'Contato',          obg:true,
+      dica:'nome da pessoa',
+      chaves:['contato','nome','responsavel contato','pessoa','name','nome do contato'] },
+    { id:'telefone',       rot:'Telefone',
+      chaves:['telefone','celular','whatsapp','fone','tel','phone'] },
+    { id:'email',          rot:'E-mail',
+      chaves:['email','e mail','mail','correio'] },
+    { id:'cnpj',           rot:'CNPJ',
+      chaves:['cnpj','documento','cnpj cpf'] },
+    { id:'produto',        rot:'Produto',
+      dica:'interesse principal',
+      chaves:['produto','servico','interesse','solucao'] },
+    { id:'origem',         rot:'Origem',
+      dica:'de onde veio',
+      chaves:['origem','fonte','canal','source'] },
+    { id:'segmento',       rot:'Segmento',
+      chaves:['segmento','setor','ramo','area de atuacao','industria'] },
+    { id:'cidade',         rot:'Cidade',
+      chaves:['cidade','municipio','city'] },
+    { id:'estado',         rot:'Estado',           dica:'sigla, 2 letras',
+      chaves:['estado','uf','sigla'] },
+    { id:'responsavel',    rot:'Responsável',      dica:'quem cuida no time',
+      chaves:['responsavel','vendedor','closer','owner','consultor'] },
+    { id:'valor_estimado', rot:'Valor estimado',
+      chaves:['valor','valor estimado','ticket','proposta','preco','valor da proposta'] },
+    { id:'proximo_contato',rot:'Próximo contato',  dica:'data',
+      chaves:['proximo contato','data','retorno','follow up','agendamento'] },
+    { id:'anotacoes',      rot:'Anotações',
+      chaves:['anotacoes','observacao','observacoes','notas','obs','comentario'] },
+  ];
+
+  const st = { passo:1, arquivo:null, colunas:[], linhas:[], mapa:{},
+               funil:'qualificacao', pularDup:true, analise:null, enviando:false };
+
+  const esc = v => String(v ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // Tira acento, pontuacao e espaco duplo: "E-Mail " e "e_mail" viram "e mail".
+  const normaliza = t => String(t ?? '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,' ').trim();
+
+  /* ---------------- passo 1 · arquivo ---------------- */
+  function abrir(){
+    Object.assign(st, { passo:1, arquivo:null, colunas:[], linhas:[],
+                        mapa:{}, analise:null, enviando:false,
+                        funil: (typeof funilAtual !== 'undefined' && funilAtual) || 'qualificacao' });
+    document.getElementById('modalImportar').classList.add('show');
+    pintar();
+  }
+  function fechar(){ document.getElementById('modalImportar').classList.remove('show'); }
+
+  function passos(){
+    const nomes = ['Arquivo','Colunas','Conferir'];
+    return '<div class="imp-passos">' + nomes.map((n,i) => {
+      const k = i + 1;
+      const cls = st.passo === k ? 'on' : (st.passo > k ? 'feito' : '');
+      return `<span class="imp-passo ${cls}"><b>${st.passo > k ? '&check;' : k}</b>${n}</span>`
+           + (i < 2 ? '<span class="imp-tr"></span>' : '');
+    }).join('') + '</div>';
+  }
+
+  function pintar(){
+    const corpo = document.getElementById('impCorpo');
+    const pe = document.getElementById('impPe');
+    document.getElementById('impTitulo').innerText =
+      st.passo === 1 ? 'Importar leads'
+      : st.passo === 2 ? 'De qual coluna vem cada campo?'
+      : 'Confira antes de gravar';
+
+    if(st.passo === 1){
+      corpo.innerHTML = passos() + `
+        <div class="imp-solta" id="impSolta"
+             onclick="document.getElementById('impArquivo').click()">
+          <span class="material-symbols-rounded">table_view</span>
+          <div class="imp-solta-t">Arraste a planilha ou clique para escolher</div>
+          <div class="imp-solta-d">Excel (.xlsx, .xls) ou CSV &middot; até 500 linhas por vez</div>
+        </div>
+        <div class="imp-aviso info">
+          <span class="material-symbols-rounded">lightbulb</span>
+          <span>A primeira linha precisa ser o <b>cabeçalho</b> com o nome das colunas.
+          Reconhecemos os nomes mais comuns sozinhos — o que não bater, você indica no
+          passo seguinte. <button class="imp-modelo" onclick="Importar.modelo()">Baixar
+          planilha modelo</button></span>
+        </div>`;
+      pe.innerHTML = `<button class="btn btn-fant" onclick="Importar.fechar()">Cancelar</button>`;
+      ligarArrasto();
+      return;
+    }
+
+    if(st.passo === 2){
+      const opcoes = c => '<option value="">— não importar —</option>' +
+        st.colunas.map(x => `<option value="${esc(x)}" ${st.mapa[c.id]===x?'selected':''}>${esc(x)}</option>`).join('');
+      corpo.innerHTML = passos() + `
+        <div class="imp-arq">
+          <span class="material-symbols-rounded">description</span>
+          <span class="imp-arq-n">${esc(st.arquivo)}</span>
+          <span class="imp-arq-d">${st.linhas.length} linha${st.linhas.length!==1?'s':''}</span>
+        </div>
+
+        <div class="ig">
+          <label for="impFunil">Onde os leads entram</label>
+          <select id="impFunil" onchange="Importar.setFunil(this.value)">
+            <option value="qualificacao" ${st.funil==='qualificacao'?'selected':''}>Qualificação · Prospecção</option>
+            <option value="fechamento"   ${st.funil==='fechamento'?'selected':''}>Fechamento · Agendamento</option>
+            <option value="relacionamento" ${st.funil==='relacionamento'?'selected':''}>Relacionamento · Backlog</option>
+            <option value="nutricao"     ${st.funil==='nutricao'?'selected':''}>Nutrição · Backlog</option>
+          </select>
+        </div>
+
+        <div class="imp-map">
+          ${CAMPOS.map(c => `
+            <div class="imp-linha">
+              <span class="imp-campo ${c.obg?'obg':''}">${c.rot}
+                ${c.dica?`<small>${c.dica}</small>`:''}</span>
+              <span class="imp-seta"><span class="material-symbols-rounded">arrow_forward</span></span>
+              <select class="imp-sel ${st.mapa[c.id]?'':'vazio'}"
+                      onchange="Importar.mapear('${c.id}', this.value)">${opcoes(c)}</select>
+            </div>`).join('')}
+        </div>
+
+        <label class="ig" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+          <input type="checkbox" id="impDup" ${st.pularDup?'checked':''}
+                 onchange="Importar.setDup(this.checked)" style="width:15px;height:15px;accent-color:var(--acao)">
+          <span style="font-size:12.5px;font-weight:500;color:var(--tinta-2)">
+            Pular quem já está no CRM (por e-mail, telefone ou empresa + contato)</span>
+        </label>`;
+      pe.innerHTML = `
+        <button class="btn btn-fant" onclick="Importar.voltar()">Voltar</button>
+        <button class="btn btn-acao" onclick="Importar.conferir()">
+          <span class="material-symbols-rounded">arrow_forward</span>Conferir</button>`;
+      return;
+    }
+
+    // passo 3
+    const a = st.analise;
+    corpo.innerHTML = passos() + `
+      <div class="imp-resumo">
+        <div class="imp-bloco ok"><div class="imp-bloco-n">${a.validas.length}</div>
+          <div class="imp-bloco-r">serão criados</div></div>
+        ${a.invalidas.length ? `<div class="imp-bloco alerta">
+          <div class="imp-bloco-n">${a.invalidas.length}</div>
+          <div class="imp-bloco-r">com problema</div></div>` : ''}
+        <div class="imp-bloco"><div class="imp-bloco-n">${st.linhas.length}</div>
+          <div class="imp-bloco-r">linhas no arquivo</div></div>
+      </div>
+
+      ${a.invalidas.length ? `
+        <div class="imp-aviso alerta">
+          <span class="material-symbols-rounded">warning</span>
+          <span><b>${a.invalidas.length} linha${a.invalidas.length!==1?'s':''} não
+          ${a.invalidas.length!==1?'serão':'será'} importada${a.invalidas.length!==1?'s':''}.</b>
+          Elas continuam na sua planilha — corrija e importe de novo, se quiser.</span>
+        </div>
+        <div class="imp-tabela">
+          <div class="imp-th"><span>#</span><span>Empresa</span><span>Contato</span><span>Motivo</span></div>
+          ${a.invalidas.slice(0,60).map(l => `
+            <div class="imp-tr2 ruim"><span class="imp-n">${l.n}</span>
+              <span>${esc(l.empresa||'—')}</span><span>${esc(l.contato||'—')}</span>
+              <span class="imp-motivo">${esc(l.motivo)}</span></div>`).join('')}
+        </div>` : ''}
+
+      ${a.validas.length ? `
+        <div class="ig"><label>Prévia dos primeiros</label>
+          <div class="imp-tabela">
+            <div class="imp-th"><span>#</span><span>Empresa</span><span>Contato</span><span>Telefone</span></div>
+            ${a.validas.slice(0,8).map(l => `
+              <div class="imp-tr2"><span class="imp-n">${l.n}</span>
+                <span>${esc(l.empresa||'—')}</span><span>${esc(l.contato||'—')}</span>
+                <span>${esc(l.telefone||'—')}</span></div>`).join('')}
+          </div></div>` : `
+        <div class="imp-aviso erro">
+          <span class="material-symbols-rounded">error</span>
+          <span>Nenhuma linha válida. Volte e confira o mapeamento das colunas.</span>
+        </div>`}
+
+      <div class="imp-aviso info">
+        <span class="material-symbols-rounded">info</span>
+        <span>Entram em <b>${esc(rotuloFunil())}</b>${st.pularDup
+          ? ', pulando quem já existe no CRM' : ', <b>sem</b> checar duplicados'}.</span>
+      </div>
+      <div id="impProgresso"></div>`;
+
+    pe.innerHTML = `
+      <button class="btn btn-fant" onclick="Importar.voltar()">Voltar</button>
+      <button class="btn btn-acao" id="impGravar" onclick="Importar.gravar()"
+        ${a.validas.length?'':'disabled'}>
+        <span class="material-symbols-rounded">upload</span>
+        Importar ${a.validas.length} lead${a.validas.length!==1?'s':''}</button>`;
+  }
+
+  function rotuloFunil(){
+    return ({qualificacao:'Qualificação · Prospecção', fechamento:'Fechamento · Agendamento',
+             relacionamento:'Relacionamento · Backlog', nutricao:'Nutrição · Backlog'})[st.funil];
+  }
+
+  /* ---------------- leitura do arquivo ---------------- */
+  function ligarArrasto(){
+    const alvo = document.getElementById('impSolta');
+    if(!alvo) return;
+    ['dragenter','dragover'].forEach(e => alvo.addEventListener(e, ev => {
+      ev.preventDefault(); alvo.classList.add('sobre'); }));
+    ['dragleave','drop'].forEach(e => alvo.addEventListener(e, ev => {
+      ev.preventDefault(); alvo.classList.remove('sobre'); }));
+    alvo.addEventListener('drop', ev => {
+      const f = ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if(f) ler(f);
+    });
+  }
+
+  function ler(file){
+    if(typeof XLSX === 'undefined'){
+      toast('A biblioteca de planilha não carregou. Recarregue a página.', 'erro');
+      return;
+    }
+    const leitor = new FileReader();
+    leitor.onload = ev => {
+      try{
+        const wb = XLSX.read(ev.target.result, { type:'array', cellDates:true });
+        const aba = wb.Sheets[wb.SheetNames[0]];
+        // defval:'' mantem as colunas vazias, senao o mapeamento perde campo
+        const linhas = XLSX.utils.sheet_to_json(aba, { defval:'', raw:false });
+        if(!linhas.length){ toast('A planilha está vazia.', 'erro'); return; }
+
+        st.arquivo = file.name;
+        st.linhas = linhas;
+        st.colunas = Object.keys(linhas[0]).filter(c => String(c).trim() !== '');
+        st.mapa = autoMapear(st.colunas);
+        st.passo = 2;
+        pintar();
+      }catch(err){
+        console.error('leitura da planilha:', err);
+        toast('Não consegui ler este arquivo. Salve como .xlsx ou .csv e tente de novo.', 'erro');
+      }
+    };
+    leitor.onerror = () => toast('Falha ao abrir o arquivo.', 'erro');
+    leitor.readAsArrayBuffer(file);
+  }
+
+  /* Casa cabecalho com campo: primeiro nome igual, depois nome contido.
+     Uma coluna so serve a um campo -- senao "nome" viraria empresa e
+     contato ao mesmo tempo. */
+  function autoMapear(colunas){
+    const mapa = {}, usadas = new Set();
+    const norm = colunas.map(c => ({ orig:c, n:normaliza(c) }));
+    CAMPOS.forEach(campo => {
+      let achou = norm.find(c => !usadas.has(c.orig) && campo.chaves.includes(c.n));
+      if(!achou) achou = norm.find(c => !usadas.has(c.orig) &&
+        campo.chaves.some(k => c.n.includes(k) || k.includes(c.n)));
+      if(achou){ mapa[campo.id] = achou.orig; usadas.add(achou.orig); }
+    });
+    return mapa;
+  }
+
+  function mapear(campo, coluna){
+    if(coluna) st.mapa[campo] = coluna; else delete st.mapa[campo];
+    pintar();
+  }
+  function setFunil(v){ st.funil = v; }
+  function setDup(v){ st.pularDup = v; }
+  function voltar(){ st.passo = Math.max(1, st.passo - 1); pintar(); }
+
+  /* ---------------- passo 3 · conferencia ---------------- */
+  function conferir(){
+    if(!st.mapa.empresa && !st.mapa.contato){
+      toast('Indique ao menos a coluna de Empresa ou a de Contato.', 'erro');
+      return;
+    }
+    const validas = [], invalidas = [];
+    st.linhas.forEach((linha, i) => {
+      const n = i + 2;                     // +1 do cabecalho, +1 porque planilha comeca em 1
+      const item = { n };
+      CAMPOS.forEach(c => {
+        const col = st.mapa[c.id];
+        if(col) item[c.id] = String(linha[col] ?? '').trim();
+      });
+      if(!item.empresa && !item.contato){
+        invalidas.push(Object.assign(item, { motivo:'sem empresa e sem contato' }));
+        return;
+      }
+      if(item.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.email)){
+        invalidas.push(Object.assign(item, { motivo:'e-mail inválido: ' + item.email }));
+        return;
+      }
+      validas.push(item);
+    });
+    st.analise = { validas, invalidas };
+    st.passo = 3;
+    pintar();
+  }
+
+  /* ---------------- gravacao ---------------- */
+  async function gravar(){
+    if(st.enviando || !st.analise.validas.length) return;
+    st.enviando = true;
+    const btn = document.getElementById('impGravar');
+    if(btn) btn.disabled = true;
+
+    const prog = document.getElementById('impProgresso');
+    const lote = 200;                       // abaixo do teto de 500 do servidor
+    const total = st.analise.validas.length;
+    let criados = 0, pulados = [];
+
+    try{
+      for(let i = 0; i < total; i += lote){
+        const parte = st.analise.validas.slice(i, i + lote);
+        if(prog) prog.innerHTML =
+          `<div class="imp-barra"><i style="width:${Math.round(i/total*100)}%"></i></div>
+           <div style="font-size:11.5px;color:var(--tinta-3);margin-top:6px">
+             Enviando ${i + parte.length} de ${total}…</div>`;
+
+        const r = await fetch('/api/leads/importar', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ linhas: parte, funil: st.funil,
+                                 pular_duplicados: st.pularDup })
+        });
+        const d = await r.json().catch(() => ({}));
+        if(!r.ok) throw new Error(d.mensagem || ('Falha no envio (HTTP ' + r.status + ')'));
+        criados += d.criados || 0;
+        pulados = pulados.concat(d.pulados || []);
+      }
+
+      fechar();
+      const partes = [criados + (criados === 1 ? ' lead importado' : ' leads importados')];
+      if(pulados.length) partes.push(pulados.length + ' pulado' + (pulados.length!==1?'s':''));
+      toast(partes.join(' · '), criados ? 'ok' : 'erro');
+      if(typeof carregar === 'function') carregar();
+      else if(typeof carregarLeads === 'function') carregarLeads();
+    }catch(err){
+      console.error('importacao:', err);
+      if(prog) prog.innerHTML = `<div class="imp-aviso erro">
+        <span class="material-symbols-rounded">error</span>
+        <span>${esc(err.message)}${criados ? ' — <b>' + criados +
+        '</b> já entraram antes da falha.' : ''}</span></div>`;
+      if(btn) btn.disabled = false;
+    }finally{
+      st.enviando = false;
+    }
+  }
+
+  /* Planilha modelo: cabecalho exato + uma linha de exemplo. Elimina a
+     ida e volta de descobrir quais colunas o sistema entende. */
+  function modelo(){
+    const cab = CAMPOS.map(c => c.rot);
+    const ex  = ['Conexão CX','Ana Medeiros','(84) 99999-0000','ana@conexaocx.com.br',
+                 '00.000.000/0001-00','Recrutamento e Seleção','Indicação','Serviços',
+                 'Natal','RN','Jhonattan Luiz','12.500,00','18/08/2026',
+                 'Reunião pedida pelo cliente'];
+    const linhas = [cab, ex].map(l =>
+      l.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(';')).join('\r\n');
+    // BOM para o Excel abrir com acento correto
+    const blob = new Blob(['\ufeff' + linhas], { type:'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'modelo-importacao-leads.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function toast(msg, tipo){
+    if(typeof showToast === 'function'){ showToast(msg, tipo === 'erro' ? 'error' : 'success'); return; }
+    alert(msg);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('impArquivo');
+    if(inp) inp.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if(f) ler(f);
+      e.target.value = '';        // permite reescolher o mesmo arquivo
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' &&
+       document.getElementById('modalImportar').classList.contains('show')) fechar();
+  });
+
+  return { abrir, fechar, mapear, setFunil, setDup, voltar, conferir, gravar, modelo };
+})();
+</script>
+
+</body>
+</html>

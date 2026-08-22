@@ -3,246 +3,446 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar | CXProjetos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <title>Entrar | core.cx</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
     <style>
-        :root {
-            --primary-purple: #7371ff;
-            --accent-lime: #bef533;
-            --text-main: #1e1e1e;
-            --text-muted: #71717a;
+        :root{
+            --fundo:#f5f4fa;
+            --papel:#ffffff;
+            --papel-suave:#f9f8fc;
+            --linha:#e7e4ef;
+            --linha-forte:#d8d2ea;
+            --texto:#1d1928;
+            --texto-secundario:#706a7e;
+            --texto-suave:#9993a5;
+            --roxo:#6c63f6;
+            --roxo-escuro:#5a50e2;
+            --roxo-suave:#efedff;
+            --erro:#bb3045;
+            --erro-fundo:#fff1f3;
+            --erro-linha:#f7c9d1;
+            --raio:16px;
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-        body { height: 100vh; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; background: #fff; }
 
-        /* ===== PAINEL ESQUERDO (MARCA) ===== */
-        .brand-panel {
-            background: #1e1e1e; position: relative; overflow: hidden;
-            display: flex; flex-direction: column; justify-content: space-between;
-            padding: 56px;
+        *{box-sizing:border-box}
+        html,body{min-height:100%}
+        body{
+            margin:0;
+            overflow-x:hidden;
+            background:var(--fundo);
+            color:var(--texto);
+            font-family:'Inter',system-ui,sans-serif;
+            -webkit-font-smoothing:antialiased;
         }
-        .brand-panel::before {
-            content: ''; position: absolute; width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(115,113,255,0.35) 0%, transparent 70%);
-            top: -200px; right: -200px; border-radius: 50%;
+
+        button,input{font:inherit}
+        button{border:0}
+        :focus-visible{outline:3px solid rgba(108,99,246,.24);outline-offset:3px}
+
+        .pagina-login{
+            position:relative;
+            display:grid;
+            place-items:center;
+            min-height:100vh;
+            padding:clamp(20px,3vh,36px) 24px;
+            overflow:hidden;
+            background:
+                radial-gradient(circle at 15% 13%,rgba(119,99,248,.10),transparent 25%),
+                radial-gradient(circle at 88% 88%,rgba(108,99,246,.10),transparent 27%),
+                var(--fundo);
         }
-        .brand-panel::after {
-            content: ''; position: absolute; width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(190,245,51,0.12) 0%, transparent 70%);
-            bottom: -180px; left: -150px; border-radius: 50%;
+
+        .grafismo{
+            position:absolute;
+            width:510px;
+            height:510px;
+            border:1px solid rgba(108,99,246,.09);
+            border-radius:50%;
+            pointer-events:none;
         }
-        .brand-logo { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
-        .brand-logo img { width: 40px; height: 40px; object-fit: contain; filter: brightness(0) invert(1); }
-        .brand-logo span { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
-        .brand-logo span b { color: var(--primary-purple); }
 
-        .brand-center { position: relative; z-index: 2; }
-        .brand-headline { font-size: 44px; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 22px; }
-        .brand-headline .lime { color: var(--accent-lime); }
-        .brand-sub { font-size: 15px; color: rgba(255,255,255,0.55); font-weight: 500; line-height: 1.7; max-width: 400px; }
+        .grafismo.um{left:-310px;bottom:-245px;box-shadow:0 0 0 55px rgba(108,99,246,.022),0 0 0 110px rgba(108,99,246,.015)}
+        .grafismo.dois{right:-330px;top:-285px;box-shadow:0 0 0 50px rgba(108,99,246,.022)}
 
-        /* Cards flutuantes decorativos */
-        .float-cards { position: relative; z-index: 2; margin: 36px 0; display: flex; flex-direction: column; gap: 12px; max-width: 360px; }
-        .float-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); padding: 14px 16px; border-radius: 14px; display: flex; align-items: center; gap: 14px; backdrop-filter: blur(10px); }
-        .float-card .fc-ico { width: 36px; height: 36px; min-width: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        .float-card .fc-txt { flex-grow: 1; }
-        .float-card .fc-title { font-size: 12px; font-weight: 800; color: #fff; }
-        .float-card .fc-bar { height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 7px; overflow: hidden; }
-        .float-card .fc-fill { height: 100%; border-radius: 10px; }
-        .float-card .fc-time { font-size: 13px; font-weight: 900; font-family: monospace; color: var(--accent-lime); }
-
-        .brand-features { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px; }
-        .brand-feature { display: flex; align-items: center; gap: 14px; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; }
-        .brand-feature .ico { width: 38px; height: 38px; min-width: 38px; background: rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-lime); }
-
-        /* ===== PAINEL DIREITO (FORM) ===== */
-        .form-panel { display: flex; align-items: center; justify-content: center; padding: 40px; }
-        .form-wrap { width: 100%; max-width: 380px; }
-        .form-title { font-size: 30px; font-weight: 900; letter-spacing: -1px; color: var(--text-main); margin-bottom: 8px; }
-        .form-sub { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-bottom: 40px; }
-
-        .field { margin-bottom: 20px; }
-        .field label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; display: block; margin-bottom: 10px; }
-        .input-shell { position: relative; display: flex; align-items: center; }
-        .input-shell .ico-left { position: absolute; left: 16px; color: #c4c4c8; font-size: 20px; transition: color 0.2s; pointer-events: none; }
-        .input-shell input {
-            width: 100%; padding: 15px 16px 15px 48px; background: #f7f7f8;
-            border: 2px solid transparent; border-radius: 14px; outline: none;
-            font-size: 14px; font-weight: 500; color: var(--text-main); transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
+        .marca-fundo{
+            position:absolute;
+            right:clamp(22px,7vw,120px);
+            bottom:clamp(18px,5vh,66px);
+            color:transparent;
+            font-size:clamp(120px,18vw,270px);
+            font-weight:700;
+            letter-spacing:-.17em;
+            line-height:.75;
+            pointer-events:none;
+            transform:rotate(-9deg);
+            -webkit-text-stroke:1px rgba(108,99,246,.10);
         }
-        .input-shell input:focus { background: #fff; border-color: var(--primary-purple); }
-        .input-shell input:focus + .ico-left, .input-shell:focus-within .ico-left { color: var(--primary-purple); }
-        .toggle-senha { position: absolute; right: 14px; color: #c4c4c8; cursor: pointer; font-size: 20px; transition: color 0.2s; background: none; border: none; }
-        .toggle-senha:hover { color: var(--text-main); }
 
-        .btn-entrar {
-            width: 100%; padding: 16px; background: var(--primary-purple); color: #fff;
-            font-weight: 800; font-size: 14px; border: none; cursor: pointer; border-radius: 14px;
-            margin-top: 12px; transition: all 0.2s; letter-spacing: 0.3px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+        .cartao-login{
+            position:relative;
+            z-index:1;
+            width:min(100%,426px);
+            padding:32px 39px;
+            border:1px solid rgba(77,58,142,.10);
+            border-radius:20px;
+            background:rgba(255,255,255,.96);
+            box-shadow:0 20px 52px rgba(45,34,82,.10);
         }
-        .btn-entrar:hover { background: var(--text-main); transform: translateY(-1px); }
-        .btn-entrar:active { transform: translateY(0); }
-        .btn-entrar:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
-        .erro-msg {
-            display: none; align-items: center; gap: 8px; margin-top: 18px; padding: 12px 16px;
-            background: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 700; border-radius: 12px;
+        .marcas-login{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            height:26px;
+            margin-bottom:25px;
+            white-space:nowrap;
         }
-        .erro-msg.show { display: flex; }
 
-        .form-footer { text-align: center; margin-top: 32px; font-size: 12px; color: #c4c4c8; font-weight: 600; }
-
-        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ===== RESPONSIVO ===== */
-        @media (max-width: 900px) {
-            body { grid-template-columns: 1fr; }
-            .brand-panel { display: none; }
+        .marca-core{
+            color:#1d1928;
+            font-size:21px;
+            font-weight:700;
+            letter-spacing:-1.1px;
+            line-height:1;
         }
+
+        .marca-core span{color:var(--roxo)}
+        .divisor-marca{width:1px;height:18px;background:#ded9ea}
+
+        .marca-conexao{
+            color:var(--roxo);
+            font-size:18px;
+            font-weight:700;
+            letter-spacing:-.7px;
+            line-height:1;
+            white-space:nowrap;
+        }
+
+        .cabecalho-formulario h1{
+            margin:0;
+            font-size:28px;
+            font-weight:700;
+            letter-spacing:-1.15px;
+            line-height:1.12;
+        }
+
+        .cabecalho-formulario p{
+            margin:8px 0 22px;
+            color:var(--texto-secundario);
+            font-size:13px;
+            line-height:1.6;
+        }
+
+        .aviso{
+            display:none;
+            align-items:flex-start;
+            gap:9px;
+            margin:0 0 20px;
+            padding:11px 12px;
+            border:1px solid transparent;
+            border-radius:10px;
+            font-size:12px;
+            line-height:1.5;
+        }
+
+        .aviso.on{display:flex}
+        .aviso .material-symbols-rounded{flex:0 0 auto;margin-top:1px;font-size:17px}
+        .aviso.erro{border-color:var(--erro-linha);background:var(--erro-fundo);color:#a7273b}
+        .aviso.info{border-color:#dcd7fb;background:#f7f6ff;color:#4d43b1}
+
+        .campo{margin-top:15px}
+        .campo label{display:block;margin-bottom:8px;color:#4c4658;font-size:11px;font-weight:700}
+        .caixa{position:relative}
+
+        .caixa > .material-symbols-rounded{
+            position:absolute;
+            z-index:1;
+            top:50%;
+            left:14px;
+            transform:translateY(-50%);
+            color:#928b9e;
+            font-size:18px;
+            pointer-events:none;
+        }
+
+        .campo input{
+            width:100%;
+            height:48px;
+            padding:0 45px 0 43px;
+            border:1px solid var(--linha);
+            border-radius:11px;
+            outline:0;
+            background:var(--papel-suave);
+            color:var(--texto);
+            font-size:13px;
+            transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
+        }
+
+        .campo input::placeholder{color:#aaa4b2}
+        .campo input:hover{border-color:var(--linha-forte)}
+        .campo input:focus{border-color:var(--roxo);background:#fff;box-shadow:0 0 0 3px rgba(108,99,246,.12)}
+        .campo input:disabled{cursor:wait;opacity:.65}
+
+        .olho{
+            position:absolute;
+            z-index:2;
+            top:50%;
+            right:7px;
+            display:grid;
+            place-items:center;
+            width:34px;
+            height:34px;
+            transform:translateY(-50%);
+            border-radius:8px;
+            background:transparent;
+            color:#928b9e;
+            cursor:pointer;
+            transition:background .16s ease,color .16s ease;
+        }
+
+        .olho:hover{background:#eeecf4;color:var(--texto)}
+        .olho .material-symbols-rounded{font-size:18px}
+
+        .linha-login{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:14px;
+            margin:17px 0 18px;
+        }
+
+        .lembrar,.esqueci{
+            border:0;
+            background:transparent;
+            cursor:pointer;
+            font-size:11.5px;
+            font-weight:600;
+        }
+
+        .lembrar{display:inline-flex;align-items:center;gap:8px;color:var(--texto-secundario);white-space:nowrap}
+        .checkbox{display:grid;place-items:center;width:16px;height:16px;border:1.5px solid #d6d0e2;border-radius:4px;transition:background .16s ease,border-color .16s ease}
+        .checkbox.on{border-color:var(--roxo);background:var(--roxo)}
+        .checkbox.on::after{content:'';width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+        .esqueci{color:var(--roxo)}
+        .esqueci:hover{color:var(--roxo-escuro);text-decoration:underline}
+
+        .entrar{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            width:100%;
+            height:49px;
+            border-radius:11px;
+            background:var(--roxo);
+            color:#fff;
+            box-shadow:0 10px 17px rgba(86,70,220,.20);
+            cursor:pointer;
+            font-size:13px;
+            font-weight:700;
+            transition:background .16s ease,box-shadow .16s ease,transform .16s ease;
+        }
+
+        .entrar:hover{background:var(--roxo-escuro);box-shadow:0 13px 22px rgba(86,70,220,.25);transform:translateY(-1px)}
+        .entrar:active{transform:translateY(0)}
+        .entrar:disabled{cursor:wait;opacity:.7;box-shadow:none;transform:none}
+        .entrar .material-symbols-rounded{font-size:18px}
+        .girando{animation:girar .8s linear infinite}
+        @keyframes girar{to{transform:rotate(360deg)}}
+
+        .ajuda{margin:18px 0 0;text-align:center;color:var(--texto-suave);font-size:11px;line-height:1.65}
+        .ajuda b{color:var(--texto-secundario);font-weight:600}
+
+        @media(max-width:520px){
+            .pagina-login{place-items:start center;padding:29px 18px}
+            .cartao-login{padding:30px 24px;border-radius:18px}
+            .marca-fundo{right:-12px;bottom:8px;font-size:138px}
+            .marcas-login{gap:8px;margin-bottom:29px}
+            .marca-core{font-size:19px}
+            .marca-conexao{font-size:17px}
+            .cabecalho-formulario h1{font-size:26px}
+            .linha-login{align-items:flex-start;flex-direction:column;gap:14px}
+        }
+
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
 </head>
 <body>
+    <main class="pagina-login">
+        <span class="grafismo um"></span>
+        <span class="grafismo dois"></span>
+        <span class="marca-fundo" aria-hidden="true">cx</span>
 
-    <div class="brand-panel">
-        <div class="brand-logo">
-            <img src="{{ url_for('static', filename='cx-icon.png') }}" alt="CX">
-            <span>CX<b>Projetos</b></span>
-        </div>
-
-        <div class="brand-center">
-            <div class="brand-headline">Gestão de projetos<br>que <span class="lime">flui</span>.</div>
-            <div class="brand-sub">Quadros, timers, planejamento e clientes — tudo em um só lugar. O workspace da sua equipe, do briefing à entrega.</div>
-
-            <div class="float-cards">
-                <div class="float-card">
-                    <div class="fc-ico" style="background:rgba(115,113,255,0.2); color:#a5a3ff;"><span class="material-symbols-rounded" style="font-size:20px;">trending_up</span></div>
-                    <div class="fc-txt">
-                        <div class="fc-title">Recrutamento & Seleção</div>
-                        <div class="fc-bar"><div class="fc-fill" style="width:72%; background:var(--primary-purple);"></div></div>
-                    </div>
-                </div>
-                <div class="float-card">
-                    <div class="fc-ico" style="background:rgba(190,245,51,0.15); color:var(--accent-lime);"><span class="material-symbols-rounded" style="font-size:20px;">timer</span></div>
-                    <div class="fc-txt"><div class="fc-title">Tempo dedicado hoje</div></div>
-                    <div class="fc-time">06:24:18</div>
-                </div>
+        <form class="cartao-login" onsubmit="entrar(); return false;" aria-labelledby="titulo-login">
+            <div class="marcas-login" aria-label="core.cx e conexão.cx">
+                <span class="marca-core">core<span>.cx</span></span>
+                <span class="divisor-marca"></span>
+                <span class="marca-conexao">conexão.cx</span>
             </div>
-        </div>
 
-        <div class="brand-features">
-            <div class="brand-feature"><div class="ico"><span class="material-symbols-rounded" style="font-size:20px;">dashboard</span></div> Quadros Kanban por área</div>
-            <div class="brand-feature"><div class="ico"><span class="material-symbols-rounded" style="font-size:20px;">timer</span></div> Controle de tempo por atividade</div>
-            <div class="brand-feature"><div class="ico"><span class="material-symbols-rounded" style="font-size:20px;">insights</span></div> Visão completa de cada cliente</div>
-        </div>
-    </div>
+            <header class="cabecalho-formulario">
+                <h1 id="titulo-login">Acesse sua conta</h1>
+                <p>Informe seus dados para continuar.</p>
+            </header>
 
-    <div class="form-panel">
-        <div class="form-wrap">
-            <div class="form-title">Bem-vindo de volta</div>
-            <div class="form-sub">Acesse seu workspace para continuar.</div>
+            <div class="aviso" id="aviso" role="alert" aria-live="polite">
+                <span class="material-symbols-rounded" id="avisoIcone">error</span>
+                <span id="avisoTexto"></span>
+            </div>
 
-            <div class="field">
-                <label>E-mail Corporativo</label>
-                <div class="input-shell">
-                    <span class="material-symbols-rounded ico-left">mail</span>
-                    <input type="email" id="email" placeholder="nome@cxdata.com.br" onkeypress="if(event.key==='Enter') document.getElementById('senha').focus()">
+            <div class="campo">
+                <label for="email">Email</label>
+                <div class="caixa">
+                    <span class="material-symbols-rounded">mail</span>
+                    <input type="email" id="email" placeholder="nome@empresa.com" autocomplete="username" autocapitalize="none" spellcheck="false">
                 </div>
             </div>
 
-            <div class="field">
-                <label>Senha</label>
-                <div class="input-shell">
-                    <span class="material-symbols-rounded ico-left">lock</span>
-                    <input type="password" id="senha" placeholder="••••••••" onkeypress="if(event.key==='Enter') executarLogin()">
-                    <button class="toggle-senha" onclick="toggleSenha()" title="Mostrar/ocultar senha"><span class="material-symbols-rounded" id="iconeOlho">visibility</span></button>
-                </div>
-                <div style="text-align:right; margin-top:10px;">
-                    <span onclick="abrirEsqueciSenha()" style="font-size:12px; font-weight:700; color:var(--primary-purple); cursor:pointer;">Esqueci minha senha</span>
+            <div class="campo">
+                <label for="senha">Senha</label>
+                <div class="caixa">
+                    <span class="material-symbols-rounded">lock</span>
+                    <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
+                    <button type="button" class="olho" id="olho" onclick="verSenha()" aria-label="Mostrar senha" title="Mostrar senha"><span class="material-symbols-rounded">visibility</span></button>
                 </div>
             </div>
 
-            <button class="btn-entrar" id="btnEntrar" onclick="executarLogin()">
-                <span id="btnTexto">ENTRAR NO SISTEMA</span>
-            </button>
-
-            <div class="erro-msg" id="mensagemErro">
-                <span class="material-symbols-rounded" style="font-size:16px;">error</span>
-                <span id="erroTexto">E-mail ou senha inválidos.</span>
+            <div class="linha-login">
+                <button type="button" class="lembrar" onclick="alternarLembrar()" aria-pressed="true"><span class="checkbox on" id="cx" aria-hidden="true"></span>Manter conectado</button>
+                <button type="button" class="esqueci" onclick="esqueci()">Esqueci minha senha</button>
             </div>
 
-            <div class="form-footer">CXProjetos · CX Data</div>
-        </div>
-    </div>
-
-    <div id="modalEsqueci" style="display:none; position:fixed; inset:0; background:rgba(30,30,30,0.5); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#fff; max-width:420px; width:90%; padding:40px; border-radius:20px; box-shadow:0 30px 80px rgba(0,0,0,0.2); text-align:center;">
-            <div style="width:60px; height:60px; background:#f0efff; border-radius:18px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-                <span class="material-symbols-rounded" style="font-size:30px; color:var(--primary-purple);">lock_reset</span>
-            </div>
-            <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px; margin-bottom:12px;">Recuperar acesso</div>
-            <p style="font-size:14px; color:var(--text-muted); font-weight:500; line-height:1.7; margin-bottom:28px;">
-                Para redefinir sua senha, entre em contato com o administrador da plataforma. Ele poderá gerar uma nova senha de acesso para você nas configurações.
-            </p>
-            <button onclick="fecharEsqueci()" style="width:100%; padding:14px; background:var(--primary-purple); color:#fff; font-weight:800; font-size:13px; border:none; cursor:pointer; border-radius:14px; transition:0.2s;" onmouseover="this.style.background='#1e1e1e'" onmouseout="this.style.background='var(--primary-purple)'">ENTENDI</button>
-        </div>
-    </div>
+            <button class="entrar" id="btnEntrar" type="submit"><span class="material-symbols-rounded" id="btnIcone">login</span><span id="btnTexto">Entrar</span></button>
+            <p class="ajuda"><b>Precisa de ajuda?</b><br>Fale com quem administra a plataforma.</p>
+        </form>
+    </main>
 
     <script>
-        function abrirEsqueciSenha() { document.getElementById('modalEsqueci').style.display = 'flex'; }
-        function fecharEsqueci() { document.getElementById('modalEsqueci').style.display = 'none'; }
+        let mostrando = false;
+        let lembrar = true;
+        let enviando = false;
 
-        function toggleSenha() {
-            const input = document.getElementById('senha');
-            const icone = document.getElementById('iconeOlho');
-            if (input.type === 'password') { input.type = 'text'; icone.innerText = 'visibility_off'; }
-            else { input.type = 'password'; icone.innerText = 'visibility'; }
+        document.addEventListener('DOMContentLoaded', function(){
+            const email = document.getElementById('email');
+            setTimeout(function(){
+                if(email.value.trim()) document.getElementById('senha').focus();
+                else email.focus();
+            }, 90);
+        });
+
+        function verSenha(){
+            mostrando = !mostrando;
+            const senha = document.getElementById('senha');
+            const botao = document.getElementById('olho');
+            senha.type = mostrando ? 'text' : 'password';
+            botao.querySelector('.material-symbols-rounded').innerText = mostrando ? 'visibility_off' : 'visibility';
+            botao.setAttribute('aria-label', mostrando ? 'Ocultar senha' : 'Mostrar senha');
+            botao.setAttribute('title', mostrando ? 'Ocultar senha' : 'Mostrar senha');
+            senha.focus();
         }
 
-        async function executarLogin() {
+        function alternarLembrar(){
+            lembrar = !lembrar;
+            document.getElementById('cx').classList.toggle('on', lembrar);
+            document.querySelector('.lembrar').setAttribute('aria-pressed', lembrar ? 'true' : 'false');
+        }
+
+        function mostrarAviso(texto, tipo){
+            const aviso = document.getElementById('aviso');
+            document.getElementById('avisoTexto').innerText = texto;
+            document.getElementById('avisoIcone').innerText = tipo === 'info' ? 'info' : 'error';
+            aviso.className = 'aviso on ' + (tipo === 'info' ? 'info' : 'erro');
+        }
+
+        function limparAviso(){
+            document.getElementById('aviso').className = 'aviso';
+        }
+
+        function carregando(estado){
+            enviando = estado;
+            const botao = document.getElementById('btnEntrar');
+            botao.disabled = estado;
+            document.getElementById('email').disabled = estado;
+            document.getElementById('senha').disabled = estado;
+            document.getElementById('btnTexto').innerText = estado ? 'Acessando' : 'Entrar';
+            const icone = document.getElementById('btnIcone');
+            icone.innerText = estado ? 'progress_activity' : 'login';
+            icone.classList.toggle('girando', estado);
+        }
+
+        async function entrar(){
+            if(enviando) return;
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value;
-            const msgErro = document.getElementById('mensagemErro');
-            const btn = document.getElementById('btnEntrar');
-            const btnTexto = document.getElementById('btnTexto');
 
-            msgErro.classList.remove('show');
-
-            if (!email || !senha) {
-                document.getElementById('erroTexto').innerText = 'Preencha e-mail e senha.';
-                msgErro.classList.add('show');
+            if(!email){
+                mostrarAviso('Informe o email.', 'erro');
+                document.getElementById('email').focus();
                 return;
             }
 
-            btn.disabled = true;
-            btnTexto.innerHTML = '<span class="spinner"></span>';
+            if(!senha){
+                mostrarAviso('Informe a senha.', 'erro');
+                document.getElementById('senha').focus();
+                return;
+            }
 
-            try {
-                const res = await fetch('/login', {
+            limparAviso();
+            carregando(true);
+
+            try{
+                const resposta = await fetch('/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, senha })
+                    body: JSON.stringify({ email: email, senha: senha, lembrar: lembrar })
                 });
 
-                if (res.ok) {
-                    btnTexto.innerText = 'ENTRANDO...';
-                    window.location.href = '/';
-                } else {
-                    const data = await res.json().catch(() => ({}));
-                    document.getElementById('erroTexto').innerText = data.mensagem || 'E-mail ou senha inválidos.';
-                    msgErro.classList.add('show');
-                    btn.disabled = false;
-                    btnTexto.innerText = 'ENTRAR NO SISTEMA';
+                if(resposta.ok){
+                    window.location.href = destinoSeguro();
+                    return;
                 }
-            } catch(e) {
-                document.getElementById('erroTexto').innerText = 'Erro de conexão. Tente novamente.';
-                msgErro.classList.add('show');
-                btn.disabled = false;
-                btnTexto.innerText = 'ENTRAR NO SISTEMA';
+
+                let mensagem = 'Não foi possível entrar. Confira seu email e sua senha.';
+                try{
+                    const dados = await resposta.json();
+                    if(dados && dados.mensagem) mensagem = dados.mensagem;
+                }catch(erro){}
+
+                mostrarAviso(mensagem, 'erro');
+                const senhaCampo = document.getElementById('senha');
+                carregando(false);
+                senhaCampo.value = '';
+                senhaCampo.focus();
+            }catch(erro){
+                carregando(false);
+                mostrarAviso('Não foi possível falar com o servidor. Verifique sua conexão.', 'erro');
             }
+        }
+
+        /* Para onde ir depois de entrar.
+
+           Recusa tres coisas, e a terceira e a que morde:
+
+           1. endereco externo -- "//outro.site" comeca com barra mas leva
+              para fora do dominio;
+           2. barra invertida -- alguns navegadores tratam "/\\x" como "//x";
+           3. rotas que desfazem o login. Um link de /logout gerava
+              ?proximo=/logout, e entrar levava direto a sair de novo.
+              A tela parecia so recarregar. */
+        function destinoSeguro(){
+            const destino = new URLSearchParams(window.location.search).get('proximo');
+            if(!destino) return '/';
+            if(destino[0] !== '/') return '/';
+            if(destino[1] === '/' || destino[1] === '\\') return '/';
+            const caminho = destino.split('?')[0].replace(/\/+$/, '');
+            if(caminho === '/logout' || caminho === '/login') return '/';
+            return destino;
+        }
+
+        function esqueci(){
+            mostrarAviso('A redefinição de senha ainda não está disponível. Peça ajuda a quem administra a plataforma.', 'info');
         }
     </script>
 </body>
