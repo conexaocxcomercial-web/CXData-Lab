@@ -25,6 +25,12 @@
 button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
 body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
       min-height:100vh; -webkit-font-smoothing:antialiased; }
+/* Nada pode ser mais largo que a tela. Uma tabela ou um gráfico que
+   estoure empurra a página inteira para o lado, e aí o cabeçalho fixo
+   descola do conteúdo -- foi o que deixou os cartões de Esforço
+   desalinhados no celular. */
+.wrap, .cartao, .tb, .bh, .serie{ max-width:100%; }
+.cartao{ overflow:hidden; }
 .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
       letter-spacing:-.2px; }
 :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
@@ -152,11 +158,25 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .jor-total b{ font-size:26px; font-weight:700; letter-spacing:-1px; }
 .jor-total span{ font-size:12px; color:var(--tinta-3); }
 
+/* Resumo do fluxo: o número antes do desenho. */
+.fluxo-r{ display:flex; gap:24px; flex-wrap:wrap; margin-bottom:18px;
+    padding-bottom:16px; border-bottom:1px solid var(--papel-2); }
+.fluxo-i{ display:block; }
+.fluxo-i b{ display:block; font-size:23px; font-weight:700; letter-spacing:-.8px;
+    line-height:1; }
+.fluxo-i span{ display:block; font-size:11.5px; color:var(--tinta-3); margin-top:5px; }
+.fluxo-i.sobe b{ color:var(--atencao); }
+.fluxo-i.desce b{ color:var(--ok); }
+
 /* ===== ANEL DE PRAZO =====
    Uma proporcao unica pede uma figura unica. Duas barras somando 100%
    custam duas leituras para dizer o que o anel diz numa. */
 .anel-cx{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
-.anel{ width:132px; height:132px; flex-shrink:0; transform:rotate(-90deg); }
+/* O `transform` no <svg> girava o elemento inteiro, e com o
+   contêiner de tamanho diferente do viewBox a figura saía do lugar.
+   Girar o <g> por dentro, em torno do centro do próprio viewBox,
+   mantém o anel centrado em qualquer largura. */
+.anel{ width:132px; height:132px; flex-shrink:0; display:block; }
 .anel-tr{ fill:none; stroke:var(--papel-2); }
 .anel-ar{ fill:none; stroke-linecap:round; transition:stroke-dasharray .5s; }
 .anel-mid{ position:relative; width:132px; height:132px; flex-shrink:0; }
@@ -264,27 +284,122 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .faixa.alerta{ background:var(--at-fundo); color:#7A4A0C; }
 .faixa b{ font-weight:650; }
 
+/* ============================================================
+   TOQUE
+
+   A tela de celular não é a de mesa encolhida. Tabela de seis
+   colunas vira "A... A... EN... LE..." e não se lê -- então aqui
+   cada linha vira um cartão, com os números empilhados e rotulados.
+
+   E a gaveta de filtros abria fora da vista: a pessoa clicava,
+   nada parecia acontecer, e só rolando é que aparecia.
+   ============================================================ */
 @media (max-width:900px){
-    .top-bar{ padding:0 16px 0 60px; }
-    .cmd{ padding:10px 16px; }
+    .top-bar{ padding:0 16px 0 60px; height:52px; }
+    .cmd{ padding:9px 14px; top:52px; gap:8px; }
     .cmd-tit,.cmd-sep{ display:none; }
-    .segm{ width:100%; } .segm-btn{ flex:1; justify-content:center; padding:6px 8px; }
-    .cmd-dir{ width:100%; margin-left:0; }
-    .cmd-dir .sel{ flex:1 1 100%; max-width:none; }
+    .segm{ width:100%; }
+    .segm-btn{ flex:1; justify-content:center; padding:8px 6px; font-size:12px; }
+    .segm-btn .material-symbols-rounded{ font-size:15px; }
+    .cmd-dir{ width:100%; margin-left:0; gap:7px; }
+    .cmd-dir .sel{ flex:1 1 calc(50% - 4px); max-width:none; min-width:0;
+        font-size:12px; padding:8px 9px; }
     .cmd-dir .btn{ flex:1 1 100%; justify-content:center; }
-    .filtros{ padding:13px 16px; gap:9px; }
-    .fg{ flex:1 1 46%; min-width:0; } .fg select{ width:100%; }
-    .wrap{ padding:14px 16px 70px; }
-    .kpis{ grid-template-columns:1fr 1fr; gap:9px; margin-bottom:18px; }
-    .kpi{ padding:12px 14px; } .kpi-v{ font-size:20px; }
-    .cartao{ padding:15px 16px; } .sec{ margin-bottom:18px; }
-    .duas,.tres{ gap:9px; }
-    .serie{ height:140px; } .sb-x{ font-size:9px; }
-    .bh-l{ grid-template-columns:1fr 74px; gap:9px; }
-    .faixa{ padding:11px 13px; font-size:12px; }
-    .tb-h,.tb-l{ padding:9px 11px; gap:8px; }
+    .datas{ flex:1 1 100%; }
+    .datas input{ flex:1; min-width:0; }
+
+    .filtros{ padding:12px 14px; gap:8px; }
+    .fg{ flex:1 1 calc(50% - 4px); min-width:0; }
+    .fg select{ width:100%; font-size:12.5px; }
+
+    .wrap{ padding:12px 14px 64px; }
+
+    /* Dois por linha: um KPI ocupando a largura toda desperdiça a
+       tela e obriga a rolar para ler quatro números. */
+    .kpis{ grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+    .kpi{ padding:12px 13px; }
+    .kpi-r{ font-size:9.5px; margin-bottom:5px; }
+    .kpi-v{ font-size:20px; letter-spacing:-.7px; }
+    .kpi-p{ font-size:10.5px; margin-top:4px; }
+
+    .placar{ grid-template-columns:1fr; gap:8px; margin-bottom:16px; }
+    .pl-grupo{ padding:13px 15px 14px; }
+    .pl-itens{ gap:16px; }
+    .pl-n{ font-size:24px; }
+    .pl-l{ font-size:11px; }
+
+    .cartao{ padding:14px 15px; }
+    .cartao-t{ font-size:12.5px; }
+    .cartao-d{ font-size:11px; margin-bottom:13px; }
+    .sec{ margin-bottom:16px; }
+    .sec-cab{ margin-bottom:9px; flex-wrap:wrap; row-gap:3px; }
+    .sec-nota{ font-size:10.5px; flex-basis:100%; }
+    .sec-linha{ min-width:14px; }
+    .duas,.tres{ grid-template-columns:1fr; gap:8px; }
+
+    /* ---- jornada ---- */
+    .jor{ height:34px; }
+    .jor-f{ font-size:11px; }
+    .jor-total b{ font-size:23px; }
+    .jor-leg{ gap:12px; flex-direction:column; }
+    .jor-v{ font-size:14px; }
+
+    /* ---- anel ---- */
+    .anel-cx{ gap:16px; justify-content:center; }
+    .anel,.anel-mid{ width:116px; height:116px; }
+    .anel-num b{ font-size:23px; }
+    .anel-det{ min-width:100%; }
+
+    /* ---- barras ---- */
+    .bh{ gap:11px; }
+    .bh-c{ gap:8px; }
+    .bh-t{ font-size:12px; }
+    .bh-v{ font-size:12px; }
+
+    /* ---- série ---- */
+    .serie{ height:150px; gap:3px; }
+    .sb{ max-width:none; }
+    .sb-x{ font-size:8.5px; }
+    .sb-par{ gap:2px; }
+    .leg{ gap:12px; font-size:11px; }
+    .leg-i{ font-size:11px; }
+
+    /* ---- TABELAS VIRAM CARTÕES ----
+       Seis colunas em 360px viram reticências. Cada linha passa a ser
+       um bloco: nome em cima, números embaixo, cada um com seu rótulo. */
+    .tb{ border:none; border-radius:0; }
+    .tb-h{ display:none; }
+    .tb-l{ display:block !important; background:var(--papel-2);
+        border-radius:var(--r-ctrl); border:none; padding:12px 13px;
+        margin-bottom:7px; }
+    .tb-l:last-child{ margin-bottom:0; }
+    .tb-l > span{ white-space:normal; }
+    .tb-nome{ display:block; font-size:13px; font-weight:650; margin-bottom:9px; }
+    .tb-l .d{ display:inline-flex; flex-direction:column; align-items:flex-start;
+        text-align:left; margin-right:16px; margin-top:2px; font-size:14px; }
+    .tb-l .d::before{ content:attr(data-r); display:block; font-family:'Inter',sans-serif;
+        font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+        color:var(--tinta-3); margin-bottom:2px; }
+    .tb-l .d:empty{ display:none; }
+
+    /* ---- aproveitamento ----
+       A jornada já aparece sob o nome; a coluna própria vira repetição.
+       E a barra ocupa a largura toda, em vez de espremer num terço. */
+    .jornada-col{ display:none !important; }
+    .apr-cx{ display:block; margin-top:10px; }
+    .apr-linha{ font-size:12px; }
+    .apr{ height:8px; margin-top:6px; }
+
+    .faixa{ padding:11px 12px; font-size:11.5px; gap:9px; }
+    .faixa .material-symbols-rounded{ font-size:16px; }
+    .vazio{ padding:26px 14px; }
 }
-@media (max-width:420px){ .kpis{ grid-template-columns:1fr; } .sb-x{ display:none; } }
+@media (max-width:400px){
+    .kpis{ grid-template-columns:1fr 1fr; }
+    .kpi-v{ font-size:18px; }
+    .sb-x{ display:none; }
+    .pl-itens{ gap:12px; }
+}
 </style>
 </head>
 <body>
@@ -324,6 +439,11 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
             <span class="datas-ate">até</span>
             <input type="date" id="dAte" onchange="Painel.datas()" aria-label="Data final">
         </span>
+        <select class="sel" id="base" onchange="Painel.base(this.value)"
+                title="Por qual data o período recorta">
+            <option value="conclusao" selected>Por data de conclusão</option>
+            <option value="criacao">Por data de criação</option>
+        </select>
         <button class="btn btn-fant" id="btnFiltros" onclick="Painel.toggleFiltros()">
             <span class="material-symbols-rounded">tune</span>Filtros<span
                 class="chip-n" id="chipF" style="display:none">0</span></button>
@@ -366,7 +486,7 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 const Painel = (function(){
 
   const st = { dados:null, otica:'entrega', periodo:'30', de:'', ate:'',
-               filtros:{}, carregando:false };
+               baseData:'conclusao', filtros:{}, carregando:false };
 
   const esc = v => String(v ?? '').replace(/[&<>"']/g,
     c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -398,6 +518,7 @@ const Painel = (function(){
     }else if(st.periodo === 'custom'){
       p.set('de', st.de || iso(h)); p.set('ate', st.ate || iso(h));
     }else{ p.set('dias', st.periodo); }
+    p.set('base', st.baseData);
     Object.entries(st.filtros).forEach(([k,v]) => { if(v) p.set(k,v); });
     return p.toString();
   }
@@ -500,9 +621,9 @@ const Painel = (function(){
       <div class="sec" style="margin-top:22px">
         <div class="sec-cab"><span class="sec-tit">Entrou e saiu</span>
           <span class="sec-linha"></span>
-          <span class="sec-nota">${st.dados.periodo.granularidade === 'dia' ? 'por dia' : 'por mês'}
-          · entrando mais do que saindo, a fila cresce</span></div>
+          <span class="sec-nota">${st.dados.periodo.granularidade === 'dia' ? 'por dia' : 'por mês'}</span></div>
         <div class="cartao">
+          ${resumoFluxo(e.fluxo_total)}
           ${e.fluxo.length ? `
             <div class="serie-cx">
               <div class="serie-grade">${'<i></i>'.repeat(5)}</div>
@@ -521,7 +642,7 @@ const Painel = (function(){
             <div class="leg">
               <span class="leg-i"><span class="leg-p" style="background:#C7C2F5"></span>abertos</span>
               <span class="leg-i"><span class="leg-p" style="background:var(--acao)"></span>entregues</span>
-            </div>` : semDados('Sem movimentação no período.')}
+            </div>` : ''}
         </div>
       </div>
 
@@ -538,16 +659,35 @@ const Painel = (function(){
               <div class="tb-l" style="grid-template-columns:1.6fr .6fr .6fr .65fr .7fr .7fr .8fr">
                 <span class="tb-nome">${esc(q.area)}${q.horas
                   ? `<span class="tb-sub"> · ${hrs(q.horas)}</span>` : ''}</span>
-                <span class="d">${q.abertos}</span>
-                <span class="d" style="color:${q.atrasados?'var(--critico)':'var(--linha-2)'}">${q.atrasados||'—'}</span>
-                <span class="d">${q.finalizados}</span>
-                <span class="d">${q.lead != null ? n(q.lead,1)+'d' : '—'}</span>
-                <span class="d">${q.cycle != null ? n(q.cycle,1)+'d' : '—'}</span>
-                <span class="d">${q.pct_no_prazo != null ? pilPrazo(q.pct_no_prazo) : '—'}</span>
+                <span class="d" data-r="Abertos">${q.abertos}</span>
+                <span class="d" data-r="Atrasados" style="color:${
+                  q.atrasados?'var(--critico)':'var(--linha-2)'}">${q.atrasados||'—'}</span>
+                <span class="d" data-r="Entregues">${q.finalizados}</span>
+                <span class="d" data-r="Lead">${q.lead != null ? n(q.lead,1)+'d' : '—'}</span>
+                <span class="d" data-r="Cycle">${q.cycle != null ? n(q.cycle,1)+'d' : '—'}</span>
+                <span class="d" data-r="No prazo">${
+                  q.pct_no_prazo != null ? pilPrazo(q.pct_no_prazo) : '—'}</span>
               </div>`).join('')}
           </div>` : semDados('Nenhum quadro com movimento no período.')}
         </div>
       </div>`;
+  }
+
+  /* O gráfico mostra o desenho; estes três números respondem a
+     pergunta direto. Barras sem rótulo, num celular, não dizem
+     quantos projetos entraram nem quantos saíram. */
+  function resumoFluxo(t){
+    if(!t) return '';
+    const cresceu = t.saldo > 0;
+    return `<div class="fluxo-r">
+      <span class="fluxo-i"><b class="num">${n(t.iniciados)}</b>
+        <span>abertos no período</span></span>
+      <span class="fluxo-i"><b class="num">${n(t.finalizados)}</b>
+        <span>entregues no período</span></span>
+      <span class="fluxo-i ${cresceu ? 'sobe' : 'desce'}">
+        <b class="num">${t.saldo > 0 ? '+' : ''}${n(t.saldo)}</b>
+        <span>${cresceu ? 'a fila cresceu' : t.saldo < 0 ? 'a fila diminuiu' : 'fila estável'}</span></span>
+    </div>`;
   }
 
   function plItem(valor, rot, sub, tom){
@@ -635,9 +775,11 @@ const Painel = (function(){
       <div class="anel-cx">
         <span class="anel-mid">
           <svg class="anel" viewBox="0 0 132 132" aria-hidden="true">
-            <circle class="anel-tr" cx="66" cy="66" r="${r}" stroke-width="13"/>
-            <circle class="anel-ar" cx="66" cy="66" r="${r}" stroke-width="13"
-                    stroke="${cor}" stroke-dasharray="${(circ*frac).toFixed(1)} ${circ.toFixed(1)}"/>
+            <g transform="rotate(-90 66 66)">
+              <circle class="anel-tr" cx="66" cy="66" r="${r}" stroke-width="13"/>
+              <circle class="anel-ar" cx="66" cy="66" r="${r}" stroke-width="13"
+                      stroke="${cor}" stroke-dasharray="${(circ*frac).toFixed(1)} ${circ.toFixed(1)}"/>
+            </g>
           </svg>
           <span class="anel-num"><b class="num" style="color:${cor}">${pct(p.pct_no_prazo)}</b>
             <small>no prazo</small></span>
@@ -703,7 +845,8 @@ const Painel = (function(){
             ${s.por_projeto.map(x => `
               <div class="tb-l" style="grid-template-columns:1.7fr .7fr .7fr">
                 <span class="tb-nome">${esc(x.chave)}</span>
-                <span class="d">${hrs(x.horas)}</span><span class="d">${x.lancamentos}</span>
+                <span class="d" data-r="Horas">${hrs(x.horas)}</span>
+                <span class="d" data-r="Sessões">${x.lancamentos}</span>
               </div>`).join('')}
           </div>` : semDados('Sem lançamentos no período.')}
         </div>
@@ -717,7 +860,8 @@ const Painel = (function(){
             ${s.por_tarefa.map(x => `
               <div class="tb-l" style="grid-template-columns:1.7fr .7fr .7fr">
                 <span class="tb-nome">${esc(x.chave)}<span class="tb-sub"> · ${x.lancamentos}x</span></span>
-                <span class="d">${hrs(x.horas)}</span><span class="d">${hrs(x.media)}</span>
+                <span class="d" data-r="Horas">${hrs(x.horas)}</span>
+                <span class="d" data-r="Média">${hrs(x.media)}</span>
               </div>`).join('')}
           </div>` : semDados('Sem lançamentos no período.')}
         </div>
@@ -736,8 +880,9 @@ const Painel = (function(){
               <div class="tb-l" style="grid-template-columns:1fr 1.5fr .55fr .7fr .7fr">
                 <span class="tb-sub" style="font-size:12px">${esc(x.area)}</span>
                 <span class="tb-nome">${esc(x.tarefa)}</span>
-                <span class="d">${x.lancamentos}</span>
-                <span class="d">${hrs(x.horas)}</span><span class="d">${hrs(x.media)}</span>
+                <span class="d" data-r="Vezes">${x.lancamentos}</span>
+                <span class="d" data-r="Total">${hrs(x.horas)}</span>
+                <span class="d" data-r="Média">${hrs(x.media)}</span>
               </div>`).join('')}
           </div>` : semDados('Sem lançamentos no período.')}
         </div>
@@ -778,19 +923,22 @@ const Painel = (function(){
               const tom = a == null ? 'apr-baixo' : a >= 110 ? 'apr-alto'
                         : a >= 60 ? 'apr-ok' : 'apr-baixo';
               return `<div class="tb-l" style="grid-template-columns:1.4fr .6fr 1.5fr .6fr .55fr .6fr">
-                <span class="tb-nome">${esc(p.nome)}${p.cadastrado ? ''
-                  : '<span class="tb-sub"> · fora do cadastro</span>'}</span>
-                <span class="d">${p.carga_semanal}h</span>
-                <span>
+                <span class="tb-nome">${esc(p.nome)}
+                  <span class="tb-sub"> · ${p.carga_semanal}h/semana${
+                    p.cadastrado ? '' : ' · fora do cadastro'}</span></span>
+                <span class="d jornada-col" data-r="Jornada">${p.carga_semanal}h</span>
+                <span class="apr-cx">
                   <span class="apr-linha">
                     <span class="num" style="font-weight:650">${hrs(p.horas_lancadas)}</span>
-                    <span style="color:var(--tinta-3)">${a != null ? pct(a) : '—'} de ${hrs(p.horas_esperadas)}</span>
+                    <span style="color:var(--tinta-3)">${
+                      a != null ? pct(a) : '—'} de ${hrs(p.horas_esperadas)}</span>
                   </span>
                   <span class="apr ${tom}"><i style="width:${Math.min(100, a||0)}%"></i></span>
                 </span>
-                <span class="d">${p.projetos_abertos}</span>
-                <span class="d" style="color:${p.atrasados?'var(--critico)':'var(--tinta-3)'}">${p.atrasados||'—'}</span>
-                <span class="d">${p.finalizados}</span>
+                <span class="d" data-r="Abertos">${p.projetos_abertos}</span>
+                <span class="d" data-r="Atrasados" style="color:${
+                  p.atrasados?'var(--critico)':'var(--tinta-3)'}">${p.atrasados||'—'}</span>
+                <span class="d" data-r="Entregues">${p.finalizados}</span>
               </div>`;
             }).join('')}
           </div>` : semDados('Nenhuma pessoa com atividade no período.')}
@@ -840,6 +988,8 @@ const Painel = (function(){
       p.classList.toggle('on', o === qual);
     });
   }
+  function base(v){ st.baseData = v; carregar(); }
+
   function periodo(v){
     st.periodo = v;
     document.getElementById('datas').classList.toggle('on', v === 'custom');
@@ -861,7 +1011,18 @@ const Painel = (function(){
     document.getElementById('dAte').value = st.ate;
     st.periodo = 'custom'; carregar();
   }
-  function toggleFiltros(){ document.getElementById('gaveta').classList.toggle('on'); }
+  /* Abrir a gaveta não bastava: no celular ela nasce acima da dobra e
+     a pessoa clicava sem ver nada acontecer. Agora a tela acompanha. */
+  function toggleFiltros(){
+    const g = document.getElementById('gaveta');
+    const abriu = g.classList.toggle('on');
+    if(abriu && window.innerWidth <= 900){
+      requestAnimationFrame(() => {
+        const y = g.getBoundingClientRect().bottom;
+        if(y > window.innerHeight) g.scrollIntoView({behavior:'smooth', block:'end'});
+      });
+    }
+  }
   function filtrar(){
     st.filtros = {
       quadro: document.getElementById('fQuadro').value,
@@ -881,7 +1042,7 @@ const Painel = (function(){
   }
 
   document.addEventListener('DOMContentLoaded', carregar);
-  return { otica, periodo, datas, toggleFiltros, filtrar, limpar };
+  return { otica, periodo, base, datas, toggleFiltros, filtrar, limpar };
 })();
 </script>
 </body>
