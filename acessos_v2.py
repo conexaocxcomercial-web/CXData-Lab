@@ -99,8 +99,6 @@ def _areas_validas():
 # Só administrador. Nunca liberadas por tela nem por quadro — são as que
 # permitem mudar as próprias regras do jogo.
 CAPS_ADMIN = (
-    'usuario.gerir',          # criar e editar pessoas
-    'papel.gerir',            # configurar acessos
     'auditoria.ver',          # registro de quem fez o quê
     'lixeira.purgar',         # remoção irreversível
     'cliente.portal.gerir',   # liberar acesso externo de cliente
@@ -148,13 +146,22 @@ CAPS_ALCANCE = (
 # Uma tela liberada em Acessos acende as capacidades daquela tela.
 # Sem a tela, a pessoa não abre o módulo e não tem as capacidades dele.
 CAPS_POR_TELA = {
-    'crm':       ('crm.lead.ver', 'crm.lead.editar', 'crm.lead.excluir', 'crm.painel.ver'),
-    'clientes':  ('cliente.ver', 'cliente.gerir'),
-    'okr':       ('okr.ver', 'okr.gerir'),
-    'dashboard': ('dashboard.ver',),
-    'lixeira':   ('lixeira.ver',),
-    'feed':      ('feed.publicar',),
-    'agenda':    ('tempo.registrar', 'tempo.ver'),
+    # Operar o funil e ver o resultado comercial são coisas diferentes:
+    # quem trabalha os leads não necessariamente pode ver receita, ticket
+    # médio e conversão por pessoa.
+    'crm':          ('crm.lead.ver', 'crm.lead.editar', 'crm.lead.excluir'),
+    'crm_painel':   ('crm.painel.ver',),
+    'clientes':     ('cliente.ver', 'cliente.gerir'),
+    'okr':          ('okr.ver', 'okr.gerir'),
+    'dashboard':    ('dashboard.ver',),
+    'lixeira':      ('lixeira.ver',),
+    'feed':         ('feed.publicar',),
+    'agenda':       ('tempo.registrar', 'tempo.ver'),
+    # Configurar quadros e gerir acessos deixaram de ser exclusivos do
+    # administrador: viraram telas que se liga para quem precisa. O
+    # interruptor de admin continua existindo para quem responde por tudo.
+    'configuracoes': (),
+    'acessos':       ('usuario.gerir', 'papel.gerir'),
 }
 
 ALCANCES = ('proprio', 'quadro')
@@ -197,19 +204,19 @@ PERFIS = {
     },
     'diretoria': {
         'nome': 'Diretoria',
-        'descricao': 'Vê o trabalho de todos, em todos os quadros. '
-                     'Sem acesso a Acessos, Configurações e Lixeira.',
+        'descricao': 'Vê o trabalho de todos, em todos os quadros, e os dois '
+                     'dashboards. Sem Acessos, Configurações e Lixeira.',
         'admin': False,
         'nivel_padrao': 'tudo',
-        'telas': ('agenda', 'crm', 'clientes', 'okr', 'feed', 'dashboard'),
+        'telas': ('feed', 'agenda', 'crm', 'crm_painel', 'dashboard', 'okr', 'clientes'),
     },
     'colaborador': {
         'nome': 'Colaborador',
         'descricao': 'Vê os quadros em que atua, mas só os próprios cards. '
-                     'Sem painel operacional.',
+                     'Sem dashboards, Lixeira, Configurações e Acessos.',
         'admin': False,
         'nivel_padrao': 'proprio',
-        'telas': ('agenda', 'crm', 'clientes', 'okr', 'feed'),
+        'telas': ('feed', 'agenda', 'crm', 'okr', 'clientes'),
     },
 }
 
@@ -346,9 +353,10 @@ def exige_admin(fn):
     def interna(*args, **kwargs):
         if 'usuario_id' not in session:
             return jsonify({"status": "erro", "mensagem": "Sessão expirada."}), 401
-        if not sou_admin():
+        if not (sou_admin() or 'acessos' in (session.get('areas') or [])
+                or 'configuracoes' in (session.get('areas') or [])):
             return jsonify({"status": "erro",
-                            "mensagem": "Só administradores acessam esta área."}), 403
+                            "mensagem": "Você não tem acesso a esta área."}), 403
         return fn(*args, **kwargs)
     return interna
 
@@ -378,7 +386,7 @@ def _auditar(acao, recurso, alvo_id, detalhe=None):
 def pagina_acessos():
     if 'usuario_id' not in session:
         return redirect(url_for('login', proximo=request.path))
-    if not sou_admin():
+    if not (sou_admin() or 'acessos' in (session.get('areas') or [])):
         return redirect(url_for('index'))
     return render_template('acessos.html',
                            usuario_nome=session.get('usuario_nome', ''),
@@ -392,7 +400,7 @@ def pagina_acessos():
 def pagina_configuracoes():
     if 'usuario_id' not in session:
         return redirect(url_for('login', proximo=request.path))
-    if not sou_admin():
+    if not (sou_admin() or 'configuracoes' in (session.get('areas') or [])):
         return redirect(url_for('index'))
     return render_template('configuracoes.html',
                            usuario_nome=session.get('usuario_nome', ''),
