@@ -5,286 +5,211 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrar | core.cx</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='core-cx-favicon.png') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
-    <style>
-        :root{
-            --fundo:#f5f4fa;
-            --papel:#ffffff;
-            --papel-suave:#f9f8fc;
-            --linha:#e7e4ef;
-            --linha-forte:#d8d2ea;
-            --texto:#1d1928;
-            --texto-secundario:#706a7e;
-            --texto-suave:#9993a5;
-            --roxo:#6c63f6;
-            --roxo-escuro:#5a50e2;
-            --roxo-suave:#efedff;
-            --erro:#bb3045;
-            --erro-fundo:#fff1f3;
-            --erro-linha:#f7c9d1;
-            --raio:16px;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+:root{
+    --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+    --linha:#E4E4EA; --linha-2:#D3D3DC;
+    --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+    --acao:#6C5CE7; --acao-fraco:#F1EFFE; --acao-escuro:#5546C9;
+    --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+    --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+    --r-card:16px; --r-ctrl:10px;
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+button,input{ font-family:inherit; border:none; background:none; color:inherit; }
+html,body{ height:100%; }
+body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+      -webkit-font-smoothing:antialiased; }
+:focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:6px; }
+@media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
 
-        *{box-sizing:border-box}
-        html,body{min-height:100%}
-        body{
-            margin:0;
-            overflow-x:hidden;
-            background:var(--fundo);
-            color:var(--texto);
-            font-family:'Inter',system-ui,sans-serif;
-            -webkit-font-smoothing:antialiased;
-        }
+/* ============================================================
+   DUAS COLUNAS
 
-        button,input{font:inherit}
-        button{border:0}
-        :focus-visible{outline:3px solid rgba(108,99,246,.24);outline-offset:3px}
+   A marca ganha metade da tela e para de disputar espaço com o
+   formulário. Antes as duas assinaturas viviam dentro do cartão,
+   acima do título, e a primeira coisa que se lia numa tela de
+   login era publicidade -- não o campo de e-mail.
 
-        .pagina-login{
-            position:relative;
-            display:grid;
-            place-items:center;
-            min-height:100vh;
-            padding:clamp(20px,3vh,36px) 24px;
-            overflow:hidden;
-            background:
-                radial-gradient(circle at 15% 13%,rgba(119,99,248,.10),transparent 25%),
-                radial-gradient(circle at 88% 88%,rgba(108,99,246,.10),transparent 27%),
-                var(--fundo);
-        }
+   Aqui o olho entra pela esquerda, reconhece onde está, e cruza
+   para a direita já sabendo o que fazer.
+   ============================================================ */
+.tela{ min-height:100%; display:grid; grid-template-columns:1.05fr 1fr; }
 
-        .grafismo{
-            position:absolute;
-            width:510px;
-            height:510px;
-            border:1px solid rgba(108,99,246,.09);
-            border-radius:50%;
-            pointer-events:none;
-        }
+/* ---------- painel da marca ---------- */
+.marca{ position:relative; overflow:hidden; padding:48px 56px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    background:linear-gradient(155deg,#17171A 0%,#221F3D 48%,#2E2657 100%); color:#fff; }
+.marca-topo{ display:flex; align-items:center; gap:14px; position:relative; z-index:2; }
+.marca-simbolo{ width:34px; height:auto; display:block; filter:brightness(0) invert(1); }
+.marca-nome{ font-size:19px; font-weight:700; letter-spacing:-.5px; }
+.marca-nome span{ color:#A99BFF; }
 
-        .grafismo.um{left:-310px;bottom:-245px;box-shadow:0 0 0 55px rgba(108,99,246,.022),0 0 0 110px rgba(108,99,246,.015)}
-        .grafismo.dois{right:-330px;top:-285px;box-shadow:0 0 0 50px rgba(108,99,246,.022)}
+.marca-meio{ position:relative; z-index:2; max-width:420px; }
+.marca-frase{ font-size:29px; font-weight:600; letter-spacing:-.9px; line-height:1.3; }
+.marca-frase b{ color:#BEF533; font-weight:600; }
+/* A frase de apoio encurtou e virou uma linha só. Com menos texto ela
+   precisa de mais respiro acima e de um corpo um pouco maior, senão
+   fica boiando sob o título em vez de completá-lo. */
+.marca-sub{ font-size:15px; line-height:1.6; color:rgba(255,255,255,.66);
+    margin-top:20px; max-width:380px; }
 
-        .marca-fundo{
-            position:absolute;
-            right:clamp(22px,7vw,120px);
-            bottom:clamp(18px,5vh,66px);
-            color:transparent;
-            font-size:clamp(120px,18vw,270px);
-            font-weight:700;
-            letter-spacing:-.17em;
-            line-height:.75;
-            pointer-events:none;
-            transform:rotate(-9deg);
-            -webkit-text-stroke:1px rgba(108,99,246,.10);
-        }
+.marca-pe{ position:relative; z-index:2; display:flex; align-items:center; gap:10px;
+    font-size:12.5px; color:rgba(255,255,255,.45); }
+.marca-pe b{ color:rgba(255,255,255,.75); font-weight:600; }
 
-        .cartao-login{
-            position:relative;
-            z-index:1;
-            width:min(100%,426px);
-            padding:32px 39px;
-            border:1px solid rgba(77,58,142,.10);
-            border-radius:20px;
-            background:rgba(255,255,255,.96);
-            box-shadow:0 20px 52px rgba(45,34,82,.10);
-        }
+/* O símbolo como marca-d'água: presença sem ruído. `aria-hidden`
+   porque é decoração -- o leitor de tela já leu o nome acima. */
+.marca-agua{ position:absolute; right:-90px; bottom:-70px; width:460px; opacity:.05;
+    filter:brightness(0) invert(1); pointer-events:none; z-index:1; }
+.halo{ position:absolute; border-radius:50%; pointer-events:none; z-index:0;
+    filter:blur(76px); }
+.halo.a{ width:380px; height:380px; background:#6C5CE7; opacity:.34; top:-110px; left:-90px; }
+.halo.b{ width:300px; height:300px; background:#BEF533; opacity:.10; bottom:60px; right:-60px; }
 
-        .marcas-login{
-            display:flex;
-            align-items:center;
-            gap:10px;
-            height:26px;
-            margin-bottom:25px;
-            white-space:nowrap;
-        }
+/* ---------- painel do formulário ---------- */
+.painel{ display:flex; align-items:center; justify-content:center;
+    padding:48px 40px; background:var(--papel); }
+.forma{ width:100%; max-width:388px; }
 
-        .marca-core{
-            color:#1d1928;
-            font-size:21px;
-            font-weight:700;
-            letter-spacing:-1.1px;
-            line-height:1;
-        }
+.f-cab{ margin-bottom:30px; }
+.f-cab h1{ font-size:26px; font-weight:700; letter-spacing:-.8px; line-height:1.2; }
+.f-cab p{ font-size:14px; color:var(--tinta-3); margin-top:8px; line-height:1.55; }
 
-        .marca-core span{color:var(--roxo)}
-        .divisor-marca{width:1px;height:18px;background:#ded9ea}
+.aviso{ display:none; gap:11px; align-items:flex-start; padding:12px 14px;
+    border-radius:var(--r-ctrl); font-size:13px; line-height:1.5; margin-bottom:20px; }
+.aviso.on{ display:flex; }
+.aviso .material-symbols-rounded{ font-size:18px; flex-shrink:0; margin-top:1px; }
+.aviso.erro{ background:var(--cr-fundo); color:#8A1F1F; box-shadow:inset 0 0 0 1px var(--cr-borda); }
+.aviso.info{ background:var(--acao-fraco); color:#3C3489; box-shadow:inset 0 0 0 1px #D6CEFB; }
 
-        .marca-conexao{
-            color:var(--roxo);
-            font-size:18px;
-            font-weight:700;
-            letter-spacing:-.7px;
-            line-height:1;
-            white-space:nowrap;
-        }
+.campo{ margin-bottom:16px; }
+.campo label{ display:block; font-size:12.5px; font-weight:600; color:var(--tinta-2);
+    margin-bottom:7px; }
 
-        .cabecalho-formulario h1{
-            margin:0;
-            font-size:28px;
-            font-weight:700;
-            letter-spacing:-1.15px;
-            line-height:1.12;
-        }
+/* A caixa inteira reage ao foco, não só o input: a borda de foco
+   precisa cercar o campo todo, senão o ícone e o olho ficam de fora
+   e a área clicável parece menor do que é. */
+.caixa{ display:flex; align-items:center; gap:11px; background:var(--papel-2);
+    border:1.5px solid transparent; border-radius:var(--r-ctrl); padding:0 14px;
+    height:48px; transition:border-color .15s, background .15s, box-shadow .15s; }
+.caixa:focus-within{ background:var(--papel); border-color:var(--acao);
+    box-shadow:0 0 0 4px var(--acao-fraco); }
+.caixa > .material-symbols-rounded{ font-size:19px; color:var(--tinta-3); flex-shrink:0;
+    transition:color .15s; }
+.caixa:focus-within > .material-symbols-rounded{ color:var(--acao); }
+.caixa input{ flex:1; min-width:0; font-size:14.5px; height:100%; outline:none;
+    color:var(--tinta); background:none; }
+.caixa input::placeholder{ color:var(--tinta-3); }
+.caixa input:disabled{ opacity:.55; }
+.olho{ width:32px; height:32px; border-radius:8px; color:var(--tinta-3); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transition:.14s; margin-right:-6px; }
+.olho:hover{ background:var(--linha); color:var(--tinta-2); }
+.olho .material-symbols-rounded{ font-size:19px; }
 
-        .cabecalho-formulario p{
-            margin:8px 0 22px;
-            color:var(--texto-secundario);
-            font-size:13px;
-            line-height:1.6;
-        }
+.linha{ display:flex; align-items:center; justify-content:space-between; gap:14px;
+    margin:20px 0 24px; flex-wrap:wrap; }
+.lembrar{ display:flex; align-items:center; gap:9px; font-size:13px; font-weight:500;
+    color:var(--tinta-2); cursor:pointer; }
+.lembrar:hover{ color:var(--tinta); }
+.checkbox{ width:18px; height:18px; border-radius:6px; background:var(--papel);
+    box-shadow:inset 0 0 0 1.5px var(--linha-2); position:relative; flex-shrink:0;
+    transition:.15s; }
+.checkbox.on{ background:var(--acao); box-shadow:inset 0 0 0 1.5px var(--acao); }
+.checkbox.on::after{ content:''; position:absolute; left:5.5px; top:2.5px;
+    width:5px; height:9px; border:solid #fff; border-width:0 2px 2px 0;
+    transform:rotate(45deg); }
+.esqueci{ font-size:13px; font-weight:600; color:var(--acao); cursor:pointer; }
+.esqueci:hover{ color:var(--acao-escuro); text-decoration:underline; }
 
-        .aviso{
-            display:none;
-            align-items:flex-start;
-            gap:9px;
-            margin:0 0 20px;
-            padding:11px 12px;
-            border:1px solid transparent;
-            border-radius:10px;
-            font-size:12px;
-            line-height:1.5;
-        }
+.entrar{ width:100%; height:50px; border-radius:var(--r-ctrl); background:var(--acao);
+    color:#fff; font-size:14.5px; font-weight:650; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; gap:9px; transition:.16s;
+    box-shadow:0 2px 12px rgba(108,92,231,.28); }
+.entrar:hover:not(:disabled){ background:var(--acao-escuro);
+    box-shadow:0 4px 18px rgba(108,92,231,.36); transform:translateY(-1px); }
+.entrar:active:not(:disabled){ transform:translateY(0); }
+.entrar:disabled{ opacity:.72; cursor:default; box-shadow:none; transform:none; }
+.entrar .material-symbols-rounded{ font-size:19px; }
+.girando{ animation:girar 1s linear infinite; }
+@keyframes girar{ to{ transform:rotate(360deg); } }
 
-        .aviso.on{display:flex}
-        .aviso .material-symbols-rounded{flex:0 0 auto;margin-top:1px;font-size:17px}
-        .aviso.erro{border-color:var(--erro-linha);background:var(--erro-fundo);color:#a7273b}
-        .aviso.info{border-color:#dcd7fb;background:#f7f6ff;color:#4d43b1}
+.ajuda{ font-size:12.5px; color:var(--tinta-3); line-height:1.6; margin-top:26px;
+    padding-top:22px; border-top:1px solid var(--linha); text-align:center; }
+.ajuda b{ color:var(--tinta-2); font-weight:600; }
 
-        .campo{margin-top:15px}
-        .campo label{display:block;margin-bottom:8px;color:#4c4658;font-size:11px;font-weight:700}
-        .caixa{position:relative}
+/* Só aparece quando a marca some, no toque. */
+.marca-mobile{ display:none; }
 
-        .caixa > .material-symbols-rounded{
-            position:absolute;
-            z-index:1;
-            top:50%;
-            left:14px;
-            transform:translateY(-50%);
-            color:#928b9e;
-            font-size:18px;
-            pointer-events:none;
-        }
+/* ============================================================
+   RESPONSIVO
 
-        .campo input{
-            width:100%;
-            height:48px;
-            padding:0 45px 0 43px;
-            border:1px solid var(--linha);
-            border-radius:11px;
-            outline:0;
-            background:var(--papel-suave);
-            color:var(--texto);
-            font-size:13px;
-            transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
-        }
+   Abaixo de 900px a coluna da marca sai inteira, em vez de virar
+   uma faixa espremida: numa tela de telefone o que importa é o
+   campo de e-mail, e a marca reaparece como assinatura no topo do
+   formulário.
+   ============================================================ */
+@media (max-width:900px){
+    .tela{ grid-template-columns:1fr; }
+    .marca{ display:none; }
+    .painel{ padding:32px 22px 40px; align-items:flex-start; min-height:100%; }
+    .forma{ max-width:420px; margin:0 auto; }
+    .marca-mobile{ display:flex; align-items:center; gap:11px; margin-bottom:34px; }
+    .marca-mobile img{ width:30px; height:auto; display:block; }
+    .marca-mobile span{ font-size:18px; font-weight:700; letter-spacing:-.45px; }
+    .marca-mobile span i{ color:var(--acao); font-style:normal; }
+    .f-cab h1{ font-size:23px; }
+}
+@media (max-width:400px){
+    .linha{ gap:10px; }
+    .esqueci{ font-size:12.5px; }
+}
 
-        .campo input::placeholder{color:#aaa4b2}
-        .campo input:hover{border-color:var(--linha-forte)}
-        .campo input:focus{border-color:var(--roxo);background:#fff;box-shadow:0 0 0 3px rgba(108,99,246,.12)}
-        .campo input:disabled{cursor:wait;opacity:.65}
-
-        .olho{
-            position:absolute;
-            z-index:2;
-            top:50%;
-            right:7px;
-            display:grid;
-            place-items:center;
-            width:34px;
-            height:34px;
-            transform:translateY(-50%);
-            border-radius:8px;
-            background:transparent;
-            color:#928b9e;
-            cursor:pointer;
-            transition:background .16s ease,color .16s ease;
-        }
-
-        .olho:hover{background:#eeecf4;color:var(--texto)}
-        .olho .material-symbols-rounded{font-size:18px}
-
-        .linha-login{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:14px;
-            margin:17px 0 18px;
-        }
-
-        .lembrar,.esqueci{
-            border:0;
-            background:transparent;
-            cursor:pointer;
-            font-size:11.5px;
-            font-weight:600;
-        }
-
-        .lembrar{display:inline-flex;align-items:center;gap:8px;color:var(--texto-secundario);white-space:nowrap}
-        .checkbox{display:grid;place-items:center;width:16px;height:16px;border:1.5px solid #d6d0e2;border-radius:4px;transition:background .16s ease,border-color .16s ease}
-        .checkbox.on{border-color:var(--roxo);background:var(--roxo)}
-        .checkbox.on::after{content:'';width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
-        .esqueci{color:var(--roxo)}
-        .esqueci:hover{color:var(--roxo-escuro);text-decoration:underline}
-
-        .entrar{
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:8px;
-            width:100%;
-            height:49px;
-            border-radius:11px;
-            background:var(--roxo);
-            color:#fff;
-            box-shadow:0 10px 17px rgba(86,70,220,.20);
-            cursor:pointer;
-            font-size:13px;
-            font-weight:700;
-            transition:background .16s ease,box-shadow .16s ease,transform .16s ease;
-        }
-
-        .entrar:hover{background:var(--roxo-escuro);box-shadow:0 13px 22px rgba(86,70,220,.25);transform:translateY(-1px)}
-        .entrar:active{transform:translateY(0)}
-        .entrar:disabled{cursor:wait;opacity:.7;box-shadow:none;transform:none}
-        .entrar .material-symbols-rounded{font-size:18px}
-        .girando{animation:girar .8s linear infinite}
-        @keyframes girar{to{transform:rotate(360deg)}}
-
-        .ajuda{margin:18px 0 0;text-align:center;color:var(--texto-suave);font-size:11px;line-height:1.65}
-        .ajuda b{color:var(--texto-secundario);font-weight:600}
-
-        @media(max-width:520px){
-            .pagina-login{place-items:start center;padding:29px 18px}
-            .cartao-login{padding:30px 24px;border-radius:18px}
-            .marca-fundo{right:-12px;bottom:8px;font-size:138px}
-            .marcas-login{gap:8px;margin-bottom:29px}
-            .marca-core{font-size:19px}
-            .marca-conexao{font-size:17px}
-            .cabecalho-formulario h1{font-size:26px}
-            .linha-login{align-items:flex-start;flex-direction:column;gap:14px}
-        }
-
-        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-    </style>
+/* Telas altas e estreitas em paisagem: evita o formulário colado. */
+@media (max-height:640px) and (min-width:901px){
+    .marca{ padding:34px 44px; }
+    .marca-frase{ font-size:24px; }
+    .painel{ padding:34px 40px; }
+}
+</style>
 </head>
 <body>
-    <main class="pagina-login">
-        <span class="grafismo um"></span>
-        <span class="grafismo dois"></span>
-        <span class="marca-fundo" aria-hidden="true">cx</span>
+<main class="tela">
 
-        <form class="cartao-login" onsubmit="entrar(); return false;" aria-labelledby="titulo-login">
-            <div class="marcas-login" aria-label="core.cx e conexão.cx">
-                <span class="marca-core">core<span>.cx</span></span>
-                <span class="divisor-marca"></span>
-                <span class="marca-conexao">conexão.cx</span>
+    <section class="marca" aria-hidden="true">
+        <span class="halo a"></span>
+        <span class="halo b"></span>
+        <img class="marca-agua" src="{{ url_for('static', filename='core-cx-mark.png') }}" alt="">
+
+        <div class="marca-topo">
+            <img class="marca-simbolo" src="{{ url_for('static', filename='core-cx-mark.png') }}" alt="">
+            <span class="marca-nome">core<span>.cx</span></span>
+        </div>
+
+        <div class="marca-meio">
+            <p class="marca-frase">O trabalho da equipe,<br><b>em um lugar só.</b></p>
+            <p class="marca-sub">A operação da conexão.cx, do primeiro contato à entrega.</p>
+        </div>
+
+        <div class="marca-pe">
+            <span>uma plataforma <b>conexão.cx</b></span>
+        </div>
+    </section>
+
+    <section class="painel">
+        <form class="forma" onsubmit="entrar(); return false;" aria-labelledby="titulo-login">
+
+            <div class="marca-mobile">
+                <img src="{{ url_for('static', filename='core-cx-mark.png') }}" alt="core.cx">
+                <span>core<i>.cx</i></span>
             </div>
 
-            <header class="cabecalho-formulario">
-                <h1 id="titulo-login">Acesse sua conta</h1>
-                <p>Informe seus dados para continuar.</p>
+            <header class="f-cab">
+                <h1 id="titulo-login">Entrar</h1>
+                <p>Acesse com o e-mail da sua conta.</p>
             </header>
 
             <div class="aviso" id="aviso" role="alert" aria-live="polite">
@@ -293,10 +218,11 @@
             </div>
 
             <div class="campo">
-                <label for="email">Email</label>
+                <label for="email">E-mail</label>
                 <div class="caixa">
                     <span class="material-symbols-rounded">mail</span>
-                    <input type="email" id="email" placeholder="nome@empresa.com" autocomplete="username" autocapitalize="none" spellcheck="false">
+                    <input type="email" id="email" placeholder="nome@conexaocx.com.br"
+                           autocomplete="username" autocapitalize="none" spellcheck="false">
                 </div>
             </div>
 
@@ -304,22 +230,32 @@
                 <label for="senha">Senha</label>
                 <div class="caixa">
                     <span class="material-symbols-rounded">lock</span>
-                    <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
-                    <button type="button" class="olho" id="olho" onclick="verSenha()" aria-label="Mostrar senha" title="Mostrar senha"><span class="material-symbols-rounded">visibility</span></button>
+                    <input type="password" id="senha" placeholder="Sua senha"
+                           autocomplete="current-password">
+                    <button type="button" class="olho" id="olho" onclick="verSenha()"
+                            aria-label="Mostrar senha" title="Mostrar senha">
+                        <span class="material-symbols-rounded">visibility</span></button>
                 </div>
             </div>
 
-            <div class="linha-login">
-                <button type="button" class="lembrar" onclick="alternarLembrar()" aria-pressed="true"><span class="checkbox on" id="cx" aria-hidden="true"></span>Manter conectado</button>
+            <div class="linha">
+                <button type="button" class="lembrar" onclick="alternarLembrar()" aria-pressed="true">
+                    <span class="checkbox on" id="cx" aria-hidden="true"></span>Manter conectado</button>
                 <button type="button" class="esqueci" onclick="esqueci()">Esqueci minha senha</button>
             </div>
 
-            <button class="entrar" id="btnEntrar" type="submit"><span class="material-symbols-rounded" id="btnIcone">login</span><span id="btnTexto">Entrar</span></button>
-            <p class="ajuda"><b>Precisa de ajuda?</b><br>Fale com quem administra a plataforma.</p>
-        </form>
-    </main>
+            <button class="entrar" id="btnEntrar" type="submit">
+                <span class="material-symbols-rounded" id="btnIcone">login</span>
+                <span id="btnTexto">Entrar</span></button>
 
-    <script>
+            <p class="ajuda"><b>Precisa de ajuda?</b><br>
+            Fale com quem administra a plataforma.</p>
+        </form>
+    </section>
+
+</main>
+
+<script>
         let mostrando = false;
         let lembrar = true;
         let enviando = false;
