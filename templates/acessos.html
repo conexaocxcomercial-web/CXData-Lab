@@ -679,23 +679,36 @@ const Acessos = (function(){
     const e = st.edicao;
     const cat = st.catalogo;
     const corpo = document.getElementById('pnCorpo');
-    const resp = new Set(e.responsavel_em);
+
+    // Defensivo: se o servidor for mais antigo que esta tela, faltam
+    // `niveis` ou `perfis` e o painel morreria em silêncio ao abrir.
+    if(!cat || !cat.niveis || !cat.quadros || !cat.telas){
+      corpo.innerHTML = `<div class="faixa aviso">
+        <span class="material-symbols-rounded">sync_problem</span>
+        <span><div class="fx-t">Recarregue a página</div>
+        <div class="fx-s">A tela e o servidor estão em versões diferentes.</div></span>
+      </div>`;
+      return;
+    }
+
+    const resp = new Set(e.responsavel_em || []);
     const acessos = e.acessos || {};
-
-    /* O painel do administrador NÃO some mais.
-
-       Antes, ligar o interruptor escondia tudo e devolvia só uma caixa
-       explicativa — inclusive a marcação de "pode receber card". Como
-       essa marcação é o que alimenta a lista de Configurações, um
-       administrador nunca podia ser escolhido para receber demanda num
-       quadro em modo Direto. Era o bug relatado.
-
-       Agora a matriz continua visível: os níveis ficam travados em "vê
-       tudo", porque é o que ser administrador significa, mas a coluna de
-       receber card segue editável. Enxergar tudo e receber trabalho são
-       decisões diferentes. */
+    const telas = new Set(e.telas || []);
     const admin = e.admin;
 
+    /* UMA LISTA SÓ.
+
+       Antes eram três blocos separados — quadros, alcance e telas — e a
+       pessoa precisava cruzar dois deles para responder uma pergunta só:
+       o que este colaborador enxerga.
+
+       Agora tudo é linha numa lista. O que muda é o controle:
+
+         quadro de trabalho   três estados, porque existe a pergunta
+                              "quanto desta pessoa" — nada, só os seus,
+                              tudo;
+         demais telas         liga/desliga, porque num Feed ou numa
+                              Lixeira essa pergunta não faz sentido. */
     corpo.innerHTML = `
       <div class="bloco">${blocoAdmin(e)}</div>
 
@@ -714,7 +727,7 @@ const Acessos = (function(){
                   onclick="Acessos.aplicarPerfil('personalizado')">
             <span class="perfil-r"></span>
             <span><span class="perfil-t">Personalizado</span>
-              <span class="perfil-d">Ajustado quadro a quadro, abaixo.</span></span>
+              <span class="perfil-d">Ajustado item a item, abaixo.</span></span>
           </button>
         </div>
       </div>`}
@@ -724,7 +737,7 @@ const Acessos = (function(){
           <span class="bl-cnt">${Object.keys(acessos).length} de ${cat.quadros.length}</span></div>
         <div class="mtz-cab">
           <span>Quadro</span><span>O que enxerga</span>
-          <span title="Pode receber card">Recebe</span></div>
+          <span title="Pode receber card deste quadro">Recebe</span></div>
         <div class="mtz">
           ${cat.quadros.map(q => {
             const nivel = acessos[q.chave] || '';
@@ -732,11 +745,12 @@ const Acessos = (function(){
               <span class="mtz-n">${esc(q.nome)}</span>
               <span class="mtz-seg">
                 ${cat.niveis.map(nv => `
-                  <button class="mtz-b${nivel === nv.chave ? ' on ' + (nv.chave || 'nada')
-                    + (nv.chave === 'tudo' ? ' tudo' : '') : ''}"
+                  <button class="mtz-b${nivel === nv.chave
+                      ? ' on ' + (nv.chave || 'nada') + (nv.chave === 'tudo' ? ' tudo' : '')
+                      : ''}"
                     ${admin ? 'disabled' : ''} title="${esc(nv.descricao)}"
                     onclick="Acessos.definirNivel('${q.chave}','${nv.chave}')"
-                    >${esc(nv.curto === '—' ? 'sem' : nv.curto)}</button>`).join('')}
+                    >${esc(nv.curto === '—' ? 'não' : nv.curto)}</button>`).join('')}
               </span>
               <button class="mtz-resp${resp.has(q.chave) ? ' on' : ''}"
                       ${nivel || admin ? '' : 'disabled'}
@@ -749,34 +763,42 @@ const Acessos = (function(){
             </div>`;
           }).join('')}
         </div>
-        ${admin ? `<div class="dica">Administrador vê tudo em todos os quadros —
-          por isso os níveis estão travados. <b>Receber card continua sendo escolha sua:</b>
-          marque os quadros em que esta pessoa deve entrar na distribuição.</div>`
+        ${admin ? `<div class="dica">Administrador vê tudo em todos os quadros — por isso
+          os níveis estão travados. <b>Receber card continua sendo escolha sua.</b></div>`
         : `<div class="mtz-acoes">
             <button class="mtz-ac" onclick="Acessos.todosNivel('tudo')">Vê tudo em todos</button>
             <button class="mtz-ac" onclick="Acessos.todosNivel('proprio')">Só os seus em todos</button>
-            <button class="mtz-ac" onclick="Acessos.todosNivel('')">Limpar</button>
-          </div>
-          <div class="dica">O ícone à direita marca quem <b>pode receber card</b> do quadro.
-          É o que alimenta a lista de Configurações na hora de distribuir a demanda —
-          e é decisão separada de enxergar: acompanhar um quadro não obriga a
-          receber trabalho dele.</div>`}
+            <button class="mtz-ac" onclick="Acessos.todosNivel('')">Nenhum quadro</button>
+          </div>`}
+        <div class="dica">O ícone à direita marca quem <b>pode receber card</b> do quadro —
+        é o que alimenta a lista de Configurações na hora de distribuir a demanda.
+        Acompanhar um quadro não obriga a receber trabalho dele.</div>
       </div>
 
       <div class="bloco">
         <div class="bl-t">Telas da plataforma
-          <span class="bl-cnt">${e.telas.length} de ${cat.telas.length}</span>
+          <span class="bl-cnt">${admin ? cat.telas.length : telas.size} de ${cat.telas.length}</span>
           ${admin ? '' : `<button class="bl-acao" onclick="Acessos.todasTelas()">${
-            e.telas.length === cat.telas.length ? 'Limpar' : 'Marcar todas'}</button>`}</div>
-        <div class="chips">
-          ${cat.telas.map(t => `
-            <button class="chip${(admin || e.telas.includes(t.chave)) ? ' on' : ''}"
-                    ${admin ? 'disabled' : ''}
-                    onclick="Acessos.alternarTela('${t.chave}')" title="${esc(t.descricao)}">
-              <span class="material-symbols-rounded">check</span>${esc(t.nome)}</button>`).join('')}
+            telas.size === cat.telas.length ? 'Limpar' : 'Marcar todas'}</button>`}</div>
+        <div class="mtz">
+          ${cat.telas.map(t => {
+            const on = admin || telas.has(t.chave);
+            return `<div class="mtz-l" style="grid-template-columns:1fr auto">
+              <span class="mtz-n">${esc(t.nome)}
+                <small style="display:block;font-size:10.5px;color:var(--tinta-3);
+                  font-weight:400;margin-top:1px">${esc(t.descricao)}</small></span>
+              <span class="mtz-seg">
+                <button class="mtz-b${!on ? ' on nada' : ''}" ${admin ? 'disabled' : ''}
+                  onclick="Acessos.definirTela('${t.chave}', false)">não</button>
+                <button class="mtz-b${on ? ' on tudo' : ''}" ${admin ? 'disabled' : ''}
+                  onclick="Acessos.definirTela('${t.chave}', true)">vê</button>
+              </span>
+            </div>`;
+          }).join('')}
         </div>
-        <div class="dica">O <b>painel operacional</b> mora aqui: desmarque "Painel" para
-        tirar o acesso sem mexer em mais nada.</div>
+        ${admin ? `<div class="dica">Administrador abre todas as telas.</div>`
+          : `<div class="dica"><b>Acessos</b> e <b>Configurações</b> também são telas:
+             ligue para quem precisa administrar sem ser administrador.</div>`}
       </div>
 
       <div class="bloco">
@@ -889,19 +911,26 @@ const Acessos = (function(){
       });
   }
 
-  function alternarTela(chave){
+  /* Estado explícito, não alternância: numa lista de dez telas, clicar em
+     "vê" e receber "não vê" porque já estava ligado é o tipo de coisa que
+     faz a pessoa desconfiar do que está vendo. */
+  function definirTela(chave, ligado){
     const e = st.edicao;
+    if(e.admin) return;
     const i = e.telas.indexOf(chave);
-    if(i >= 0) e.telas.splice(i, 1);
-    else e.telas.push(chave);
+    if(ligado && i < 0) e.telas.push(chave);
+    if(!ligado && i >= 0) e.telas.splice(i, 1);
+    e.perfil = 'personalizado';
     pintarPainel();
     salvar({telas: e.telas});
   }
 
   function todasTelas(){
     const e = st.edicao;
+    if(e.admin) return;
     const todas = st.catalogo.telas.map(t => t.chave);
     e.telas = e.telas.length === todas.length ? [] : todas;
+    e.perfil = 'personalizado';
     pintarPainel();
     salvar({telas: e.telas});
   }
@@ -1150,7 +1179,7 @@ const Acessos = (function(){
   document.addEventListener('DOMContentLoaded', carregar);
 
   return { aba, abrir, fecharPainel, buscar, filtrar, recarregar, fecharModal,
-           alternarAdmin, alternarResp, alternarTela, todasTelas,
+           alternarAdmin, alternarResp, definirTela, todasTelas,
            definirNivel, todosNivel, aplicarPerfil,
            modalNova, criar, gravarSenha, senhaSugerida };
 })();
