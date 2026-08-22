@@ -25,6 +25,10 @@
 button,input,select{ font-family:inherit; border:none; background:none; color:inherit; }
 body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
       min-height:100vh; -webkit-font-smoothing:antialiased; }
+/* Nada mais largo que a tela: o que estoura empurra a página inteira
+   e descola o cabeçalho fixo do conteúdo. */
+.wrap, .cartao, .tb, .bh, .serie{ max-width:100%; }
+.cartao{ overflow:hidden; }
 .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
       letter-spacing:-.2px; }
 :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:5px; }
@@ -166,6 +170,10 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .sb:hover .sb-b{ background:#5a4bd4; }
 .sb-x{ font-size:9.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
     white-space:nowrap; }
+/* Valor sobre a barra. Num toque não existe passar o mouse: sem o
+   rótulo, o gráfico vira desenho e o número fica inacessível. */
+.sb-n{ font-size:10.5px; font-weight:650; color:var(--tinta-2); white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace; margin-bottom:3px; }
 .sb-dica{ position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
     background:var(--tinta); color:#fff; font-size:11px; padding:5px 9px; border-radius:7px;
     white-space:nowrap; opacity:0; pointer-events:none; transition:.14s; margin-bottom:5px; z-index:5; }
@@ -229,48 +237,84 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .faixa.alerta{ background:var(--at-fundo); color:#7A4A0C; }
 .faixa b{ font-weight:650; }
 
+/* ============================================================
+   TOQUE — mesma régua do painel operacional: tabela vira cartão,
+   KPI vira dois por linha, e a gaveta de filtros acompanha o clique.
+   ============================================================ */
 @media (max-width:900px){
-    .top-bar{ padding:0 16px 0 60px; }
-    .cmd{ padding:10px 16px; }
-    .cmd-tit{ display:none; } .cmd-sep{ display:none; }
-    .segm{ width:100%; } .segm-btn{ flex:1; justify-content:center; }
-    .cmd-dir{ width:100%; margin-left:0; }
-    /* Três controles em 360px não cabem lado a lado: período e visão
-       dividem uma linha, Filtros ocupa a seguinte. */
-    .cmd-dir .sel{ flex:1 1 44%; min-width:0; }
+    .top-bar{ padding:0 16px 0 60px; height:52px; }
+    .cmd{ padding:9px 14px; top:52px; gap:8px; }
+    .cmd-tit,.cmd-sep{ display:none; }
+    .segm{ width:100%; }
+    .segm-btn{ flex:1; justify-content:center; padding:8px 6px; font-size:12px; }
+    .segm-btn .material-symbols-rounded{ font-size:15px; }
+    .cmd-dir{ width:100%; margin-left:0; gap:7px; }
+    .cmd-dir .sel{ flex:1 1 calc(50% - 4px); max-width:none; min-width:0;
+        font-size:12px; padding:8px 9px; }
     .cmd-dir .btn{ flex:1 1 100%; justify-content:center; }
+    .datas{ flex:1 1 100%; }
+    .datas input{ flex:1; min-width:0; }
 
-    .filtros{ padding:13px 16px; gap:9px; }
-    .fg{ flex:1 1 46%; min-width:0; }
-    .fg select,.fg input{ width:100%; }
+    .filtros{ padding:12px 14px; gap:8px; }
+    .fg{ flex:1 1 calc(50% - 4px); min-width:0; }
+    .fg select{ width:100%; font-size:12.5px; }
 
-    .wrap{ padding:14px 16px 70px; }
-    .kpis{ grid-template-columns:1fr 1fr; gap:9px; margin-bottom:18px; }
-    .kpi{ padding:12px 14px; }
-    .kpi-v{ font-size:20px; }
-    .cartao{ padding:15px 16px; }
-    .sec{ margin-bottom:18px; }
-    .duas,.tres{ gap:9px; }
+    .wrap{ padding:12px 14px 64px; }
 
-    /* A tabela perdia a coluna Conversão justamente no aparelho em que
-       ela é a única leitura que cabe. Some o total, que é o dado
-       redundante com o gráfico logo acima. */
-    .tb-h,.tb-l{ grid-template-columns:1.5fr .55fr .8fr; gap:8px; padding:9px 11px; }
-    .tb-h span:nth-child(3),.tb-l span:nth-child(3){ display:none; }
+    .kpis{ grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+    .kpi{ padding:12px 13px; }
+    .kpi-r{ font-size:9.5px; margin-bottom:5px; }
+    .kpi-v{ font-size:19px; letter-spacing:-.6px; }
+    .kpi-p{ font-size:10.5px; margin-top:4px; }
 
-    .fun-l{ grid-template-columns:88px 1fr 62px; gap:8px; }
-    .fun-r{ font-size:11.5px; }
+    .cartao{ padding:14px 15px; }
+    .cartao-t{ font-size:12.5px; }
+    .cartao-d{ font-size:11px; margin-bottom:13px; }
+    .sec{ margin-bottom:16px; }
+    .sec-cab{ margin-bottom:9px; flex-wrap:wrap; row-gap:3px; }
+    .sec-nota{ font-size:10.5px; flex-basis:100%; }
+    .sec-linha{ min-width:14px; }
+    .duas,.tres{ grid-template-columns:1fr; gap:8px; }
+
+    /* funil */
+    .fun-l{ grid-template-columns:78px 1fr 58px; gap:7px; }
+    .fun-r{ font-size:11px; }
+    .fun-b{ height:30px; }
+    .fun-n{ font-size:11.5px; }
     .fun-c{ font-size:11.5px; }
-    .fun-c small{ display:none; }   /* o valor volta no desktop */
+    .fun-c small{ display:none; }
 
-    .bh-l{ grid-template-columns:1fr 68px; gap:9px; }
-    .serie{ height:140px; gap:3px; }
-    .sb-x{ font-size:9px; }
-    .faixa{ padding:11px 13px; font-size:12px; }
+    .bh{ gap:11px; }
+    .bh-t{ font-size:12px; }
+    .bh-v{ font-size:12px; }
+
+    .serie{ height:158px; gap:3px; }
+    .sb{ max-width:none; }
+    .sb-n{ font-size:9px; }
+    .sb-x{ font-size:8.5px; }
+
+    /* TABELAS VIRAM CARTÕES */
+    .tb{ border:none; border-radius:0; }
+    .tb-h{ display:none; }
+    .tb-l{ display:block !important; background:var(--papel-2);
+        border-radius:var(--r-ctrl); border:none; padding:12px 13px; margin-bottom:7px; }
+    .tb-l:last-child{ margin-bottom:0; }
+    .tb-l > span{ white-space:normal; }
+    .tb-nome{ display:block; font-size:13px; font-weight:650; margin-bottom:9px; }
+    .tb-l .d{ display:inline-flex; flex-direction:column; align-items:flex-start;
+        text-align:left; margin-right:16px; margin-top:2px; font-size:14px; }
+    .tb-l .d::before{ content:attr(data-r); display:block; font-family:'Inter',sans-serif;
+        font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+        color:var(--tinta-3); margin-bottom:2px; }
+
+    .faixa{ padding:11px 12px; font-size:11.5px; gap:9px; }
+    .faixa .material-symbols-rounded{ font-size:16px; }
+    .vazio{ padding:26px 14px; }
 }
-@media (max-width:420px){
-    .kpis{ grid-template-columns:1fr; }
-    .sb-x{ display:none; }          /* rótulos ilegíveis abaixo disso */
+@media (max-width:400px){
+    .kpi-v{ font-size:17px; }
+    .sb-x{ display:none; }
+    .fun-l{ grid-template-columns:66px 1fr 50px; }
 }
 </style>
 </head>
@@ -494,11 +538,7 @@ const Painel = (function(){
           ${kpiCard('Até fechar', dias(t.ciclo.ate_fechamento),
                     'do lead entrar até o contrato')}
         </div>
-        <div class="faixa info" style="margin-top:11px">
-          <span class="material-symbols-rounded">functions</span>
-          <span>Mediana, não média. Um lead parado há meses distorceria a média
-          e faria o time desconfiar do número.</span>
-        </div>
+
       </div>
 
       <div class="sec">
@@ -554,42 +594,19 @@ const Painel = (function(){
      um lead entra num mês e fecha no outro. Ele conta em qual?
      Explicar isso em palavras abstratas não funciona -- o exemplo com
      números resolve em cinco segundos. */
+  /* O explicador longo saiu: quem configurou a visão uma vez não
+     precisa reler o exemplo toda vez que abre a tela. Fica só o
+     alerta, e só quando ele resolve algo -- uma etapa acima de 100%
+     é um número que confunde, e aí a frase tem função. */
   function notaVisao(){
     const t = st.dados.trabalho;
     const cresceu = t.funil.some(e => e.conv != null && e.conv > 100);
-    const ent = st.vis === 'entrada';
-
-    return `<div class="exp">
-      <div class="exp-caso">
-        <b>Um lead entrou em 20 de julho e fechou em 15 de agosto.</b>
-        Se você está olhando <b>agosto</b>, ele aparece onde?
-      </div>
-
-      <div class="exp-l ${ent ? '' : 'on'}">
-        <span class="material-symbols-rounded">${ent ? 'radio_button_unchecked' : 'radio_button_checked'}</span>
-        <span><span class="exp-n">Tudo que andou no período —</span>
-        o fechamento dele <b>conta em agosto</b>, porque foi quando aconteceu.
-        Mas ele não entra nos leads gerados de agosto, já que entrou em julho.
-        Bom para saber <b>quanto o time produziu</b> no mês.</span>
-      </div>
-
-      <div class="exp-l ${ent ? 'on' : ''}">
-        <span class="material-symbols-rounded">${ent ? 'radio_button_checked' : 'radio_button_unchecked'}</span>
-        <span><span class="exp-n">Só os leads que entraram —</span>
-        ele <b>não aparece em agosto</b>, porque entrou em julho.
-        Ficam só os leads de agosto, acompanhados até onde chegarem.
-        Bom para saber <b>se os leads de agosto foram bons</b>.</span>
-      </div>
-
-      ${cresceu && !ent ? `<div class="exp-alerta">
-        <b>É por isso que uma etapa passou de 100% aí em cima.</b>
-        Houve propostas e fechamentos de leads que entraram antes de agosto.
-        Para medir conversão, troque para <b>Só os leads que entraram</b>.
-      </div>` : ''}
-      ${ent ? `<div class="exp-alerta">
-        <b>Atenção ao comparar meses.</b> O mês atual sempre parece pior:
-        quem entrou nos últimos dias ainda não teve tempo de fechar.
-      </div>` : ''}
+    if(!cresceu || st.vis === 'entrada') return '';
+    return `<div class="faixa alerta" style="margin:15px 0 0">
+      <span class="material-symbols-rounded">warning</span>
+      <span>Uma etapa passou de <b>100%</b>: houve propostas e fechamentos de
+      leads que entraram antes deste período. Para medir conversão, troque para
+      <b>Só os leads que entraram</b>.</span>
     </div>`;
   }
 
@@ -600,10 +617,10 @@ const Painel = (function(){
         <span class="d">Fechados</span><span class="d">Conversão</span></div>
       ${lista.slice(0,10).map(x => `<div class="tb-l">
         <span class="tb-nome">${esc(x.chave)}</span>
-        <span class="d">${x.leads}</span>
-        <span class="d">${x.ganhos}</span>
-        <span class="d" style="color:${x.conv >= 20 ? 'var(--ok)' : 'var(--tinta-2)'}">
-          ${pct(x.conv)}</span>
+        <span class="d" data-r="Leads">${x.leads}</span>
+        <span class="d" data-r="Fechados">${x.ganhos}</span>
+        <span class="d" data-r="Conversão" style="color:${
+          x.conv >= 20 ? 'var(--ok)' : 'var(--tinta-2)'}">${pct(x.conv)}</span>
       </div>`).join('')}
     </div>`;
   }
@@ -642,8 +659,10 @@ const Painel = (function(){
         <div class="cartao">
           ${r.serie.length ? `<div class="serie">
             ${r.serie.map(x => `<div class="sb">
-              <span class="sb-dica">${rotuloX(x.quando)} · ${money(x.valor)} · ${x.qtd} contrato${x.qtd!==1?'s':''}</span>
-              <span class="sb-b" style="height:${Math.max(2, x.valor/maxSerie*118)}px"></span>
+              <span class="sb-dica">${rotuloX(x.quando)} · ${money(x.valor)} · ${
+                x.qtd} contrato${x.qtd!==1?'s':''}</span>
+              <span class="sb-n">${moneyCurto(x.valor)}</span>
+              <span class="sb-b" style="height:${Math.max(2, x.valor/maxSerie*104)}px"></span>
               <span class="sb-x">${rotuloX(x.quando)}</span>
             </div>`).join('')}
           </div>` : semDados('Nenhum contrato fechado neste período.')}
@@ -659,9 +678,9 @@ const Painel = (function(){
               <span class="d">Total</span><span class="d">Ticket</span></div>
             ${r.por_produto.map(x => `<div class="tb-l">
               <span class="tb-nome">${esc(x.chave)}</span>
-              <span class="d">${x.qtd}</span>
-              <span class="d">${moneyCurto(x.valor)}</span>
-              <span class="d" style="color:var(--ok)">${moneyCurto(x.ticket)}</span>
+              <span class="d" data-r="Contratos">${x.qtd}</span>
+              <span class="d" data-r="Total">${moneyCurto(x.valor)}</span>
+              <span class="d" data-r="Ticket" style="color:var(--ok)">${moneyCurto(x.ticket)}</span>
             </div>`).join('')}
           </div>` : semDados('Sem contratos no período.')}
         </div>
@@ -706,9 +725,9 @@ const Painel = (function(){
               <span class="d">Total</span><span class="d">Ticket</span></div>
             ${r.por_responsavel.map(x => `<div class="tb-l">
               <span class="tb-nome">${esc(x.chave)}</span>
-              <span class="d">${x.qtd}</span>
-              <span class="d">${moneyCurto(x.valor)}</span>
-              <span class="d">${moneyCurto(x.ticket)}</span>
+              <span class="d" data-r="Contratos">${x.qtd}</span>
+              <span class="d" data-r="Total">${moneyCurto(x.valor)}</span>
+              <span class="d" data-r="Ticket">${moneyCurto(x.ticket)}</span>
             </div>`).join('')}
           </div>` : semDados('Sem contratos no período.')}
         </div>
@@ -783,7 +802,18 @@ const Painel = (function(){
     carregar();
   }
   function visao(v){ st.vis = v; carregar(); }
-  function toggleFiltros(){ document.getElementById('gaveta').classList.toggle('on'); }
+  /* No celular a gaveta nasce acima da dobra: abrir sem rolar fazia
+     parecer que o clique não funcionou. */
+  function toggleFiltros(){
+    const g = document.getElementById('gaveta');
+    const abriu = g.classList.toggle('on');
+    if(abriu && window.innerWidth <= 900){
+      requestAnimationFrame(() => {
+        const y = g.getBoundingClientRect().bottom;
+        if(y > window.innerHeight) g.scrollIntoView({behavior:'smooth', block:'end'});
+      });
+    }
+  }
   function filtrar(){
     st.filtros = {
       produto: document.getElementById('fProduto').value,
