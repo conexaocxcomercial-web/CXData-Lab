@@ -3257,6 +3257,24 @@ def pagina_feed():
 TIPOS_POST = ('comunicado', 'evento', 'celebracao', 'post')
 BUCKET_FEED = 'feed'
 
+# Bucket PRIVADO. O do feed é público -- `get_public_url` devolve um
+# endereço que qualquer pessoa abre sem login, e serve para imagem de
+# comunicado. Contrato assinado carrega CNPJ, valor e assinatura das duas
+# partes: num bucket público o link vaza em qualquer lugar onde seja
+# colado, e não há como revogar depois.
+BUCKET_CONTRATOS = 'contratos'
+
+# Word, PDF e os formatos que um contrato assinado costuma ter.
+TIPOS_CONTRATO = {
+    'application/pdf': '.pdf',
+    'application/msword': '.doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+    'application/rtf': '.rtf',
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+}
+EXT_CONTRATO = ('.pdf', '.doc', '.docx', '.rtf', '.jpg', '.jpeg', '.png')
+
 
 def _pode_publicar(tipo):
     if session.get('tipo_usuario') == 'externo':
@@ -6218,6 +6236,159 @@ def excluir_comentario_post(comentario_id):
         print("Erro em excluir_comentario_post:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao excluir.",
                         "detalhe": str(e)[:300]}), 500
+
+
+# ============================================================================
+# CONTRATO DO LEAD GANHO
+#
+# Tres rotas: subir, gerar link de leitura e remover. O arquivo nunca fica
+# publico -- quem pede o link precisa poder ver o lead, e o link expira.
+# ============================================================================
+
+def _lead_para_contrato(lead_id):
+    """Busca o lead e devolve (lead, erro). Erro ja e a resposta pronta.
+
+    Centraliza a checagem porque ela se repete nas tres rotas, e uma
+    delas esquecer seria um buraco silencioso: link de contrato acessivel
+    a quem nao ve o lead.
+    """
+    if 'usuario_id' not in session:
+        return None, (jsonify({"erro": "Nao logado"}), 401)
+    if session.get('tipo_usuario') == 'externo':
+        return None, (jsonify({"erro": "Acesso negado"}), 403)
+    try:
+        r = (supabase.table("leads").select("*")
+             .eq("id", lead_id).limit(1).execute())
+    except Exception as e:
+        print("Erro ao buscar lead do contrato:", e)
+        return None, (jsonify({"status": "erro", "mensagem": "Erro ao buscar o lead."}), 500)
+    if not r.data:
+        return None, (jsonify({"status": "erro", "mensagem": "Lead nao encontrado."}), 404)
+    lead = r.data[0]
+    # Mesma regra do resto do CRM: quem nao ve o lead nao ve o contrato.
+    if not pode('crm.lead.ver', lead):
+        return None, (jsonify({"status": "erro", "mensagem": "Sem acesso a este lead."}), 403)
+    return lead, None
+
+
+@app.route('/api/leads/<lead_id>/contrato', methods=['POST'])
+def subir_contrato(lead_id):
+    """Anexa o contrato assinado ao lead."""
+    lead, erro = _lead_para_contrato(lead_id)
+    if erro:
+        return erro
+    if not pode('crm.lead.editar', lead):
+        return jsonify({"status": "erro",
+                        "mensagem": "Voce nao pode editar este lead."}), 403
+    try:
+        arq = request.files.get('arquivo')
+        if not arq or not arq.filename:
+            return jsonify({"status": "erro", "mensagem": "Nenhum arquivo recebido."}), 400
+
+        nome = arq.filename
+        ext = ('.' + nome.rpartition('.')[2].lower()) if '.' in nome else ''
+        # Confere extensao E tipo declarado: o navegador as vezes manda
+        # tipo generico, e o nome as vezes vem sem extensao.
+        if ext not in EXT_CONTRATO and (arq.mimetype or '') not in TIPOS_CONTRATO:
+            return jsonify({"status": "erro",
+                            "mensagem": "Envie PDF, Word ou imagem do contrato."}), 400
+
+        dados = arq.read()
+        if not dados:
+            return jsonify({"status": "erro", "mensagem": "Arquivo vazio."}), 400
+        # Teto do Vercel por requisicao. Acima disso a falha aconteceria
+        # antes de chegar aqui, sem mensagem util.
+        if len(dados) > 4 * 1024 * 1024:
+            return jsonify({"status": "erro",
+                            "mensagem": "Arquivo acima de 4 MB. Comprima o PDF e tente de novo."}), 413
+
+        caminho = "%s/%s%s" % (lead_id, secrets.token_urlsafe(12), ext or '.pdf')
+        supabase.storage.from_(BUCKET_CONTRATOS).upload(
+            caminho, dados,
+            {"content-type": arq.mimetype or "application/octet-stream"})
+
+        anterior = lead.get("contrato_arquivo") or {}
+        info = {
+            "caminho": caminho,
+            "nome": nome,
+            "tipo": arq.mimetype or "",
+            "tamanho": len(dados),
+            "enviado_em": datetime.now(timezone.utc).isoformat(),
+            "enviado_por": session.get('usuario_nome'),
+        }
+        supabase.table("leads").update({"contrato_arquivo": info}).eq("id", lead_id).execute()
+
+        # Substituir apaga o antigo: dois contratos para o mesmo lead
+        # ocupam espaco e criam duvida sobre qual vale.
+        if anterior.get("caminho") and anterior["caminho"] != caminho:
+            try:
+                supabase.storage.from_(BUCKET_CONTRATOS).remove([anterior["caminho"]])
+            except Exception as e:
+                print("Aviso: contrato anterior nao removido:", e)
+
+        registrar_auditoria("contrato_anexado", "lead", lead_id,
+                            {"nome": nome, "tamanho": len(dados)})
+        return jsonify({"status": "sucesso", "contrato": info}), 201
+
+    except Exception as e:
+        print("Erro em subir_contrato:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao enviar o contrato.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/leads/<lead_id>/contrato', methods=['GET'])
+def link_contrato(lead_id):
+    """Link temporario para ler o contrato.
+
+    O arquivo e privado: nao existe URL permanente. Cada pedido gera um
+    endereco que expira em uma hora -- se ele vazar, deixa de funcionar
+    sozinho.
+    """
+    lead, erro = _lead_para_contrato(lead_id)
+    if erro:
+        return erro
+    info = lead.get("contrato_arquivo") or {}
+    if not info.get("caminho"):
+        return jsonify({"status": "erro", "mensagem": "Este lead nao tem contrato."}), 404
+    try:
+        r = supabase.storage.from_(BUCKET_CONTRATOS).create_signed_url(
+            info["caminho"], 3600)
+        url = r.get("signedURL") or r.get("signedUrl") or r.get("signed_url")
+        if not url:
+            raise RuntimeError("Storage nao devolveu o link")
+        return jsonify({"status": "sucesso", "url": url,
+                        "nome": info.get("nome"), "expira_em": 3600}), 200
+    except Exception as e:
+        print("Erro em link_contrato:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao abrir o contrato.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/leads/<lead_id>/contrato', methods=['DELETE'])
+def remover_contrato(lead_id):
+    """Remove o contrato anexado."""
+    lead, erro = _lead_para_contrato(lead_id)
+    if erro:
+        return erro
+    if not pode('crm.lead.editar', lead):
+        return jsonify({"status": "erro",
+                        "mensagem": "Voce nao pode editar este lead."}), 403
+    info = lead.get("contrato_arquivo") or {}
+    try:
+        # Limpa o campo primeiro: se o Storage falhar, o lead ja nao
+        # aponta para um arquivo que a tela nao consegue abrir.
+        supabase.table("leads").update({"contrato_arquivo": None}).eq("id", lead_id).execute()
+        if info.get("caminho"):
+            try:
+                supabase.storage.from_(BUCKET_CONTRATOS).remove([info["caminho"]])
+            except Exception as e:
+                print("Aviso: arquivo nao removido do Storage:", e)
+        registrar_auditoria("contrato_removido", "lead", lead_id,
+                            {"nome": info.get("nome")})
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        print("Erro em remover_contrato:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao remover."}), 500
 
 
 @app.route('/api/feed/upload', methods=['POST'])
