@@ -1079,22 +1079,62 @@
 
         // Produtos que a Conexão vende, alinhados aos quadros de entrega.
         // OKR saiu: é ferramenta interna, não entrega.
-        const PRODUTOS = ['Recrutamento e Seleção','RH Estratégico mensal','PCCS','PCO',
-                          'Gestão de Desempenho','Educação','CX Data','Outro'];
+        /* Lista oficial de produtos do CRM. A ordem é a de venda, não a
+           alfabética: o que mais se vende aparece primeiro, porque a lista
+           é usada em pressa, no meio de uma ligação. */
+        const PRODUTOS = [
+            'Recrutamento & Seleção',
+            'Recrutamento & Seleção Mensalista',
+            'RH Estratégico',
+            'PCCS',
+            'PCO',
+            'Gestao de Desempenho',
+            'Liderar Contábil incompany',
+            'Liderar Contábil Avulso',
+            'Liderar com conexão',
+            'Reaprendendo',
+            'Treinamento personalizado',
+            'Mentoria',
+            'CXData Mensalista',
+            'CXData Pontual',
+            'Consultoria personalizada',
+            'Café com Conexão'
+        ];
         // Quadro e subdivisão sugeridos ao fechar. O closer confirma ou troca.
+        /* Produto -> quadro (e subdivisão) que abre no fechamento.
+
+           Toda entrada da lista de produtos precisa estar aqui. Produto
+           sem destino cai em Projetos, e o card nasce no quadro errado --
+           some da vista de quem deveria executá-lo. */
         const PRODUTO_QUADRO = {
-            'Recrutamento e Seleção': ['recrutamento', null],
-            'RH Estratégico mensal':  ['rhestrategico', 'mensalista'],
-            'PCCS':                   ['rhestrategico', 'pccs'],
-            'PCO':                    ['rhestrategico', 'pco'],
-            'Gestão de Desempenho':   ['rhestrategico', 'gd'],
-            'Educação':               ['educacao', 'reaprendendo'],
-            'CX Data':                ['cxdata', 'pontual'],
-            'Outro':                  ['projetos', null]
+            'Recrutamento & Seleção':            ['recrutamento', null],
+            'Recrutamento & Seleção Mensalista': ['recrutamento', null],
+
+            'RH Estratégico':                    ['rhestrategico', 'mensalista'],
+            'PCCS':                              ['rhestrategico', 'pccs'],
+            'PCO':                               ['rhestrategico', 'pco'],
+            'Gestao de Desempenho':              ['rhestrategico', 'gd'],
+
+            'Liderar Contábil incompany':        ['educacao', 'liderar'],
+            'Liderar Contábil Avulso':           ['educacao', 'liderar'],
+            'Liderar com conexão':               ['educacao', 'liderar'],
+            'Reaprendendo':                      ['educacao', 'reaprendendo'],
+            'Treinamento personalizado':         ['educacao', 'personalizado'],
+            'Mentoria':                          ['educacao', 'personalizado'],
+            'Café com Conexão':                  ['educacao', 'personalizado'],
+
+            'CXData Mensalista':                 ['cxdata', 'mensalista'],
+            'CXData Pontual':                    ['cxdata', 'pontual'],
+
+            'Consultoria personalizada':         ['projetos', null]
         };
         // Produtos que voltam ao Relacionamento quando o card é finalizado
-        const PRODUTO_POS = ['Recrutamento e Seleção','RH Estratégico mensal','PCCS','PCO',
-                             'Gestão de Desempenho','CX Data'];
+        /* Produtos que abrem card de Relacionamento ao serem finalizados:
+           entrega contínua ou que rende acompanhamento depois. Curso
+           avulso e consultoria pontual não voltam. */
+        const PRODUTO_POS = ['Recrutamento & Seleção','Recrutamento & Seleção Mensalista',
+                             'RH Estratégico','PCCS','PCO','Gestao de Desempenho',
+                             'CXData Mensalista','CXData Pontual'];
         const RESPONSAVEIS = ['Jhonattan Luiz','Gabriela Farias','Mirian Meireles','Itiana Andrade',
             'Matheus Alves','Clara Viana','Alisson Maciel','Juliete Cadete','Ana Medeiros',
             'Thallya Rodrigues','Patrick Guilherme','Bárbara Cazé'];
