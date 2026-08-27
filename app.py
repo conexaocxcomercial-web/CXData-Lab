@@ -6245,6 +6245,31 @@ def excluir_comentario_post(comentario_id):
 # publico -- quem pede o link precisa poder ver o lead, e o link expira.
 # ============================================================================
 
+def _erro_storage(e):
+    """Traduz falha do Storage em frase que ajuda quem esta na tela.
+
+    O erro cru do Supabase chega como JSON -- "Bucket not found",
+    "new row violates row-level security policy". Quem so queria anexar
+    um PDF nao tem o que fazer com isso, e o texto ainda revela detalhe
+    da infraestrutura.
+
+    Falha de configuracao nao e culpa de quem usa: a mensagem diz o que
+    aconteceu e para quem pedir ajuda.
+    """
+    txt = str(e).lower()
+    if 'bucket not found' in txt:
+        return ("O armazenamento de contratos ainda nao foi configurado. "
+                "Avise quem administra a plataforma.")
+    if 'row-level security' in txt or 'unauthorized' in txt:
+        return ("O armazenamento existe, mas esta sem permissao de escrita. "
+                "Avise quem administra a plataforma.")
+    if 'payload too large' in txt or '413' in txt:
+        return "Arquivo grande demais. Comprima o PDF e tente de novo."
+    if 'duplicate' in txt or 'already exists' in txt:
+        return "Ja existe um arquivo com esse nome. Tente de novo."
+    return "Nao foi possivel enviar o contrato. Tente de novo em instantes."
+
+
 def _lead_para_contrato(lead_id):
     """Busca o lead e devolve (lead, erro). Erro ja e a resposta pronta.
 
@@ -6332,8 +6357,7 @@ def subir_contrato(lead_id):
 
     except Exception as e:
         print("Erro em subir_contrato:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao enviar o contrato.",
-                        "detalhe": str(e)[:300]}), 500
+        return jsonify({"status": "erro", "mensagem": _erro_storage(e)}), 500
 
 
 @app.route('/api/leads/<lead_id>/contrato', methods=['GET'])
@@ -6360,8 +6384,7 @@ def link_contrato(lead_id):
                         "nome": info.get("nome"), "expira_em": 3600}), 200
     except Exception as e:
         print("Erro em link_contrato:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao abrir o contrato.",
-                        "detalhe": str(e)[:300]}), 500
+        return jsonify({"status": "erro", "mensagem": _erro_storage(e)}), 500
 
 
 @app.route('/api/leads/<lead_id>/contrato', methods=['DELETE'])
