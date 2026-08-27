@@ -727,6 +727,13 @@
                     </div>
                 </div>
                 <div class="ig">
+                    <label for="fCnpj">CNPJ</label>
+                    <input type="text" id="fCnpj" inputmode="numeric" maxlength="18"
+                           placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)">
+                    <div class="ig-dica">Vira o cadastro do cliente no fechamento.
+                    O portão de Negociação cobra este campo — preencher aqui adianta.</div>
+                </div>
+                <div class="ig">
                     <label for="fTelefone">Telefone</label>
                     <div class="campo-acao">
                         <input type="text" id="fTelefone" placeholder="(84) 99999-0000" oninput="atualizarAtalhos()">
@@ -2185,6 +2192,7 @@
                 + segs.map(function(s){
                     return '<option' + (s === seg ? ' selected' : '') + '>' + escH(s) + '</option>';
                   }).join('');
+            document.getElementById('fCnpj').value = l ? (l.cnpj||'') : '';
             document.getElementById('fTelefone').value = l ? (l.telefone||'') : '';
             document.getElementById('fEmail').value = l ? (l.email||'') : '';
             document.getElementById('fProduto').value = l ? (l.produto||'') : '';
@@ -2220,11 +2228,19 @@
                 segmento: document.getElementById('fSegmento').value,
                 cidade: document.getElementById('fCidade').value.trim(),
                 estado: document.getElementById('fEstado').value,
+                cnpj: document.getElementById('fCnpj').value.trim(),
                 proximo_contato: document.getElementById('fProximo').value || null,
                 valor_estimado: document.getElementById('fValor').value || null,
                 anotacoes: document.getElementById('fAnotacoes').value.trim()
             };
             if(!payload.empresa && !payload.contato){ showToast('Informe a empresa ou o contato.','error'); return; }
+            // CNPJ é opcional aqui, mas se foi digitado precisa estar certo:
+            // ele vira o cadastro do cliente e a emissão da nota depois.
+            if(payload.cnpj && !cnpjValido(payload.cnpj)){
+                const el = document.getElementById('fCnpj');
+                showToast('CNPJ inválido. Confira os números.','error');
+                el.classList.add('erro'); el.focus(); return;
+            }
             if(!id){ payload.funil = funilAtual; payload.coluna = FUNIS[funilAtual].colunas[0].id; }
 
             const btn = document.getElementById('btnSalvarLead');
