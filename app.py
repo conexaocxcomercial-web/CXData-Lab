@@ -3485,13 +3485,25 @@ PAPEIS_QUADRO = [
 PAPEIS_VALIDOS = {p for p, _, _ in PAPEIS_QUADRO}
 
 # Quadro de destino sugerido por produto. O closer confirma ou troca.
+# Produto -> quadro que abre no fechamento. Espelha a lista do crm.html;
+# as duas precisam andar juntas, senao o card nasce no quadro errado.
 PRODUTO_QUADRO = {
-    'Recrutamento e Seleção': 'recrutamento',
-    'RH Estratégico': 'rhestrategico',
-    'CX Data': 'cxdata',
-    'Consultoria': 'projetos',
-    'Treinamento': 'projetos',
-    'Outro': 'projetos',
+    'Recrutamento & Seleção':            'recrutamento',
+    'Recrutamento & Seleção Mensalista': 'recrutamento',
+    'RH Estratégico':                    'rhestrategico',
+    'PCCS':                              'rhestrategico',
+    'PCO':                               'rhestrategico',
+    'Gestao de Desempenho':              'rhestrategico',
+    'Liderar Contábil incompany':        'educacao',
+    'Liderar Contábil Avulso':           'educacao',
+    'Liderar com conexão':               'educacao',
+    'Reaprendendo':                      'educacao',
+    'Treinamento personalizado':         'educacao',
+    'Mentoria':                          'educacao',
+    'Café com Conexão':                  'educacao',
+    'CXData Mensalista':                 'cxdata',
+    'CXData Pontual':                    'cxdata',
+    'Consultoria personalizada':         'projetos',
 }
 # Área correspondente a cada quadro, que é o que `projetos.area` guarda.
 # ============================================================
