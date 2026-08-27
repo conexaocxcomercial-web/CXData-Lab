@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
 import uuid
+import types
 
 # Fuso horário de Brasília (UTC-3). Usado para gravar datas de projeto
 # de forma consistente com a realidade local — evita erro de "um dia" na
@@ -450,6 +451,24 @@ def _comparar(rotulo, antigo, novo, extra=None):
     return antigo
 
 
+def _paginar(tabela, colunas, filtro=None, teto=8000):
+    """Le tabela grande em blocos. O PostgREST devolve no maximo 1000 por
+    requisicao -- sem isto, `time_logs` viria truncada em silencio e o
+    painel mostraria menos horas do que existem."""
+    saida, off = [], 0
+    while off < teto:
+        q = supabase.table(tabela).select(colunas)
+        if filtro:
+            q = filtro(q)
+        r = q.range(off, off + 999).execute()
+        lote = r.data or []
+        saida.extend(lote)
+        if len(lote) < 1000:
+            break
+        off += 1000
+    return saida
+
+
 @app.context_processor
 def injetar_permissoes():
     """Disponibiliza as permissões do usuário em TODOS os templates,
@@ -752,7 +771,8 @@ def arvore_quadros():
 def listar_projetos():
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
     try:
-        res_projetos = supabase.table("projetos").select("*").execute()
+        # Paginado: 486 projetos hoje, e o corte em 1000 e silencioso.
+        res_projetos = types.SimpleNamespace(data=_paginar("projetos", "*"))
         projetos = [p for p in res_projetos.data if not p.get("excluido_em")]
 
         # CONTROLE DE ACESSO: função central que cobre todos os níveis
@@ -2680,9 +2700,13 @@ def listar_leads():
     if session.get('tipo_usuario') == 'externo':
         return jsonify({"erro": "Acesso negado"}), 403
     try:
-        res = (supabase.table("leads").select("*")
-               .is_("excluido_em", "null")
-               .order("movido_em", desc=True).execute())
+        # Paginado: com 768 leads a tela ja passaria de 1000 em pouco
+        # tempo, e o corte do PostgREST e silencioso -- some lead do
+        # quadro sem nenhum aviso.
+        res_data = _paginar("leads", "*",
+                            lambda q: q.is_("excluido_em", "null")
+                                       .order("movido_em", desc=True))
+        res = types.SimpleNamespace(data=res_data)
         return jsonify({"status": "sucesso", "leads": res.data or []}), 200
     except Exception as e:
         print("Erro em listar_leads:", e)
@@ -3032,6 +3056,130 @@ def movimentos_lead(lead_id):
                         "detalhe": str(e)[:300]}), 500
 
 
+# ============================================================================
+# CAMINHO OBRIGATÓRIO DO FUNIL
+#
+# Certas etapas não se pulam na prática, só no registro. Quem fecha um
+# contrato passou por proposta e negociação -- se o card foi de
+# Agendamento direto para Ganho, o que faltou foi arrastar, não negociar.
+#
+# Sem tratar isso, a cascata do painel mostra mais fechamentos do que
+# negociações, e a conversão passa de 100% -- que é impossível.
+#
+# NÃO ENTRAM AQUI
+#   Follow up 1..4  são tentativas, não etapas: quem fecha no primeiro
+#                   contato não passou por nenhuma, e isso é real.
+#   Perdido         é saída, acontece a qualquer momento.
+#   Nutrição        idem.
+# ============================================================================
+CAMINHO_OBRIGATORIO = {
+    'qualificacao': ['Prospecção', 'Contato', 'Ganho'],
+    'fechamento':   ['Agendamento', 'Proposta', 'Negociação', 'Ganho'],
+}
+
+# Marca a passagem que o sistema criou. A cascata conta todas -- é o que
+# conserta o número. Quem for medir DURAÇÃO de etapa exclui estas, porque
+# nascem com zero segundos e puxariam a média para baixo.
+MOTIVO_PREENCHIDO = 'etapa preenchida automaticamente'
+
+# Tentativas de contato. Quem está num Follow up já passou por Contato.
+FOLLOWS = ('Follow up 1', 'Follow up 2', 'Follow up 3', 'Follow up 4')
+
+
+def etapas_puladas(funil, de_coluna, para_coluna):
+    """Etapas obrigatórias que ficaram para trás neste movimento.
+
+    Só olha para a frente: mover um card de volta não gera preenchimento,
+    porque voltar é decisão, não esquecimento.
+    """
+    caminho = CAMINHO_OBRIGATORIO.get(funil)
+    if not caminho or para_coluna not in caminho:
+        return []
+    fim = caminho.index(para_coluna)
+
+    if de_coluna in caminho:
+        ini = caminho.index(de_coluna)
+    elif de_coluna in FOLLOWS:
+        # Follow up não está no caminho obrigatório, mas quem chegou lá
+        # já passou por Contato -- são tentativas DEPOIS do contato.
+        # Sem esta linha, mover de Follow up 2 para Ganho recriaria
+        # Prospecção e Contato, etapas que o lead já cumpriu.
+        ini = caminho.index("Contato") if "Contato" in caminho else -1
+    else:
+        # Veio de outro funil ou de uma saída: começa do início.
+        ini = -1
+
+    if ini >= fim:
+        return []
+    return caminho[ini + 1:fim]
+
+
+def registrar_movimento(lead_id, de_funil, de_coluna, para_funil, para_coluna,
+                        autor, objecao=None, objecao_detalhe=None, preencher=True):
+    """Grava o movimento e, antes dele, as etapas que faltaram.
+
+    As preenchidas entram alguns milissegundos antes do movimento real,
+    para a ordem da trilha ficar correta -- senão o `lag()` que calcula de
+    onde o card veio leria a sequência ao contrário.
+    """
+    agora = datetime.now(timezone.utc)
+    linhas = []
+
+    if preencher:
+        mesmo_funil = (de_funil == para_funil)
+        puladas = etapas_puladas(para_funil,
+                                 de_coluna if mesmo_funil else None,
+                                 para_coluna)
+        anterior_f, anterior_c = de_funil, de_coluna
+        for i, etapa in enumerate(puladas):
+            linhas.append({
+                "lead_id": lead_id,
+                "de_funil": anterior_f,
+                "de_coluna": anterior_c,
+                "para_funil": para_funil,
+                "para_coluna": etapa,
+                "autor": autor,
+                "objecao": MOTIVO_PREENCHIDO,
+                "criado_em": (agora - timedelta(milliseconds=(len(puladas) - i) * 10)).isoformat(),
+            })
+            anterior_f, anterior_c = para_funil, etapa
+        if puladas:
+            de_funil, de_coluna = anterior_f, anterior_c
+
+    linhas.append({
+        "lead_id": lead_id,
+        "de_funil": de_funil,
+        "de_coluna": de_coluna,
+        "para_funil": para_funil,
+        "para_coluna": para_coluna,
+        "objecao": objecao,
+        "objecao_detalhe": objecao_detalhe,
+        "autor": autor,
+        "criado_em": agora.isoformat(),
+    })
+
+    supabase.table("lead_movimentos").insert(linhas).execute()
+    return len(linhas) - 1
+
+
+@app.route('/api/leads/etapas-puladas', methods=['POST'])
+def consultar_etapas_puladas():
+    """O que seria preenchido se este movimento acontecesse.
+
+    A tela pergunta antes de mover, para avisar a pessoa no mesmo portão
+    que já pede objeção e valor -- em vez de registrar em silêncio.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    d = request.get_json(silent=True) or {}
+    de_funil = d.get('de_funil')
+    para_funil = d.get('para_funil') or de_funil
+    puladas = etapas_puladas(para_funil,
+                             d.get('de_coluna') if de_funil == para_funil else None,
+                             d.get('para_coluna'))
+    return jsonify({"status": "sucesso", "etapas": puladas}), 200
+
+
 @app.route('/api/leads/<lead_id>/mover', methods=['POST'])
 def mover_lead(lead_id):
     """Move o lead de coluna e, quando a coluna é de saída, troca de funil.
@@ -3069,22 +3217,24 @@ def mover_lead(lead_id):
         supabase.table("leads").update(upd).eq("id", lead_id).execute()
 
         # Trilha. Falhar aqui não desfaz o movimento: o lead já andou.
+        preenchidas = 0
         try:
-            supabase.table("lead_movimentos").insert({
-                "lead_id": lead_id,
-                "de_funil": lead.get("funil"),
-                "de_coluna": lead.get("coluna"),
-                "para_funil": upd.get("funil", lead.get("funil")),
-                "para_coluna": upd["coluna"],
-                "objecao": d.get("objecao"),
-                "objecao_detalhe": (d.get("objecao_detalhe") or "").strip() or None,
-                "autor": session.get('usuario_nome', ''),
-            }).execute()
+            preenchidas = registrar_movimento(
+                lead_id,
+                lead.get("funil"), lead.get("coluna"),
+                upd.get("funil", lead.get("funil")), upd["coluna"],
+                session.get('usuario_nome', ''),
+                objecao=d.get("objecao"),
+                objecao_detalhe=(d.get("objecao_detalhe") or "").strip() or None,
+                # A tela pode desmarcar quando o pulo foi real.
+                preencher=d.get("preencher_etapas") is not False,
+            )
         except Exception as e:
             print("Aviso: movimento nao registrado em lead_movimentos:", e)
 
         lead.update(upd)
-        return jsonify({"status": "sucesso", "lead": lead}), 200
+        return jsonify({"status": "sucesso", "lead": lead,
+                        "etapas_preenchidas": preenchidas}), 200
     except Exception as e:
         print("Erro em mover_lead:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao mover lead.", "detalhe": str(e)[:300]}), 500
@@ -4358,8 +4508,7 @@ def painel_operacao():
         # --- horas por área e fora do plano ---
         horas_area, horas_total, fora_plano = {}, 0, 0
         try:
-            logs = (supabase.table("time_logs").select("*")
-                    .gte("criado_em", desde).execute()).data or []
+            logs = _paginar("time_logs", "*", lambda q: q.gte("criado_em", desde))
             mapa_area = {str(p.get('id')): p.get('area') for p in projetos}
             permitidos = set(mapa_area.keys())
             for l in logs:
@@ -4379,8 +4528,8 @@ def painel_operacao():
         # --- gargalo por fase ---
         gargalo = []
         try:
-            movs = (supabase.table("projeto_movimentos").select("*")
-                    .order("projeto_id").order("criado_em").execute()).data or []
+            movs = _paginar("projeto_movimentos", "*",
+                            lambda q: q.order("projeto_id").order("criado_em"))
             area_filtro = areas[0]["area"] if areas else None
             if quadro:
                 nomes = [n for c, n in QUADROS if c == quadro]
@@ -4582,24 +4731,6 @@ def _dias_uteis(de, ate):
             n += 1
         cur += timedelta(days=1)
     return n
-
-
-def _paginar(tabela, colunas, filtro=None, teto=8000):
-    """Le tabela grande em blocos. O PostgREST devolve no maximo 1000 por
-    requisicao -- sem isto, `time_logs` viria truncada em silencio e o
-    painel mostraria menos horas do que existem."""
-    saida, off = [], 0
-    while off < teto:
-        q = supabase.table(tabela).select(colunas)
-        if filtro:
-            q = filtro(q)
-        r = q.range(off, off + 999).execute()
-        lote = r.data or []
-        saida.extend(lote)
-        if len(lote) < 1000:
-            break
-        off += 1000
-    return saida
 
 
 @app.route('/api/operacional/painel', methods=['GET'])
@@ -4922,9 +5053,17 @@ def api_comercial_painel():
         de, ate, granul = _periodo_comercial()
         ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
 
-        leads = (supabase.table("leads").select("*")
-                 .is_("excluido_em", "null").execute()).data or []
-        movs = (supabase.table("lead_movimentos").select("*").execute()).data or []
+        # PAGINADO. O PostgREST devolve no maximo 1000 linhas por
+        # requisicao, em silencio -- nao ha erro, nem aviso: a lista
+        # simplesmente vem cortada.
+        #
+        # Com 1.893 movimentos na trilha, a cascata era calculada sobre
+        # pouco mais da metade dela. O sintoma foi "Fechamentos 13 x
+        # Negociacoes 8" -- conversao de 162%, impossivel num funil.
+        # Os 5 que faltavam estavam nos 893 movimentos que nunca
+        # chegaram ao servidor.
+        leads = _paginar("leads", "*", lambda q: q.is_("excluido_em", "null"))
+        movs = _paginar("lead_movimentos", "*")
 
         # Escopo: quem só enxerga os próprios leads também só vê os
         # próprios números. O painel não pode ser porta dos fundos.
@@ -5182,10 +5321,8 @@ def painel_comercial():
         hoje = datetime.now(timezone.utc).date().isoformat()
         ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
 
-        leads = (supabase.table("leads").select("*")
-                 .is_("excluido_em", "null").execute()).data or []
-        movs = (supabase.table("lead_movimentos").select("*")
-                .gte("criado_em", desde).execute()).data or []
+        leads = _paginar("leads", "*", lambda q: q.is_("excluido_em", "null"))
+        movs = _paginar("lead_movimentos", "*", lambda q: q.gte("criado_em", desde))
 
         # Escopo: quem só vê os próprios leads também só vê os próprios números.
         esc = caps_da_sessao().get('crm.lead.ver')
