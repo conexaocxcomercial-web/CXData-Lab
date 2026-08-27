@@ -997,8 +997,18 @@
             const iDestino = idx(coluna);
             const iAtual = colunaAtual === undefined ? -1 : idx(colunaAtual);
 
-            // Só acumula quando avança. Voltar não deve cobrar nada.
-            const acumula = iDestino > iAtual;
+            /* Só acumula quando AVANÇA no caminho normal.
+
+               Voltar não cobra nada -- e sair também não. Perdido e
+               Nutrição ficam depois de Ganho na lista de colunas, então
+               pela posição pareceriam "avanço": mover para Perdido puxava
+               junto o portão de Ganho e pedia telefone, e-mail e contexto
+               do closer para um lead que acabou de morrer.
+
+               Sair do funil é decisão, não etapa. O que se pergunta ali é
+               a objeção, e isso tem janela própria. */
+            const cfgDestino = cols.find(function(x){ return x.id === coluna; }) || {};
+            const acumula = iDestino > iAtual && !cfgDestino.objecao;
             const aplicaveis = PORTOES.filter(function(p){
                 if(p.funil !== funil) return false;
                 if(!acumula) return p.para === coluna;
@@ -1421,21 +1431,46 @@
         /* ==================== MOVER ==================== */
         function colunaCfg(funil, id){ return (FUNIS[funil].colunas||[]).find(c=>c.id===id); }
 
+        /* DIAGNÓSTICO. Toda decisão do movimento fica registrada no
+           console do navegador (F12). Quando um card não vai para onde
+           deveria, a linha diz exatamente onde a lógica parou -- em vez
+           de nada acontecer em silêncio, que é o pior sintoma possível
+           para investigar. */
+        function _diag(){ if(window.__crmDiag !== false) console.log('[mover]', ...arguments); }
+
         async function mover(leadId, novaColuna){
             const l = leads.find(x=>String(x.id)===String(leadId));
-            if(!l || l.coluna===novaColuna) return;
+            if(!l){ _diag('PAROU: lead não encontrado na lista', leadId); return; }
+            _diag('lead', l.empresa || l.contato, '|', l.funil + '/' + l.coluna, '->', novaColuna);
+            if(l.coluna === novaColuna){ _diag('PAROU: já está nesta coluna'); return; }
             const cfg = colunaCfg(funilAtual, novaColuna);
-            if(!cfg) return;
+            if(!cfg){
+                _diag('PAROU: coluna "' + novaColuna + '" não existe no funil "' + funilAtual + '"',
+                      '| colunas:', (FUNIS[funilAtual].colunas||[]).map(c=>c.id).join(', '));
+                showToast('Esta coluna não pertence ao funil aberto.','error');
+                return;
+            }
+            _diag('config da coluna:', JSON.stringify(cfg));
 
             // Ganho no fechamento abre a janela que cria os quadros
-            if(cfg.ganhoFinal){ abrirFechamento(leadId); return; }
+            if(cfg.ganhoFinal){ _diag('-> janela de fechamento'); abrirFechamento(leadId); return; }
 
             // Portão: falta algum dado obrigatório para este movimento?
+            /* O portão abre SEMPRE que o movimento tem um, mesmo com tudo
+               preenchido -- vem com os valores atuais para conferir.
+
+               Antes só abria quando faltava dado. Parecia gentil, mas
+               criava um buraco: os 768 leads importados chegaram com todos
+               os campos preenchidos, então nenhum portão disparava neles.
+               Contato -> Ganho passava direto, sem ninguém confirmar se
+               telefone e e-mail ainda valiam.
+
+               Avançar de etapa é o momento em que a informação importa. Se
+               ela já está certa, confirmar custa um clique; se envelheceu,
+               é a única chance de corrigir antes do closer receber. */
             const portao = portaoDe(funilAtual, novaColuna, l.coluna);
-            if(portao){
-                const faltando = portao.campos.filter(c => !String(l[c.k]||'').trim());
-                if(faltando.length){ abrirPortao(leadId, novaColuna, portao, cfg.saida||null); return; }
-            }
+            _diag('portão:', portao ? portao.titulo : 'nenhum para este movimento');
+            if(portao){ abrirPortao(leadId, novaColuna, portao, cfg.saida||null); return; }
 
             // Colunas que pedem objeção abrem o registro antes de mover
             if(cfg.objecao){
