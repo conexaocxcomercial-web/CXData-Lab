@@ -4627,6 +4627,10 @@ def painel_operacao():
 
 # Etapas do funil comercial, na ordem em que o lead atravessa. A cascata
 # de conversão sai daqui, e não de uma lista repetida na tela.
+# Colunas que descrevem SITUAÇÃO, e não passagem. Contam por onde o
+# lead está hoje -- entrar nelas e sair depois não deixa marca no número.
+TERMINAIS = ('Ganho', 'Perdido')
+
 ETAPAS_COMERCIAL = [
     ('leads',        None,             None,           'Leads gerados'),
     ('contatos',     'qualificacao',   'Contato',      'Contatos'),
@@ -5147,7 +5151,27 @@ def api_comercial_painel():
         funil, anterior = [], None
         for chave, fnl, col, rotulo in ETAPAS_COMERCIAL:
             if chave == 'leads':
-                ids = set(ids_entrada)
+                if visao == 'entrada':
+                    ids = set(ids_entrada)
+                else:
+                    # Por periodo, a base e todo lead que SE MEXEU no
+                    # recorte, mais os que nasceram nele.
+                    #
+                    # Contar so os nascidos descasava a cascata da propria
+                    # base: um lead de julho que virou Contato em agosto
+                    # entrava em 'Contatos' e ficava de fora da primeira
+                    # linha. A base media menos que as etapas abaixo dela.
+                    ids = set(ids_entrada)
+                    for chaves in passou.values():
+                        ids |= chaves
+            elif col in TERMINAIS:
+                # Ganho e Perdido são situação, não passagem: contam por
+                # onde o lead ESTÁ, não por onde já esteve. Sem isso, um
+                # lead que fechou e voltou atrás continuaria somando.
+                universo = gerados if visao == 'entrada' else leads
+                ids = {str(l['id']) for l in universo
+                       if l.get('funil') == fnl and l.get('coluna') == col
+                       and (visao == 'entrada' or dentro(l.get('movido_em')))}
             elif visao == 'entrada':
                 # Só quem entrou no recorte, chegue onde chegar, quando chegar.
                 ids = set(passou_sempre.get((fnl, col), set())) & ids_entrada
@@ -5163,7 +5187,13 @@ def api_comercial_painel():
                         and dentro(l.get('movido_em'))}
             n = len(ids)
             funil.append({
-                "chave": chave, "rotulo": rotulo, "qtd": n,
+                "chave": chave,
+                # Na visao por periodo a primeira linha nao conta so quem
+                # nasceu no recorte -- entao chamar de "gerados" seria
+                # mentira. O rotulo acompanha o que o numero mede.
+                "rotulo": ("Leads no funil" if chave == "leads" and visao != "entrada"
+                           else rotulo),
+                "qtd": n,
                 # Conversão da etapa anterior: é onde o funil vaza.
                 "conv": round(n / anterior * 100, 1) if anterior else None,
                 "valor": round(sum(_num(por_id[i].get('valor_estimado'))
@@ -5192,14 +5222,33 @@ def api_comercial_painel():
         }
 
         # --- recortes do trabalho ---
+        # ETAPA TERMINAL CONTA PELO ESTADO ATUAL, não pela trilha.
+        #
+        # Passar por Contato ou Proposta é fato consumado: aconteceu, e
+        # continua tendo acontecido mesmo que o lead volte. Já "fechado"
+        # não é passagem, é situação -- e situação pode ser desfeita.
+        #
+        # O CRM antigo permitia voltar de Ganho para Negociação. A trilha
+        # importada tem fechamentos que não se concretizaram: o negócio
+        # estava apalavrado e o cliente recuou. Olhando só o histórico não
+        # há como separá-los dos reais.
+        #
+        # O estado atual não tem esse problema, e alinha as duas óticas:
+        # a de Resultado já contava assim.
+        def _fechou(l):
+            return _venceu(l)
+
         def quebra(campo, universo, rotulo_vazio='Sem informação'):
             """Agrupa por um campo do lead, com conversão e valor."""
             g = {}
             for l in universo:
-                k = (l.get(campo) or '').strip() or rotulo_vazio
+                # `_texto` limpa 'null' e 'none' que vieram como palavra
+                # na importação em CSV -- para o painel eram nomes de
+                # segmento, não campo vazio.
+                k = _texto(l.get(campo)) or rotulo_vazio
                 it = g.setdefault(k, {"chave": k, "leads": 0, "ganhos": 0, "valor": 0.0})
                 it["leads"] += 1
-                if _venceu(l):
+                if _fechou(l):
                     it["ganhos"] += 1
                     it["valor"] += _num(l.get('valor_estimado'))
             saida = []
@@ -5245,7 +5294,7 @@ def api_comercial_painel():
         def receita_por(campo, vazio):
             g = {}
             for l in fechados:
-                k = (l.get(campo) or '').strip() or vazio
+                k = _texto(l.get(campo)) or vazio
                 it = g.setdefault(k, {"chave": k, "qtd": 0, "valor": 0.0})
                 it["qtd"] += 1
                 it["valor"] += _num(l.get('valor_estimado'))
@@ -5278,11 +5327,11 @@ def api_comercial_painel():
             # Alimenta os seletores de filtro com o que existe de fato,
             # em vez de uma lista fixa que envelhece.
             "opcoes": {
-                "produtos": sorted({(l.get('produto') or '').strip() for l in leads} - {''}),
-                "origens": sorted({(l.get('origem') or '').strip() for l in leads} - {''}),
-                "responsaveis": sorted({(l.get('responsavel') or '').strip() for l in leads} - {''}),
-                "estados": sorted({(l.get('estado') or '').strip().upper() for l in leads} - {''}),
-                "segmentos": sorted({(l.get('segmento') or '').strip() for l in leads} - {''}),
+                "produtos": sorted({_texto(l.get('produto')) for l in leads} - {''}),
+                "origens": sorted({_texto(l.get('origem')) for l in leads} - {''}),
+                "responsaveis": sorted({_texto(l.get('responsavel')) for l in leads} - {''}),
+                "estados": sorted({_texto(l.get('estado')).upper() for l in leads} - {''}),
+                "segmentos": sorted({_texto(l.get('segmento')) for l in leads} - {''}),
             },
         }), 200
 
@@ -5290,6 +5339,17 @@ def api_comercial_painel():
         print("Erro em api_comercial_painel:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao montar o painel.",
                         "detalhe": str(e)[:300]}), 500
+
+
+def _texto(v):
+    """Texto de campo, tratando os nulos que viraram palavra.
+
+    A exportação em CSV grava o nulo do banco como a string 'null'. Sem
+    esta limpeza o painel mostra 'null' como se fosse um segmento com
+    nome esquisito, em vez de 'Sem segmento'.
+    """
+    t = str(v or '').strip()
+    return '' if t.lower() in ('null', 'none', 'nan', '-') else t
 
 
 def _venceu(lead):
