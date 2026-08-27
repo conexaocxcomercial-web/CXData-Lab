@@ -253,6 +253,38 @@
         .imp-modelo{ font-size:12px; font-weight:600; color:var(--acao); cursor:pointer;
             background:none; border:none; padding:0; text-decoration:underline; }
 
+        /* ===== CONTRATO ANEXADO =====
+           O contrato assinado é o documento que sustenta o número. Sem
+           ele, "R$ 55 mil fechados" é palavra de quem digitou; com ele,
+           qualquer pessoa confere na origem. */
+        .ctr-solta{ border:1.5px dashed var(--linha-2); border-radius:var(--r-ctrl);
+            padding:16px 14px; text-align:center; cursor:pointer; transition:.15s;
+            background:var(--papel-2); }
+        .ctr-solta:hover,.ctr-solta.sobre{ border-color:var(--acao); background:var(--acao-fraco); }
+        .ctr-solta .material-symbols-rounded{ font-size:24px; color:var(--tinta-3);
+            display:block; margin-bottom:6px; }
+        .ctr-solta.sobre .material-symbols-rounded{ color:var(--acao); }
+        .ctr-solta-t{ font-size:12.5px; font-weight:600; }
+        .ctr-solta-d{ font-size:11px; color:var(--tinta-3); margin-top:3px; line-height:1.45; }
+        .ctr-arq{ display:flex; align-items:center; gap:11px; background:var(--ok-fraco);
+            border-radius:var(--r-ctrl); padding:11px 13px; }
+        .ctr-arq > .material-symbols-rounded{ font-size:20px; color:var(--ok); flex-shrink:0; }
+        .ctr-txt{ flex:1; min-width:0; }
+        .ctr-nome{ font-size:12.5px; font-weight:600; overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; }
+        .ctr-meta{ font-size:11px; color:var(--tinta-3); margin-top:1px; }
+        .ctr-acao{ width:28px; height:28px; border-radius:7px; background:transparent;
+            color:var(--tinta-3); cursor:pointer; border:none; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; transition:.14s; }
+        .ctr-acao:hover{ background:var(--papel); color:var(--tinta); }
+        .ctr-acao.perigo:hover{ background:var(--cr-fundo); color:var(--critico); }
+        .ctr-acao .material-symbols-rounded{ font-size:17px; }
+        .ctr-prog{ height:4px; background:var(--papel-2); border-radius:99px;
+            overflow:hidden; margin-top:8px; }
+        .ctr-prog i{ display:block; height:100%; background:var(--acao); width:40%;
+            animation:ctrAnda 1s ease-in-out infinite; }
+        @keyframes ctrAnda{ 0%{margin-left:-40%} 100%{margin-left:100%} }
+
         /* ===== MODAL ===== */
         .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(23,23,26,.45); z-index:1000;
             justify-content:center; align-items:center; padding:20px; }
@@ -778,6 +810,12 @@
                                placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)"></div>
                     <div class="ig"><label for="fcValor">Valor</label>
                         <input type="number" id="fcValor" step="0.01" min="0" oninput="atualizarPrevia()"></div>
+                </div>
+                <div class="ig">
+                    <label>Contrato assinado <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
+                    <div id="fcContrato"></div>
+                    <div class="ig-dica">PDF, Word ou foto, até 4 MB. Fica guardado com o
+                    lead, e só quem enxerga o lead consegue abrir.</div>
                 </div>
                 <div class="ig">
                     <div class="ig-secao">Onde o trabalho vai acontecer</div>
@@ -1516,6 +1554,10 @@
         function abrirFechamento(leadId){
             const l = leads.find(x=>String(x.id)===String(leadId)); if(!l) return;
             fechCtx = { leadId };
+            // Reabrir a janela de um lead que já tem contrato deve mostrar
+            // o anexo, e não um campo vazio convidando a subir de novo.
+            ctrAtual = l.contrato_arquivo || null;
+            pintarContrato();
             const [sugerido, subSugerida] = PRODUTO_QUADRO[l.produto] || ['projetos', null];
 
             document.getElementById('fcEyebrow').innerText = (l.contato||'') + ' · ' + (l.empresa||'');
@@ -1598,8 +1640,134 @@
 
         function cancelarFechamento(){
             document.getElementById('modalFechamento').classList.remove('show');
-            fechCtx = null; render();
+            // O arquivo já está no lead: cancelar a janela não desfaz o
+            // anexo, só fecha a tela. Quem quiser tirar usa o botão de
+            // remover, que é explícito.
+            fechCtx = null; ctrAtual = null; render();
         }
+
+        /* ==========================================================
+           CONTRATO ANEXADO AO FECHAMENTO
+
+           Sobe assim que a pessoa escolhe o arquivo, e não junto com o
+           botão de confirmar. Duas razões:
+
+           - o upload é a parte lenta; deixá-lo para o fim faria o
+             "Fechar contrato" travar por segundos sem explicação;
+           - se o upload falhar, ela descobre na hora e tenta de novo,
+             em vez de perder o formulário inteiro.
+
+           O lead já existe quando esta janela abre, então o arquivo tem
+           onde ser pendurado desde já.
+           ========================================================== */
+        let ctrAtual = null;   // {caminho, nome, tamanho, ...} ou null
+
+        function pintarContrato(estado){
+            const cx = document.getElementById('fcContrato');
+            if(!cx) return;
+            if(estado === 'enviando'){
+                cx.innerHTML = `<div class="ctr-arq" style="background:var(--acao-fraco)">
+                    <span class="material-symbols-rounded" style="color:var(--acao)">upload</span>
+                    <span class="ctr-txt"><span class="ctr-nome">Enviando…</span>
+                      <span class="ctr-prog"><i></i></span></span></div>`;
+                return;
+            }
+            if(ctrAtual){
+                cx.innerHTML = `<div class="ctr-arq">
+                    <span class="material-symbols-rounded">task</span>
+                    <span class="ctr-txt">
+                      <span class="ctr-nome">${esc(ctrAtual.nome)}</span>
+                      <span class="ctr-meta">${(ctrAtual.tamanho/1024/1024).toFixed(1)} MB · anexado</span>
+                    </span>
+                    <button type="button" class="ctr-acao" title="Abrir"
+                            onclick="abrirContrato()">
+                      <span class="material-symbols-rounded">open_in_new</span></button>
+                    <button type="button" class="ctr-acao perigo" title="Remover"
+                            onclick="removerContrato()">
+                      <span class="material-symbols-rounded">delete</span></button>
+                </div>`;
+                return;
+            }
+            cx.innerHTML = `<div class="ctr-solta" id="ctrSolta"
+                 onclick="document.getElementById('fcArquivo').click()">
+                <span class="material-symbols-rounded">upload_file</span>
+                <div class="ctr-solta-t">Anexar o contrato</div>
+                <div class="ctr-solta-d">Arraste aqui ou clique para escolher</div>
+            </div>`;
+            ligarArrastoContrato();
+        }
+
+        function ligarArrastoContrato(){
+            const alvo = document.getElementById('ctrSolta');
+            if(!alvo) return;
+            ['dragenter','dragover'].forEach(e => alvo.addEventListener(e, ev => {
+                ev.preventDefault(); alvo.classList.add('sobre'); }));
+            ['dragleave','drop'].forEach(e => alvo.addEventListener(e, ev => {
+                ev.preventDefault(); alvo.classList.remove('sobre'); }));
+            alvo.addEventListener('drop', ev => {
+                const f = ev.dataTransfer.files && ev.dataTransfer.files[0];
+                if(f) subirContrato(f);
+            });
+        }
+
+        async function subirContrato(file){
+            if(!fechCtx) return;
+            if(file.size > 4 * 1024 * 1024){
+                showToast('Arquivo acima de 4 MB. Comprima o PDF e tente de novo.','error');
+                return;
+            }
+            pintarContrato('enviando');
+            try{
+                const fd = new FormData();
+                fd.append('arquivo', file);
+                const r = await fetch('/api/leads/' + fechCtx.leadId + '/contrato',
+                                      { method:'POST', body: fd });
+                if(!r.ok){
+                    showToast(await motivoErro(r,'Não foi possível anexar.'),'error');
+                    ctrAtual = null; pintarContrato(); return;
+                }
+                const d = await r.json();
+                ctrAtual = d.contrato;
+                pintarContrato();
+                showToast('Contrato anexado.','success');
+            }catch(e){
+                showToast('Sem conexão com o servidor.','error');
+                ctrAtual = null; pintarContrato();
+            }
+        }
+
+        /* O arquivo é privado: não há URL fixa. Cada abertura pede um
+           link que expira em uma hora -- se vazar, para de funcionar. */
+        async function abrirContrato(){
+            if(!fechCtx) return;
+            try{
+                const r = await fetch('/api/leads/' + fechCtx.leadId + '/contrato');
+                if(!r.ok){ showToast(await motivoErro(r,'Não foi possível abrir.'),'error'); return; }
+                const d = await r.json();
+                window.open(d.url, '_blank', 'noopener');
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+        }
+
+        async function removerContrato(){
+            if(!fechCtx || !ctrAtual) return;
+            const nome = ctrAtual.nome;
+            ctrAtual = null; pintarContrato();
+            try{
+                const r = await fetch('/api/leads/' + fechCtx.leadId + '/contrato',
+                                      { method:'DELETE' });
+                if(!r.ok){ showToast(await motivoErro(r,'Não foi possível remover.'),'error'); return; }
+                showToast('Contrato removido.','success');
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const inp = document.getElementById('fcArquivo');
+            if(inp) inp.addEventListener('change', e => {
+                const f = e.target.files && e.target.files[0];
+                if(f) subirContrato(f);
+                e.target.value = '';   // permite reescolher o mesmo arquivo
+            });
+        });
 
         async function confirmarFechamento(){
             const c = fechCtx; if(!c) return;
@@ -1637,7 +1805,11 @@
                 const d = await r.json();
                 document.getElementById('modalFechamento').classList.remove('show');
                 fechCtx = null;
-                if(l){ l.coluna = 'Ganho'; l.movido_em = new Date().toISOString(); }
+                if(l){
+                    l.coluna = 'Ganho';
+                    l.movido_em = new Date().toISOString();
+                    if(ctrAtual) l.contrato_arquivo = ctrAtual;
+                }
                 const n = d.criados || 0;
                 showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
                             : 'Contrato fechado.', 'success');
@@ -2123,6 +2295,7 @@
     </div>
 </div>
 <input type="file" id="impArquivo" accept=".xlsx,.xls,.csv,.txt" style="display:none">
+<input type="file" id="fcArquivo" accept=".pdf,.doc,.docx,.rtf,.jpg,.jpeg,.png" style="display:none">
 
 
 <script>
