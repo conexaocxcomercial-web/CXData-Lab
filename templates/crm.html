@@ -1853,9 +1853,35 @@
                     if(ctrAtual) l.contrato_arquivo = ctrAtual;
                 }
                 const n = d.criados || 0;
+                await carregar();
+
+                /* CONFERE SE PEGOU DE VERDADE.
+
+                   O servidor pode responder 200 e mesmo assim não ter
+                   gravado a mudança de coluna -- uma chave estrangeira
+                   quebrada, um lead que já fechou antes, uma escrita
+                   recusada em silêncio.
+
+                   Sem esta checagem o fluxo era: aviso de sucesso, tela
+                   recarrega, e o card reaparece onde estava. Quem move
+                   vê o card "voltar sozinho" sem nenhuma explicação --
+                   o pior tipo de falha, porque não deixa o que
+                   investigar.
+
+                   Agora, se não pegou, a tela diz. */
+                const conferido = leads.find(x => String(x.id) === String(c.leadId));
+                if(conferido && conferido.coluna !== 'Ganho'){
+                    showToast('O contrato foi registrado, mas o card não mudou de coluna. '
+                            + 'Recarregue a página e, se continuar, avise quem administra.',
+                              'error');
+                    console.error('[fechamento] servidor respondeu ok mas o lead segue em',
+                                  conferido.funil + '/' + conferido.coluna,
+                                  '| resposta:', d);
+                    return;
+                }
+
                 showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
                             : 'Contrato fechado.', 'success');
-                await carregar();
             }catch(e){
                 showToast('Sem conexão com o servidor.','error');
             } finally { btn.disabled = false; }
