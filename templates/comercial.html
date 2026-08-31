@@ -98,6 +98,9 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     box-shadow:0 0 0 3px var(--acao-fraco); }
 
 .wrap{ max-width:1280px; margin:0 auto; padding:18px 22px 80px; }
+/* O último bloco encostava no fim da página: `.sec` tem margem embaixo,
+   mas um `.duas` solto no fim não tinha. */
+.otica > .duas:last-child, .otica > .tres:last-child{ margin-bottom:22px; }
 .otica{ display:none; }
 .otica.on{ display:block; }
 
@@ -170,6 +173,13 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 .sb:hover .sb-b{ background:#5a4bd4; }
 .sb-x{ font-size:9.5px; color:var(--tinta-3); font-family:'IBM Plex Mono',monospace;
     white-space:nowrap; }
+/* Valor sobre a barra. Num toque não existe passar o mouse: sem o
+   rótulo, o gráfico vira desenho e o número fica inacessível. */
+.sb-n{ font-size:10.5px; font-weight:650; color:var(--tinta-2); white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace; margin-bottom:3px; }
+.serie-rolagem{ overflow:visible; }
+.serie-dica{ display:none; font-size:11px; color:var(--tinta-3); margin-top:9px;
+    text-align:center; }
 /* Valor sobre a barra. Num toque não existe passar o mouse: sem o
    rótulo, o gráfico vira desenho e o número fica inacessível. */
 .sb-n{ font-size:10.5px; font-weight:650; color:var(--tinta-2); white-space:nowrap;
@@ -261,11 +271,15 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
 
     .wrap{ padding:12px 14px 64px; }
 
+    /* Dois por linha. Um KPI ocupando a largura inteira desperdiça a
+       tela e obriga a rolar para ler quatro números que cabem em duas
+       linhas. */
     .kpis{ grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
-    .kpi{ padding:12px 13px; }
+    .kpi{ padding:12px 13px; min-width:0; }
     .kpi-r{ font-size:9.5px; margin-bottom:5px; }
-    .kpi-v{ font-size:19px; letter-spacing:-.6px; }
-    .kpi-p{ font-size:10.5px; margin-top:4px; }
+    .kpi-v{ font-size:18px; letter-spacing:-.5px; overflow:hidden;
+        text-overflow:ellipsis; white-space:nowrap; }
+    .kpi-p{ font-size:10px; margin-top:4px; line-height:1.35; }
 
     .cartao{ padding:14px 15px; }
     .cartao-t{ font-size:12.5px; }
@@ -288,10 +302,17 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
     .bh-t{ font-size:12px; }
     .bh-v{ font-size:12px; }
 
-    .serie{ height:158px; gap:3px; }
-    .sb{ max-width:none; }
-    .sb-n{ font-size:9px; }
-    .sb-x{ font-size:8.5px; }
+    /* O gráfico rola na horizontal em vez de espremer trinta barras em
+       360px. Cada barra ganha largura fixa para o valor e a data caberem
+       -- sem isso o gráfico vira desenho, e num toque não há como passar
+       o mouse para descobrir o número. */
+    .serie-rolagem{ overflow-x:auto; overflow-y:hidden; margin:0 -15px;
+        padding:0 15px; -webkit-overflow-scrolling:touch; }
+    .serie{ height:172px; gap:6px; min-width:min-content; }
+    .sb{ max-width:none; flex:0 0 48px; }
+    .sb-n{ font-size:9.5px; }
+    .sb-x{ font-size:9px; }
+    .serie-dica{ display:block; }
 
     /* TABELAS VIRAM CARTÕES */
     .tb{ border:none; border-radius:0; }
@@ -340,6 +361,7 @@ body{ font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:va
         <select class="sel" id="periodo" onchange="Painel.periodo(this.value)">
             <option value="semana">Esta semana</option>
             <option value="mes">Este mês</option>
+            <option value="mes_passado">Mês passado</option>
             <option value="30">Últimos 30 dias</option>
             <option value="90" selected>Últimos 90 dias</option>
             <option value="180">Últimos 6 meses</option>
@@ -412,6 +434,9 @@ const Painel = (function(){
     if(n >= 1e3) return 'R$ ' + Math.round(n/1e3) + 'k';
     return 'R$ ' + Math.round(n);
   };
+  // Número puro, com separador de milhar. Faltava neste arquivo -- só
+  // havia formatador de dinheiro, porcentagem e dias.
+  const num = v => v == null ? '—' : Number(v).toLocaleString('pt-BR');
   const pct = v => v == null ? '—' : Number(v).toLocaleString('pt-BR',
     {minimumFractionDigits:0, maximumFractionDigits:1}) + '%';
   const dias = v => v == null ? '—' : Number(v).toLocaleString('pt-BR',
@@ -433,6 +458,11 @@ const Painel = (function(){
     }else if(st.periodo === 'mes'){
       p.set('de', iso(new Date(h.getFullYear(), h.getMonth(), 1)));
       p.set('ate', iso(h));
+    }else if(st.periodo === 'mes_passado'){
+      // Dia 0 do mês corrente é o último dia do anterior. Evita a conta
+      // de "quantos dias tinha aquele mês", que erra em fevereiro.
+      p.set('de',  iso(new Date(h.getFullYear(), h.getMonth() - 1, 1)));
+      p.set('ate', iso(new Date(h.getFullYear(), h.getMonth(), 0)));
     }else if(st.periodo === 'ano'){
       p.set('de', h.getFullYear() + '-01-01'); p.set('ate', iso(h));
     }else if(st.periodo === 'custom'){
@@ -518,7 +548,7 @@ const Painel = (function(){
                 <span class="fun-b"><span class="fun-f" style="width:${larg}%">
                   <span class="fun-n">${e.qtd}</span></span></span>
                 <span class="fun-c ${tomConv(e.conv)}">${e.conv == null ? '—' : pct(e.conv)}
-                  ${vv && e.valor ? `<small>${moneyCurto(e.valor)}</small>` : ''}</span>
+                  <small>${num(e.qtd)} lead${e.qtd !== 1 ? 's' : ''}</small></span>
               </div>`;
             }).join('')}
           </div>
@@ -657,7 +687,7 @@ const Painel = (function(){
           <span class="sec-tit">Evolução</span><span class="sec-linha"></span>
           <span class="sec-nota">${r.granularidade === 'dia' ? 'por dia' : 'por mês'}</span></div>
         <div class="cartao">
-          ${r.serie.length ? `<div class="serie">
+          ${r.serie.length ? `<div class="serie-rolagem"><div class="serie">
             ${r.serie.map(x => `<div class="sb">
               <span class="sb-dica">${rotuloX(x.quando)} · ${money(x.valor)} · ${
                 x.qtd} contrato${x.qtd!==1?'s':''}</span>
@@ -665,7 +695,9 @@ const Painel = (function(){
               <span class="sb-b" style="height:${Math.max(2, x.valor/maxSerie*104)}px"></span>
               <span class="sb-x">${rotuloX(x.quando)}</span>
             </div>`).join('')}
-          </div>` : semDados('Nenhum contrato fechado neste período.')}
+          </div></div>${r.serie.length > 6
+            ? '<div class="serie-dica">arraste para ver o período todo</div>' : ''}`
+          : semDados('Nenhum contrato fechado neste período.')}
         </div>
       </div>
 
