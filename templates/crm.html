@@ -537,8 +537,22 @@
             .rot-longo{ display:none; }
             .cmd-tit{ font-size:15px; }
             .cmd-sep{ display:none; }
-            .segm{ order:-1; width:100%; }
-            .segm-btn{ flex:1; text-align:center; justify-content:center; }
+            /* Quatro funis com `white-space:nowrap` somam mais que 360px.
+               Com `flex:1` eles se espremiam até o texto vazar, e o último
+               -- Nutrição -- saía da tela sem rolagem: existia, e não havia
+               como alcançar.
+
+               Agora a faixa rola na horizontal. A margem negativa faz a
+               rolagem ir de borda a borda, para o primeiro e o último não
+               nascerem cortados. */
+            .segm{ order:-1; width:100%; overflow-x:auto; overflow-y:hidden;
+                -webkit-overflow-scrolling:touch; scrollbar-width:none;
+                margin:0 -16px; padding:3px 16px; border-radius:0;
+                background:transparent; }
+            .segm::-webkit-scrollbar{ display:none; }
+            .segm-btn{ flex:0 0 auto; text-align:center; padding:7px 15px;
+                background:var(--papel-2); }
+            .segm-btn.on{ background:var(--papel); box-shadow:0 0 0 1px var(--linha); }
             .cmd-cont{ order:-1; }
             .m-fases{ display:flex; }
             .board{ flex-direction:column; padding:12px 16px 22px; overflow-x:visible; }
@@ -2762,7 +2776,7 @@ const Importar = (function(){
   function modelo(){
     const cab = CAMPOS.map(c => c.rot);
     const ex  = ['Conexão CX','Ana Medeiros','(84) 99999-0000','ana@conexaocx.com.br',
-                 '00.000.000/0001-00','Recrutamento e Seleção','Indicação','Serviços',
+                 '00.000.000/0001-00','Recrutamento & Seleção','Indicação','Serviços',
                  'Natal','RN','Jhonattan Luiz','12.500,00','18/08/2026',
                  'Reunião pedida pelo cliente'];
     const linhas = [cab, ex].map(l =>
