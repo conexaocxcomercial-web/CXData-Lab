@@ -833,11 +833,41 @@ def criar_projeto():
             "responsavel": dados.get("responsavel", "Não definido"),
             "status": dados.get("status_inicial", "Backlog"),
             "progresso": 0,
-            "anotacoes": "",
+            # Era `""` fixo. A descricao e obrigatoria na janela de
+            # solicitacao e vinha sendo descartada aqui: o card chegava em
+            # branco no outro quadro, e quem enviou achava que comunicou.
+            "anotacoes": dados.get("anotacoes") or "",
             "prazo_data": dados.get("prazo_data") if dados.get("prazo_data") else None,
             "is_scrum": bool(dados.get("is_scrum", False))
         }
-        supabase.table("projetos").insert(novo_projeto).execute()
+
+        # PASSAGEM ENTRE QUADROS
+        # A tela ja enviava estes campos; nada os gravava. Sem `origem_area`
+        # o chip do elo nunca aparecia, embora a janela prometesse que "os
+        # dois lados passam a exibir o elo".
+        for campo in ("origem_projeto_id", "origem_area", "tipo_solicitacao",
+                      "solicitado_por"):
+            if dados.get(campo):
+                novo_projeto[campo] = dados[campo]
+
+        # O card derivado herda o lead de origem em vez de receber copia de
+        # CNPJ, contrato e valor: um campo viaja, e o dossie resolve o resto
+        # ao vivo. Vale tambem para solicitacao aberta a partir de outra
+        # solicitacao, que continua achando a negociacao original.
+        origem_id = dados.get("origem_projeto_id")
+        if origem_id:
+            try:
+                o = (supabase.table("projetos").select("origem_lead_id, cliente_id")
+                     .eq("id", origem_id).limit(1).execute())
+                if o.data:
+                    if o.data[0].get("origem_lead_id"):
+                        novo_projeto["origem_lead_id"] = o.data[0]["origem_lead_id"]
+                    if not novo_projeto.get("cliente_id"):
+                        novo_projeto["cliente_id"] = o.data[0].get("cliente_id")
+            except Exception as e:
+                print("Aviso: origem do card nao herdada:", e)
+
+        _inserir_projeto(novo_projeto)
         return jsonify({"status": "sucesso"}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no POST Projetos: {str(e)}")
@@ -1993,6 +2023,392 @@ def conta_cliente(cliente_id):
         print("Erro em conta_cliente:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar o cliente.",
                         "detalhe": str(e)[:300]}), 500
+
+
+# ============================================================================
+# DOSSIE COMERCIAL
+#
+# A historia de um contrato vive espalhada, ligada por campos que ja
+# existiam e que ninguem percorria:
+#
+#   leads (fechamento/Ganho)   valor, contrato_arquivo, lead_movimentos
+#     |--> projetos.origem_lead_id ..... a entrega (um card, ou N num lote)
+#     |--< leads.lead_pai_id ........... o lead de relacionamento
+#            \--> clientes ............. a conta
+#
+# Nada e copiado: o dossie e montado na leitura. Copiar criaria uma segunda
+# versao da mesma verdade -- foi o que aconteceu com `projeto_movimentos` e
+# `historico_colunas`, e ate hoje ninguem sabe qual das duas vale. Ler ao
+# vivo tambem faz o dossie valer para os cards que ja existem, sem migracao.
+# ============================================================================
+
+
+def _pode_ver_valor():
+    """Valor de contrato e informacao restrita: quem executa a entrega nem
+    sempre pode ver quanto ela custou. Sem a capacidade, o campo sai do
+    payload em vez de ir zerado -- zero mente, ausencia nao."""
+    return pode('crm.valor.ver')
+
+
+def _contato_do_dossie(lead, cliente):
+    """CNPJ, WhatsApp e e-mail, com queda do lead para o cliente.
+
+    Card criado a mao nao tem lead de origem, mas costuma ter cliente. Sem
+    a queda, a passagem entre quadros chegaria sem telefone justamente nos
+    cards que nao vieram do CRM.
+    """
+    lead = lead or {}
+    cliente = cliente or {}
+    return {
+        "cnpj": lead.get("cnpj") or cliente.get("cnpj"),
+        "telefone": lead.get("telefone") or cliente.get("telefone"),
+        "email": lead.get("email") or cliente.get("email"),
+    }
+
+
+def _contrato_do_lead(lead):
+    """Metadados do contrato, SEM o caminho no Storage.
+
+    O caminho abriria o arquivo a quem soubesse montar a URL. O link sai
+    pelo endpoint proprio, assinado e valido por uma hora.
+    """
+    info = (lead or {}).get("contrato_arquivo") or {}
+    if not info.get("caminho"):
+        return None
+    return {"nome": info.get("nome"), "tipo": info.get("tipo"),
+            "tamanho": info.get("tamanho"), "enviado_em": info.get("enviado_em"),
+            "enviado_por": info.get("enviado_por")}
+
+
+def _normalizar_movimento(m):
+    """Um movimento da trilha, com a passagem automatica marcada.
+
+    A marca precisa sobreviver ate a tela: sem ela, um "passou por
+    Proposta" preenchido automaticamente fica indistinguivel de uma
+    negociacao que aconteceu de verdade.
+    """
+    automatica = m.get("objecao") == MOTIVO_PREENCHIDO
+    return {
+        "de_funil": m.get("de_funil"), "de_coluna": m.get("de_coluna"),
+        "para_funil": m.get("para_funil"), "para_coluna": m.get("para_coluna"),
+        "autor": m.get("autor"), "criado_em": m.get("criado_em"),
+        "automatica": automatica,
+        "objecao": None if automatica else m.get("objecao"),
+        "objecao_detalhe": None if automatica else m.get("objecao_detalhe"),
+    }
+
+
+def _entrega_resumida(p):
+    """O que a entrega tem a dizer para quem nao estava nela."""
+    return {
+        "id": p.get("id"), "nome": p.get("nome_projeto"), "area": p.get("area"),
+        "subquadro": p.get("subquadro"), "status": p.get("status"),
+        "responsavel": p.get("responsavel"),
+        "criado_em": p.get("criado_em"),
+        "data_inicio": p.get("data_inicio"),
+        "data_conclusao": p.get("data_conclusao"),
+        "prazo": str(p.get("prazo_data") or '')[:10] or None,
+        "tempo_segundos": p.get("tempo_total_segundos") or 0,
+        # Pausa congela lead e cycle time; o tempo parado responde
+        # "levou 15 dias nossos, mas o cliente esperou 30".
+        "tempo_parado_segundos": p.get("tempo_parado_segundos") or 0,
+        "lote_pos": p.get("lote_pos"), "lote_total": p.get("lote_total"),
+    }
+
+
+_COLS_ENTREGA = ("id, nome_projeto, area, subquadro, status, responsavel, "
+                 "criado_em, data_inicio, data_conclusao, prazo_data, "
+                 "tempo_total_segundos, tempo_parado_segundos, "
+                 "lote_pos, lote_total, origem_lead_id")
+
+
+def _dossie_de_lead(lead_id, cliente=None):
+    """Monta o dossie de UM fechamento, a partir do lead de origem.
+
+    Cada trecho falha por conta propria: contrato indisponivel nao pode
+    levar junto a trilha que ja tinha sido lida.
+    """
+    if not lead_id:
+        return None
+    try:
+        r = (supabase.table("leads").select("*")
+             .eq("id", lead_id).limit(1).execute())
+    except Exception as e:
+        print("Aviso: lead de origem indisponivel no dossie:", e)
+        return None
+    if not r.data:
+        return None
+    lead = r.data[0]
+
+    negociacao = {
+        "lead_id": lead.get("id"),
+        "empresa": lead.get("empresa"), "contato": lead.get("contato"),
+        "produto": lead.get("produto"), "origem": lead.get("origem"),
+        "responsavel": lead.get("responsavel"),
+        "funil": lead.get("funil"), "coluna": lead.get("coluna"),
+        "fechado_em": lead.get("movido_em"),
+        "criado_em": lead.get("criado_em"),
+    }
+    if _pode_ver_valor():
+        negociacao["valor"] = lead.get("valor_estimado")
+
+    trilha = []
+    try:
+        movs = _paginar("lead_movimentos", "*",
+                        lambda q: q.eq("lead_id", lead_id).order("criado_em"))
+        trilha = [_normalizar_movimento(m) for m in movs]
+    except Exception as e:
+        print("Aviso: trilha do lead indisponivel no dossie:", e)
+
+    entregas = []
+    try:
+        pr = (supabase.table("projetos").select(_COLS_ENTREGA)
+              .eq("origem_lead_id", lead_id).is_("excluido_em", "null").execute())
+        entregas = [_entrega_resumida(p)
+                    for p in filtrar_projetos_permitidos(pr.data or [])]
+    except Exception as e:
+        print("Aviso: entregas indisponiveis no dossie:", e)
+
+    relacionamento = None
+    try:
+        rr = (supabase.table("leads")
+              .select("id, funil, coluna, responsavel, proximo_contato, criado_em")
+              .eq("lead_pai_id", lead_id).order("criado_em", desc=True)
+              .limit(1).execute())
+        if rr.data:
+            relacionamento = rr.data[0]
+    except Exception as e:
+        print("Aviso: lead de relacionamento indisponivel no dossie:", e)
+
+    return {
+        "negociacao": negociacao,
+        "contato": _contato_do_dossie(lead, cliente),
+        "contrato": _contrato_do_lead(lead),
+        "trilha": trilha,
+        "entregas": entregas,
+        "relacionamento": relacionamento,
+    }
+
+
+def _cliente_do_dossie(cliente_id):
+    """O cliente, quando houver. Serve de queda para os dados de contato."""
+    if not cliente_id:
+        return None
+    try:
+        r = (supabase.table("clientes")
+             .select("id, nome_empresa, cnpj, email, telefone, lead_id")
+             .eq("id", cliente_id).limit(1).execute())
+        return (r.data or [None])[0]
+    except Exception as e:
+        print("Aviso: cliente indisponivel no dossie:", e)
+        return None
+
+
+def _link_assinado_do_contrato(lead):
+    """URL temporaria do contrato. Resposta pronta, no padrao das rotas."""
+    info = (lead or {}).get("contrato_arquivo") or {}
+    if not info.get("caminho"):
+        return jsonify({"status": "erro", "mensagem": "Sem contrato anexado."}), 404
+    try:
+        r = supabase.storage.from_(BUCKET_CONTRATOS).create_signed_url(
+            info["caminho"], 3600)
+        url = r.get("signedURL") or r.get("signedUrl") or r.get("signed_url")
+        if not url:
+            raise RuntimeError("Storage nao devolveu o link")
+        return jsonify({"status": "sucesso", "url": url,
+                        "nome": info.get("nome"), "expira_em": 3600}), 200
+    except Exception as e:
+        print("Erro ao assinar contrato:", e)
+        return jsonify({"status": "erro", "mensagem": _erro_storage(e)}), 500
+
+
+def _projeto_do_dossie(projeto_id):
+    """Busca o card e confere o alcance de quem pede. Erro ja pronto.
+
+    A autorizacao e a DO CARD, nao a do CRM: quem trabalha no quadro
+    normalmente nao tem acesso ao comercial, e ainda assim precisa do
+    contrato e do contato para executar.
+    """
+    if 'usuario_id' not in session:
+        return None, (jsonify({"erro": "Nao logado"}), 401)
+    try:
+        r = (supabase.table("projetos").select("*")
+             .eq("id", projeto_id).limit(1).execute())
+    except Exception as e:
+        print("Erro ao buscar projeto do dossie:", e)
+        return None, (jsonify({"status": "erro", "mensagem": "Erro ao buscar o card."}), 500)
+    if not r.data:
+        return None, (jsonify({"status": "erro", "mensagem": "Card nao encontrado."}), 404)
+    projeto = r.data[0]
+    if not filtrar_projetos_permitidos([projeto]):
+        return None, (jsonify({"erro": "Acesso negado"}), 403)
+    return projeto, None
+
+
+@app.route('/api/projetos/<projeto_id>/dossie', methods=['GET'])
+def dossie_do_projeto(projeto_id):
+    """O que foi negociado antes deste card existir.
+
+    Card sem `origem_lead_id` (criado a mao) devolve `origem: null` com
+    200: a tela usa isso para nem desenhar o painel, em vez de tratar
+    ausencia de origem como erro.
+    """
+    projeto, erro = _projeto_do_dossie(projeto_id)
+    if erro:
+        return erro
+    try:
+        cliente = _cliente_do_dossie(projeto.get("cliente_id"))
+        dossie = _dossie_de_lead(projeto.get("origem_lead_id"), cliente)
+        if not dossie:
+            # Sem lead de origem o contato ainda pode vir do cliente --
+            # e e justamente o que a passagem entre quadros precisa.
+            contato = _contato_do_dossie(None, cliente)
+            if not any(contato.values()):
+                return jsonify({"status": "sucesso", "origem": None}), 200
+            return jsonify({"status": "sucesso",
+                            "origem": {"negociacao": None, "contato": contato,
+                                       "contrato": None, "trilha": [],
+                                       "entregas": [], "relacionamento": None}}), 200
+        return jsonify({"status": "sucesso", "origem": dossie}), 200
+    except Exception as e:
+        print("Erro em dossie_do_projeto:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a origem.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/projetos/<projeto_id>/contrato', methods=['GET'])
+def contrato_do_projeto(projeto_id):
+    """Link do contrato para quem esta no quadro.
+
+    Existe separado de `/api/leads/<id>/contrato` por causa da
+    autorizacao: aquela rota exige ver o lead no CRM, o que barraria
+    justamente quem precisa executar a entrega.
+    """
+    projeto, erro = _projeto_do_dossie(projeto_id)
+    if erro:
+        return erro
+    lead_id = projeto.get("origem_lead_id")
+    if not lead_id:
+        return jsonify({"status": "erro", "mensagem": "Este card nao veio do CRM."}), 404
+    try:
+        r = (supabase.table("leads").select("contrato_arquivo")
+             .eq("id", lead_id).limit(1).execute())
+    except Exception as e:
+        print("Erro ao buscar contrato do projeto:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao buscar o contrato."}), 500
+    if not r.data:
+        return jsonify({"status": "erro", "mensagem": "Lead de origem nao encontrado."}), 404
+    return _link_assinado_do_contrato(r.data[0])
+
+
+@app.route('/api/leads/<lead_id>/dossie', methods=['GET'])
+def dossie_do_lead(lead_id):
+    """O passado herdado por um lead de relacionamento.
+
+    O lead de relacionamento nasce novo (`_acao_criar_lead`), entao a
+    trilha dele comeca vazia: quem abre para a pesquisa de satisfacao ve
+    um card sem historia. O dossie vem do `lead_pai_id`, que ate agora era
+    gravado e nunca lido.
+    """
+    lead, erro = _lead_para_contrato(lead_id)
+    if erro:
+        return erro
+    try:
+        # Sem pai, o proprio lead e a origem: serve o fechamento visto de
+        # dentro do CRM, sem caso especial na tela.
+        origem_id = lead.get("lead_pai_id") or lead.get("id")
+        cliente = _cliente_do_dossie(lead.get("cliente_id"))
+        dossie = _dossie_de_lead(origem_id, cliente)
+        return jsonify({"status": "sucesso",
+                        "herdado": bool(lead.get("lead_pai_id")),
+                        "origem": dossie}), 200
+    except Exception as e:
+        print("Erro em dossie_do_lead:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar o historico.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/clientes/<cliente_id>/contratos', methods=['GET'])
+def contratos_do_cliente(cliente_id):
+    """Todo fechamento daquele cliente, do mais recente para o mais antigo.
+
+    `fechamento/Ganho` e o unico que conta: `qualificacao/Ganho` e passagem
+    de bastao para o closer, nao contrato assinado. Somar os dois encheria
+    a conta de negocios que nunca receberam proposta.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        cliente = _cliente_do_dossie(cliente_id)
+        if not cliente:
+            return jsonify({"status": "erro", "mensagem": "Cliente nao encontrado."}), 404
+
+        leads = []
+        try:
+            r = (supabase.table("leads").select("*")
+                 .eq("cliente_id", cliente_id).execute())
+            leads = [l for l in (r.data or [])
+                     if l.get("funil") == 'fechamento' and l.get("coluna") == 'Ganho']
+        except Exception as e:
+            print("Aviso: leads do cliente indisponiveis:", e)
+
+        # O lead que originou o cadastro pode ser anterior ao vinculo por
+        # `cliente_id` -- entra a parte, sem duplicar.
+        if cliente.get("lead_id") and not any(
+                str(l.get("id")) == str(cliente["lead_id"]) for l in leads):
+            try:
+                r0 = (supabase.table("leads").select("*")
+                      .eq("id", cliente["lead_id"]).limit(1).execute())
+                if r0.data and r0.data[0].get("coluna") == 'Ganho':
+                    leads.append(r0.data[0])
+            except Exception as e:
+                print("Aviso: lead de origem do cliente indisponivel:", e)
+
+        leads.sort(key=lambda l: str(l.get("movido_em") or l.get("criado_em") or ''),
+                   reverse=True)
+
+        contratos = []
+        for l in leads:
+            d = _dossie_de_lead(l.get("id"), cliente)
+            if d:
+                contratos.append(d)
+
+        return jsonify({"status": "sucesso", "contratos": contratos,
+                        "total": len(contratos)}), 200
+    except Exception as e:
+        print("Erro em contratos_do_cliente:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao carregar os contratos.",
+                        "detalhe": str(e)[:300]}), 500
+
+
+@app.route('/api/clientes/<cliente_id>/contrato/<lead_id>', methods=['GET'])
+def contrato_do_cliente(cliente_id, lead_id):
+    """Link do contrato a partir da conta do cliente.
+
+    Confere que o lead pertence AQUELE cliente: sem isso, trocar o id na
+    URL abriria o contrato de qualquer outro.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    try:
+        r = (supabase.table("leads").select("id, cliente_id, contrato_arquivo")
+             .eq("id", lead_id).limit(1).execute())
+        if not r.data:
+            return jsonify({"status": "erro", "mensagem": "Lead nao encontrado."}), 404
+        lead = r.data[0]
+        cliente = _cliente_do_dossie(cliente_id)
+        vinculado = (str(lead.get("cliente_id") or '') == str(cliente_id)
+                     or (cliente and str(cliente.get("lead_id") or '') == str(lead_id)))
+        if not vinculado:
+            return jsonify({"erro": "Acesso negado"}), 403
+        return _link_assinado_do_contrato(lead)
+    except Exception as e:
+        print("Erro em contrato_do_cliente:", e)
+        return jsonify({"status": "erro", "mensagem": "Erro ao abrir o contrato."}), 500
 
 
 @app.route('/api/clientes/<cliente_id>/mapa', methods=['GET'])
@@ -3771,7 +4187,11 @@ def _acao_criar_cobranca(acao, dados):
 # ainda precisa nascer: perder um contrato fechado por causa de coluna
 # ausente é pior que criar o card sem o dado extra.
 _COLUNAS_OPCIONAIS = ("subquadro", "origem_lead_id", "lote_id", "lote_pos",
-                      "lote_total", "aguardando_responsavel", "vinculado_a")
+                      "lote_total", "aguardando_responsavel", "vinculado_a",
+                      # Passagem entre quadros: se a coluna nao existir, o
+                      # card nasce sem o elo em vez de o insert inteiro falhar.
+                      "origem_projeto_id", "origem_area", "tipo_solicitacao",
+                      "solicitado_por")
 
 
 def _inserir_projeto(novo):
