@@ -178,6 +178,24 @@
             flex-wrap:wrap; align-items:center; }
         .pj-v{ font-size:12px; font-weight:650; font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
         .pilula{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+
+        /* ===== CONTRATOS DA CONTA ===== */
+        .ctr{ background:var(--papel-2); border-radius:var(--r-card, 12px); padding:13px 15px; margin-bottom:9px; }
+        .ctr:last-child{ margin-bottom:0; }
+        .ctr-topo{ display:flex; align-items:flex-start; gap:12px; }
+        .ctr-id{ flex:1; min-width:0; }
+        .ctr-prod{ font-size:13px; font-weight:650; color:var(--tinta); letter-spacing:-.15px; }
+        .ctr-data{ font-size:11px; color:var(--tinta-3); margin-top:2px; }
+        .ctr-valor{ font-size:15px; font-weight:650; color:var(--ok); white-space:nowrap;
+            font-family:'IBM Plex Mono',monospace; letter-spacing:-.3px; }
+        .ctr-arq{ width:100%; justify-content:center; margin-top:11px; }
+        .ctr-sem{ font-size:11.5px; color:var(--tinta-3); margin-top:11px;
+            display:flex; align-items:center; gap:7px; }
+        .ctr-sem .material-symbols-rounded{ font-size:15px; opacity:.6; }
+        .ctr-ent{ display:flex; flex-wrap:wrap; gap:5px; margin-top:11px; }
+        .ctr-rel{ font-size:11px; color:var(--acao); margin-top:9px;
+            display:flex; align-items:center; gap:6px; }
+        .ctr-rel .material-symbols-rounded{ font-size:14px; }
         .p-n{ background:var(--papel-2); color:var(--tinta-3); }
         .p-ok{ background:var(--ok-fraco); color:var(--ok); }
         .p-at{ background:var(--at-fundo); color:var(--atencao); }
@@ -564,6 +582,76 @@
             }catch(e){ erroGeral('Sem conexão com o servidor.'); return; }
             vendo = id;
             renderConta(d);
+            carregarContratos(id);
+        }
+
+        /* ==========================================================
+           CONTRATOS DA CONTA
+           Carregado à parte: a conta abre com os projetos na tela, e o
+           histórico comercial chega em seguida sem segurar o resto.
+           ========================================================== */
+        async function carregarContratos(id){
+            const alvo = document.getElementById('ctContratos');
+            if(!alvo) return;
+            alvo.innerHTML = '<div class="dr" style="margin-top:24px">Contratos</div>' +
+                '<div class="campo-v vazio">Carregando…</div>';
+            let d;
+            try{
+                const r = await fetch('/api/clientes/'+id+'/contratos');
+                if(!r.ok) throw new Error('falhou');
+                d = await r.json();
+            }catch(e){
+                alvo.innerHTML = '<div class="dr" style="margin-top:24px">Contratos</div>' +
+                    '<div class="campo-v vazio">Não foi possível carregar os contratos.</div>';
+                return;
+            }
+            // A conta pode ter mudado enquanto a resposta vinha.
+            if(vendo !== id) return;
+            renderContratos(id, d.contratos || []);
+        }
+
+        function renderContratos(clienteId, contratos){
+            const alvo = document.getElementById('ctContratos');
+            if(!alvo) return;
+            const cab = `<div class="dr" style="margin-top:24px">Contratos${contratos.length?` · ${contratos.length}`:''}</div>`;
+            if(!contratos.length){
+                alvo.innerHTML = cab + '<div class="campo-v vazio">Nenhum contrato fechado registrado para este cliente.</div>';
+                return;
+            }
+            alvo.innerHTML = cab + contratos.map(o => {
+                const n = o.negociacao || {};
+                const valor = n.valor ? 'R$ ' + Number(n.valor).toLocaleString('pt-BR',{maximumFractionDigits:0}) : null;
+                const dt = n.fechado_em ? new Date(n.fechado_em) : null;
+                const quando = (dt && !isNaN(dt)) ? dt.toLocaleDateString('pt-BR') : 'data não registrada';
+                const ent = o.entregas || [];
+                const rel = o.relacionamento;
+                return `<div class="ctr">
+                    <div class="ctr-topo">
+                        <div class="ctr-id">
+                            <div class="ctr-prod">${escH(n.produto) || 'Contrato'}</div>
+                            <div class="ctr-data">${escH(quando)}${n.responsavel ? ' · ' + escH(n.responsavel) : ''}</div>
+                        </div>
+                        ${valor ? `<span class="ctr-valor num">${escH(valor)}</span>` : ''}
+                    </div>
+                    ${o.contrato ? `
+                    <button class="btn btn-borda ctr-arq" onclick="abrirContratoCliente('${escA(clienteId)}','${escA(n.lead_id)}')">
+                        <span class="material-symbols-rounded">description</span>${escH(o.contrato.nome || 'Abrir contrato')}</button>`
+                    : `<div class="ctr-sem"><span class="material-symbols-rounded">draft</span>Sem arquivo anexado</div>`}
+                    ${ent.length ? `<div class="ctr-ent">${ent.map(e =>
+                        `<span class="pilula p-az">${escH(e.nome)}${e.status ? ' · ' + escH(e.status) : ''}</span>`).join('')}</div>` : ''}
+                    ${rel ? `<div class="ctr-rel"><span class="material-symbols-rounded">favorite</span>
+                        Relacionamento em ${escH(rel.coluna)}${rel.responsavel ? ' · ' + escH(rel.responsavel) : ''}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        async function abrirContratoCliente(clienteId, leadId){
+            try{
+                const r = await fetch('/api/clientes/'+clienteId+'/contrato/'+leadId);
+                const d = await r.json();
+                if(r.ok && d.url) window.open(d.url, '_blank', 'noopener');
+                else erroGeral(d.mensagem || 'Não foi possível abrir o contrato.');
+            }catch(e){ erroGeral('Sem conexão com o servidor.'); }
         }
 
         function renderConta(d){
@@ -642,6 +730,11 @@
                                 ${d.horas_area.map((a,i) =>
                                     `<span><i style="background:${CORES_AREA[i%CORES_AREA.length]}"></i>${escH(a.area)} · ${a.horas}h</span>`).join('')}
                             </div>` : ''}
+
+                            <!-- A conta mostrava só a entrega. Os contratos são
+                                 a outra metade: o que foi vendido, sob que valor
+                                 e com que papel assinado. -->
+                            <div id="ctContratos"></div>
                         </div>
 
                         <div class="ct-dir">

@@ -426,6 +426,44 @@
         .det-dir{ padding:20px 22px; background:var(--papel-2); min-width:0; }
         .det-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:14px; }
 
+        /* ===== O QUE VEIO ANTES (lead de relacionamento) ===== */
+        #dHerdado{ margin-bottom:22px; }
+        #dHerdado[hidden]{ display:none; }
+        .herd-cartao{
+            background:var(--papel-2); border-radius:var(--r-card); padding:13px 15px;
+            margin-bottom:9px;
+        }
+        .herd-tit{
+            font-size:12px; font-weight:650; color:var(--tinta); letter-spacing:-.1px;
+            display:flex; align-items:center; gap:7px; margin-bottom:11px;
+        }
+        .herd-tit .material-symbols-rounded{ font-size:16px; color:var(--acao); }
+        .herd-campos{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+        .herd-campo{ min-width:0; }
+        .herd-campo-r{ font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--tinta-3); }
+        .herd-campo-v{ font-size:12.5px; font-weight:600; color:var(--tinta); margin-top:2px; word-break:break-word; }
+        .herd-campo-v.vazio{ font-weight:500; color:var(--tinta-3); }
+        .herd-ct{ width:100%; justify-content:center; margin-top:12px; }
+        .herd-sem{ font-size:11.5px; color:var(--tinta-3); }
+        .herd-obj{
+            font-size:12px; color:var(--tinta-2); line-height:1.5; padding:8px 10px;
+            background:var(--at-fundo); border-radius:8px; margin-bottom:6px;
+        }
+        .herd-obj:last-child{ margin-bottom:0; }
+        .herd-obj b{ color:var(--atencao); font-weight:650; }
+        .herd-obj-et{ display:block; font-size:10px; color:var(--tinta-3); margin-top:3px; }
+        .herd-ent{ padding:9px 0; border-bottom:1px solid var(--linha); }
+        .herd-ent:last-child{ border-bottom:none; padding-bottom:0; }
+        .herd-ent-nome{ font-size:12.5px; font-weight:600; color:var(--tinta); letter-spacing:-.1px; }
+        .herd-ent-meta{ font-size:10.5px; color:var(--tinta-3); margin-top:2px; }
+        .herd-ent-selos{ display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+        .herd-selo{
+            font-size:10px; font-weight:600; padding:3px 8px; border-radius:var(--r-pill);
+        }
+        .herd-selo.s-cr{ background:var(--cr-fundo); color:var(--critico); }
+        .herd-selo.s-at{ background:var(--at-fundo); color:var(--atencao); }
+        @media (max-width:900px){ .herd-campos{ grid-template-columns:1fr; } }
+
         .tl{ position:relative; padding-left:26px; }
         .tl::before{ content:''; position:absolute; left:7px; top:6px; bottom:14px; width:2px; background:var(--linha); }
         .tp{ position:relative; padding-bottom:20px; }
@@ -695,6 +733,11 @@
             <div class="det-num" id="dNumeros"></div>
             <div class="det-corpo">
                 <div class="det-esq">
+                    <!-- O lead de relacionamento nasce novo: a trilha dele
+                         começa vazia. Quem liga para a pesquisa de satisfação
+                         precisa do que veio antes — o que foi vendido e como
+                         foi entregue. -->
+                    <div id="dHerdado" hidden></div>
                     <div class="det-rot">Por onde passou</div>
                     <div id="dTimeline"><div class="loading">Carregando histórico...</div></div>
                 </div>
@@ -2167,6 +2210,114 @@
             }catch(e){}
             renderNumeros(l, movs);
             renderTimeline(l, movs);
+            carregarHerdado(l);
+        }
+
+        /* ==========================================================
+           O QUE VEIO ANTES
+           Só para o lead que herdou um pai — hoje, o de relacionamento
+           criado quando a entrega é finalizada. Sem isto, quem faz a
+           pesquisa de satisfação abre um card em branco e liga no escuro.
+           ========================================================== */
+        async function carregarHerdado(l){
+            const alvo = document.getElementById('dHerdado');
+            if(!alvo) return;
+            if(!l.lead_pai_id){ alvo.hidden = true; alvo.innerHTML = ''; return; }
+            alvo.hidden = false;
+            alvo.innerHTML = '<div class="det-rot">Antes desta conversa</div><div class="loading">Carregando…</div>';
+            try{
+                const r = await fetch('/api/leads/'+l.id+'/dossie');
+                if(!r.ok) throw new Error('falhou');
+                const d = await r.json();
+                renderHerdado(d.origem);
+            }catch(e){
+                alvo.innerHTML = '<div class="det-rot">Antes desta conversa</div>' +
+                    '<div class="col-vazia">Não foi possível carregar o histórico anterior.</div>';
+            }
+        }
+
+        function renderHerdado(o){
+            const alvo = document.getElementById('dHerdado');
+            if(!alvo) return;
+            if(!o){
+                alvo.innerHTML = '<div class="det-rot">Antes desta conversa</div>' +
+                    '<div class="col-vazia">O lead de origem não foi encontrado.</div>';
+                return;
+            }
+            const n = o.negociacao || {};
+            const valor = n.valor ? 'R$ ' + Number(n.valor).toLocaleString('pt-BR',{maximumFractionDigits:0}) : null;
+            const fechado = dataDe(n.fechado_em);
+
+            // O que foi vendido
+            const vendido = `
+                <div class="herd-cartao">
+                    <div class="herd-tit"><span class="material-symbols-rounded">handshake</span>O que foi vendido</div>
+                    <div class="herd-campos">
+                        ${campoHerd('Produto', n.produto)}
+                        ${campoHerd('Valor', valor)}
+                        ${campoHerd('Fechado em', fechado ? fechado.toLocaleDateString('pt-BR') : null)}
+                        ${campoHerd('Fechado por', n.responsavel)}
+                    </div>
+                    ${o.contrato ? `
+                    <button class="btn btn-fant herd-ct" onclick="abrirContratoHerdado()">
+                        <span class="material-symbols-rounded">description</span>${escH(o.contrato.nome || 'Abrir contrato')}</button>`
+                    : `<div class="herd-sem">Sem contrato anexado.</div>`}
+                </div>`;
+
+            // Objeções que apareceram: quem vai perguntar "como foi?"
+            // precisa saber o que foi prometido para contornar cada uma.
+            const objecoes = (o.trilha || []).filter(m => m.objecao);
+            const bloco_obj = objecoes.length ? `
+                <div class="herd-cartao">
+                    <div class="herd-tit"><span class="material-symbols-rounded">record_voice_over</span>Objeções na negociação</div>
+                    ${objecoes.map(m => `<div class="herd-obj"><b>${escH(m.objecao)}</b>${m.objecao_detalhe ? ' — ' + escH(m.objecao_detalhe) : ''}
+                        <span class="herd-obj-et">em ${escH(m.para_coluna)}</span></div>`).join('')}
+                </div>` : '';
+
+            // Como foi entregue. Ligar sem saber que a entrega atrasou é o
+            // pior cenário possível para a pesquisa de satisfação.
+            const ent = o.entregas || [];
+            const bloco_ent = ent.length ? `
+                <div class="herd-cartao">
+                    <div class="herd-tit"><span class="material-symbols-rounded">local_shipping</span>Como foi entregue</div>
+                    ${ent.map(e => {
+                        const parado = Number(e.tempo_parado_segundos) || 0;
+                        const dias = parado ? Math.round(parado / 86400) : 0;
+                        const atraso = e.prazo && e.data_conclusao &&
+                            String(e.data_conclusao).slice(0,10) > e.prazo;
+                        return `<div class="herd-ent">
+                            <div class="herd-ent-nome">${escH(e.nome)}</div>
+                            <div class="herd-ent-meta">${escH([e.area, e.status, e.responsavel].filter(Boolean).join(' · '))}</div>
+                            <div class="herd-ent-selos">
+                                ${atraso ? '<span class="herd-selo s-cr">entregue após o prazo</span>' : ''}
+                                ${dias ? `<span class="herd-selo s-at">${dias === 1 ? '1 dia parado' : dias + ' dias parados'}</span>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>` : `
+                <div class="herd-cartao"><div class="herd-sem">Nenhuma entrega ligada a este contrato.</div></div>`;
+
+            alvo.innerHTML = '<div class="det-rot">Antes desta conversa</div>' +
+                vendido + bloco_obj + bloco_ent;
+        }
+
+        function campoHerd(rot, val){
+            const vazio = val === null || val === undefined || val === '';
+            return `<div class="herd-campo"><div class="herd-campo-r">${escH(rot)}</div>
+                <div class="herd-campo-v${vazio ? ' vazio' : ''}">${vazio ? 'não informado' : escH(val)}</div></div>`;
+        }
+
+        async function abrirContratoHerdado(){
+            try{
+                const r = await fetch('/api/leads/'+detalheId+'/dossie');
+                const d = await r.json();
+                const origem = d.origem && d.origem.negociacao;
+                if(!origem || !origem.lead_id){ toast('Contrato indisponível.','erro'); return; }
+                const rc = await fetch('/api/leads/'+origem.lead_id+'/contrato');
+                const dc = await rc.json();
+                if(rc.ok && dc.url) window.open(dc.url, '_blank', 'noopener');
+                else toast(dc.mensagem || 'Não foi possível abrir o contrato.','erro');
+            }catch(e){ toast('Erro de conexão.','erro'); }
         }
 
         function renderNumeros(l, movs){

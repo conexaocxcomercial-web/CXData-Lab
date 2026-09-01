@@ -615,28 +615,223 @@
         .det-chip .material-symbols-rounded{ font-size:14px; color:var(--tinta-3); }
         .det-chip b{ font-weight:600; color:var(--tinta); }
 
-        .det-grid{ display:grid; grid-template-columns:1fr 1.15fr 1fr; flex:1; overflow:hidden; }
-        .det-col{ padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; border-right:1px solid var(--linha-1); }
-        .det-col:last-child{ border-right:none; background:#FCFCFD; }
         .det-rot{
             font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
             color:var(--tinta-3); margin-bottom:12px; flex-shrink:0;
         }
-        .det-relogio{
-            background:var(--tinta); border-radius:13px; padding:17px 19px; margin-bottom:20px;
-            display:flex; flex-direction:column; gap:5px; flex-shrink:0;
+        /* --- pílula de estado: o card Pausado abria idêntico ao ativo --- */
+        .det-status{
+            font-size:11.5px; font-weight:600; letter-spacing:-.1px; padding:5px 12px;
+            border-radius:var(--r-pill); display:inline-flex; align-items:center; gap:6px;
+            border:1px solid transparent; white-space:nowrap; flex-shrink:0;
         }
-        .det-relogio-rot{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--accent-lime); }
-        .det-relogio-num{
+        .det-status .material-symbols-rounded{ font-size:15px; }
+        .det-status.e-neutro{ background:var(--papel-2); color:var(--tinta-2); border-color:var(--linha-1); }
+        .det-status.e-ativo{ background:var(--acao-fraco); color:var(--acao); }
+        .det-status.e-pausa{ background:var(--at-fundo); color:var(--atencao); border-color:var(--at-borda); }
+        .det-status.e-fim{ background:var(--ok-fraco); color:var(--ok); }
+        .det-status.e-morto{ background:var(--cr-fundo); color:var(--critico); border-color:var(--cr-borda); }
+        .det-titulo-linha{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .det-chip.c-crm{ background:var(--acao-fraco); color:var(--acao); cursor:pointer; border:none; font-family:inherit; }
+        .det-chip.c-crm .material-symbols-rounded{ color:var(--acao); }
+        .det-chip.c-crm:hover{ background:#e6e1fd; }
+        .det-avatar{
+            width:19px; height:19px; border-radius:50%; font-size:8.5px; font-weight:700;
+            display:inline-flex; align-items:center; justify-content:center; letter-spacing:.2px;
+        }
+
+        /* --- faixa de métricas: o relógio deixa de ser o único número --- */
+        .det-metricas{
+            display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:10px;
+            padding:15px 22px; border-bottom:1px solid var(--linha-1); flex-shrink:0;
+            background:var(--papel);
+        }
+        .det-tile{
+            background:var(--papel-2); border-radius:12px; padding:12px 14px;
+            display:flex; flex-direction:column; gap:3px; min-width:0;
+        }
+        .det-tile.t-escuro{ background:var(--tinta); }
+        .det-tile.t-atencao{ background:var(--at-fundo); box-shadow:inset 0 0 0 1px var(--at-borda); }
+        .det-tile-rot{
+            font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .det-tile.t-escuro .det-tile-rot{ color:var(--accent-lime); }
+        .det-tile.t-atencao .det-tile-rot{ color:var(--atencao); }
+        .det-tile-num{
             font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
-            font-size:27px; font-weight:600; color:#fff; letter-spacing:-.5px;
+            font-size:20px; font-weight:600; color:var(--tinta); letter-spacing:-.5px; line-height:1.15;
         }
+        .det-tile.t-escuro .det-tile-num{ color:#fff; }
+        .det-tile.t-atencao .det-tile-num{ color:var(--atencao); }
+        .det-tile-pe{ font-size:10.5px; font-weight:500; color:var(--tinta-3); }
+        .det-tile.t-escuro .det-tile-pe{ color:rgba(255,255,255,.55); }
+        .det-tile.t-atencao .det-tile-pe{ color:var(--atencao); opacity:.8; }
+
+        /* --- corpo 7/5: o trabalho de um lado, as anotações do outro --- */
+        .det-grid2{ display:grid; grid-template-columns:1.42fr 1fr; flex:1; overflow:hidden; }
+        .det-painel{ display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--linha-1); }
+        .det-painel:last-child{ border-right:none; background:#FCFCFD; }
+        .det-segm{
+            display:flex; gap:3px; padding:13px 20px 0; flex-shrink:0;
+            border-bottom:1px solid var(--linha-1);
+        }
+        .det-seg{
+            font-family:inherit; font-size:12.5px; font-weight:600; color:var(--tinta-3);
+            background:transparent; border:none; cursor:pointer; padding:7px 12px 10px;
+            border-bottom:2px solid transparent; margin-bottom:-1px; transition:.15s;
+            display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+        }
+        .det-seg .material-symbols-rounded{ font-size:16px; }
+        .det-seg:hover{ color:var(--tinta-2); }
+        .det-seg.on{ color:var(--acao); border-bottom-color:var(--acao); }
+        .det-corpo{ padding:18px 20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; }
+        .det-aba[hidden]{ display:none; }
+        .det-aba{ display:flex; flex-direction:column; flex:1; min-height:0; }
+
+        /* --- estados: carregando e vazio deixam de ser texto solto --- */
+        .det-skel{ display:flex; flex-direction:column; gap:9px; }
+        .det-skel i{
+            display:block; height:11px; border-radius:6px; background:var(--papel-2);
+            animation:skelPulso 1.1s ease-in-out infinite;
+        }
+        .det-skel i:nth-child(2){ width:78%; } .det-skel i:nth-child(3){ width:54%; }
+        .det-skel i:nth-child(4){ width:88%; } .det-skel i:nth-child(5){ width:42%; }
+        @keyframes skelPulso{ 0%,100%{opacity:1;} 50%{opacity:.45;} }
+        .det-vazio{
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:7px; padding:34px 18px; text-align:center; color:var(--tinta-3);
+        }
+        .det-vazio .material-symbols-rounded{ font-size:28px; opacity:.5; }
+        .det-vazio b{ font-size:13px; font-weight:600; color:var(--tinta-2); }
+        .det-vazio span.txt{ font-size:11.5px; line-height:1.5; max-width:230px; }
+
+        /* --- histórico de execução, agora dentro dos tokens --- */
+        .hist-item{
+            padding:11px 13px; background:var(--papel-2); border-radius:var(--r-ctrl);
+            margin-bottom:6px; display:flex; justify-content:space-between;
+            align-items:center; gap:12px;
+        }
+        .hist-txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+        .hist-tarefa{ font-size:12.5px; font-weight:600; color:var(--tinta); letter-spacing:-.1px; }
+        .hist-meta{ font-size:10.5px; font-weight:500; color:var(--tinta-3); }
+        .hist-tempo{
+            font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
+            font-size:13.5px; font-weight:600; color:var(--acao); flex-shrink:0;
+        }
+
+        /* --- dossiê: negociação, contrato e contato --- */
+        .dos-bloco{ margin-bottom:18px; }
+        .dos-rot{
+            font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+            color:var(--tinta-3); margin-bottom:9px;
+        }
+        .dos-cartao{
+            background:var(--papel-2); border-radius:var(--r-card); padding:13px 15px;
+            display:flex; flex-direction:column; gap:10px;
+        }
+        .dos-campos{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+        .dos-campo{ min-width:0; }
+        .dos-campo-r{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--tinta-3); }
+        .dos-campo-v{ font-size:13px; font-weight:600; color:var(--tinta); margin-top:2px; word-break:break-word; }
+        .dos-campo-v.vazio{ font-weight:500; color:var(--tinta-3); }
+        .dos-campo-v a{ color:var(--acao); text-decoration:none; }
+        .dos-campo-v a:hover{ text-decoration:underline; }
+        .dos-valor{
+            font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;
+            font-size:19px; font-weight:600; color:var(--ok); letter-spacing:-.4px;
+        }
+        .dos-contrato{
+            display:flex; align-items:center; gap:11px; padding:12px 14px;
+            background:var(--papel); border-radius:var(--r-card);
+            box-shadow:inset 0 0 0 1px var(--linha-1);
+        }
+        .dos-ct-ico{
+            width:34px; height:34px; border-radius:9px; background:var(--acao-fraco); color:var(--acao);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .dos-ct-txt{ flex:1; min-width:0; }
+        .dos-ct-nome{
+            font-size:12.5px; font-weight:600; color:var(--tinta); letter-spacing:-.1px;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .dos-ct-meta{ font-size:10.5px; color:var(--tinta-3); margin-top:2px; }
+        .dos-sem{
+            font-size:12px; color:var(--tinta-3); padding:11px 13px; background:var(--papel-2);
+            border-radius:var(--r-ctrl); display:flex; align-items:center; gap:8px;
+        }
+        .dos-sem .material-symbols-rounded{ font-size:16px; opacity:.6; }
+
+        /* trilha do funil: a passagem preenchida não pode passar por
+           negociação que aconteceu */
+        .dos-tl{ display:flex; flex-direction:column; }
+        .dos-mv{ display:flex; gap:12px; padding-bottom:15px; position:relative; }
+        .dos-mv:last-child{ padding-bottom:0; }
+        .dos-mv::before{
+            content:''; position:absolute; left:5px; top:14px; bottom:0; width:1px;
+            background:var(--linha-1);
+        }
+        .dos-mv:last-child::before{ display:none; }
+        .dos-pt{
+            width:11px; height:11px; border-radius:50%; background:var(--acao);
+            margin-top:3px; flex-shrink:0; z-index:1;
+            box-shadow:0 0 0 3px var(--papel);
+        }
+        .dos-mv.auto .dos-pt{ background:var(--papel); box-shadow:0 0 0 3px var(--papel), inset 0 0 0 1.5px var(--linha-2); }
+        .dos-mv-txt{ flex:1; min-width:0; }
+        .dos-mv-etapa{ font-size:12.5px; font-weight:600; color:var(--tinta); letter-spacing:-.1px; }
+        .dos-mv.auto .dos-mv-etapa{ font-weight:500; color:var(--tinta-3); }
+        .dos-mv-meta{ font-size:10.5px; color:var(--tinta-3); margin-top:2px; }
+        .dos-mv-auto{
+            font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
+            color:var(--tinta-3); background:var(--papel-2); padding:2px 7px;
+            border-radius:var(--r-pill); display:inline-block; margin-top:4px;
+        }
+        .dos-mv-obj{
+            font-size:11.5px; color:var(--atencao); background:var(--at-fundo);
+            border-radius:7px; padding:6px 9px; margin-top:6px; line-height:1.45;
+        }
+        .dos-entrega{
+            display:flex; align-items:center; gap:10px; padding:10px 12px;
+            background:var(--papel-2); border-radius:var(--r-ctrl); margin-bottom:6px;
+        }
+        .dos-entrega-txt{ flex:1; min-width:0; }
+        .dos-entrega-nome{ font-size:12.5px; font-weight:600; color:var(--tinta); letter-spacing:-.1px; }
+        .dos-entrega-meta{ font-size:10.5px; color:var(--tinta-3); margin-top:2px; }
+
+        /* anotações: salvar deixa de ser um ato de fé */
+        .det-anot-pe{
+            display:flex; align-items:center; justify-content:space-between; gap:10px;
+            margin-top:10px;
+        }
+        .det-salvo{ font-size:11px; font-weight:500; color:var(--tinta-3); display:flex; align-items:center; gap:5px; }
+        .det-salvo .material-symbols-rounded{ font-size:14px; }
+        .det-salvo.ok{ color:var(--ok); }
+
+        /* aviso do que viaja na passagem entre quadros */
+        .solic-leva{
+            font-size:11.5px; color:var(--acao); line-height:1.5; background:var(--acao-fraco);
+            padding:10px 12px; border-radius:8px; display:flex; gap:8px; align-items:flex-start;
+        }
+        .solic-leva .material-symbols-rounded{ font-size:15px; flex-shrink:0; margin-top:1px; }
+        .solic-leva b{ font-weight:650; }
 
         @media (max-width:900px){
             .modal-overlay{ padding:0; align-items:flex-end; }
             .modal-content{ max-width:none !important; width:100% !important; max-height:94vh !important; border-radius:16px 16px 0 0; }
-            .det-grid{ grid-template-columns:1fr; overflow-y:auto; }
-            .det-col{ border-right:none; border-bottom:1px solid var(--linha-1); overflow:visible; }
+            /* tiles em faixa rolável: empilhados, empurrariam o conteúdo
+               para fora da primeira tela */
+            .det-metricas{
+                grid-auto-columns:minmax(140px,1fr); overflow-x:auto; padding:13px 16px;
+                scrollbar-width:none;
+            }
+            .det-metricas::-webkit-scrollbar{ display:none; }
+            .det-grid2{ grid-template-columns:1fr; overflow-y:auto; }
+            .det-painel{ border-right:none; border-bottom:1px solid var(--linha-1); overflow:visible; }
+            .det-corpo{ overflow:visible; }
+            .det-segm{ padding:11px 14px 0; overflow-x:auto; scrollbar-width:none; }
+            .det-segm::-webkit-scrollbar{ display:none; }
+            .dos-campos{ grid-template-columns:1fr; }
             .md-linha2{ grid-template-columns:1fr; }
             .md-pe .btn-md{ flex:1; }
             /* card expandido: os 3 botões em linha quebravam o rótulo em 3 linhas */
@@ -1225,13 +1420,18 @@
     </div>
 
     <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
-        <div class="modal-content det">
+        <div class="modal-content det" role="dialog" aria-modal="true" aria-labelledby="detNome">
 
             <div class="md-head">
                 <div class="md-head-txt">
                     <span class="md-eyebrow" id="detArea"></span>
-                    <div class="md-titulo" id="detNome">Nome do Projeto</div>
-                    <div class="det-chips">
+                    <div class="det-titulo-linha">
+                        <div class="md-titulo" id="detNome">Nome do Projeto</div>
+                        <span class="det-status e-neutro" id="detStatus" hidden></span>
+                    </div>
+                    <!-- Responsável, cliente, datas e lote: sem isto o card
+                         abria sem dizer de quem é nem em que pé está. -->
+                    <div class="det-chips" id="detChips">
                         <span class="det-chip"><span class="material-symbols-rounded">play_circle</span>Início <b id="detDataInicio"></b></span>
                         <span class="det-chip"><span class="material-symbols-rounded">flag</span>Conclusão <b id="detDataFim"></b></span>
                     </div>
@@ -1239,31 +1439,58 @@
                 <button class="close-btn" onclick="fecharModal('modalDetalhes')" aria-label="Fechar"></button>
             </div>
 
-            <div class="det-grid">
-                <div class="det-col">
-                    <div class="det-relogio">
-                        <span class="det-relogio-rot">Tempo total dedicado</span>
-                        <div class="det-relogio-num" id="detTempoTotal">00:00:00</div>
+            <div class="det-metricas" id="detMetricas">
+                <div class="det-tile t-escuro">
+                    <span class="det-tile-rot">Tempo dedicado</span>
+                    <div class="det-tile-num" id="detTempoTotal">00:00:00</div>
+                    <span class="det-tile-pe" id="detTempoPe">nenhum registro</span>
+                </div>
+            </div>
+
+            <div class="det-grid2">
+                <div class="det-painel">
+                    <div class="det-segm" role="tablist" aria-label="Painéis do card">
+                        <button class="det-seg on" id="seg-mural" role="tab" aria-selected="true"
+                                aria-controls="aba-mural" onclick="trocarSegmento('mural')">
+                            <span class="material-symbols-rounded">forum</span>Mural</button>
+                        <button class="det-seg" id="seg-execucao" role="tab" aria-selected="false"
+                                aria-controls="aba-execucao" onclick="trocarSegmento('execucao')">
+                            <span class="material-symbols-rounded">timer</span>Execução</button>
+                        <button class="det-seg" id="seg-origem" role="tab" aria-selected="false"
+                                aria-controls="aba-origem" onclick="trocarSegmento('origem')" hidden>
+                            <span class="material-symbols-rounded">handshake</span>Origem comercial</button>
                     </div>
-                    <div class="det-rot">Histórico de execução</div>
-                    <div id="listaHistorico" style="flex-grow:1; overflow-y:auto;"></div>
+
+                    <div class="det-corpo">
+                        <div class="det-aba" id="aba-mural" role="tabpanel" aria-labelledby="seg-mural">
+                            <div class="comentarios-lista" id="listaComentarios" style="flex-grow:1; overflow-y:auto; margin-bottom:12px;"></div>
+                            <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
+                                <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização..."></textarea>
+                                <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar comentário"><span class="material-symbols-rounded">send</span></button>
+                            </div>
+                        </div>
+
+                        <div class="det-aba" id="aba-execucao" role="tabpanel" aria-labelledby="seg-execucao" hidden>
+                            <div id="listaHistorico" style="flex-grow:1;"></div>
+                        </div>
+
+                        <div class="det-aba" id="aba-origem" role="tabpanel" aria-labelledby="seg-origem" hidden>
+                            <div id="listaOrigem" style="flex-grow:1;"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="det-col">
-                    <div class="det-rot">Mural e atualizações</div>
-                    <div class="comentarios-lista" id="listaComentarios" style="flex-grow:1; overflow-y:auto; margin-bottom:12px;"></div>
-                    <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
-                        <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização..."></textarea>
-                        <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar comentário"><span class="material-symbols-rounded">send</span></button>
+                <div class="det-painel">
+                    <div class="det-corpo">
+                        <div class="det-rot">Descrição e anotações</div>
+                        <textarea id="detAnotacoes" class="input-item" style="flex-grow:1; min-height:180px; resize:none; font-size:13px; background:#fff;" placeholder="Cole links de drives, descreva o escopo, requisitos do cliente..." oninput="anotacoesMudaram()"></textarea>
+                        <div class="det-anot-pe">
+                            <span class="det-salvo" id="detSalvo"></span>
+                            <button class="btn-md btn-md-primario" id="btnSalvarAnotacoes" onclick="salvarAnotacoes()">
+                                <span class="material-symbols-rounded">save</span>Salvar
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <div class="det-col">
-                    <div class="det-rot">Descrição e anotações</div>
-                    <textarea id="detAnotacoes" class="input-item" style="flex-grow:1; min-height:180px; resize:none; font-size:13px; background:#fff; margin-bottom:12px;" placeholder="Cole links de drives, descreva o escopo, requisitos do cliente..."></textarea>
-                    <button class="btn-md btn-md-primario" id="btnSalvarAnotacoes" style="width:100%;" onclick="salvarAnotacoes()">
-                        <span class="material-symbols-rounded">save</span>Salvar anotações
-                    </button>
                 </div>
             </div>
 
@@ -3296,67 +3523,406 @@
         }
 
         // NOVO: Função para gravar as anotações
-        async function salvarAnotacoes() {
+        /* ==========================================================
+           ANOTAÇÕES
+           Salvar era um ato de fé: nada dizia se o texto tinha ido. Agora
+           grava sozinho depois da pausa de digitação, e o rótulo ao lado
+           conta em que pé está.
+           ========================================================== */
+        let anotTimer = null, anotSalvando = false;
+
+        function marcarAnot(estado) {
+            const el = document.getElementById('detSalvo');
+            if (!el) return;
+            const mapa = {
+                editando: ['edit', 'alterações não salvas', ''],
+                salvando: ['sync', 'salvando…', ''],
+                salvo:    ['check_circle', 'salvo', 'ok'],
+                erro:     ['error', 'não foi possível salvar', ''],
+                limpo:    ['', '', '']
+            };
+            const [ico, txt, cls] = mapa[estado] || mapa.limpo;
+            el.className = 'det-salvo' + (cls ? ' ' + cls : '');
+            el.innerHTML = txt
+                ? `<span class="material-symbols-rounded">${ico}</span>${escH(txt)}`
+                : '';
+        }
+
+        function anotacoesMudaram() {
+            marcarAnot('editando');
+            clearTimeout(anotTimer);
+            anotTimer = setTimeout(() => salvarAnotacoes(true), 1200);
+        }
+
+        async function salvarAnotacoes(automatico) {
+            if (anotSalvando) return;
+            clearTimeout(anotTimer);
             const btn = document.getElementById('btnSalvarAnotacoes');
             const txt = document.getElementById('detAnotacoes').value;
-            btn.innerText = "SALVANDO..."; btn.disabled = true;
+            const alvo = projIdEmFoco;
+            anotSalvando = true;
+            if (btn) btn.disabled = true;
+            marcarAnot('salvando');
 
             try {
-                await fetch(`/api/projetos/${projIdEmFoco}`, {
+                const r = await fetch(`/api/projetos/${alvo}`, {
                     method: 'PUT', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ anotacoes: txt })
                 });
-                const proj = projetosGlobais.find(p => p.id === projIdEmFoco);
+                if (!r.ok) throw new Error('falhou');
+                const proj = projetosGlobais.find(p => p.id === alvo);
                 if (proj) proj.anotacoes = txt;
-                showToast("Anotações salvas com sucesso!", "success");
+                marcarAnot('salvo');
+                // O salvamento automático não interrompe quem está escrevendo
+                // com um aviso na tela; o rótulo já contou.
+                if (!automatico) showToast("Anotações salvas.", "success");
             } catch(e) {
+                marcarAnot('erro');
                 showToast("Erro ao salvar anotações.", "error");
             } finally {
-                btn.innerText = "SALVAR ANOTAÇÕES"; btn.disabled = false;
+                anotSalvando = false;
+                if (btn) btn.disabled = false;
             }
+        }
+
+        /* ==========================================================
+           CARD EXPANDIDO
+           Helpers locais. Não copiar de crm.html nem de clientes.html:
+           cada tela tem os seus, e o nome parecido esconde a diferença
+           até a função inteira morrer com "X is not defined".
+           ========================================================== */
+        function detIniciais(nome) {
+            const p = String(nome || '').trim().split(/\s+/).filter(Boolean);
+            if (!p.length) return '—';
+            return ((p[0][0] || '') + (p.length > 1 ? p[p.length-1][0] : '')).toUpperCase();
+        }
+        function detCorAvatar(nome) {
+            let h = 0; const s = String(nome || '');
+            for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+            return [`hsl(${h} 62% 92%)`, `hsl(${h} 52% 34%)`];
+        }
+        function detDataCurta(iso) {
+            if (!iso) return null;
+            const d = new Date(iso);
+            return isNaN(d) ? null : d.toLocaleDateString('pt-BR');
+        }
+        function detDias(iso) {
+            if (!iso) return null;
+            const d = new Date(iso);
+            if (isNaN(d)) return null;
+            return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+        }
+        function detTextoDias(n) {
+            if (n === null) return '—';
+            return n === 0 ? 'hoje' : (n === 1 ? '1 dia' : n + ' dias');
+        }
+        function detMoeda(v) {
+            const n = Number(v);
+            if (!isFinite(n) || !n) return null;
+            return 'R$ ' + n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+        }
+        function detTamanho(bytes) {
+            const n = Number(bytes);
+            if (!isFinite(n) || n <= 0) return '';
+            return n < 1048576 ? Math.round(n / 1024) + ' KB'
+                               : (n / 1048576).toFixed(1).replace('.', ',') + ' MB';
+        }
+
+        /* A pílula de estado: um card Pausado abria idêntico a um em
+           andamento, e a pausa é justamente o que explica o prazo. */
+        const DET_ESTADO = {
+            'Backlog':       ['e-neutro', 'inbox'],
+            'Não Iniciado':  ['e-neutro', 'schedule'],
+            'Onboarding':    ['e-neutro', 'waving_hand'],
+            'Pausado':       ['e-pausa',  'pause_circle'],
+            'Finalizado':    ['e-fim',    'check_circle'],
+            'Cancelado':     ['e-morto',  'cancel']
+        };
+
+        function pintarEstado(proj) {
+            const el = document.getElementById('detStatus');
+            if (!el) return;
+            const st = proj.status;
+            if (!st) { el.hidden = true; return; }
+            const [cls, ico] = DET_ESTADO[st] || ['e-ativo', 'bolt'];
+            el.className = 'det-status ' + cls;
+            el.innerHTML = `<span class="material-symbols-rounded">${ico}</span>${escH(st)}`;
+            el.hidden = false;
+        }
+
+        function montarChipsDet(proj) {
+            const alvo = document.getElementById('detChips');
+            if (!alvo) return;
+            const chips = [];
+
+            if (proj.responsavel) {
+                const [bg, fg] = detCorAvatar(proj.responsavel);
+                chips.push(`<span class="det-chip"><span class="det-avatar" style="background:${bg};color:${fg}">${escH(detIniciais(proj.responsavel))}</span><b>${escH(proj.responsavel)}</b></span>`);
+            } else if (proj.aguardando_responsavel) {
+                chips.push(`<span class="det-chip"><span class="material-symbols-rounded">person_alert</span>Sem responsável</span>`);
+            }
+            if (proj.empresa) {
+                chips.push(`<span class="det-chip"><span class="material-symbols-rounded">apartment</span><b>${escH(proj.empresa)}</b></span>`);
+            }
+            chips.push(`<span class="det-chip"><span class="material-symbols-rounded">play_circle</span>Início <b id="detDataInicio">${escH(detDataCurta(proj.data_inicio) || '—')}</b></span>`);
+            chips.push(`<span class="det-chip"><span class="material-symbols-rounded">flag</span>Conclusão <b id="detDataFim">${escH(detDataCurta(proj.data_conclusao) || 'Em aberto')}</b></span>`);
+            if (proj.lote_total > 1) {
+                chips.push(`<span class="det-chip"><span class="material-symbols-rounded">stacks</span>Lote <b>${escH(proj.lote_pos)}/${escH(proj.lote_total)}</b></span>`);
+            }
+            if (proj.origem_lead_id) {
+                chips.push(`<button type="button" class="det-chip c-crm" onclick="trocarSegmento('origem')"><span class="material-symbols-rounded">handshake</span>Veio do CRM</button>`);
+            }
+            alvo.innerHTML = chips.join('');
+        }
+
+        function montarMetricasDet(proj, totalSegundos) {
+            const alvo = document.getElementById('detMetricas');
+            if (!alvo) return;
+            const tiles = [];
+
+            tiles.push(`
+                <div class="det-tile t-escuro">
+                    <span class="det-tile-rot">Tempo dedicado</span>
+                    <div class="det-tile-num" id="detTempoTotal">${formatarSegundosTick(totalSegundos || 0)}</div>
+                    <span class="det-tile-pe" id="detTempoPe">${totalSegundos ? 'somado dos registros' : 'nenhum registro ainda'}</span>
+                </div>`);
+
+            // A pausa parte do cliente e congela lead e cycle time. Mostrar
+            // só o tempo dedicado esconde metade da história — a metade que
+            // responde "a entrega levou 15 dias nossos, o cliente esperou 30".
+            const parado = Number(proj.tempo_parado_segundos) || 0;
+            if (parado > 0) {
+                tiles.push(`
+                    <div class="det-tile t-atencao">
+                        <span class="det-tile-rot">Tempo parado</span>
+                        <div class="det-tile-num">${formatarSegundosTick(parado)}</div>
+                        <span class="det-tile-pe">espera do cliente</span>
+                    </div>`);
+            }
+
+            const dias = detDias(proj.data_status_atual);
+            tiles.push(`
+                <div class="det-tile">
+                    <span class="det-tile-rot">No status atual</span>
+                    <div class="det-tile-num">${escH(detTextoDias(dias))}</div>
+                    <span class="det-tile-pe">${escH(proj.status || '—')}</span>
+                </div>`);
+
+            alvo.innerHTML = tiles.join('');
+        }
+
+        /* Segmentos: mesmo padrão das abas de visão do quadro, para o modal
+           não inventar um componente só dele. */
+        function trocarSegmento(nome) {
+            ['mural', 'execucao', 'origem'].forEach(s => {
+                const btn = document.getElementById('seg-' + s);
+                const aba = document.getElementById('aba-' + s);
+                if (!btn || !aba) return;
+                const ativo = (s === nome);
+                btn.classList.toggle('on', ativo);
+                btn.setAttribute('aria-selected', ativo ? 'true' : 'false');
+                aba.hidden = !ativo;
+            });
+            if (nome === 'origem') carregarOrigem(projIdEmFoco);
+        }
+
+        /* ---------- Origem comercial ---------- */
+        let origemCarregada = null;
+
+        async function carregarOrigem(id) {
+            if (!id || origemCarregada === id) return;
+            const alvo = document.getElementById('listaOrigem');
+            if (!alvo) return;
+            origemCarregada = id;
+            alvo.innerHTML = `<div class="det-skel"><i></i><i></i><i></i><i></i><i></i></div>`;
+            try {
+                const r = await fetch(`/api/projetos/${id}/dossie`);
+                if (!r.ok) throw new Error('falhou');
+                const d = await r.json();
+                renderOrigem(d.origem);
+            } catch (e) {
+                origemCarregada = null;
+                alvo.innerHTML = `<div class="det-vazio"><span class="material-symbols-rounded">cloud_off</span>
+                    <b>Não foi possível carregar</b>
+                    <span class="txt">Tente abrir o card de novo. O trabalho no quadro não depende disto.</span></div>`;
+            }
+        }
+
+        function renderOrigem(o) {
+            const alvo = document.getElementById('listaOrigem');
+            if (!alvo) return;
+            if (!o) {
+                alvo.innerHTML = `<div class="det-vazio"><span class="material-symbols-rounded">handshake</span>
+                    <b>Sem origem comercial</b>
+                    <span class="txt">Este card não veio de um fechamento do CRM.</span></div>`;
+                return;
+            }
+
+            const n = o.negociacao || {};
+            const partes = [];
+
+            // Contato primeiro: é o que quem recebe uma passagem entre
+            // quadros abre o painel para buscar.
+            const c = o.contato || {};
+            if (c.cnpj || c.telefone || c.email) {
+                partes.push(`
+                <div class="dos-bloco">
+                    <div class="dos-rot">Contato</div>
+                    <div class="dos-cartao">
+                        <div class="dos-campos">
+                            ${campoDos('CNPJ', c.cnpj)}
+                            ${campoDos('WhatsApp', c.telefone, c.telefone ? `https://wa.me/55${String(c.telefone).replace(/\D/g,'')}` : null)}
+                            ${campoDos('E-mail', c.email, c.email ? 'mailto:' + c.email : null)}
+                        </div>
+                    </div>
+                </div>`);
+            }
+
+            if (n.lead_id) {
+                const valor = detMoeda(n.valor);
+                partes.push(`
+                <div class="dos-bloco">
+                    <div class="dos-rot">Negociação</div>
+                    <div class="dos-cartao">
+                        ${valor ? `<div><div class="dos-campo-r">Valor fechado</div><div class="dos-valor">${escH(valor)}</div></div>` : ''}
+                        <div class="dos-campos">
+                            ${campoDos('Produto', n.produto)}
+                            ${campoDos('Fechado em', detDataCurta(n.fechado_em))}
+                            ${campoDos('Responsável', n.responsavel)}
+                            ${campoDos('Origem do lead', n.origem)}
+                        </div>
+                    </div>
+                </div>`);
+            }
+
+            partes.push(`
+                <div class="dos-bloco">
+                    <div class="dos-rot">Contrato</div>
+                    ${o.contrato ? `
+                    <div class="dos-contrato">
+                        <span class="dos-ct-ico"><span class="material-symbols-rounded">description</span></span>
+                        <div class="dos-ct-txt">
+                            <div class="dos-ct-nome">${escH(o.contrato.nome || 'Contrato')}</div>
+                            <div class="dos-ct-meta">${escH([detTamanho(o.contrato.tamanho), o.contrato.enviado_por ? 'por ' + o.contrato.enviado_por : '', detDataCurta(o.contrato.enviado_em)].filter(Boolean).join(' · '))}</div>
+                        </div>
+                        <button class="btn-md btn-md-primario" onclick="abrirContratoDoCard()">
+                            <span class="material-symbols-rounded">open_in_new</span>Abrir</button>
+                    </div>` : `
+                    <div class="dos-sem"><span class="material-symbols-rounded">draft</span>Nenhum contrato anexado a este fechamento.</div>`}
+                </div>`);
+
+            const trilha = o.trilha || [];
+            if (trilha.length) {
+                partes.push(`
+                <div class="dos-bloco">
+                    <div class="dos-rot">Trajetória no funil</div>
+                    <div class="dos-tl">${trilha.map(linhaTrilha).join('')}</div>
+                </div>`);
+            }
+
+            const entregas = (o.entregas || []).filter(e => String(e.id) !== String(projIdEmFoco));
+            if (entregas.length) {
+                partes.push(`
+                <div class="dos-bloco">
+                    <div class="dos-rot">Outras entregas deste contrato</div>
+                    ${entregas.map(e => `
+                    <div class="dos-entrega">
+                        <span class="material-symbols-rounded" style="font-size:18px;color:var(--tinta-3)">task_alt</span>
+                        <div class="dos-entrega-txt">
+                            <div class="dos-entrega-nome">${escH(e.nome)}</div>
+                            <div class="dos-entrega-meta">${escH([e.area, e.status, e.responsavel].filter(Boolean).join(' · '))}</div>
+                        </div>
+                    </div>`).join('')}
+                </div>`);
+            }
+
+            alvo.innerHTML = partes.join('');
+        }
+
+        function campoDos(rotulo, valor, href) {
+            const vazio = valor === null || valor === undefined || valor === '';
+            const conteudo = vazio ? 'não informado'
+                : (href ? `<a href="${escAttr(href)}" target="_blank" rel="noopener">${escH(valor)}</a>` : escH(valor));
+            return `<div class="dos-campo"><div class="dos-campo-r">${escH(rotulo)}</div>
+                <div class="dos-campo-v${vazio ? ' vazio' : ''}">${conteudo}</div></div>`;
+        }
+
+        function linhaTrilha(m) {
+            // A passagem preenchida automaticamente não pode se parecer com
+            // negociação que aconteceu de verdade.
+            const meta = [detDataCurta(m.criado_em), m.autor].filter(Boolean).join(' · ');
+            return `
+            <div class="dos-mv${m.automatica ? ' auto' : ''}">
+                <span class="dos-pt"></span>
+                <div class="dos-mv-txt">
+                    <div class="dos-mv-etapa">${escH(m.para_coluna || '—')}</div>
+                    <div class="dos-mv-meta">${escH(meta)}</div>
+                    ${m.automatica ? `<span class="dos-mv-auto">preenchida automaticamente</span>` : ''}
+                    ${m.objecao ? `<div class="dos-mv-obj"><b>${escH(m.objecao)}</b>${m.objecao_detalhe ? ' — ' + escH(m.objecao_detalhe) : ''}</div>` : ''}
+                </div>
+            </div>`;
+        }
+
+        async function abrirContratoDoCard() {
+            try {
+                const r = await fetch(`/api/projetos/${projIdEmFoco}/contrato`);
+                const d = await r.json();
+                if (r.ok && d.url) window.open(d.url, '_blank', 'noopener');
+                else showToast(d.mensagem || 'Não foi possível abrir o contrato.', 'error');
+            } catch (e) { showToast('Erro de conexão.', 'error'); }
         }
 
         async function abrirDetalhes(id, event) {
             if(event && (event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes'))) return;
 
             projIdEmFoco = id;
+            origemCarregada = null;
             const proj = projetosGlobais.find(p => p.id === id);
-            
-            document.getElementById('detArea').innerText = proj.area;
-            document.getElementById('detNome').innerText = proj.nome_projeto;
-            document.getElementById('detTempoTotal').innerText = formatarSegundosTick(proj.tempo_total_segundos || 0);
+            if (!proj) return;
 
-            document.getElementById('detDataInicio').innerText = proj.data_inicio ? new Date(proj.data_inicio).toLocaleDateString('pt-BR') : '-';
-            document.getElementById('detDataFim').innerText = proj.data_conclusao ? new Date(proj.data_conclusao).toLocaleDateString('pt-BR') : 'Em aberto';
+            document.getElementById('detArea').textContent =
+                proj.subquadro ? `${proj.area} › ${proj.subquadro}` : (proj.area || '');
+            document.getElementById('detNome').textContent = proj.nome_projeto || '';
+            pintarEstado(proj);
+            montarChipsDet(proj);
+            montarMetricasDet(proj, proj.tempo_total_segundos || 0);
 
-            // NOVO: Puxa o texto guardado e injeta na textarea da direita
             document.getElementById('detAnotacoes').value = proj.anotacoes || '';
+            marcarAnot('limpo');
+
+            // O segmento de origem só existe quando há de onde vir.
+            const segOrigem = document.getElementById('seg-origem');
+            if (segOrigem) segOrigem.hidden = !proj.origem_lead_id && !proj.cliente_id;
+            trocarSegmento('mural');
 
             document.getElementById('modalDetalhes').style.display = 'flex';
 
-            const res = await fetch(`/api/projetos/${id}/historico`);
-            const data = await res.json();
             const container = document.getElementById('listaHistorico');
-            
+            container.innerHTML = `<div class="det-skel"><i></i><i></i><i></i></div>`;
+
+            let data = {};
+            try {
+                const res = await fetch(`/api/projetos/${id}/historico`);
+                data = await res.json();
+            } catch (e) { data = {}; }
+
             if (data.historico && data.historico.length > 0) {
                 // Recalcula o total direto dos logs reais — ignora cache
                 const totalReal = data.historico.reduce((soma, h) => soma + (h.tempo_segundos || 0), 0);
-                document.getElementById('detTempoTotal').innerText = formatarSegundosTick(totalReal);
+                montarMetricasDet(proj, totalReal);
 
-                container.innerHTML = data.historico.map(h => {
-                    return `
-                    <div class="historico-item">
-                        <div class="historico-info">
-                            <span style="font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${h.descricao_tarefa}</span>
-                            <span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
-                                ${new Date(h.criado_em).toLocaleDateString('pt-BR')} • ${h.colaborador}
-                            </span>
+                container.innerHTML = data.historico.map(h => `
+                    <div class="hist-item">
+                        <div class="hist-txt">
+                            <span class="hist-tarefa">${escH(h.descricao_tarefa) || 'Sem descrição'}</span>
+                            <span class="hist-meta">${escH(detDataCurta(h.criado_em) || '')} · ${escH(h.colaborador) || '—'}</span>
                         </div>
-                        <span style="font-family: monospace; font-size: 16px; font-weight: 900; color: var(--primary-purple);">${formatarSegundosTick(h.tempo_segundos)}</span>
-                    </div>`;
-                }).join('');
+                        <span class="hist-tempo">${formatarSegundosTick(h.tempo_segundos)}</span>
+                    </div>`).join('');
             } else {
-                container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registros.</p>';
+                container.innerHTML = `<div class="det-vazio"><span class="material-symbols-rounded">timer_off</span>
+                    <b>Nenhum tempo registrado</b>
+                    <span class="txt">Os apontamentos do cronômetro aparecem aqui.</span></div>`;
             }
 
             carregarComentarios(id);
@@ -3426,7 +3992,26 @@
             atualizarTiposSolicitacao();
             document.getElementById('solicDesc').value = '';
             document.getElementById('solicPrazo').value = '';
+            mostrarOQueLeva(p);
             document.getElementById('modalSolicitacao').style.display = 'flex';
+        }
+
+        /* O card derivado não recebe cópia de CNPJ, contrato e valor: ele
+           herda o lead de origem e o painel resolve o resto na leitura.
+           Aqui a janela só diz o que o outro lado vai ver. */
+        function mostrarOQueLeva(p) {
+            const caixa = document.getElementById('solicLeva');
+            const txt = document.getElementById('solicLevaTxt');
+            if (!caixa || !txt) return;
+            if (p.origem_lead_id) {
+                txt.innerHTML = 'Seguem junto <b>CNPJ, WhatsApp, e-mail, contrato e valor da negociação</b>, no painel Origem comercial do card.';
+                caixa.hidden = false;
+            } else if (p.cliente_id) {
+                txt.innerHTML = 'Seguem junto os <b>dados de contato do cliente</b>. Este card não veio do CRM, então não há contrato nem valor.';
+                caixa.hidden = false;
+            } else {
+                caixa.hidden = true;
+            }
         }
 
         function atualizarTiposSolicitacao() {
@@ -3786,6 +4371,19 @@
             col.classList.remove('min');
         }
 
+        /* Esc fecha o modal que estiver aberto. Antes só o seletor de
+           atividade respondia ao teclado: o card expandido prendia quem
+           navega sem mouse. */
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            if (document.getElementById('pickAtividade').classList.contains('on')) return;
+            const abertos = Array.from(document.querySelectorAll('.modal-overlay'))
+                .filter(m => m.style.display === 'flex' || m.classList.contains('ativo'));
+            if (!abertos.length) return;
+            e.preventDefault();
+            fecharModal(abertos[abertos.length - 1].id);
+        });
+
         /* Teclado do seletor: setas, Enter e Esc */
         document.addEventListener('keydown', function(e) {
             if (!document.getElementById('pickAtividade').classList.contains('on')) return;
@@ -3833,6 +4431,12 @@
                 <div style="font-size:11.5px; color:var(--tinta-3); line-height:1.5; background:var(--papel-2); padding:10px 12px; border-radius:8px; display:flex; gap:8px;">
                     <span class="material-symbols-rounded" style="font-size:15px; flex-shrink:0; margin-top:1px;">info</span>
                     <span id="solicAviso">Cria um card no quadro escolhido, vinculado a este projeto. Os dois lados passam a exibir o elo.</span>
+                </div>
+                <!-- Quem envia precisa saber o que o outro lado vai enxergar;
+                     senão repete no texto o que já viaja sozinho. -->
+                <div id="solicLeva" class="solic-leva" hidden>
+                    <span class="material-symbols-rounded">forward_to_inbox</span>
+                    <span id="solicLevaTxt"></span>
                 </div>
             </div>
 
