@@ -1,1172 +1,499 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-tema="claro">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Início · core.cx</title>
-
-<script>
-/* Define o tema antes da primeira pintura para não haver flash branco em dark. */
-(function(){
-  try{
-    var pref = localStorage.getItem('cx_tema') || 'sistema';
-    var escuro = pref === 'escuro' ||
-      (pref === 'sistema' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    var r = document.documentElement;
-    r.dataset.tema = escuro ? 'escuro' : 'claro';
-    r.dataset.temaPref = pref;
-  }catch(e){}
-})();
-</script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
-
-<style>
-/* ============================================================
-   TOKENS
-   Uma escala por eixo. Nada de valores avulsos no componente.
-   ============================================================ */
-:root{
-  color-scheme: light;
-
-  /* superfícies */
-  --canvas:#F3F3F6;
-  --paper:#FFFFFF;
-  --paper-2:#FAFAFC;
-  --paper-3:#F1F1F5;
-
-  /* traços */
-  --fio:#E5E5EB;
-  --fio-forte:#D2D2DC;
-
-  /* texto */
-  --ink:#131318;
-  --ink-2:#54545F;
-  --ink-3:#82828E;
-
-  /* marca */
-  --brand:#5B4BD6;
-  --brand-forte:#4A3BC4;
-  --brand-fraco:#EFEDFC;
-  --brand-fio:#D8D3F8;
-
-  /* estados */
-  --grave:#C0392F;
-  --grave-fraco:#FCEBEA;
-  --grave-fio:#F2C9C5;
-  --aviso:#A2590B;
-  --aviso-fraco:#FDF2E0;
-  --aviso-fio:#EFD6A8;
-  --bom:#0C8F63;
-  --bom-fraco:#E4F5EE;
-
-  /* acento vivo — usado só no cronômetro em execução */
-  --vivo:#C6F53F;
-
-  /* raios: hierarquia, não um valor para tudo */
-  --r-sm:7px;
-  --r-md:10px;
-  --r-lg:14px;
-  --r-pill:999px;
-
-  /* elevação: repouso é plano; sombra só quando algo sobe */
-  --sombra-0:none;
-  --sombra-1:0 1px 2px rgba(19,19,24,.05);
-  --sombra-2:0 6px 20px -6px rgba(19,19,24,.16), 0 2px 6px rgba(19,19,24,.05);
-
-  /* espaço: escala de 4 */
-  --sp-1:4px;  --sp-2:8px;  --sp-3:12px; --sp-4:16px;
-  --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
-
-  /* tipografia */
-  --fonte-ui:'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --fonte-tit:'Inter Tight', 'Inter', system-ui, sans-serif;
-  --fonte-num:'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
-
-  --fs-12:12px; --fs-13:13px; --fs-14:14px; --fs-15:15px;
-  --fs-17:17px; --fs-20:20px; --fs-26:26px; --fs-32:32px;
-
-  /* layout */
-  --barra-h:56px;
-  --leito:1160px;
-  --trilho:308px;
-  --transicao:150ms cubic-bezier(.2,.6,.3,1);
-}
-
-html[data-tema="escuro"]{
-  color-scheme: dark;
-
-  --canvas:#0C0C10;
-  --paper:#15151B;
-  --paper-2:#1B1B22;
-  --paper-3:#22222A;
-
-  --fio:#26262F;
-  --fio-forte:#35353F;
-
-  --ink:#F1F1F4;
-  --ink-2:#A2A2AE;
-  --ink-3:#74747F;
-
-  --brand:#9C8DFF;
-  --brand-forte:#B0A4FF;
-  --brand-fraco:#211D3A;
-  --brand-fio:#332D57;
-
-  --grave:#F08379;
-  --grave-fraco:#2B1715;
-  --grave-fio:#4A231F;
-  --aviso:#E5AC5C;
-  --aviso-fraco:#2A1F0F;
-  --aviso-fio:#463415;
-  --bom:#43C79A;
-  --bom-fraco:#0F2820;
-
-  --sombra-1:0 1px 2px rgba(0,0,0,.4);
-  --sombra-2:0 10px 30px -8px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.35);
-}
-
-/* ============================================================
-   BASE
-   ============================================================ */
-*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
-
-html{ -webkit-text-size-adjust:100%; }
-
-body{
-  font-family:var(--fonte-ui);
-  font-size:var(--fs-14);
-  line-height:1.5;
-  color:var(--ink);
-  background:var(--canvas);
-  min-height:100vh;
-  min-height:100dvh;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  font-feature-settings:'cv11' 1;
-}
-
-button, input, select, textarea{ font:inherit; color:inherit; border:none; background:none; }
-button{ cursor:pointer; }
-a{ color:inherit; text-decoration:none; }
-ul, ol{ list-style:none; }
-
-h1,h2,h3{ font-family:var(--fonte-tit); font-weight:600; letter-spacing:-.02em; line-height:1.2; }
-
-/* Numeral tabular. Reservado a dados, nunca a rótulos. */
-.num{
-  font-family:var(--fonte-num);
-  font-variant-numeric:tabular-nums;
-  font-weight:500;
-  letter-spacing:-.02em;
-}
-
-.ms{
-  font-family:'Material Symbols Rounded';
-  font-weight:400;
-  font-style:normal;
-  line-height:1;
-  letter-spacing:normal;
-  display:inline-block;
-  white-space:nowrap;
-  direction:ltr;
-  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
-  -webkit-font-feature-settings:'liga';
-  font-feature-settings:'liga';
-  -webkit-font-smoothing:antialiased;
-  user-select:none;
-}
-
-.oculto-visual{
-  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
-}
-
-/* Foco visível e consistente em toda a tela. */
-:focus{ outline:none; }
-:focus-visible{
-  outline:2px solid var(--brand);
-  outline-offset:2px;
-  border-radius:var(--r-sm);
-}
-
-::selection{ background:var(--brand-fraco); color:var(--brand-forte); }
-
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
-}
-
-::-webkit-scrollbar{ width:10px; height:10px; }
-::-webkit-scrollbar-track{ background:transparent; }
-::-webkit-scrollbar-thumb{ background:var(--fio-forte); border-radius:99px; border:3px solid var(--canvas); }
-::-webkit-scrollbar-thumb:hover{ background:var(--ink-3); }
-
-/* ============================================================
-   BARRA SUPERIOR
-   ============================================================ */
-.barra{
-  position:sticky; top:0; z-index:30;
-  height:var(--barra-h);
-  display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4);
-  padding:0 var(--sp-5) 0 var(--sp-5);
-  background:color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter:saturate(180%) blur(12px);
-  -webkit-backdrop-filter:saturate(180%) blur(12px);
-  border-bottom:1px solid var(--fio);
-}
-
-.marca{
-  font-family:var(--fonte-tit);
-  font-size:var(--fs-17); font-weight:700; letter-spacing:-.035em;
-  padding:var(--sp-1) var(--sp-2); margin-left:calc(var(--sp-2) * -1);
-  border-radius:var(--r-sm);
-}
-.marca b{ color:var(--brand); font-weight:700; }
-
-.barra-dir{ display:flex; align-items:center; gap:var(--sp-2); }
-
-.btn-icone{
-  width:34px; height:34px; border-radius:var(--r-sm);
-  display:inline-flex; align-items:center; justify-content:center;
-  color:var(--ink-2);
-  transition:background var(--transicao), color var(--transicao);
-}
-.btn-icone .ms{ font-size:19px; }
-.btn-icone:hover{ background:var(--paper-3); color:var(--ink); }
-
-/* ============================================================
-   ESTRUTURA
-   ============================================================ */
-.leito{
-  max-width:var(--leito);
-  margin:0 auto;
-  padding:var(--sp-8) var(--sp-5) var(--sp-12);
-}
-
-.grade{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) var(--trilho);
-  gap:var(--sp-6);
-  align-items:start;
-}
-
-.coluna{ display:flex; flex-direction:column; gap:var(--sp-6); min-width:0; }
-
-.trilho{
-  display:flex; flex-direction:column; gap:var(--sp-5);
-  position:sticky; top:calc(var(--barra-h) + var(--sp-6));
-}
-
-/* ============================================================
-   ABERTURA — o herói é a frase do dia, gerada pelos dados
-   ============================================================ */
-.abertura{ margin-bottom:var(--sp-6); }
-
-.saudacao{
-  font-size:var(--fs-13); font-weight:500; color:var(--ink-3);
-  margin-bottom:var(--sp-2);
-}
-.saudacao .dia{ text-transform:capitalize; }
-.saudacao .sep{ color:var(--fio-forte); margin:0 var(--sp-2); }
-
-.manchete{
-  font-family:var(--fonte-tit);
-  font-size:var(--fs-32);
-  font-weight:600;
-  letter-spacing:-.035em;
-  line-height:1.14;
-  max-width:22ch;
-  text-wrap:balance;
-}
-.manchete .g{ color:var(--grave); }
-.manchete .a{ color:var(--aviso); }
-
-.manchete-sk{
-  height:38px; width:min(420px, 90%); border-radius:var(--r-sm);
-}
-
-/* ============================================================
-   CARTÃO — primitiva única, sem sombra em repouso
-   ============================================================ */
-.cartao{
-  background:var(--paper);
-  border:1px solid var(--fio);
-  border-radius:var(--r-lg);
-}
-
-.cartao-cab{
-  display:flex; align-items:baseline; justify-content:space-between; gap:var(--sp-3);
-  padding:var(--sp-4) var(--sp-5) var(--sp-3);
-}
-.cartao-tit{ font-size:var(--fs-15); font-weight:600; font-family:var(--fonte-tit); letter-spacing:-.015em; }
-.cartao-nota{ font-size:var(--fs-13); color:var(--ink-3); }
-
-.elo{
-  font-size:var(--fs-13); font-weight:500; color:var(--brand);
-  border-radius:var(--r-sm); padding:2px 4px; margin:-2px -4px;
-}
-.elo:hover{ background:var(--brand-fraco); }
-
-/* Rótulo de grupo dentro de um cartão. Sentença, não caixa-alta. */
-.grupo-rot{
-  display:flex; align-items:center; gap:var(--sp-2);
-  padding:var(--sp-3) var(--sp-5) var(--sp-2);
-  font-size:var(--fs-12); font-weight:600; color:var(--ink-3);
-}
-.grupo-rot::after{ content:''; flex:1; height:1px; background:var(--fio); }
-.grupo-rot .ponto{ width:6px; height:6px; border-radius:50%; background:var(--ink-3); }
-.grupo-rot[data-tom="grave"]{ color:var(--grave); }
-.grupo-rot[data-tom="grave"] .ponto{ background:var(--grave); }
-.grupo-rot[data-tom="aviso"]{ color:var(--aviso); }
-.grupo-rot[data-tom="aviso"] .ponto{ background:var(--aviso); }
-.grupo-rot[data-tom="brand"]{ color:var(--brand); }
-.grupo-rot[data-tom="brand"] .ponto{ background:var(--brand); }
-
-/* ============================================================
-   TRIAGEM — elemento de assinatura
-   A espinha vertical à esquerda carrega a urgência.
-   ============================================================ */
-.triagem{ padding-bottom:var(--sp-2); }
-
-.linha{
-  position:relative;
-  display:flex; align-items:center; gap:var(--sp-3);
-  padding:var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-5);
-  transition:background var(--transicao);
-}
-.linha + .linha{ box-shadow:inset 0 1px 0 var(--fio); }
-.grupo-rot + .linha{ box-shadow:none; }
-
-.linha::before{
-  content:'';
-  position:absolute; left:0; top:6px; bottom:6px;
-  width:3px; border-radius:0 3px 3px 0;
-  background:transparent;
-  transition:background var(--transicao);
-}
-.linha[data-tom="grave"]::before{ background:var(--grave); }
-.linha[data-tom="aviso"]::before{ background:var(--aviso); }
-.linha[data-tom="brand"]::before{ background:var(--brand); }
-
-.linha:hover{ background:var(--paper-2); }
-.linha:focus-visible{ outline-offset:-2px; }
-
-.linha-corpo{ flex:1; min-width:0; }
-
-.linha-meta{
-  display:flex; align-items:center; gap:var(--sp-2);
-  font-size:var(--fs-12); color:var(--ink-3); font-weight:500;
-  margin-bottom:1px;
-}
-.linha-cliente{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.linha-quadro{ color:var(--ink-3); flex-shrink:0; }
-.linha-quadro::before{ content:'em '; }
-
-.linha-nome{
-  font-size:var(--fs-14); font-weight:500; color:var(--ink);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-
-.linha-dir{ display:flex; align-items:center; gap:var(--sp-2); flex-shrink:0; }
-
-.selo{
-  display:inline-flex; align-items:center; gap:5px;
-  font-size:var(--fs-12); font-weight:500; white-space:nowrap;
-  padding:3px 9px; border-radius:var(--r-pill);
-  background:var(--paper-3); color:var(--ink-2);
-  border:1px solid transparent;
-}
-.selo .ms{ font-size:14px; }
-.selo[data-tom="grave"]{ background:var(--grave-fraco); color:var(--grave); border-color:var(--grave-fio); }
-.selo[data-tom="aviso"]{ background:var(--aviso-fraco); color:var(--aviso); border-color:var(--aviso-fio); }
-.selo[data-tom="brand"]{ background:var(--brand-fraco); color:var(--brand); border-color:var(--brand-fio); }
-
-.chevron{ color:var(--fio-forte); display:flex; transition:color var(--transicao), transform var(--transicao); }
-.chevron .ms{ font-size:18px; }
-.linha:hover .chevron{ color:var(--ink-3); transform:translateX(2px); }
-
-.rodape-lista{
-  padding:var(--sp-2) var(--sp-5) var(--sp-3);
-}
-.btn-mais{
-  width:100%; text-align:left;
-  font-size:var(--fs-13); font-weight:500; color:var(--brand);
-  padding:var(--sp-2) 0;
-  border-radius:var(--r-sm);
-}
-.btn-mais:hover{ text-decoration:underline; }
-
-/* ============================================================
-   FILA DE ATRIBUIÇÃO — bloqueio de fluxo, tratado à parte
-   ============================================================ */
-.fila{ border-color:var(--aviso-fio); }
-html[data-tema="claro"] .fila{ background:linear-gradient(var(--aviso-fraco), var(--aviso-fraco)) 0 0/100% 44px no-repeat, var(--paper); }
-.fila .cartao-tit{ color:var(--aviso); }
-
-.fila-linha{
-  display:flex; align-items:center; gap:var(--sp-3);
-  padding:var(--sp-3) var(--sp-5);
-  transition:background var(--transicao);
-}
-.fila-linha + .fila-linha{ box-shadow:inset 0 1px 0 var(--fio); }
-.fila-linha:hover{ background:var(--paper-2); }
-.fila-qtd{
-  min-width:26px; height:22px; padding:0 6px;
-  display:inline-flex; align-items:center; justify-content:center;
-  font-size:var(--fs-12); border-radius:var(--r-sm);
-  background:var(--aviso-fraco); color:var(--aviso);
-  border:1px solid var(--aviso-fio);
-}
-html[data-tema="escuro"] .fila-qtd{ border-color:var(--aviso-fio); }
-.fila-area{ flex:1; font-size:var(--fs-14); font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.fila-pe{
-  padding:var(--sp-3) var(--sp-5) var(--sp-4);
-  font-size:var(--fs-13); color:var(--ink-3);
-  border-top:1px solid var(--fio);
-}
-
-/* ============================================================
-   CRONÔMETRO — único lugar onde o acento vivo aparece
-   ============================================================ */
-.crono{
-  display:flex; align-items:center; gap:var(--sp-3);
-  padding:var(--sp-4);
-  border-radius:var(--r-lg);
-  background:#17171D;
-  border:1px solid #26262F;
-  color:#fff;
-  transition:border-color var(--transicao);
-}
-.crono:hover{ border-color:#3A3A46; }
-
-.crono-pulso{
-  width:8px; height:8px; border-radius:50%; flex-shrink:0;
-  background:var(--vivo);
-  animation:pulsar 2.4s ease-out infinite;
-}
-.crono[data-pausado="1"] .crono-pulso{ background:#7A7A86; animation:none; }
-@keyframes pulsar{
-  0%{ box-shadow:0 0 0 0 rgba(198,245,63,.45); }
-  70%{ box-shadow:0 0 0 9px rgba(198,245,63,0); }
-  100%{ box-shadow:0 0 0 0 rgba(198,245,63,0); }
-}
-
-.crono-info{ flex:1; min-width:0; }
-.crono-nome{ font-size:var(--fs-13); font-weight:500; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.crono-sub{ font-size:var(--fs-12); color:rgba(255,255,255,.55); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.crono-relogio{ font-size:var(--fs-15); font-weight:600; color:var(--vivo); flex-shrink:0; }
-.crono[data-pausado="1"] .crono-relogio{ color:#B9B9C4; }
-
-/* ============================================================
-   PANORAMA — trilho, contagem alinhada à direita
-   ============================================================ */
-.painel-tit{
-  font-size:var(--fs-13); font-weight:600; color:var(--ink-2);
-  font-family:var(--fonte-tit); letter-spacing:-.01em;
-  padding:0 var(--sp-1) var(--sp-3);
-}
-
-.medidas{ overflow:hidden; }
-.medida{
-  display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3);
-  padding:var(--sp-3) var(--sp-4);
-  transition:background var(--transicao);
-}
-.medida + .medida{ box-shadow:inset 0 1px 0 var(--fio); }
-a.medida:hover{ background:var(--paper-2); }
-.medida-rot{ font-size:var(--fs-13); color:var(--ink-2); }
-.medida-val{ font-size:var(--fs-17); font-weight:600; color:var(--ink); }
-.medida-val.vazio{ color:var(--ink-3); font-weight:500; }
-
-/* ============================================================
-   QUADROS — lista compacta, não uma grade de cards iguais
-   ============================================================ */
-.quadro-linha{
-  display:flex; align-items:center; gap:var(--sp-3);
-  padding:var(--sp-2) var(--sp-3);
-  border-radius:var(--r-md);
-  transition:background var(--transicao);
-}
-.quadro-linha:hover{ background:var(--paper-2); }
-.quadro-ico{
-  width:28px; height:28px; border-radius:var(--r-sm); flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-}
-.quadro-ico .ms{ font-size:17px; }
-.quadro-nome{ flex:1; font-size:var(--fs-13); font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.quadro-qtd{ font-size:var(--fs-13); color:var(--ink-3); flex-shrink:0; }
-.quadro-qtd[data-zero="1"]{ color:var(--fio-forte); }
-
-.painel-lista{ padding:var(--sp-2); }
-
-/* ============================================================
-   ESTADOS: vazio, erro, carregando
-   ============================================================ */
-.vazio{
-  padding:var(--sp-8) var(--sp-5);
-  text-align:center;
-}
-.vazio-ico{
-  width:40px; height:40px; border-radius:var(--r-pill);
-  background:var(--bom-fraco); color:var(--bom);
-  display:inline-flex; align-items:center; justify-content:center;
-  margin-bottom:var(--sp-3);
-}
-.vazio-ico .ms{ font-size:22px; }
-.vazio p{ font-size:var(--fs-15); font-weight:500; }
-.vazio small{ display:block; font-size:var(--fs-13); color:var(--ink-3); margin-top:var(--sp-1); }
-
-.erro{
-  padding:var(--sp-5);
-  display:flex; gap:var(--sp-3); align-items:flex-start;
-}
-.erro-ico{ color:var(--grave); display:flex; padding-top:1px; }
-.erro-ico .ms{ font-size:20px; }
-.erro-txt{ flex:1; }
-.erro-txt strong{ display:block; font-size:var(--fs-14); font-weight:600; }
-.erro-txt p{ font-size:var(--fs-13); color:var(--ink-2); margin-top:2px; }
-
-.btn{
-  display:inline-flex; align-items:center; gap:6px;
-  height:32px; padding:0 var(--sp-3);
-  border-radius:var(--r-sm);
-  font-size:var(--fs-13); font-weight:500;
-  background:var(--paper); color:var(--ink);
-  border:1px solid var(--fio-forte);
-  transition:background var(--transicao), border-color var(--transicao);
-}
-.btn:hover{ background:var(--paper-3); }
-.btn .ms{ font-size:16px; }
-.btn-primario{ background:var(--brand); color:#fff; border-color:transparent; }
-.btn-primario:hover{ background:var(--brand-forte); }
-html[data-tema="escuro"] .btn-primario{ color:#14141A; }
-
-.sk{
-  background:linear-gradient(90deg, var(--paper-3) 25%, var(--fio) 37%, var(--paper-3) 63%);
-  background-size:400% 100%;
-  animation:brilho 1.4s ease infinite;
-  border-radius:var(--r-sm);
-}
-@keyframes brilho{ 0%{ background-position:100% 50%; } 100%{ background-position:0 50%; } }
-
-.sk-linha{ display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-3) var(--sp-5); }
-.sk-linha + .sk-linha{ box-shadow:inset 0 1px 0 var(--fio); }
-.sk-corpo{ flex:1; }
-.sk-a{ height:9px; width:38%; margin-bottom:7px; }
-.sk-b{ height:12px; width:64%; }
-.sk-c{ height:20px; width:76px; border-radius:var(--r-pill); }
-
-/* ============================================================
-   RESPONSIVO
-   ============================================================ */
-@media (max-width:1060px){
-  .grade{ grid-template-columns:minmax(0,1fr); }
-  .trilho{ position:static; }
-  .painel-lista{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:var(--sp-1); }
-}
-
-@media (max-width:760px){
-  :root{ --fs-32:26px; }
-  .barra{ padding-left:60px; padding-right:var(--sp-4); } /* espaço do botão da sidebar */
-  .leito{ padding:var(--sp-6) var(--sp-4) var(--sp-10); }
-  .cartao-cab, .rodape-lista, .fila-pe{ padding-left:var(--sp-4); padding-right:var(--sp-4); }
-  .grupo-rot, .linha, .fila-linha, .sk-linha{ padding-left:var(--sp-4); padding-right:var(--sp-4); }
-  .manchete{ max-width:none; }
-}
-
-@media (max-width:520px){
-  /* Em vez de esconder selos, a linha quebra e mantém a informação. */
-  .linha{ align-items:flex-start; flex-wrap:wrap; }
-  .linha-corpo{ flex:1 1 100%; }
-  .linha-dir{ flex:1 1 100%; margin-top:var(--sp-2); }
-  .linha .chevron{ display:none; }
-  .painel-lista{ grid-template-columns:1fr; }
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>core.cx</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root{
+            --mesa:#EFEFF3; --papel:#FFF; --papel-2:#F7F7F9;
+            --linha:#E4E4EA; --linha-2:#D3D3DC;
+            --tinta:#17171A; --tinta-2:#56565F; --tinta-3:#7C7C88;
+            --acao:#6C5CE7; --acao-fraco:#F1EFFE; --lime:#BEF533;
+            --ok:#0E9F6E; --ok-fraco:#E6F7F0;
+            --atencao:#C2660B; --at-fundo:#FFF0D6; --at-borda:#E5BE7F;
+            --critico:#D42F2F; --cr-fundo:#FBE3E3; --cr-borda:#E9A9A9;
+            --r-card:12px; --r-ctrl:9px; --r-pill:999px;
+            --e1:0 1px 2px rgba(23,23,26,.05), 0 0 0 1px var(--linha);
+            --e2:0 4px 14px rgba(23,23,26,.07), 0 0 0 1px var(--linha);
+        }
+        *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+        button,input,select{ font-family:inherit; border:none; }
+        body{
+            font-family:'Inter',system-ui,sans-serif; background:var(--mesa); color:var(--tinta);
+            min-height:100vh; -webkit-font-smoothing:antialiased;
+        }
+        .num{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+        :focus-visible{ outline:2px solid var(--acao); outline-offset:2px; border-radius:4px; }
+        @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+        ::-webkit-scrollbar{ width:8px; } ::-webkit-scrollbar-track{ background:transparent; }
+        ::-webkit-scrollbar-thumb{ background:var(--linha-2); border-radius:99px; }
+
+        .topo{
+            background:var(--papel); height:56px; display:flex; align-items:center;
+            justify-content:space-between; padding:0 22px; border-bottom:1px solid var(--linha);
+            position:sticky; top:0; z-index:20;
+        }
+        .topo-logo{ font-size:17px; font-weight:700; letter-spacing:-.4px; cursor:pointer; }
+        .topo-logo span{ color:var(--acao); }
+
+        .wrap{ max-width:1080px; margin:0 auto; padding:30px 22px 70px; }
+
+        /* ===== SAUDAÇÃO ===== */
+        .hero{ margin-bottom:24px; }
+        .saud{ font-size:27px; font-weight:700; letter-spacing:-1px; line-height:1.15; }
+        .saud span{ color:var(--acao); }
+        .data{ font-size:13px; color:var(--tinta-3); font-weight:500; margin-top:6px; text-transform:capitalize; }
+
+        /* ===== TIMER ATIVO ===== */
+        .timer-ativo{
+            background:var(--tinta); border-radius:var(--r-card); padding:13px 16px;
+            display:flex; align-items:center; gap:12px; margin-bottom:16px; cursor:pointer;
+        }
+        .timer-pulso{ width:9px; height:9px; border-radius:50%; background:var(--lime); flex-shrink:0; animation:pulsar 2s ease-out infinite; }
+        @keyframes pulsar{ 0%{ box-shadow:0 0 0 0 rgba(190,245,51,.5); } 70%{ box-shadow:0 0 0 8px rgba(190,245,51,0); } 100%{ box-shadow:0 0 0 0 rgba(190,245,51,0); } }
+        .timer-info{ flex:1; min-width:0; }
+        .timer-nome{ font-size:13px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .timer-tarefa{ font-size:11px; color:rgba(255,255,255,.6); font-weight:500; margin-top:2px; }
+        .timer-relogio{ font-size:15px; font-weight:650; color:var(--lime); font-family:'IBM Plex Mono',monospace; flex-shrink:0; }
+
+        /* ===== SEÇÃO ===== */
+        .secao{ margin-bottom:26px; }
+        .secao-cab{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .secao-tit{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; color:var(--tinta-3); }
+        .secao-linha{ flex:1; height:1px; background:var(--linha); }
+        .secao-link{ font-size:12px; font-weight:600; color:var(--acao); cursor:pointer; white-space:nowrap; }
+        .secao-link:hover{ text-decoration:underline; }
+
+        /* ===== ATENÇÃO: lista de projetos ===== */
+        .lista{ display:flex; flex-direction:column; gap:8px; }
+        .item{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;
+            transition:box-shadow .16s, transform .16s, background .16s;
+        }
+        .item:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .item.critico{ background:var(--cr-fundo); box-shadow:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--cr-borda); }
+        .item.atencao{ background:var(--at-fundo); box-shadow:0 1px 2px rgba(23,23,26,.05),0 0 0 1px var(--at-borda); }
+        .item-corpo{ flex:1; min-width:0; }
+        .item-topo{ display:flex; align-items:center; gap:7px; margin-bottom:3px; }
+        .item-cliente{ font-size:10.5px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--tinta-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .item-quadro{ font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; background:rgba(0,0,0,.05); color:var(--tinta-2); white-space:nowrap; flex-shrink:0; }
+        .item-nome{ font-size:13.5px; font-weight:600; letter-spacing:-.15px; color:var(--tinta); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .item-dir{ display:flex; align-items:center; gap:9px; flex-shrink:0; }
+        .selo{
+            font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:99px; white-space:nowrap;
+            display:inline-flex; align-items:center; gap:4px; background:var(--papel-2); color:var(--tinta-3);
+        }
+        .selo .material-symbols-rounded{ font-size:13px; }
+        .selo.cr{ background:rgba(212,47,47,.12); color:var(--critico); }
+        .selo.at{ background:rgba(194,102,11,.14); color:var(--atencao); }
+        .selo.rx{ background:var(--acao-fraco); color:var(--acao); }
+        .item-seta{ color:var(--tinta-3); display:flex; }
+        .item-seta .material-symbols-rounded{ font-size:18px; }
+
+        .tudo-certo{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            padding:26px 20px; text-align:center;
+        }
+        .tudo-certo .material-symbols-rounded{ font-size:30px; color:var(--ok); display:block; margin-bottom:9px; }
+        .tudo-certo p{ font-size:13px; font-weight:550; color:var(--tinta-2); }
+        .tudo-certo small{ display:block; font-size:12px; color:var(--tinta-3); font-weight:500; margin-top:4px; }
+
+        /* ===== PULSO ===== */
+        .pulso{ display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:11px; }
+        .pz{ background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1); padding:14px 15px; }
+        .pz.clic{ cursor:pointer; transition:box-shadow .16s, transform .16s; }
+        .pz.clic:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .pz-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); margin-bottom:6px; }
+        .pz-val{ font-size:23px; font-weight:700; letter-spacing:-.7px; line-height:1; }
+        .pz-val.vazio{ color:var(--tinta-3); }
+        .skel{ width:36px; height:23px; background:linear-gradient(90deg,var(--papel-2),var(--linha),var(--papel-2)); background-size:200% 100%; animation:brilho 1.2s infinite; border-radius:5px; }
+        @keyframes brilho{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+
+        /* ===== ATALHOS ===== */
+        .atalhos{ display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:9px; }
+        .at{
+            background:var(--papel); border-radius:var(--r-card); box-shadow:var(--e1);
+            padding:13px 14px; cursor:pointer; display:flex; align-items:center; gap:11px;
+            transition:box-shadow .16s, transform .16s;
+        }
+        .at:hover{ box-shadow:var(--e2); transform:translateY(-1px); }
+        .at-ico{ width:32px; height:32px; min-width:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; }
+        .at-ico .material-symbols-rounded{ font-size:18px; }
+        .at-txt{ min-width:0; }
+        .at-nome{ font-size:12.5px; font-weight:600; letter-spacing:-.1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .at-qtd{ font-size:11px; color:var(--tinta-3); font-weight:500; margin-top:1px; }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width:900px){
+            .topo{ padding:0 16px 0 60px; }
+            .wrap{ padding:22px 16px 60px; }
+            .saud{ font-size:23px; }
+            .atalhos{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+            .item{ padding:11px 12px; }
+            .item-dir .selo:not(:first-child){ display:none; }
+        }
+        @media (max-width:560px){
+            .saud{ font-size:21px; letter-spacing:-.7px; }
+            .pulso{ grid-template-columns:1fr 1fr; }
+            .atalhos{ grid-template-columns:1fr 1fr; }
+            .item-seta{ display:none; }
+            .item-quadro{ display:none; }
+        }
+    
+        .fila-inicio{ display:flex; flex-direction:column; gap:1px; background:var(--linha);
+            border-radius:9px; overflow:hidden; box-shadow:inset 0 0 0 1px var(--linha); }
+        .fila-linha{ display:flex; align-items:center; gap:11px; padding:11px 13px;
+            background:var(--papel); text-decoration:none; color:inherit; transition:.12s; }
+        .fila-linha:hover{ background:var(--at-fundo); }
+        .fl-n{ font-size:13px; font-weight:700; color:var(--atencao); min-width:20px;
+            font-family:'IBM Plex Mono',monospace; }
+        .fl-a{ font-size:12.5px; font-weight:550; color:var(--tinta-2); flex:1; }
+        .fl-seta{ color:var(--linha-2); display:flex; }
+        .fl-seta .material-symbols-rounded{ font-size:17px; }
+        .fila-linha:hover .fl-seta{ color:var(--atencao); }
+        .fila-nota{ font-size:11.5px; color:var(--tinta-3); margin-top:9px; }
 </style>
 </head>
-
 <body>
+    {% include '_sidebar.html' %}
 
-{% include '_sidebar.html' %}
-
-<header class="barra">
-  <a class="marca" href="/">core<b>.cx</b></a>
-  <div class="barra-dir">
-    <button type="button" class="btn-icone" id="btnTema" aria-label="Alternar tema">
-      <span class="ms" id="icoTema" aria-hidden="true">routine</span>
-    </button>
-    {% include '_usermenu.html' %}
-  </div>
-</header>
-
-<main class="leito">
-
-  <div class="abertura">
-    <p class="saudacao">
-      <span id="saudacao">Olá</span>
-      <span class="sep" aria-hidden="true">·</span>
-      <span class="dia" id="dataHoje"></span>
-    </p>
-    <h1 class="manchete" id="manchete"><span class="sk manchete-sk" role="presentation"></span></h1>
-  </div>
-
-  <div id="regiaoCrono" style="margin-bottom:var(--sp-6)"></div>
-
-  <div class="grade">
-    <div class="coluna">
-      <div id="regiaoFila"></div>
-      <section id="regiaoTriagem" aria-labelledby="tituloTriagem"></section>
+    <div class="topo">
+        <div class="topo-logo" onclick="window.location.href='/'">core<span>.cx</span></div>
+        {% include '_usermenu.html' %}
     </div>
 
-    <aside class="trilho">
-      <div id="regiaoPanorama"></div>
-      <div id="regiaoQuadros"></div>
-    </aside>
-  </div>
-
-</main>
-
-<script>
-/* ============================================================================
-   CONTEXTO DO SERVIDOR
-   tojson em todos os valores: string crua quebra o script se o nome do
-   usuário contiver aspas, e é um vetor de injeção.
-   ========================================================================== */
-const NIVEL = {{ nivel_acesso | tojson }};
-const TIPO  = {{ tipo_usuario | tojson }};
-const PERM  = {{ perm_modulos | tojson }};
-const NOME  = {{ usuario_nome | tojson }};
-const CATALOGO_QUADROS = {{ quadros_catalogo | tojson }};
-
-const ehExterno = TIPO === 'externo';
-const ehPerson  = NIVEL === 'personalizado';
-const ehGestor  = NIVEL === 'admin' || NIVEL === 'gestor';
-
-function temModulo(m){ return ehGestor || !ehPerson || PERM.includes(m); }
-function temAnalise(m){ return ehGestor || (ehPerson && PERM.includes(m)); }
-
-/* ---------------------------------------------------------------------------
-   Utilidades
-   ------------------------------------------------------------------------- */
-const $ = id => document.getElementById(id);
-
-function esc(s){
-  if(s === null || s === undefined) return '';
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function plural(n, um, muitos){ return n + ' ' + (n === 1 ? um : muitos); }
-
-/* ---------------------------------------------------------------------------
-   Tema — cicla sistema → claro → escuro
-   ------------------------------------------------------------------------- */
-const ICONE_TEMA = { sistema:'routine', claro:'light_mode', escuro:'dark_mode' };
-const ROTULO_TEMA = { sistema:'Tema do sistema', claro:'Tema claro', escuro:'Tema escuro' };
-
-function aplicarTema(pref){
-  const escuro = pref === 'escuro' ||
-    (pref === 'sistema' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const r = document.documentElement;
-  r.dataset.tema = escuro ? 'escuro' : 'claro';
-  r.dataset.temaPref = pref;
-  try{ localStorage.setItem('cx_tema', pref); }catch(e){}
-  $('icoTema').textContent = ICONE_TEMA[pref];
-  $('btnTema').setAttribute('aria-label', ROTULO_TEMA[pref] + '. Trocar.');
-}
-
-(function iniciarTema(){
-  const atual = document.documentElement.dataset.temaPref || 'sistema';
-  aplicarTema(atual);
-  $('btnTema').addEventListener('click', () => {
-    const ordem = ['sistema','claro','escuro'];
-    const i = ordem.indexOf(document.documentElement.dataset.temaPref);
-    aplicarTema(ordem[(i + 1) % ordem.length]);
-  });
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if(document.documentElement.dataset.temaPref === 'sistema') aplicarTema('sistema');
-  });
-})();
-
-/* ---------------------------------------------------------------------------
-   Quadros
-   Catálogo vem do servidor. Aqui ficam só decisões de interface:
-   apelido curto e cor. Quadro novo aparece sozinho, no neutro.
-   ------------------------------------------------------------------------- */
-const APELIDO = { recrutamento:'R&S', financeiro:'Financeiro' };
-
-const CORES_QUADRO = {
-  recrutamento:  { cor:'#5B4BD6', bg:'#EFEDFC' },
-  rhestrategico: { cor:'#0C8F63', bg:'#E4F5EE' },
-  educacao:      { cor:'#7C3AED', bg:'#F2EDFE' },
-  cxdata:        { cor:'#0284C7', bg:'#E2F2FC' },
-  projetos:      { cor:'#5B4BD6', bg:'#EFEDFC' },
-  comercial:     { cor:'#A2590B', bg:'#FDF2E0' },
-  marketing:     { cor:'#C0257A', bg:'#FCE7F1' },
-  financeiro:    { cor:'#0E7490', bg:'#DFF1F5' },
-  tecnologia:    { cor:'#475569', bg:'#EDF0F4' },
-  rhinterno:     { cor:'#A2590B', bg:'#FDF2E0' }
-};
-const COR_PADRAO = { cor:'#54545F', bg:'#F1F1F5' };
-
-const QUADROS = (CATALOGO_QUADROS || []).map(q => Object.assign({
-  chave: q.chave,
-  nome:  APELIDO[q.chave] || q.area,
-  area:  q.area,
-  ico:   q.icone || 'dashboard'
-}, CORES_QUADRO[q.chave] || COR_PADRAO));
-
-function quadroDaArea(area){ return QUADROS.find(q => q.area === area) || null; }
-function linkDoQuadro(area){
-  const q = quadroDaArea(area);
-  return q ? '/board/' + q.chave : '/board/geral';
-}
-
-/* ---------------------------------------------------------------------------
-   Datas
-   ------------------------------------------------------------------------- */
-function hoje0(){ const d = new Date(); d.setHours(0,0,0,0); return d; }
-function dataDe(s){
-  if(!s) return null;
-  const p = String(s).split('T')[0].split('-');
-  if(p.length !== 3) return null;
-  const d = new Date(+p[0], +p[1] - 1, +p[2]);
-  if(isNaN(d.getTime())) return null;
-  d.setHours(0,0,0,0);
-  return d;
-}
-function diasAte(s){ const d = dataDe(s); return d === null ? null : Math.round((d - hoje0()) / 86400000); }
-
-/* ---------------------------------------------------------------------------
-   Abertura
-   ------------------------------------------------------------------------- */
-(function abrir(){
-  const h = new Date().getHours();
-  const s = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-  const primeiro = (NOME || '').trim().split(/\s+/)[0] || '';
-  $('saudacao').textContent = primeiro ? s + ', ' + primeiro : s;
-  $('dataHoje').textContent = new Date()
-    .toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
-})();
-
-/* A manchete é a resposta à pergunta que trouxe a pessoa até aqui. */
-function escreverManchete(atrasados, hoje, breve, erro){
-  const el = $('manchete');
-  if(erro){
-    el.textContent = 'Não consegui carregar seus projetos.';
-    return;
-  }
-  const partes = [];
-  if(atrasados) partes.push('<span class="g">' + plural(atrasados,'projeto atrasado','projetos atrasados') + '</span>');
-  if(hoje)      partes.push('<span class="a">' + (hoje === 1 ? '1 vence hoje' : hoje + ' vencem hoje') + '</span>');
-  if(!partes.length && breve) partes.push(plural(breve,'projeto vence esta semana','projetos vencem esta semana'));
-
-  if(!partes.length){
-    el.textContent = 'Nada atrasado nem vencendo hoje.';
-    return;
-  }
-  el.innerHTML = partes.join(' e ') + '.';
-}
-
-/* ---------------------------------------------------------------------------
-   Cronômetro
-   O nó é criado uma vez; o tique só troca o texto do relógio.
-   ------------------------------------------------------------------------- */
-let cronoNo = null, cronoRelogio = null, cronoChave = null;
-
-function lerCrono(){
-  try{ return JSON.parse(localStorage.getItem('cxdata_timer_ativo') || 'null'); }
-  catch(e){ return null; }
-}
-
-function formatarTempo(t){
-  const base  = (t.baseSegundosOriginal || 0) + (t.sessaoAtualSegundos || 0);
-  const extra = t.paused ? 0 : Math.floor((Date.now() - (t.startTime || Date.now())) / 1000);
-  const seg = Math.max(0, base + extra);
-  const hh = String(Math.floor(seg / 3600)).padStart(2,'0');
-  const mm = String(Math.floor((seg % 3600) / 60)).padStart(2,'0');
-  const ss = String(seg % 60).padStart(2,'0');
-  return hh + ':' + mm + ':' + ss;
-}
-
-function renderCrono(){
-  const t = lerCrono();
-  const area = $('regiaoCrono');
-
-  if(!t || !t.id){
-    if(cronoNo){ area.innerHTML = ''; cronoNo = null; cronoChave = null; }
-    return;
-  }
-
-  const chave = t.id + '|' + (t.paused ? 'p' : 'r') + '|' + (t.nome || '') + '|' + (t.tarefa || '');
-  if(chave !== cronoChave){
-    area.innerHTML =
-      '<a class="crono" href="' + linkDoQuadro(t.area) + '" data-pausado="' + (t.paused ? 1 : 0) + '">' +
-        '<span class="crono-pulso" aria-hidden="true"></span>' +
-        '<span class="crono-info">' +
-          '<span class="crono-nome">' + esc(t.nome) + '</span>' +
-          '<span class="crono-sub">' + (t.paused ? 'Pausado' : 'Cronometrando') +
-            (t.tarefa ? ' — ' + esc(t.tarefa) : '') + '</span>' +
-        '</span>' +
-        '<span class="crono-relogio num" aria-hidden="true"></span>' +
-        '<span class="oculto-visual">Cronômetro ' + (t.paused ? 'pausado' : 'em execução') + '</span>' +
-      '</a>';
-    cronoNo = area.firstElementChild;
-    cronoRelogio = cronoNo.querySelector('.crono-relogio');
-    cronoChave = chave;
-  }
-  cronoRelogio.textContent = formatarTempo(t);
-}
-
-/* ---------------------------------------------------------------------------
-   Triagem
-   Grupos por urgência. A ordem é a ordem de atendimento.
-   ------------------------------------------------------------------------- */
-const GRUPOS = [
-  { id:'atrasado', rot:'Atrasados',       tom:'grave' },
-  { id:'hoje',     rot:'Vencem hoje',     tom:'aviso' },
-  { id:'breve',    rot:'Próximos 3 dias', tom:'aviso' },
-  { id:'msg',      rot:'Comentários novos', tom:'brand' }
-];
-
-let triagemDados = [], triagemExpandida = false;
-const LIMITE = 6;
-
-function classificar(projetos){
-  const meu = (NOME || '').trim().toLowerCase();
-  const meus = projetos.filter(p =>
-    (p.responsavel || '').trim().toLowerCase() === meu);
-  const abertos = meus.filter(p => p.status !== 'Finalizado' && p.status !== 'Cancelado');
-
-  const marcados = [];
-  abertos.forEach(p => {
-    const d = diasAte(p.prazo_data);
-    const naoIniciado = p.status === 'Backlog' || p.status === 'Não Iniciado';
-    const msgs = p.qtd_nao_lidos || 0;
-    let grupo = null, selo = '';
-
-    if(d !== null && !naoIniciado){
-      if(d < 0){
-        grupo = 'atrasado';
-        selo = seloHtml('grave','error', plural(Math.abs(d),'dia de atraso','dias de atraso'));
-      } else if(d === 0){
-        grupo = 'hoje';
-        selo = seloHtml('aviso','today','vence hoje');
-      } else if(d <= 3){
-        grupo = 'breve';
-        selo = seloHtml('aviso','schedule','em ' + plural(d,'dia','dias'));
-      }
-    }
-    if(!grupo && msgs > 0) grupo = 'msg';
-    if(!grupo) return;
-
-    marcados.push({
-      p, grupo, selo, msgs, d,
-      tom: GRUPOS.find(g => g.id === grupo).tom
-    });
-  });
-
-  const peso = { atrasado:0, hoje:1, breve:2, msg:3 };
-  marcados.sort((a,b) =>
-    peso[a.grupo] - peso[b.grupo] ||
-    (a.d === null ? 999 : a.d) - (b.d === null ? 999 : b.d) ||
-    b.msgs - a.msgs
-  );
-
-  return { marcados, abertos };
-}
-
-function seloHtml(tom, ico, txt){
-  return '<span class="selo" data-tom="' + tom + '">' +
-    '<span class="ms" aria-hidden="true">' + ico + '</span>' + esc(txt) + '</span>';
-}
-
-function linhaHtml(x){
-  const q = quadroDaArea(x.p.area);
-  const selos = x.selo + (x.msgs > 0
-    ? seloHtml('brand','forum', x.msgs === 1 ? '1 nova mensagem' : x.msgs + ' novas mensagens')
-    : '');
-  return '<a class="linha" data-tom="' + x.tom + '" href="' + linkDoQuadro(x.p.area) + '">' +
-      '<span class="linha-corpo">' +
-        '<span class="linha-meta">' +
-          '<span class="linha-cliente">' + esc(x.p.empresa) + '</span>' +
-          (q ? '<span class="linha-quadro">' + esc(q.nome) + '</span>' : '') +
-        '</span>' +
-        '<span class="linha-nome">' + esc(x.p.nome_projeto) + '</span>' +
-      '</span>' +
-      '<span class="linha-dir">' + selos +
-        '<span class="chevron" aria-hidden="true"><span class="ms">chevron_right</span></span>' +
-      '</span>' +
-    '</a>';
-}
-
-function renderTriagem(abertos, erro){
-  const alvo = $('regiaoTriagem');
-
-  if(erro){
-    alvo.innerHTML =
-      '<div class="cartao">' +
-        '<div class="erro">' +
-          '<span class="erro-ico" aria-hidden="true"><span class="ms">cloud_off</span></span>' +
-          '<div class="erro-txt">' +
-            '<strong>Os projetos não carregaram</strong>' +
-            '<p>A conexão com o servidor falhou. O que aparece abaixo pode estar incompleto.</p>' +
-          '</div>' +
-          '<button type="button" class="btn" onclick="location.reload()">' +
-            '<span class="ms" aria-hidden="true">refresh</span>Tentar de novo</button>' +
-        '</div>' +
-      '</div>';
-    return;
-  }
-
-  const lista = triagemDados;
-
-  if(!lista.length){
-    alvo.innerHTML =
-      '<div class="cartao">' +
-        '<div class="cartao-cab"><h2 class="cartao-tit" id="tituloTriagem">Precisa de você</h2></div>' +
-        '<div class="vazio">' +
-          '<span class="vazio-ico" aria-hidden="true"><span class="ms">check</span></span>' +
-          '<p>Nada atrasado nem vencendo</p>' +
-          '<small>' + (abertos
-            ? plural(abertos,'projeto em aberto com você','projetos em aberto com você')
-            : 'Você não tem projetos em aberto') + '</small>' +
-        '</div>' +
-      '</div>';
-    return;
-  }
-
-  const visiveis = triagemExpandida ? lista : lista.slice(0, LIMITE);
-  const restam = lista.length - visiveis.length;
-
-  let corpo = '', grupoAtual = null;
-  visiveis.forEach(x => {
-    if(x.grupo !== grupoAtual){
-      grupoAtual = x.grupo;
-      const g = GRUPOS.find(gg => gg.id === grupoAtual);
-      const n = lista.filter(i => i.grupo === grupoAtual).length;
-      corpo += '<div class="grupo-rot" data-tom="' + g.tom + '">' +
-        '<span class="ponto" aria-hidden="true"></span>' + g.rot + ' (' + n + ')</div>';
-    }
-    corpo += linhaHtml(x);
-  });
-
-  alvo.innerHTML =
-    '<div class="cartao triagem">' +
-      '<div class="cartao-cab">' +
-        '<h2 class="cartao-tit" id="tituloTriagem">Precisa de você</h2>' +
-        '<span class="cartao-nota num">' + lista.length + '</span>' +
-      '</div>' +
-      corpo +
-      (restam > 0
-        ? '<div class="rodape-lista"><button type="button" class="btn-mais" id="btnMais">' +
-            'Mostrar mais ' + plural(restam,'projeto','projetos') + '</button></div>'
-        : '') +
-    '</div>';
-
-  const btn = $('btnMais');
-  if(btn) btn.addEventListener('click', () => {
-    triagemExpandida = true;
-    renderTriagem(abertos, false);
-    const cab = $('regiaoTriagem').querySelector('.rodape-lista, .linha:last-of-type');
-    if(cab) cab.scrollIntoView({ block:'nearest', behavior:'smooth' });
-  });
-}
-
-function esqueletoTriagem(){
-  let l = '';
-  for(let i = 0; i < 4; i++){
-    l += '<div class="sk-linha">' +
-      '<div class="sk-corpo"><div class="sk sk-a"></div><div class="sk sk-b"></div></div>' +
-      '<div class="sk sk-c"></div></div>';
-  }
-  $('regiaoTriagem').innerHTML =
-    '<div class="cartao">' +
-      '<div class="cartao-cab"><h2 class="cartao-tit" id="tituloTriagem">Precisa de você</h2></div>' +
-      l +
-    '</div>';
-}
-
-/* ---------------------------------------------------------------------------
-   Fila de atribuição
-   Card sem dono não anda. Fica no topo da coluna de trabalho.
-   ------------------------------------------------------------------------- */
-async function renderFila(){
-  try{
-    const r = await fetch('/api/quadros/fila');
-    if(!r.ok) return;
-    const d = await r.json();
-    const itens = d.projetos || [];
-    if(!itens.length) return;
-
-    /* Agrupa por quadro: "3 em R&S" é acionável; "3 espalhados" não é. */
-    const porArea = {};
-    itens.forEach(p => {
-      const a = p.area || 'sem área';
-      (porArea[a] = porArea[a] || []).push(p);
-    });
-
-    const maisAntigo = itens.reduce((m,p) => {
-      const dt = new Date(p.criado_em);
-      if(isNaN(dt.getTime())) return m;
-      return Math.max(m, Math.floor((Date.now() - dt.getTime()) / 86400000));
-    }, 0);
-
-    const linhas = Object.keys(porArea).map(a =>
-      '<a class="fila-linha" href="' + linkDoQuadro(a) + '">' +
-        '<span class="fila-qtd num">' + porArea[a].length + '</span>' +
-        '<span class="fila-area">' + esc(a) + '</span>' +
-        '<span class="chevron" aria-hidden="true"><span class="ms">chevron_right</span></span>' +
-      '</a>').join('');
-
-    $('regiaoFila').innerHTML =
-      '<section class="cartao fila" aria-labelledby="tituloFila">' +
-        '<div class="cartao-cab">' +
-          '<h2 class="cartao-tit" id="tituloFila">Esperando responsável</h2>' +
-          '<span class="cartao-nota num">' + itens.length + '</span>' +
-        '</div>' +
-        linhas +
-        '<p class="fila-pe">' + (maisAntigo >= 2
-          ? 'O mais antigo espera há ' + plural(maisAntigo,'dia','dias') + '. Defina quem executa para o trabalho começar.'
-          : 'Defina quem executa para o trabalho começar.') + '</p>' +
-      '</section>';
-  }catch(e){
-    /* A fila é complemento. Falhar aqui não pode derrubar o Início. */
-  }
-}
-
-/* ---------------------------------------------------------------------------
-   Panorama
-   ------------------------------------------------------------------------- */
-function renderPanorama(resumo, projetos){
-  const meu = (NOME || '').trim().toLowerCase();
-  const meus = projetos.filter(p =>
-    (p.responsavel || '').trim().toLowerCase() === meu &&
-    p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
-
-  const medidas = [];
-  medidas.push(medida('Meus projetos em aberto', meus, '/dashboard', temAnalise('dashboard')));
-  medidas.push(medida('Projetos ativos', resumo.projetos, '/dashboard', temAnalise('dashboard')));
-  if(temModulo('clientes')) medidas.push(medida('Clientes', resumo.clientes, '/clientes', true));
-
-  $('regiaoPanorama').innerHTML =
-    '<section aria-labelledby="tituloPanorama">' +
-      '<h2 class="painel-tit" id="tituloPanorama">Panorama</h2>' +
-      '<div class="cartao medidas">' + medidas.join('') + '</div>' +
-    '</section>';
-}
-
-function medida(rot, val, href, clicavel){
-  const vazio = val === null || val === undefined;
-  const conteudo =
-    '<span class="medida-rot">' + esc(rot) + '</span>' +
-    '<span class="medida-val' + (vazio ? ' vazio' : ' num') + '">' + (vazio ? '—' : val) + '</span>';
-  return clicavel
-    ? '<a class="medida" href="' + href + '">' + conteudo + '</a>'
-    : '<div class="medida">' + conteudo + '</div>';
-}
-
-function esqueletoPanorama(){
-  let l = '';
-  for(let i = 0; i < 3; i++){
-    l += '<div class="medida"><span class="sk" style="height:11px;width:110px"></span>' +
-         '<span class="sk" style="height:16px;width:26px"></span></div>';
-  }
-  $('regiaoPanorama').innerHTML =
-    '<section><h2 class="painel-tit">Panorama</h2><div class="cartao medidas">' + l + '</div></section>';
-}
-
-/* ---------------------------------------------------------------------------
-   Quadros
-   ------------------------------------------------------------------------- */
-function renderQuadros(projetos){
-  const visiveis = QUADROS.filter(q => temModulo(q.chave) || (ehPerson && PERM.includes('geral')));
-  if(!visiveis.length) return;
-
-  const linhas = visiveis.map(q => {
-    const n = projetos.filter(p =>
-      p.area === q.area && p.status !== 'Finalizado' && p.status !== 'Cancelado').length;
-    return '<a class="quadro-linha" href="/board/' + q.chave + '">' +
-        '<span class="quadro-ico" style="background:' + q.bg + '">' +
-          '<span class="ms" style="color:' + q.cor + '" aria-hidden="true">' + esc(q.ico) + '</span></span>' +
-        '<span class="quadro-nome">' + esc(q.nome) + '</span>' +
-        '<span class="quadro-qtd num" data-zero="' + (n === 0 ? 1 : 0) + '">' + n + '</span>' +
-        '<span class="oculto-visual">' + plural(n,'projeto em aberto','projetos em aberto') + '</span>' +
-      '</a>';
-  }).join('');
-
-  $('regiaoQuadros').innerHTML =
-    '<section aria-labelledby="tituloQuadros">' +
-      '<h2 class="painel-tit" id="tituloQuadros">Quadros de trabalho</h2>' +
-      '<div class="cartao painel-lista">' + linhas + '</div>' +
-    '</section>';
-}
-
-/* ---------------------------------------------------------------------------
-   Modo externo — hub reduzido
-   ------------------------------------------------------------------------- */
-function renderExterno(){
-  $('manchete').textContent = 'Acompanhe o andamento do seu projeto.';
-  $('regiaoTriagem').innerHTML =
-    '<div class="cartao painel-lista">' +
-      '<a class="quadro-linha" href="/agenda">' +
-        '<span class="quadro-ico" style="background:#EFEDFC">' +
-          '<span class="ms" style="color:#5B4BD6" aria-hidden="true">calendar_month</span></span>' +
-        '<span class="quadro-nome">Agenda do projeto</span>' +
-        '<span class="chevron" aria-hidden="true"><span class="ms">chevron_right</span></span>' +
-      '</a>' +
-    '</div>';
-}
-
-/* ---------------------------------------------------------------------------
-   Carga
-   ------------------------------------------------------------------------- */
-(async function iniciar(){
-  if(ehExterno){ renderExterno(); return; }
-
-  renderCrono();
-  setInterval(renderCrono, 1000);
-  window.addEventListener('storage', e => { if(e.key === 'cxdata_timer_ativo') renderCrono(); });
-
-  esqueletoTriagem();
-  esqueletoPanorama();
-  renderFila();
-
-  let projetos = [], erro = false;
-  try{
-    const r = await fetch('/api/projetos');
-    if(!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    projetos = (d.projetos || d || []).filter(p => !p.excluido_em);
-  }catch(e){
-    erro = true;
-  }
-
-  const { marcados, abertos } = classificar(projetos);
-  triagemDados = marcados;
-
-  escreverManchete(
-    marcados.filter(x => x.grupo === 'atrasado').length,
-    marcados.filter(x => x.grupo === 'hoje').length,
-    marcados.filter(x => x.grupo === 'breve').length,
-    erro
-  );
-
-  renderTriagem(abertos.length, erro);
-  renderQuadros(projetos);
-
-  try{
-    const r = await fetch('/api/hub/resumo');
-    const d = await r.json();
-    renderPanorama(d.resumo || {}, projetos);
-  }catch(e){
-    renderPanorama({}, projetos);
-  }
-})();
-</script>
+    <div class="wrap">
+        <div class="hero">
+            <div class="saud" id="saudacao">Olá<span>.</span></div>
+            <div class="data" id="dataHoje"></div>
+        </div>
+
+        <div id="timerAtivo"></div>
+        <div id="atencao"></div>
+        <div id="pulsoArea"></div>
+        <div id="atalhosArea"></div>
+    </div>
+
+    <script>
+
+        /* ==================== FILA DE ATRIBUIÇÃO ====================
+           Card que nasceu sem dono precisa ser visto por quem direciona.
+           Aparece acima de tudo: enquanto ninguém assume, o trabalho
+           não começa. */
+        async function carregarFilaAtribuicao(){
+            try{
+                const r = await fetch('/api/quadros/fila');
+                if(!r.ok) return;
+                const d = await r.json();
+                const itens = d.projetos || [];
+                if(!itens.length) return;
+
+                // Agrupa por quadro: "3 cards em R&S" é acionável,
+                // "3 cards" espalhados por três quadros não é.
+                const porArea = {};
+                itens.forEach(p => {
+                    const a = p.area || 'sem área';
+                    (porArea[a] = porArea[a] || []).push(p);
+                });
+                const antigo = itens.reduce((m,p) => {
+                    const dt = new Date(p.criado_em);
+                    if(isNaN(dt.getTime())) return m;
+                    return Math.max(m, Math.floor((Date.now() - dt.getTime())/86400000));
+                }, 0);
+
+                const bloco = document.createElement('div');
+                bloco.className = 'secao';
+                bloco.innerHTML = `
+                    <div class="secao-cab">
+                        <span class="secao-tit">Esperando responsável</span>
+                        <span class="secao-linha"></span>
+                    </div>
+                    <div class="fila-inicio">
+                        ${Object.keys(porArea).map(a => `
+                            <a class="fila-linha" href="${linkDoQuadro(a)}">
+                                <span class="fl-n">${porArea[a].length}</span>
+                                <span class="fl-a">${escH(a)}</span>
+                                <span class="fl-seta">
+                                    <span class="material-symbols-rounded">arrow_forward</span></span>
+                            </a>`).join('')}
+                    </div>
+                    <div class="fila-nota">${antigo >= 2
+                        ? `O mais antigo espera há ${antigo} dias.`
+                        : 'Escolha quem executa para o trabalho começar.'}</div>`;
+                const atencao = document.getElementById('atencao');
+                atencao.parentNode.insertBefore(bloco, atencao);
+            }catch(e){ /* fila é complemento: falha aqui não derruba o Início */ }
+        }
+
+        const AREA_QUADRO = {
+            'Recrutamento e seleção':'recrutamento', 'RH Estratégico':'rhestrategico',
+            'Educação':'educacao', 'CX Data':'cxdata', 'Projetos':'projetos',
+            'Comercial':'comercial', 'Marketing':'marketing', 'Adm/Fin':'financeiro',
+            'Tecnologia':'tecnologia', 'RH Interno':'rhinterno'
+        };
+        function linkDoQuadro(area){
+            const q = AREA_QUADRO[area];
+            return q ? '/board/' + q : '#';
+        }
+
+        const NIVEL = "{{ nivel_acesso }}";
+        const TIPO  = "{{ tipo_usuario }}";
+        const PERM  = {{ perm_modulos | tojson }};
+        const NOME  = "{{ usuario_nome }}";
+
+        const ehExterno = TIPO === 'externo';
+        const ehPerson  = NIVEL === 'personalizado';
+        function temModulo(m){ return (NIVEL==='admin'||NIVEL==='gestor') || (!ehPerson) || PERM.includes(m); }
+        function temAnalise(m){ return (NIVEL==='admin'||NIVEL==='gestor') || (ehPerson && PERM.includes(m)); }
+
+        function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escA(s){ return escH(s).replace(/'/g,'&#39;'); }
+
+        // Mapa area -> quadro, espelhando o cfg de projetos.html
+        /* ==========================================================
+           QUADROS DE TRABALHO
+
+           A lista vem do servidor (ARVORE_QUADROS), nao escrita aqui.
+           A copia manual anterior ficou dois quadros atrasada: Educacao
+           e Tecnologia existiam no sistema e nao apareciam no painel --
+           nem zerados, simplesmente ausentes. Quem olhasse esta tela
+           veria um retrato incompleto da operacao.
+
+           Agora quadro novo aparece sozinho. So o rotulo curto e a cor
+           ficam aqui, porque sao decisao de interface: o servidor nao
+           precisa saber que R&S e o apelido de "Recrutamento e selecao".
+           ========================================================== */
+        const CATALOGO_QUADROS = {{ quadros_catalogo | tojson }};
+
+        // Apelido curto para caber no cartao. Sem entrada, usa a area.
+        const APELIDO = {
+            recrutamento: 'R&S',
+            financeiro:   'Financeiro',
+        };
+
+        // Paleta por quadro. Quadro novo sem cor definida cai no neutro,
+        // que e legivel -- nunca fica invisivel por falta de estilo.
+        const CORES_QUADRO = {
+            recrutamento:  { cor:'#6C5CE7', bg:'#F1EFFE' },
+            rhestrategico: { cor:'#0E9F6E', bg:'#E6F7F0' },
+            educacao:      { cor:'#7C3AED', bg:'#F3EEFE' },
+            cxdata:        { cor:'#0EA5E9', bg:'#E4F4FD' },
+            projetos:      { cor:'#6C5CE7', bg:'#F1EFFE' },
+            comercial:     { cor:'#C2660B', bg:'#FDF3E4' },
+            marketing:     { cor:'#DB2777', bg:'#FCE7F3' },
+            financeiro:    { cor:'#0891B2', bg:'#E0F5F9' },
+            tecnologia:    { cor:'#475569', bg:'#EEF1F5' },
+            rhinterno:     { cor:'#C2660B', bg:'#FDF3E4' },
+        };
+        const COR_PADRAO = { cor:'#56565F', bg:'#F2F2F5' };
+
+        const QUADROS = CATALOGO_QUADROS.map(q => Object.assign({
+            chave: q.chave,
+            nome:  APELIDO[q.chave] || q.area,
+            area:  q.area,
+            ico:   q.icone || 'dashboard',
+        }, CORES_QUADRO[q.chave] || COR_PADRAO));
+        function quadroDaArea(area){ return QUADROS.find(q => q.area === area) || null; }
+
+        // ===== SAUDAÇÃO =====
+        (function(){
+            const h = new Date().getHours();
+            const s = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+            const primeiro = (NOME||'').trim().split(/\s+/)[0] || '';
+            document.getElementById('saudacao').innerHTML = `${s}, ${escH(primeiro)}<span>.</span>`;
+            document.getElementById('dataHoje').textContent =
+                new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+        })();
+
+        // ===== PRAZO =====
+        function hoje0(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+        function dataDe(s){ if(!s) return null; const p=String(s).split('T')[0].split('-'); if(p.length!==3) return null; const d=new Date(+p[0],+p[1]-1,+p[2]); d.setHours(0,0,0,0); return d; }
+        function diasAte(s){ const d=dataDe(s); if(!d) return null; return Math.round((d-hoje0())/86400000); }
+
+        // ===== TIMER ATIVO =====
+        function renderTimer(){
+            let t = null;
+            try { t = JSON.parse(localStorage.getItem('cxdata_timer_ativo') || 'null'); } catch(e){}
+            if (!t || !t.id) return;
+            const base = (t.baseSegundosOriginal||0) + (t.sessaoAtualSegundos||0);
+            const extra = t.paused ? 0 : Math.floor((Date.now() - (t.startTime||Date.now()))/1000);
+            const seg = base + extra;
+            const hh = String(Math.floor(seg/3600)).padStart(2,'0');
+            const mm = String(Math.floor((seg%3600)/60)).padStart(2,'0');
+            const ss = String(seg%60).padStart(2,'0');
+            const q = quadroDaArea(t.area);
+            document.getElementById('timerAtivo').innerHTML = `
+                <div class="timer-ativo" onclick="window.location.href='/board/${q?q.chave:'geral'}'">
+                    <span class="timer-pulso"></span>
+                    <div class="timer-info">
+                        <div class="timer-nome">${escH(t.nome)}</div>
+                        <div class="timer-tarefa">${t.paused?'Pausado':'Cronometrando'} · ${escH(t.tarefa||'')}</div>
+                    </div>
+                    <span class="timer-relogio">${hh}:${mm}:${ss}</span>
+                </div>`;
+        }
+
+        // ===== O QUE PRECISA DE ATENÇÃO =====
+        function renderAtencao(projetos){
+            const meus = projetos.filter(p =>
+                (p.responsavel||'').trim().toLowerCase() === (NOME||'').trim().toLowerCase());
+
+            const abertos = meus.filter(p => p.status !== 'Finalizado' && p.status !== 'Cancelado');
+
+            const marcados = abertos.map(p => {
+                const d = diasAte(p.prazo_data);
+                const naoIniciado = (p.status === 'Backlog' || p.status === 'Não Iniciado');
+                let peso = 0, selo = '', classe = '';
+                if (d !== null && !naoIniciado) {
+                    if (d < 0)       { peso = 3; classe='critico'; selo = `<span class="selo cr"><span class="material-symbols-rounded">error</span>${Math.abs(d)} dia${Math.abs(d)!==1?'s':''} de atraso</span>`; }
+                    else if (d === 0){ peso = 2; classe='atencao'; selo = `<span class="selo at"><span class="material-symbols-rounded">today</span>vence hoje</span>`; }
+                    else if (d <= 3) { peso = 2; classe='atencao'; selo = `<span class="selo at"><span class="material-symbols-rounded">schedule</span>vence em ${d} dia${d!==1?'s':''}</span>`; }
+                }
+                let seloCom = '';
+                if (p.qtd_nao_lidos > 0) {
+                    peso = Math.max(peso, 1);
+                    seloCom = `<span class="selo rx"><span class="material-symbols-rounded">chat</span>${p.qtd_nao_lidos}</span>`;
+                }
+                return { p, peso, selo, seloCom, classe, d };
+            }).filter(x => x.peso > 0)
+              .sort((a,b) => b.peso - a.peso || ((a.d===null?999:a.d) - (b.d===null?999:b.d)));
+
+            const alvo = document.getElementById('atencao');
+            const atrasados = marcados.filter(x=>x.peso===3).length;
+            const comentarios = marcados.filter(x=>x.seloCom).length;
+            carregarFilaAtribuicao();
+
+            if (!marcados.length) {
+                alvo.innerHTML = `
+                    <div class="secao">
+                        <div class="secao-cab"><span class="secao-tit">Precisa de você</span><span class="secao-linha"></span></div>
+                        <div class="tudo-certo">
+                            <span class="material-symbols-rounded">task_alt</span>
+                            <p>Nada atrasado nem vencendo</p>
+                            <small>${abertos.length? abertos.length+' projeto'+(abertos.length!==1?'s':'')+' em aberto com você' : 'Você não tem projetos em aberto'}</small>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            const linhas = marcados.slice(0, 6).map(x => {
+                const q = quadroDaArea(x.p.area);
+                return `<div class="item ${x.classe}" onclick="window.location.href='/board/${q?q.chave:'geral'}'">
+                    <div class="item-corpo">
+                        <div class="item-topo">
+                            <span class="item-cliente">${escH(x.p.empresa)}</span>
+                            ${q?`<span class="item-quadro">${escH(q.nome)}</span>`:''}
+                        </div>
+                        <div class="item-nome">${escH(x.p.nome_projeto)}</div>
+                    </div>
+                    <div class="item-dir">
+                        ${x.selo}${x.seloCom}
+                        <span class="item-seta"><span class="material-symbols-rounded">chevron_right</span></span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            let resumo = [];
+            if (atrasados)   resumo.push(atrasados+' atrasado'+(atrasados!==1?'s':''));
+            if (comentarios) resumo.push(comentarios+' com comentário novo');
+
+            alvo.innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab">
+                        <span class="secao-tit">Precisa de você${resumo.length? ' · '+resumo.join(' · ') : ''}</span>
+                        <span class="secao-linha"></span>
+                        ${marcados.length>6 ? `<span class="secao-tit">+${marcados.length-6}</span>` : ''}
+                    </div>
+                    <div class="lista">${linhas}</div>
+                </div>`;
+        }
+
+        // ===== PULSO =====
+        function renderPulso(r, projetos){
+            const meus = projetos.filter(p => (p.responsavel||'').trim().toLowerCase() === (NOME||'').trim().toLowerCase()
+                && p.status!=='Finalizado' && p.status!=='Cancelado').length;
+            const cards = [];
+            cards.push(pz('Meus projetos', meus, "window.location.href='/dashboard'", temAnalise('dashboard')));
+            cards.push(pz('Projetos ativos', r.projetos, "window.location.href='/dashboard'", temAnalise('dashboard')));
+            if (temModulo('clientes'))    cards.push(pz('Clientes', r.clientes, "window.location.href='/clientes'", true));
+            document.getElementById('pulsoArea').innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab"><span class="secao-tit">Panorama</span><span class="secao-linha"></span></div>
+                    <div class="pulso">${cards.filter(Boolean).join('')}</div>
+                </div>`;
+        }
+        function pz(rot, val, acao, clic){
+            const v = (val===null||val===undefined) ? '<span class="pz-val vazio">—</span>' : `<span class="pz-val num">${val}</span>`;
+            return `<div class="pz ${clic?'clic':''}" ${clic?`onclick="${acao}"`:''}>
+                <div class="pz-rot">${rot}</div>${v}</div>`;
+        }
+
+        // ===== ATALHOS =====
+        function renderAtalhos(projetos){
+            const visiveis = QUADROS.filter(q => temModulo(q.chave) || (ehPerson && PERM.includes('geral')));
+            if (!visiveis.length) return;
+            const cards = visiveis.map(q => {
+                const n = projetos.filter(p => p.area===q.area && p.status!=='Finalizado' && p.status!=='Cancelado').length;
+                return `<div class="at" onclick="window.location.href='/board/${q.chave}'">
+                    <div class="at-ico" style="background:${q.bg};"><span class="material-symbols-rounded" style="color:${q.cor};">${q.ico}</span></div>
+                    <div class="at-txt">
+                        <div class="at-nome">${escH(q.nome)}</div>
+                        <div class="at-qtd num">${n} em aberto</div>
+                    </div>
+                </div>`;
+            }).join('');
+            document.getElementById('atalhosArea').innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab"><span class="secao-tit">Quadros de trabalho</span><span class="secao-linha"></span></div>
+                    <div class="atalhos">${cards}</div>
+                </div>`;
+        }
+
+        // ===== EXTERNO: hub simplificado =====
+        function renderExterno(){
+            document.getElementById('atencao').innerHTML = `
+                <div class="secao">
+                    <div class="secao-cab"><span class="secao-tit">Acompanhamento</span><span class="secao-linha"></span></div>
+                    <div class="atalhos">
+                        <div class="at" onclick="window.location.href='/agenda'">
+                            <div class="at-ico" style="background:#F1EFFE;"><span class="material-symbols-rounded" style="color:#6C5CE7;">calendar_today</span></div>
+                            <div class="at-txt"><div class="at-nome">Agenda do Projeto</div><div class="at-qtd">Compromissos e etapas</div></div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // ===== CARGA =====
+        (async function(){
+            if (ehExterno) { renderExterno(); return; }
+            renderTimer();
+            setInterval(renderTimer, 1000);
+
+            // esqueleto do panorama enquanto carrega
+            document.getElementById('pulsoArea').innerHTML = `
+                <div class="secao"><div class="secao-cab"><span class="secao-tit">Panorama</span><span class="secao-linha"></span></div>
+                <div class="pulso">${Array(4).fill('<div class="pz"><div class="pz-rot">&nbsp;</div><div class="skel"></div></div>').join('')}</div></div>`;
+
+            let projetos = [];
+            try {
+                const rp = await fetch('/api/projetos');
+                const dp = await rp.json();
+                projetos = (dp.projetos || dp || []).filter(p => !p.excluido_em);
+            } catch(e) { projetos = []; }
+
+            renderAtencao(projetos);
+            renderAtalhos(projetos);
+
+            try {
+                const rr = await fetch('/api/hub/resumo');
+                const dr = await rr.json();
+                renderPulso(dr.resumo || {}, projetos);
+            } catch(e) { renderPulso({}, projetos); }
+        })();
+    </script>
 </body>
 </html>
