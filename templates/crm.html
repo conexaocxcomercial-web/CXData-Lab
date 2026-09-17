@@ -1896,6 +1896,21 @@
 
                 showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
                             : 'Contrato fechado.', 'success');
+
+                /* NADA FOI CRIADO E ALGUEM PEDIU.
+                   Fechar sem marcar quadro e uma escolha legitima -- a
+                   janela avisa que o lead vai para Ganho sem gerar
+                   trabalho. Marcar quadro e nao nascer card nenhum nao
+                   e: significa que a passagem de bastao falhou, e quem
+                   fechou precisa saber na hora, nao o quadro que nunca
+                   recebeu o pedido. */
+                if(!n && (d.pediu_quadros || 0) > 0){
+                    const quais = (d.recusados || []).filter(Boolean);
+                    showToast('O contrato foi registrado, mas nenhum card foi criado nos quadros '
+                            + 'marcados' + (quais.length ? ' (' + quais.join(', ') + ' não existe).' : '. ')
+                            + ' Avise quem administra.', 'error');
+                    console.error('[fechamento] quadros pedidos sem card criado | resposta:', d);
+                }
             }catch(e){
                 showToast('Sem conexão com o servidor.','error');
             } finally { btn.disabled = false; }
