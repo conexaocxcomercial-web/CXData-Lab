@@ -424,6 +424,16 @@
         .cta-ctr-n small{ display:block; font-weight:500; color:var(--tinta-3); font-size:11px; }
         .cta-btn{ min-height:40px; padding:0 14px; border-radius:var(--r-ctrl); border:none; background:var(--papel); box-shadow:inset 0 0 0 1px var(--linha-2, var(--linha)); font:inherit; font-size:12.5px; font-weight:600; color:var(--tinta); cursor:pointer; white-space:nowrap; }
         .cta-btn:hover{ background:var(--papel-2); }
+        .csat-op{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:10px; }
+        .csat-b{ min-height:60px; border:none; border-radius:10px; background:var(--papel-2); box-shadow:inset 0 0 0 1px var(--linha);
+            font:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px; }
+        .csat-b b{ font-size:17px; color:var(--tinta); }
+        .csat-b span{ font-size:10.5px; font-weight:600; line-height:1.2; text-align:center; color:var(--tinta-2); }
+        .csat-b.on{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .csat-b.on b, .csat-b.on span{ color:var(--acao); }
+        .csat-salvar{ background:var(--acao); color:#fff; box-shadow:none; }
+        .csat-salvar:hover{ background:var(--acao); filter:brightness(.95); }
+        @media(max-width:520px){ .csat-op{ grid-template-columns:repeat(5,1fr); gap:4px; } .csat-b span{ font-size:9.5px; } }
         @media(max-width:520px){ .cta-lin{ grid-template-columns:1fr; gap:2px; } .cta-lin .d{ font-size:11px; } }
         .ig-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
             letter-spacing:.5px; color:var(--tinta-3); padding-top:6px; margin-bottom:9px;
@@ -798,7 +808,7 @@
                     <input type="text" id="fCnpj" inputmode="numeric" maxlength="18"
                            placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this); checarCnpjLead(this.value)">
                     <div class="ig-dica">Vira o cadastro do cliente no fechamento.
-                    O portão de Negociação cobra este campo — preencher aqui adianta.</div>
+                    Só é exigido ao fechar o contrato (Ganho) — preencher antes adianta, mas não é obrigatório.</div>
                     <!-- Um CNPJ, um cliente: se já existe, a tela avisa e o lead
                          nasce como nova oportunidade da conta, não cadastro novo. -->
                     <div id="fCnpjAviso" class="cnpj-aviso" style="display:none"></div>
@@ -889,7 +899,7 @@
                         <input type="number" id="fcValor" step="0.01" min="0" oninput="atualizarPrevia()"></div>
                 </div>
                 <div class="ig">
-                    <label>Contrato assinado <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
+                    <label>Contrato assinado <span class="brf-obr">obrigatório</span></label>
                     <div id="fcContrato"></div>
                     <div class="ig-dica">PDF, Word ou foto, até 4 MB. Fica guardado com o
                     lead, e só quem enxerga o lead consegue abrir.</div>
@@ -898,30 +908,30 @@
                      Obrigatório de propósito: o custo de uma frase aqui é
                      menor que o de quem executa perguntar no WhatsApp. -->
                 <div class="brf">
-                    <div class="ig-secao">O que a operação precisa saber</div>
+                    <div class="ig-secao">Para a operação</div>
                     <div class="ig">
-                        <label for="fcResumo">O que foi vendido, em uma frase <span class="brf-obr">obrigatório</span></label>
+                        <label for="fcResumo">Informações para a operação <span class="brf-obr">obrigatório</span></label>
                         <textarea id="fcResumo" rows="2" maxlength="400"
                             placeholder="Ex.: cinco vagas de analista fiscal, shortlist até 30/09, entrevistas às sextas."
                             oninput="this.classList.remove('erro')"></textarea>
                     </div>
-                    <div class="ig3 brf-contato">
-                        <div class="ig"><label for="fcContato">Contato da execução</label>
-                            <input type="text" id="fcContato" placeholder="Quem acompanha o trabalho"></div>
-                        <div class="ig"><label for="fcCargo">Cargo</label>
-                            <input type="text" id="fcCargo" placeholder="Gerente de RH"></div>
-                    </div>
-                    <div class="ig3 brf-contato">
-                        <div class="ig"><label for="fcTelefoneExec">Telefone da execução</label>
-                            <input type="text" id="fcTelefoneExec" placeholder="(84) 99999-0000"></div>
-                        <div class="ig"><label for="fcPrazo">Prazo prometido</label>
-                            <input type="date" id="fcPrazo"></div>
-                    </div>
                     <div class="ig">
-                        <label for="fcAtencao">Atenção da venda <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
-                        <textarea id="fcAtencao" rows="2" maxlength="600"
-                            placeholder="Cliente difícil, expectativa desalinhada, quem indicou…"></textarea>
-                        <div class="ig-dica">As anotações do lead vêm pré-carregadas aqui para você revisar. O que ficar é o que a operação lê.</div>
+                        <label for="fcPrazo">Prazo prometido <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
+                        <input type="date" id="fcPrazo">
+                    </div>
+                    <!-- Decisor: quem negociou e assinou. É com ele que a
+                         operação abre o trabalho e o financeiro fala se a
+                         nota travar. -->
+                    <div class="ig-secao" style="margin-top:4px">Decisor · quem negociou e assinou</div>
+                    <div class="ig">
+                        <label for="fcContato">Nome <span class="brf-obr">obrigatório</span></label>
+                        <input type="text" id="fcContato" placeholder="Carlos Souza" oninput="this.classList.remove('erro')">
+                    </div>
+                    <div class="ig3 brf-contato">
+                        <div class="ig"><label for="fcCargo">Cargo</label>
+                            <input type="text" id="fcCargo" placeholder="Sócio"></div>
+                        <div class="ig"><label for="fcTelefoneExec">Telefone</label>
+                            <input type="text" id="fcTelefoneExec" placeholder="(84) 99999-0000"></div>
                     </div>
                 </div>
 
@@ -1027,9 +1037,18 @@
               ajuda:'Sem a origem, o painel não sabe qual canal converte.',
               campos:[ {k:'origem', r:'Origem', tipo:'select', obrig:true} ] },
             { funil:'qualificacao', para:'Ganho',
-              titulo:'O lead passa para o closer',
+              titulo:'O lead passa para o Fechamento',
               ajuda:'Sem contato e contexto, quem recebe recomeça a conversa do zero.',
-              campos:[ {k:'telefone', r:'Telefone', tipo:'tel', obrig:true},
+              /* O closer é escolhido aqui para o card chegar no Agendamento
+                 já no nome dele -- antes chegava com o SDR, e um closer de
+                 acesso restrito nem via o lead que recebeu. */
+              /* Quem segue com o lead no Fechamento: pode ser o mesmo da
+                 Qualificação ou outra pessoa. A primeira opção mantém o
+                 responsável atual; trocar avisa quem recebe. */
+              campos:[ {k:'responsavel', r:'Responsável no Fechamento', tipo:'select', obrig:true,
+                        opcoesDe:'responsaveis', manterAtual:true,
+                        dica:'Mantenha quem está com o lead ou escolha quem assume. Quem assume é avisado.'},
+                       {k:'telefone', r:'Telefone', tipo:'tel', obrig:true},
                        {k:'email', r:'E-mail', tipo:'email', obrig:true},
                        {k:'segmento', r:'Segmento', tipo:'select', obrig:true,
                         opcoes:SEGMENTOS},
@@ -1043,15 +1062,14 @@
               ajuda:'O valor daqui alimenta o painel comercial.',
               campos:[ {k:'canal_proposta', r:'Como foi apresentada', tipo:'select', obrig:true,
                         opcoes:['E-mail','WhatsApp','Ligação','Reunião online','Reunião presencial']},
-                       {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true} ] },
-            /* CNPJ só aqui: na proposta o closer costuma não ter ainda.
-               Em negociação já há intenção de contrato, e o dado vira o
-               cadastro do cliente. Quem pula direto para Ganho encontra
-               a mesma exigência na janela de fechamento. */
-            { funil:'fechamento', para:'Negociação',
-              titulo:'Entrando em negociação',
-              ajuda:'O CNPJ vira o cadastro do cliente e a emissão da nota.',
-              campos:[ {k:'cnpj', r:'CNPJ', tipo:'cnpj', obrig:true} ] }
+                       {k:'valor_estimado', r:'Valor da proposta', tipo:'moeda', obrig:true} ] }
+            /* CNPJ SAIU DAQUI (18/09).
+               O portão de Negociação exigia CNPJ antes de o closer ter o
+               do cliente, e o campo passou a ser preenchido com o CNPJ da
+               própria conexão para destravar o card: Fogaça e Prevenção
+               ficaram cadastradas com ele. Agora o CNPJ é exigido uma vez
+               só, na janela de fechamento (Ganho), quando o contrato já
+               existe e o dado é certo. */
         ];
         /* ==================== CNPJ ====================
            Um CNPJ inválido no cadastro do cliente vira problema na
@@ -1291,6 +1309,9 @@
         const PRODUTO_POS = ['Recrutamento & Seleção','Recrutamento & Seleção Mensalista',
                              'RH Estratégico','PCCS','PCO','Gestao de Desempenho',
                              'CXData Mensalista','CXData Pontual'];
+        /* Lista de reserva. A lista real vem do cadastro (/api/pessoas) ao
+           abrir a página: nome escrito à mão diverge do cadastro e o card
+           vai para alguém que o sistema não reconhece (caso Bárbara). */
         const RESPONSAVEIS = ['Jhonattan Luiz','Gabriela Farias','Mirian Meireles','Itiana Andrade',
             'Matheus Alves','Clara Viana','Alisson Maciel','Juliete Cadete','Ana Medeiros',
             'Thallya Rodrigues','Patrick Guilherme','Bárbara Cazé'];
@@ -1365,9 +1386,30 @@
             const m=document.getElementById('atMail'); m.style.opacity = temMail?'1':'.4';
         }
 
+        /* ==================== PESSOAS ====================
+           Troca o conteúdo da lista de reserva pelos nomes do cadastro.
+           Falhou a leitura: fica a reserva, e a tela continua usável. */
+        async function carregarPessoas(){
+            try{
+                const r = await fetch('/api/pessoas');
+                if(!r.ok) return;
+                const d = await r.json();
+                const nomes = (d.pessoas || []).map(p => p.nome).filter(Boolean);
+                if(nomes.length) RESPONSAVEIS.splice(0, RESPONSAVEIS.length, ...nomes);
+            }catch(e){ console.warn('pessoas indisponíveis, usando a lista de reserva', e); }
+        }
+        /* Um lead antigo pode estar com um nome que não está mais no
+           cadastro. A opção entra na lista para o valor não sumir do campo. */
+        function garantirOpcao(sel, nome){
+            if(!nome || [...sel.options].some(o => o.value === nome)) return;
+            const o = document.createElement('option'); o.value = nome; o.textContent = nome + ' (fora do cadastro)';
+            sel.appendChild(o);
+        }
+
         /* ==================== CARGA ==================== */
         async function iniciar(){
             document.getElementById('fProduto').innerHTML = '<option value="">—</option>' + PRODUTOS.map(p=>`<option>${escH(p)}</option>`).join('');
+            await carregarPessoas();
             document.getElementById('fResponsavel').innerHTML = RESPONSAVEIS.map(r=>`<option ${r===USUARIO?'selected':''}>${escH(r)}</option>`).join('');
             document.getElementById('objGrade').innerHTML = OBJECOES.map(o=>
                 `<button class="obj" data-obj="${o.id}" onclick="escolherObjecao('${o.id}')">
@@ -1637,9 +1679,22 @@
                     campo = `<textarea id="pt-${escA(c.k)}" rows="3"
                         placeholder="${escA(c.dica||'')}">${escH(l[c.k]||'')}</textarea>`;
                 } else if(c.tipo === 'select'){
-                    const ops = c.opcoes || ORIGENS;
-                    campo = `<select id="pt-${escA(c.k)}"><option value="">Selecione…</option>` +
-                        ops.map(o=>`<option ${l[c.k]===o?'selected':''}>${escH(o)}</option>`).join('') + '</select>';
+                    // RESPONSAVEIS é declarada depois de PORTOES: resolver
+                    // aqui evita ler a constante antes de ela existir.
+                    const ops = c.opcoesDe === 'responsaveis' ? RESPONSAVEIS : (c.opcoes || ORIGENS);
+                    if(c.manterAtual){
+                        // Manter vem primeiro e já marcado: é o caso comum
+                        // quando o mesmo SDR segue, e trocar é uma escolha
+                        // consciente, não um esquecimento.
+                        const atualR = (l[c.k] || '').trim();
+                        campo = `<select id="pt-${escA(c.k)}">` +
+                            (atualR ? `<option value="${escA(atualR)}" selected>Manter ${escH(atualR)} (responsável atual)</option>` : '<option value="">Selecione…</option>') +
+                            ops.filter(o => o !== atualR).map(o=>`<option value="${escA(o)}">Passar para ${escH(o)}</option>`).join('') + '</select>';
+                    } else {
+                        const atual = l[c.k];
+                        campo = `<select id="pt-${escA(c.k)}"><option value="">Selecione…</option>` +
+                            ops.map(o=>`<option ${atual===o?'selected':''}>${escH(o)}</option>`).join('') + '</select>';
+                    }
                 } else if(c.tipo === 'cidade'){
                     // Lista aberta com sugestão: o Brasil tem 5.570 cidades,
                     // mas as que a Conexão atende se repetem.
@@ -1734,7 +1789,6 @@
             document.getElementById('fcCargo').value = '';
             document.getElementById('fcTelefoneExec').value = l.telefone || '';
             document.getElementById('fcPrazo').value = '';
-            document.getElementById('fcAtencao').value = l.anotacoes || '';
 
             // Quadros: o do produto e o Financeiro já vêm marcados.
             document.getElementById('fcQuadros').innerHTML = QUADROS_TRABALHO.map(([c,n]) => {
@@ -1944,8 +1998,9 @@
             if(!nome){ showToast('Informe o nome do projeto.','error'); return; }
             const qtd = Math.max(1, parseInt(document.getElementById('fcQtd').value) || 1);
             if(qtd > 50){ showToast('Máximo de 50 cards por contrato.','error'); return; }
-            // Quem pulou Negociação chega aqui sem CNPJ: a exigência é a
-            // mesma, senão o cliente nasce sem o dado que a nota precisa.
+            // O CNPJ é exigido aqui e só aqui: é o único ponto do funil em
+            // que o contrato já existe e o número é o do contratante. Sem
+            // ele o cliente nasceria sem o dado que a nota precisa.
             const cnpjEl = document.getElementById('fcCnpj');
             const cnpj = cnpjEl.value.trim();
             if(!cnpj){
@@ -1958,6 +2013,20 @@
             }
             // A mesma exigência do servidor, aqui para o erro aparecer no
             // campo e não só no aviso.
+            // CONTRATO DESTA VENDA: sem ele o bastão passa pela metade. O
+            // anexo de um lead que voltou do Relacionamento é o contrato
+            // anterior e não serve (o servidor refaz esta checagem).
+            if(!ctrAtual || !String(ctrAtual.caminho || '').startsWith(String(fechCtx.leadId) + '/')){
+                showToast('Anexe o contrato assinado desta venda para fechar.', 'error');
+                const z = document.querySelector('#modalFechamento .ctr, #modalFechamento [id^="fcContrato"]');
+                if(z) z.scrollIntoView({ block:'center', behavior:'smooth' });
+                return;
+            }
+            const decEl = document.getElementById('fcContato');
+            if(!decEl.value.trim()){
+                showToast('Informe o nome do decisor: quem negociou e assinou.', 'error');
+                decEl.classList.add('erro'); decEl.focus(); return;
+            }
             const resumoEl = document.getElementById('fcResumo');
             const resumo = resumoEl.value.trim();
             if(resumo.length < 10){
@@ -1982,8 +2051,7 @@
                             contato: document.getElementById('fcContato').value.trim(),
                             cargo: document.getElementById('fcCargo').value.trim(),
                             telefone: document.getElementById('fcTelefoneExec').value.trim(),
-                            prazo_prometido: document.getElementById('fcPrazo').value,
-                            atencao: document.getElementById('fcAtencao').value.trim()
+                            prazo_prometido: document.getElementById('fcPrazo').value
                         }
                     })});
                 if(!r.ok){ showToast(await motivoErro(r,'Não foi possível fechar o contrato.'),'error'); return; }
@@ -2339,6 +2407,9 @@
                 </div>`);
             }
 
+            // 1b. Pesquisa de satisfação (CSAT) -- só no Relacionamento
+            if(l.funil === 'relacionamento') blocos.push(blocoPesquisa(l, e.pesquisa || null));
+
             // 2. O que foi prometido na venda (lead ganho)
             const p = d.prometido;
             if(p && p.resumo){
@@ -2390,7 +2461,64 @@
                     ${and.length ? `<div class="cta-at" style="background:var(--ok-fraco);color:var(--ok)"><b>Em andamento agora:</b> ${and.length} card${and.length!==1?'s':''} · ${[...new Set(and.map(x => NOME_QUADRO[x.quadro]||x.area))].map(escH).join(', ')}</div>` : ''}
                 </div>`);
             }
+            // 6. Contatos registrados: o CRM gravava estas interações e
+            //    nenhuma tela mostrava -- incluindo a passagem SDR → closer.
+            const it = d.interacoes || [];
+            if(it.length){
+                const ROT_INT = { passagem:'Passagem', entrega:'Entrega', pesquisa:'Pesquisa', sistema:'Sistema' };
+                blocos.push(`<div class="cta-bloco"><div class="cta-t">Contatos e registros</div>
+                    ${it.slice(0,8).map(x => `<div class="cta-lin">
+                        <span class="d">${fmtData(x.criado_em)}</span>
+                        <span class="n">${escH(x.resumo || '')}<small>${escH(ROT_INT[x.tipo] || x.tipo || '')}${x.autor ? ' · ' + escH(x.autor) : ''}</small></span>
+                        <span class="v"></span></div>`).join('')}</div>`);
+            }
             alvo.innerHTML = blocos.join('');
+        }
+
+        /* ==================== PESQUISA CSAT ====================
+           De 1 a 5, a resposta DO CLIENTE. Satisfeitos = 4 e 5; o CSAT
+           da conexão é a porcentagem deles. Não confundir com a
+           percepção da operação registrada na finalização. */
+        const CSAT = [[1,'Muito insatisfeito'],[2,'Insatisfeito'],[3,'Neutro'],[4,'Satisfeito'],[5,'Muito satisfeito']];
+        let csatNota = null;
+        function blocoPesquisa(l, ult){
+            csatNota = null;
+            const feita = ult ? (ult.nao_respondeu
+                ? `<div class="cta-at" style="background:var(--papel-2);color:var(--tinta-2)">Última tentativa: cliente não respondeu${ult.canal ? ' · ' + escH(ult.canal) : ''} · ${fmtData(ult.registrado_em)}</div>`
+                : `<div class="cta-at" style="background:${ult.satisfeito ? 'var(--ok-fraco)' : 'var(--at-fundo)'};color:${ult.satisfeito ? 'var(--ok)' : '#6B3D03'}"><b>CSAT ${ult.nota} · ${escH(ult.rotulo)}</b>${ult.canal ? ' · ' + escH(ult.canal) : ''} · ${fmtData(ult.registrado_em)}${ult.comentario ? '<br>' + escH(ult.comentario) : ''}</div>`) : '';
+            return `<div class="cta-bloco destaque" id="csatBloco"><div class="cta-t">Pesquisa de satisfação · CSAT</div>
+                <div class="cta-meta" style="margin:0 0 10px"><b style="color:var(--tinta)">"De 1 a 5, quanto você ficou satisfeito com o serviço entregue?"</b> Registre a resposta do cliente.</div>
+                ${feita}
+                <div class="csat-op" role="radiogroup" aria-label="Nota CSAT">
+                    ${CSAT.map(([n,t]) => `<button type="button" role="radio" aria-checked="false" class="csat-b" data-n="${n}" onclick="marcarCsat(${n})"><b>${n}</b><span>${t}</span></button>`).join('')}
+                </div>
+                <div class="cta-meta" style="margin:6px 0 10px">Contam como satisfeitos as notas 4 e 5.</div>
+                <div class="ig"><label for="csatComent">O que o cliente disse</label><textarea id="csatComent" rows="2" maxlength="1000"></textarea></div>
+                <div class="ig"><label for="csatCanal">Como a pesquisa foi feita</label>
+                    <select id="csatCanal"><option>Ligação</option><option>WhatsApp</option><option>E-mail</option><option>Reunião</option><option>Formulário</option></select></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                    <button type="button" class="cta-btn csat-salvar" onclick="salvarCsat('${escA(l.id)}', false)">Registrar pesquisa</button>
+                    <button type="button" class="cta-btn" onclick="salvarCsat('${escA(l.id)}', true)">Cliente não respondeu</button>
+                </div></div>`;
+        }
+        function marcarCsat(n){
+            csatNota = n;
+            document.querySelectorAll('.csat-b').forEach(b => {
+                const on = Number(b.dataset.n) === n;
+                b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+        }
+        async function salvarCsat(leadId, naoRespondeu){
+            if(!naoRespondeu && !csatNota){ showToast('Escolha a nota que o cliente deu, de 1 a 5.', 'error'); return; }
+            try{
+                const r = await fetch('/api/leads/' + leadId + '/pesquisa', { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ nota: csatNota, nao_respondeu: naoRespondeu,
+                        comentario: (document.getElementById('csatComent')||{}).value || '',
+                        canal: (document.getElementById('csatCanal')||{}).value || '' }) });
+                if(!r.ok){ showToast(await motivoErro(r, 'Não foi possível registrar a pesquisa.'), 'error'); return; }
+                showToast(naoRespondeu ? 'Registrado: cliente não respondeu.' : 'Pesquisa registrada.', 'success');
+                abrirDetalhe(leadId);
+            }catch(e){ showToast('Sem conexão com o servidor.', 'error'); }
         }
 
         /* Trava de CNPJ, lado da tela. O servidor refaz a checagem no
@@ -2537,6 +2665,7 @@
             document.getElementById('fTelefone').value = l ? (l.telefone||'') : '';
             document.getElementById('fEmail').value = l ? (l.email||'') : '';
             document.getElementById('fProduto').value = l ? (l.produto||'') : '';
+            garantirOpcao(document.getElementById('fResponsavel'), l ? l.responsavel : null);
             document.getElementById('fResponsavel').value = l ? (l.responsavel||USUARIO) : USUARIO;
             // Monta as opções a partir de ORIGENS. Se o lead tiver uma
             // origem antiga que saiu da lista, ela entra também — senão
