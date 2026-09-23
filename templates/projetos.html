@@ -528,6 +528,9 @@
         body.modo-cliente .status-pill-select { pointer-events: none; opacity: 0.95; }
         /* Anotações em modo leitura */
         body.modo-cliente #detAnotacoes { background: #f9f9f9 !important; pointer-events: none; }
+        body.modo-cliente .cxd-play, body.modo-cliente .cxd-menu-w, body.modo-cliente .cxd-ic[aria-label="Editar projeto"],
+        body.modo-cliente #detAnotStatus { display: none !important; }
+        body.modo-cliente .cxd-pill.fase select { pointer-events: none; }
         /* Esconde os botões Editar/Excluir do rodapé do modal de detalhes */
         body.modo-cliente .modal-footer-acoes { display: none !important; }
 
@@ -614,6 +617,247 @@
         }
         .det-chip .material-symbols-rounded{ font-size:14px; color:var(--tinta-3); }
         .det-chip b{ font-weight:600; color:var(--tinta); }
+
+
+        /* ================= CARD EXPANDIDO (cxd) ================= */
+        .cxd-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+        .modal-content.cxd{ width:min(1180px, 96vw); max-width:none; height:min(92vh, 940px); padding:0; display:flex; flex-direction:column;
+            overflow:hidden; border-radius:14px; background:var(--papel); box-shadow:var(--e-pop); }
+        .cxd-cab{ padding:16px 24px 14px; display:flex; flex-direction:column; gap:10px; border-bottom:1px solid var(--linha-1); flex-shrink:0; }
+        .cxd-l1{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .cxd-trilha{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--tinta-3); min-width:0; flex-wrap:wrap; }
+        .cxd-trilha .sep{ opacity:.6; }
+        .cxd-acoes{ display:flex; align-items:center; gap:6px; }
+        .cxd-ic{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:var(--r-ctrl);
+            background:transparent; box-shadow:inset 0 0 0 1px var(--linha-1); color:var(--tinta-2); cursor:pointer; }
+        .cxd-ic:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cxd-ic .material-symbols-rounded{ font-size:19px; }
+        .cxd-menu-w{ position:relative; }
+        .cxd-menu{ position:absolute; right:0; top:calc(100% + 6px); min-width:230px; background:var(--papel); border-radius:12px; box-shadow:var(--e-pop);
+            padding:6px; display:none; flex-direction:column; z-index:20; }
+        .cxd-menu.on{ display:flex; }
+        .cxd-menu button{ min-height:42px; display:flex; align-items:center; gap:10px; padding:0 12px; border:none; background:none; border-radius:8px;
+            font:inherit; font-size:13px; font-weight:600; color:var(--tinta); cursor:pointer; text-align:left; }
+        .cxd-menu button:hover{ background:var(--papel-2); }
+        .cxd-menu button .material-symbols-rounded{ font-size:18px; color:var(--tinta-3); }
+        .cxd-menu button.perigo{ color:var(--critico); } .cxd-menu button.perigo .material-symbols-rounded{ color:var(--critico); }
+        .cxd-l2{ display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+        .cxd-titulo{ margin:0; font-size:21px; font-weight:700; line-height:1.25; letter-spacing:-.4px; color:var(--tinta); min-width:0; }
+        .cxd-crono{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .cxd-crono-v{ display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+        .cxd-crono-v b{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-size:15px; font-weight:600; color:var(--tinta); }
+        .cxd-crono-v span{ font-size:11px; color:var(--tinta-3); }
+        .cxd-play{ min-height:40px; padding:0 14px 0 10px; display:inline-flex; align-items:center; gap:8px; border:none; border-radius:var(--r-ctrl);
+            background:#17171a; color:#fff; font:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+        .cxd-play .bola{ width:20px; height:20px; border-radius:50%; background:#bef533; color:#17171a; display:inline-flex; align-items:center; justify-content:center; }
+        .cxd-play .bola .material-symbols-rounded{ font-size:15px; }
+        .cxd-play.rodando .bola{ background:#fb7185; color:#fff; }
+        .cxd-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .cxd-pill{ position:relative; min-height:34px; display:inline-flex; align-items:center; gap:7px; padding:0 11px; border-radius:var(--r-pill);
+            background:var(--papel); box-shadow:inset 0 0 0 1px var(--linha-1); font-size:12.5px; font-weight:600; color:var(--tinta); white-space:nowrap; }
+        .cxd-pill .r{ font-weight:500; color:var(--tinta-3); }
+        .cxd-pill .material-symbols-rounded{ font-size:16px; color:var(--tinta-3); }
+        .cxd-pill.fase{ background:var(--acao-fraco); box-shadow:none; color:var(--acao); padding-right:30px; }
+        .cxd-pill.fase .r, .cxd-pill.fase .material-symbols-rounded{ color:var(--acao); }
+        .cxd-pill.fase select{ position:absolute; inset:0; opacity:0; cursor:pointer; font:inherit; }
+        /* Seta desenhada em CSS: um ícone de fonte num pseudo-elemento vira a
+           palavra "expand_more" enquanto a fonte não carrega. */
+        .cxd-pill.fase .seta{ position:absolute; right:11px; top:50%; width:6px; height:6px; margin-top:-5px;
+            border-right:1.8px solid currentColor; border-bottom:1.8px solid currentColor; transform:rotate(45deg); pointer-events:none; }
+        /* Os comentários reaproveitam as classes antigas (o "Ciente" as
+           procura); neutraliza o visual de balão que vinha com elas. */
+        .cxd-com .chat-bubble{ border:none !important; box-shadow:none !important; background:transparent !important; padding:2px 0 !important;
+            margin:0 !important; max-width:none !important; border-radius:8px !important; }
+        .cxd-com .chat-bubble.naolido{ background:var(--acao-fraco) !important; padding:8px 10px !important; }
+        .cxd-com .comentario-acoes{ margin:0 0 0 -6px !important; padding:0 !important; border:none !important; }
+        .cxd-com .comentario-texto{ font-size:13.5px !important; line-height:1.55 !important; color:var(--tinta-2) !important; margin:0 !important; }
+        .cxd-pill.btn{ cursor:pointer; border:none; font-family:inherit; }
+        .cxd-pill.btn:hover{ background:var(--papel-2); }
+        .cxd-pill.at{ background:var(--at-fundo); box-shadow:none; color:#6b3d03; }
+        .cxd-pill.at .r, .cxd-pill.at .material-symbols-rounded{ color:#8a4a06; }
+        .cxd-pill.suave{ background:var(--papel-2); box-shadow:none; color:var(--tinta-2); }
+        .cxd-av{ width:26px; height:26px; flex-shrink:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+            font-size:10.5px; font-weight:700; background:#17171a; color:#bef533; }
+        .cxd-pill .cxd-av{ width:24px; height:24px; margin-left:-7px; }
+        .cxd-alerta{ display:flex; align-items:center; gap:12px; padding:10px 12px 10px 14px; border-radius:10px; background:var(--at-fundo);
+            font-size:13px; line-height:1.45; color:#6b3d03; }
+        .cxd-alerta .material-symbols-rounded{ color:#8a4a06; font-size:19px; }
+        .cxd-alerta span.t{ flex:1; }
+        .cxd-corpo{ flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 360px; overflow:hidden; }
+        .cxd-main{ overflow-y:auto; padding:20px 24px 28px; display:flex; flex-direction:column; gap:26px; min-width:0; }
+        .cxd-lat{ overflow-y:auto; background:#fbfbfc; border-left:1px solid var(--linha-1); display:flex; flex-direction:column; }
+        .cxd-sec{ display:flex; flex-direction:column; gap:12px; }
+        .cxd-lsec{ padding:18px 20px; border-bottom:1px solid var(--linha-1); display:flex; flex-direction:column; gap:10px; }
+        .cxd-lsec:last-child{ border-bottom:none; }
+        .cxd-sec-t{ display:flex; align-items:center; gap:8px; min-height:26px; }
+        .cxd-sec-t h3{ margin:0; font-size:13px; font-weight:700; letter-spacing:-.1px; color:var(--tinta); }
+        .cxd-sec-t .material-symbols-rounded{ font-size:18px; color:var(--tinta-3); }
+        .cxd-sec-t a{ margin-left:auto; font-size:12px; font-weight:600; color:var(--acao); text-decoration:none; display:inline-flex; align-items:center; gap:3px; }
+        .cxd-sec-t a .material-symbols-rounded{ font-size:14px; color:var(--acao); }
+        .cxd-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+        .cxd-comercial{ border-radius:10px; background:var(--acao-fraco); padding:13px 15px; display:flex; flex-direction:column; gap:6px; }
+        .cxd-comercial .topo{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+        .cxd-comercial .topo .cxd-rot{ color:var(--acao); }
+        .cxd-comercial .quem{ font-size:11.5px; color:#5a52b8; }
+        .cxd-comercial p{ margin:0; font-size:14px; font-weight:500; line-height:1.6; color:var(--tinta); white-space:pre-wrap; }
+        .cxd-vazio{ font-size:12.5px; color:var(--tinta-3); line-height:1.5; }
+        .cxd-doc{ border-radius:10px; box-shadow:inset 0 0 0 1px var(--linha-1); background:var(--papel); }
+        .cxd-doc:focus-within{ box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .cxd-doc textarea{ width:100%; box-sizing:border-box; min-height:120px; padding:13px 15px 6px; border:none; outline:none; resize:vertical;
+            background:transparent; font:inherit; font-size:13.5px; line-height:1.6; color:var(--tinta); }
+        .cxd-doc-pe{ padding:0 15px 9px; font-size:11.5px; color:var(--tinta-3); }
+        .cxd-fat{ border-radius:12px; box-shadow:inset 0 0 0 1px var(--linha-1); padding:16px 18px; display:flex; flex-direction:column; gap:16px; }
+        .cxd-fat-topo{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-bottom:14px; border-bottom:1px solid var(--linha-1); flex-wrap:wrap; }
+        .cxd-valor{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-size:28px; font-weight:600; letter-spacing:-.8px; color:var(--tinta); }
+        .cxd-grade{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:14px 18px; }
+        .cxd-campo{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+        .cxd-campo .v{ font-size:14px; font-weight:600; color:var(--tinta); display:flex; align-items:center; gap:4px; overflow-wrap:anywhere; }
+        .cxd-campo .v.mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; letter-spacing:-.2px; }
+        .cxd-campo .s{ font-size:11.5px; color:var(--tinta-3); }
+        .cxd-copiar{ width:30px; height:30px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:7px;
+            background:transparent; color:var(--tinta-3); cursor:pointer; }
+        .cxd-copiar:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cxd-copiar .material-symbols-rounded{ font-size:16px; }
+        .cxd-ctr{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:var(--ok-fraco); }
+        .cxd-ctr > .material-symbols-rounded{ color:var(--ok); font-size:20px; }
+        .cxd-ctr .n{ flex:1; min-width:0; font-size:12.5px; font-weight:600; color:var(--tinta); overflow-wrap:anywhere; }
+        .cxd-ctr .n small{ display:block; font-size:11px; font-weight:500; color:var(--tinta-3); }
+        .cxd-btn{ min-height:36px; padding:0 13px; display:inline-flex; align-items:center; gap:7px; border:none; border-radius:8px; background:var(--papel);
+            box-shadow:inset 0 0 0 1px var(--linha-2); font:inherit; font-size:12.5px; font-weight:600; color:var(--tinta); cursor:pointer; white-space:nowrap; }
+        .cxd-btn:hover{ background:var(--papel-2); }
+        .cxd-btn .material-symbols-rounded{ font-size:16px; }
+        .cxd-btn.prim{ background:var(--acao); color:#fff; box-shadow:none; }
+        .cxd-btn.prim:hover{ filter:brightness(.95); background:var(--acao); }
+        .cxd-pessoa{ display:flex; align-items:center; gap:10px; }
+        .cxd-pessoa .cxd-av{ width:34px; height:34px; font-size:12px; background:var(--papel-2); color:var(--tinta-2); }
+        .cxd-pessoa .q{ flex:1; min-width:0; }
+        .cxd-pessoa .q b{ display:block; font-size:13px; font-weight:700; color:var(--tinta); }
+        .cxd-pessoa .q span{ font-size:11.5px; color:var(--tinta-3); }
+        .cxd-linha{ display:grid; grid-template-columns:100px 1fr; gap:10px; align-items:baseline; padding:6px 0; font-size:13px; }
+        .cxd-linha .r{ font-size:12px; color:var(--tinta-3); }
+        .cxd-linha .v{ font-weight:600; color:var(--tinta); min-width:0; overflow-wrap:anywhere; }
+        .cxd-linha .v small{ display:block; font-size:11.5px; font-weight:500; color:var(--tinta-3); }
+        .cxd-lote{ display:flex; gap:5px; flex-wrap:wrap; }
+        .cxd-lote span{ width:26px; height:26px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+            background:var(--papel-2); color:var(--tinta-2); box-shadow:inset 0 0 0 1px var(--linha-1); }
+        .cxd-lote span.fim{ background:var(--ok-fraco); color:var(--ok); }
+        .cxd-lote span.aqui{ background:var(--acao); color:#fff; box-shadow:none; }
+        .cxd-tempo{ display:flex; align-items:baseline; gap:8px; }
+        .cxd-tempo-n{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-size:22px; font-weight:600; letter-spacing:-.5px; color:var(--tinta); }
+        .cxd-tempo-s{ font-size:12px; color:var(--tinta-3); }
+        .cxd-log{ display:grid; grid-template-columns:1fr auto; gap:8px; padding:8px 0; border-bottom:1px solid var(--linha-1); font-size:12.5px; }
+        .cxd-log:last-child{ border-bottom:none; }
+        .cxd-log .t{ color:var(--tinta); font-weight:600; min-width:0; overflow-wrap:anywhere; }
+        .cxd-log .t small{ display:block; font-weight:500; color:var(--tinta-3); font-size:11.5px; }
+        .cxd-log .d{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-weight:600; color:var(--tinta); }
+        .cxd-mais{ align-self:flex-start; border:none; background:none; padding:6px 0; min-height:36px; font:inherit; font-size:12.5px; font-weight:600; color:var(--acao); cursor:pointer; }
+        .cxd-abas{ display:flex; gap:18px; border-bottom:1px solid var(--linha-1); }
+        .cxd-abas button{ min-height:40px; padding:0 2px; display:inline-flex; align-items:center; gap:7px; border:none; border-bottom:2px solid transparent; background:none;
+            font:inherit; font-size:13px; font-weight:600; color:var(--tinta-3); cursor:pointer; margin-bottom:-1px; }
+        .cxd-abas button.on{ color:var(--tinta); font-weight:700; border-bottom-color:var(--acao); }
+        .cxd-n{ font-size:11px; font-weight:700; padding:1px 7px; border-radius:var(--r-pill); background:var(--papel-2); color:var(--tinta-3); }
+        .cxd-abas button.on .cxd-n{ background:var(--acao-fraco); color:var(--acao); }
+        .cxd-compor{ display:flex; gap:10px; align-items:flex-start; }
+        .cxd-compor > .cxd-av{ width:32px; height:32px; font-size:11.5px; background:var(--acao); color:#fff; }
+        .cxd-compor-box{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; padding:9px 11px; border-radius:10px; box-shadow:inset 0 0 0 1px var(--linha-2); background:var(--papel); }
+        .cxd-compor-box:focus-within{ box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .cxd-compor-box textarea{ border:none; outline:none; resize:none; background:transparent; font:inherit; font-size:13.5px; line-height:1.5; color:var(--tinta); min-height:40px; }
+        .cxd-compor-pe{ display:flex; justify-content:flex-end; }
+        .cxd-feed{ display:flex; flex-direction:column; gap:16px; }
+        .cxd-com{ display:flex; gap:10px; align-items:flex-start; }
+        .cxd-com.resp{ margin-left:42px; }
+        .cxd-com > .cxd-av{ width:32px; height:32px; font-size:11.5px; }
+        .cxd-com .corpo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; padding:2px 0; border-radius:8px; }
+        .cxd-com .corpo.naolido{ background:var(--acao-fraco); padding:8px 10px; }
+        .cxd-com .quem{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+        .cxd-com .quem b{ font-size:13px; font-weight:700; color:var(--tinta); }
+        .cxd-com .quem span{ font-size:11.5px; color:var(--tinta-3); }
+        .cxd-com .txt{ font-size:13.5px; line-height:1.55; color:var(--tinta-2); overflow-wrap:anywhere; }
+        .cxd-com .acoes{ display:flex; gap:4px; margin-left:-6px; }
+        .cxd-com .acoes button{ min-height:32px; padding:0 6px; border:none; background:none; border-radius:6px; font:inherit; font-size:12px; font-weight:600;
+            color:var(--tinta-3); cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+        .cxd-com .acoes button:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cxd-com .acoes .material-symbols-rounded{ font-size:15px; }
+        .cxd-ev{ display:flex; gap:12px; align-items:flex-start; padding-left:11px; font-size:12.5px; color:var(--tinta-3); line-height:1.5; }
+        .cxd-ev i{ width:10px; height:10px; margin-top:5px; flex-shrink:0; border-radius:50%; background:var(--linha-2); }
+        .cxd-ev.fase i{ background:var(--acao); } .cxd-ev.tempo i{ background:#bef533; box-shadow:0 0 0 1px #9bc41f; }
+        .cxd-ev b{ color:var(--tinta-2); font-weight:600; }
+        #pickAtividade{ z-index:4000 !important; } #pickVeu{ z-index:3999 !important; }
+        @media (max-width:900px){
+            .modal-content.cxd{ width:100vw; height:100%; max-height:none; border-radius:0; }
+            .cxd-cab{ padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); }
+            .cxd-l2{ flex-direction:column; gap:12px; }
+            .cxd-crono{ width:100%; }
+            .cxd-crono-v{ display:none; }
+            .cxd-play{ flex:1; justify-content:center; min-height:48px; font-size:14px; }
+            .cxd-corpo{ display:flex; flex-direction:column; overflow-y:auto; }
+            .cxd-main, .cxd-lat{ display:contents; }
+            .cxd-sec, .cxd-lsec{ padding:16px; border-bottom:1px solid var(--linha-1); background:var(--papel); }
+            .cxd-o1{ order:1; } .cxd-o2{ order:2; } .cxd-o3{ order:3; } .cxd-o4{ order:4; } .cxd-o5{ order:5; padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
+            .cxd-titulo{ font-size:18px; }
+            .cxd-ic{ width:44px; height:44px; }
+        }
+
+        /* origem comercial */
+        .org{ border-bottom:1px solid var(--linha-1); background:#FCFCFD; flex-shrink:0; }
+        .org-cab{ width:100%; display:flex; align-items:center; gap:10px; padding:12px 22px; background:none;
+            border:none; font:inherit; cursor:pointer; text-align:left; min-height:48px; }
+        .org-cab:hover{ background:var(--papel-2); }
+        .org-ico{ font-size:18px; color:var(--acao); }
+        .org-tit{ font-size:12.5px; font-weight:650; letter-spacing:-.1px; }
+        .org-resumo-fechado{ flex:1; min-width:0; font-size:12px; color:var(--tinta-3); overflow:hidden;
+            text-overflow:ellipsis; white-space:nowrap; display:none; }
+        .org.fechado .org-resumo-fechado{ display:block; }
+        .org-seta{ margin-left:auto; font-size:20px; color:var(--tinta-3); transition:transform .18s; }
+        .org.fechado .org-seta{ transform:rotate(180deg); }
+        .org-corpo{ padding:0 22px 16px; display:grid; grid-template-columns:1.3fr 1fr; gap:14px; }
+        .org.fechado .org-corpo{ display:none; }
+        .org-col{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+        .org-brf{ background:var(--acao-fraco); border-radius:12px; padding:13px 15px; }
+        .org-brf-r{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--acao); margin-bottom:5px; }
+        .org-brf-t{ font-size:13.5px; font-weight:600; line-height:1.5; color:var(--tinta); }
+        .org-brf-m{ font-size:11px; color:var(--tinta-3); margin-top:5px; }
+        .org-at{ background:var(--at-fundo); color:#6B3D03; border-radius:10px; padding:10px 13px; font-size:12.5px; line-height:1.5;
+            display:flex; gap:9px; align-items:flex-start; }
+        .org-at .material-symbols-rounded{ font-size:17px; flex-shrink:0; color:var(--atencao); }
+        .org-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px 14px; }
+        .org-c-r{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--tinta-3); margin-bottom:3px; }
+        .org-c-v{ font-size:13px; font-weight:600; color:var(--tinta); word-break:break-word; }
+        .org-c-v small{ display:block; font-size:11px; font-weight:500; color:var(--tinta-3); }
+        .org-c-v.vazio{ color:var(--tinta-3); font-weight:400; font-style:italic; }
+        .org-c-v a{ color:inherit; text-decoration:none; }
+        .org-c-v a:hover{ color:var(--acao); }
+        .org-linha{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .org-valor{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:18px; font-weight:600; letter-spacing:-.3px; }
+        .org-btn{ min-height:40px; padding:0 14px; border-radius:var(--r-ctrl); border:none; background:var(--papel);
+            box-shadow:inset 0 0 0 1px var(--linha-2); font:inherit; font-size:12.5px; font-weight:600; color:var(--tinta);
+            cursor:pointer; display:inline-flex; align-items:center; gap:7px; white-space:nowrap; text-decoration:none; }
+        .org-btn:hover{ background:var(--papel-2); }
+        .org-btn .material-symbols-rounded{ font-size:17px; color:var(--tinta-3); }
+        .org-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+        .org-traj{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+        .org-traj::-webkit-scrollbar{ display:none; }
+        .org-tp{ flex:0 0 auto; min-width:112px; background:var(--papel-2); border-radius:10px; padding:9px 11px; }
+        .org-tp.aqui{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1px var(--acao); }
+        .org-tp.ganho{ background:var(--ok-fraco, #E6F7F0); }
+        .org-tp-d{ font-size:10px; font-weight:600; color:var(--tinta-3); }
+        .org-tp-t{ font-size:12px; font-weight:650; margin-top:2px; }
+        .org-tp-m{ font-size:11px; color:var(--tinta-3); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }
+        .org-lote{ display:flex; gap:5px; flex-wrap:wrap; }
+        .org-lote span{ width:26px; height:26px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center;
+            font-size:11px; font-weight:600; background:var(--papel-2); color:var(--tinta-2); }
+        .org-lote span.fim{ background:var(--ok-fraco, #E6F7F0); color:var(--ok, #0E9F6E); }
+        .org-lote span.aqui{ background:var(--acao); color:#fff; }
+        .org-nota{ font-size:11px; color:var(--tinta-3); line-height:1.5; }
+        .org-vazio{ font-size:12.5px; color:var(--tinta-3); font-style:italic; padding:4px 0 10px; }
+        .org-pil{ font-size:10px; font-weight:600; padding:2px 8px; border-radius:var(--r-pill); background:var(--papel-2); color:var(--tinta-2); }
+        .org-pil.ok{ background:var(--ok-fraco, #E6F7F0); color:var(--ok, #0E9F6E); }
+        .org-pil.at{ background:var(--at-fundo); color:var(--atencao); }
+        @media (max-width:900px){
+            .org-corpo{ grid-template-columns:1fr; padding:0 16px 14px; }
+            .org-cab{ padding:12px 16px; }
+            .org-grid{ grid-template-columns:1fr 1fr; }
+        }
 
         .det-grid{ display:grid; grid-template-columns:1fr 1.15fr 1fr; flex:1; overflow:hidden; }
         .det-col{ padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; border-right:1px solid var(--linha-1); }
@@ -787,6 +1031,24 @@
         .enc-pv b{ font-weight:650; }
         .enc-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
             letter-spacing:.5px; color:var(--tinta-3); }
+        .enc-obr{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
+            color:var(--acao); background:var(--acao-fraco); padding:2px 7px; border-radius:var(--r-pill); margin-left:6px; }
+        #encRelato.erro{ box-shadow:0 0 0 2px var(--at-borda); }
+        .enc-sat{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+        .enc-sat-op{ min-height:44px; border:none; background:var(--papel-2); border-radius:var(--r-ctrl);
+            font:inherit; font-size:12.5px; font-weight:600; color:var(--tinta-2); cursor:pointer;
+            display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:inset 0 0 0 1px transparent; transition:.14s; }
+        .enc-sat-op .material-symbols-rounded{ font-size:18px; }
+        .enc-sat-op:hover{ box-shadow:inset 0 0 0 1px var(--linha-2); }
+        .enc-sat-op.on{ background:var(--acao-fraco); color:var(--acao); box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .enc-sat.erro .enc-sat-op{ box-shadow:inset 0 0 0 1px var(--at-borda); }
+        .enc-pv.alerta{ color:#6B3D03; }
+        .enc-relinfo{ display:flex; gap:12px; align-items:flex-start; padding:13px 15px; border-radius:10px; background:#fbeaf0; color:#72243e; }
+        .enc-relinfo .material-symbols-rounded{ font-size:20px; color:#993556; }
+        .enc-relinfo b{ display:block; font-size:13.5px; margin-bottom:2px; }
+        .enc-relinfo span.t{ font-size:13px; line-height:1.5; }
+        .enc-pv.alerta .material-symbols-rounded{ color:var(--atencao); }
+        @media(max-width:520px){ .enc-sat{ grid-template-columns:1fr; } .enc-sat-op{ justify-content:flex-start; padding:0 14px; } }
 
         /* ===== ABAS DE SUBDIVISÃO ===== */
         /* Subdivisões: mesmo segmented dos funis do CRM, para quem
@@ -1224,61 +1486,77 @@
         </div>
     </div>
 
+    <!-- CARD EXPANDIDO
+         Hierarquia: o cabeçalho concentra estado e ações (fase,
+         responsável, prazo, cronômetro); a coluna principal é o TRABALHO
+         (escopo e atividade); a lateral é CONSULTA (cliente, detalhes,
+         tempo). Antes, três colunas de peso igual e o tempo ocupando um
+         terço da tela escondiam o que importa: o que fazer e para quem. -->
     <div class="modal-overlay" id="modalDetalhes" onclick="fecharModalFundo(event, 'modalDetalhes')">
-        <div class="modal-content det">
-
-            <div class="md-head">
-                <div class="md-head-txt">
-                    <span class="md-eyebrow" id="detArea"></span>
-                    <div class="md-titulo" id="detNome">Nome do Projeto</div>
-                    <div class="det-chips">
-                        <span class="det-chip"><span class="material-symbols-rounded">play_circle</span>Início <b id="detDataInicio"></b></span>
-                        <span class="det-chip"><span class="material-symbols-rounded">flag</span>Conclusão <b id="detDataFim"></b></span>
+        <div class="modal-content cxd" role="dialog" aria-modal="true" aria-labelledby="detNome">
+            <header class="cxd-cab">
+                <div class="cxd-l1">
+                    <nav class="cxd-trilha" id="detArea" aria-label="Quadro e fase"></nav>
+                    <div class="cxd-acoes">
+                        <button type="button" class="cxd-ic" onclick="abrirModalEdicao(projIdEmFoco, event)" aria-label="Editar projeto" title="Editar projeto"><span class="material-symbols-rounded">edit</span></button>
+                        <div class="cxd-menu-w">
+                            <button type="button" class="cxd-ic" id="detMaisBtn" aria-haspopup="menu" aria-expanded="false" onclick="alternarMaisDet(event)" aria-label="Mais ações" title="Mais ações"><span class="material-symbols-rounded">more_horiz</span></button>
+                            <div class="cxd-menu" id="detMais" role="menu">
+                                <button type="button" role="menuitem" onclick="fecharMaisDet(); abrirSolicitacao()"><span class="material-symbols-rounded">bolt</span>Solicitar em outro quadro</button>
+                                <button type="button" role="menuitem" class="perigo" onclick="fecharMaisDet(); excluirProjeto()"><span class="material-symbols-rounded">delete</span>Excluir projeto</button>
+                            </div>
+                        </div>
+                        <button type="button" class="cxd-ic" onclick="fecharModal('modalDetalhes')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
                     </div>
                 </div>
-                <button class="close-btn" onclick="fecharModal('modalDetalhes')" aria-label="Fechar"></button>
-            </div>
-
-            <div class="det-grid">
-                <div class="det-col">
-                    <div class="det-relogio">
-                        <span class="det-relogio-rot">Tempo total dedicado</span>
-                        <div class="det-relogio-num" id="detTempoTotal">00:00:00</div>
-                    </div>
-                    <div class="det-rot">Histórico de execução</div>
-                    <div id="listaHistorico" style="flex-grow:1; overflow-y:auto;"></div>
+                <div class="cxd-l2">
+                    <h2 class="cxd-titulo" id="detNome">Nome do projeto</h2>
+                    <div class="cxd-crono" id="detCrono"></div>
                 </div>
+                <div class="cxd-meta" id="detMeta"></div>
+                <div id="detAlerta"></div>
+            </header>
 
-                <div class="det-col">
-                    <div class="det-rot">Mural e atualizações</div>
-                    <div class="comentarios-lista" id="listaComentarios" style="flex-grow:1; overflow-y:auto; margin-bottom:12px;"></div>
-                    <div class="comentario-input-area" id="areaNovoComentarioPrincipal">
-                        <textarea id="novoComentarioTexto" class="comentario-textarea" placeholder="Adicione uma atualização..."></textarea>
-                        <button class="btn-enviar-comentario" onclick="salvarComentario()" title="Publicar comentário"><span class="material-symbols-rounded">send</span></button>
-                    </div>
-                </div>
+            <div class="cxd-corpo">
+                <main class="cxd-main">
+                    <section class="cxd-sec cxd-o1" id="detEscopo">
+                        <div class="cxd-sec-t"><span class="material-symbols-rounded">description</span><h3 id="detEscopoTit">Escopo do trabalho</h3></div>
+                        <div id="detDoComercial"></div>
+                        <div class="cxd-doc">
+                            <label for="detAnotacoes" class="cxd-sr">Descrição e anotações</label>
+                            <textarea id="detAnotacoes" rows="5" placeholder="Descreva o escopo, os requisitos do cliente, links de drives…" oninput="agendarSalvarAnotacoes()"></textarea>
+                            <div class="cxd-doc-pe" id="detAnotStatus">Salvo automaticamente</div>
+                        </div>
+                    </section>
 
-                <div class="det-col">
-                    <div class="det-rot">Descrição e anotações</div>
-                    <textarea id="detAnotacoes" class="input-item" style="flex-grow:1; min-height:180px; resize:none; font-size:13px; background:#fff; margin-bottom:12px;" placeholder="Cole links de drives, descreva o escopo, requisitos do cliente..."></textarea>
-                    <button class="btn-md btn-md-primario" id="btnSalvarAnotacoes" style="width:100%;" onclick="salvarAnotacoes()">
-                        <span class="material-symbols-rounded">save</span>Salvar anotações
-                    </button>
-                </div>
-            </div>
+                    <section class="cxd-sec cxd-o3">
+                        <div class="cxd-sec-t"><span class="material-symbols-rounded">forum</span><h3>Atividade</h3></div>
+                        <div class="cxd-abas" role="tablist" aria-label="Atividade">
+                            <button type="button" role="tab" id="abaCom" aria-selected="true" class="on" onclick="trocarAbaAtividade('com')">Comentários <span class="cxd-n" id="nCom">0</span></button>
+                            <button type="button" role="tab" id="abaTudo" aria-selected="false" onclick="trocarAbaAtividade('tudo')">Tudo</button>
+                        </div>
+                        <div class="cxd-compor" id="areaNovoComentarioPrincipal">
+                            <span class="cxd-av" id="detEuAv" aria-hidden="true"></span>
+                            <div class="cxd-compor-box">
+                                <label for="novoComentarioTexto" class="cxd-sr">Nova atualização</label>
+                                <textarea id="novoComentarioTexto" rows="2" placeholder="Escreva uma atualização… use @ para mencionar alguém"></textarea>
+                                <div class="cxd-compor-pe"><button type="button" class="cxd-btn prim" onclick="salvarComentario()"><span class="material-symbols-rounded">send</span>Publicar</button></div>
+                            </div>
+                        </div>
+                        <div id="listaComentarios" class="cxd-feed"></div>
+                        <div id="listaTudo" class="cxd-feed" style="display:none"></div>
+                    </section>
+                </main>
 
-            <div class="modal-footer-acoes md-pe" style="justify-content:space-between;">
-                <button class="btn-md btn-md-perigo" onclick="excluirProjeto()">
-                    <span class="material-symbols-rounded">delete</span>Excluir
-                </button>
-                <div style="display:flex; gap:9px;">
-                    <button class="btn-md btn-md-fantasma" onclick="abrirSolicitacao()">
-                        <span class="material-symbols-rounded">bolt</span>Solicitar<span class="rot-longo">&nbsp;em outro quadro</span>
-                    </button>
-                    <button class="btn-md btn-md-primario" onclick="abrirModalEdicao(projIdEmFoco, event)">
-                        <span class="material-symbols-rounded">edit</span>Editar projeto
-                    </button>
-                </div>
+                <aside class="cxd-lat">
+                    <section class="cxd-lsec cxd-o2" id="detCliente"></section>
+                    <section class="cxd-lsec cxd-o4" id="detDetalhes"></section>
+                    <section class="cxd-lsec cxd-o5">
+                        <div class="cxd-sec-t"><h3>Tempo dedicado</h3></div>
+                        <div class="cxd-tempo"><span class="cxd-tempo-n" id="detTempoTotal">00:00:00</span><span class="cxd-tempo-s" id="detTempoQtd"></span></div>
+                        <div id="listaHistorico"></div>
+                    </section>
+                </aside>
             </div>
         </div>
     </div>
@@ -2085,7 +2363,10 @@
             renderizarProjetos();
         }
 
-        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        function fecharModal(id) {
+            if (id === 'modalDetalhes' && anotTimer) salvarAnotacoes();
+            document.getElementById(id).style.display = 'none';
+        }
         function fecharModalFundo(event, id) { if(event.target.id === id) fecharModal(id); }
         
         let clientesGlobais = [];
@@ -2440,9 +2721,19 @@
                 ? 'Abre um lead para a pesquisa de satisfação depois da entrega.'
                 : 'Quadros internos não costumam gerar pesquisa — marque se quiser mesmo assim.';
             document.getElementById('encSelo').style.display = sugereRel ? '' : 'none';
+            document.getElementById('encRelato').value = '';
+            document.getElementById('encRelato').classList.remove('erro');
+            document.getElementById('encAtencao').value = '';
+            document.getElementById('encFatContato').value = '';
+            document.getElementById('encFatEmail').value = '';
+            document.getElementById('encFatForma').value = '';
+            marcarSat(null);
+            encDestinos = null;
+            travarRelacionamento(sugereRel, null, p);
             marcarEnc('encRel', sugereRel);
             marcarEnc('encCob', false);
             janela.classList.add('ativo');
+            carregarDestinosEnc(projetoId);
             return true;
           }catch(err){
             console.error('Janela de encerramento falhou:', err);
@@ -2459,12 +2750,57 @@
             // de clique e a linha toda, entao o destaque tem que ser dela.
             const linha = document.getElementById(id === 'encRel' ? 'encOpRel' : 'encOpCob');
             if(linha) linha.classList.toggle('on', valor);
-            if(id === 'encCob'){
-                document.getElementById('encLinhaValor').style.display = valor ? 'flex' : 'none';
-                if(valor) setTimeout(() => document.getElementById('encValor').focus(), 60);
-            }
+            const rel = document.getElementById('encRel').classList.contains('on');
+            const cob = document.getElementById('encCob').classList.contains('on');
+            // Relato só quando algum destino está marcado: finalizar sem
+            // gerar nada continua sendo um clique.
+            document.getElementById('encRelatoBloco').style.display = (rel || cob) ? 'flex' : 'none';
+            document.getElementById('encFatBloco').style.display = cob ? 'flex' : 'none';
+            if(id === 'encCob' && valor) setTimeout(() => document.getElementById('encValor').focus(), 60);
             atualizarPreviaEnc();
         }
+
+        let encSat = null, encDestinos = null;
+        function marcarSat(v){
+            encSat = v;
+            document.querySelectorAll('.enc-sat-op').forEach(b => b.classList.toggle('on', b.dataset.sat === v));
+            const g = document.querySelector('.enc-sat'); if(g) g.classList.remove('erro');
+        }
+
+        /* Para quem cada destino vai. Destino sem responsável vira aviso
+           na prévia, em vez de o card nascer órfão em silêncio. */
+        async function carregarDestinosEnc(projetoId){
+            try{
+                const r = await fetch(`/api/projetos/${projetoId}/destinos`);
+                if(!r.ok) return;
+                const d = await r.json();
+                if(!encPendente || encPendente.id !== projetoId) return;
+                encDestinos = d;
+                const pj = projetosGlobais.find(x => x.id === projetoId);
+                if(d.relacionamento_obrigatorio !== undefined) travarRelacionamento(d.relacionamento_obrigatorio, d.relacionamento_existente, pj);
+                const f = d.faturamento_sugerido || {};
+                if(!document.getElementById('encFatContato').value) document.getElementById('encFatContato').value = f.contato || '';
+                if(!document.getElementById('encFatEmail').value) document.getElementById('encFatEmail').value = f.email || '';
+                atualizarPreviaEnc();
+            }catch(e){}
+        }
+        /* RELACIONAMENTO SEMPRE (quadros de produto): some o interruptor,
+           entra o aviso dizendo em qual card a entrega cai -- o card que o
+           cliente já tem no Relacionamento, ou um novo. */
+        function travarRelacionamento(obrigatorio, existente, p){
+            const info = document.getElementById('encRelInfo');
+            document.getElementById('encOpRel').style.display = obrigatorio ? 'none' : '';
+            info.style.display = obrigatorio ? 'flex' : 'none';
+            if(!obrigatorio) return;
+            marcarEnc('encRel', true);
+            const cli = escH((p && p.empresa) || 'O cliente');
+            info.innerHTML = `<span class="material-symbols-rounded">favorite</span><span class="t"><b>${cli} vai para o Relacionamento</b>`
+                + (existente
+                    ? `Já existe um card aberto dele${existente.responsavel ? ', com ' + escH(existente.responsavel) : ''}${existente.coluna ? ' (' + escH(existente.coluna) + ')' : ''}. Esta entrega entra no histórico desse card; nenhum lead novo é criado.`
+                    : `Um card novo nasce no Backlog do Relacionamento, com o CNPJ, o decisor, o contrato e esta entrega.`)
+                + `</span>`;
+        }
+
         function alternarEnc(id){
             const el = document.getElementById(id);
             marcarEnc(id, !el.classList.contains('on'));
@@ -2479,22 +2815,29 @@
             const valor = document.getElementById('encValor').value;
             const linhas = [];
 
+            const dRel = encDestinos ? encDestinos.relacionamento.responsavel : undefined;
+            const dCob = encDestinos ? encDestinos.cobranca.responsavel : undefined;
             if(rel) linhas.push(item('sentiment_satisfied',
-                '<b>1 lead</b> no funil de Relacionamento, no Backlog, para a pesquisa de satisfação'));
+                (encDestinos && encDestinos.relacionamento_existente
+                    ? 'A entrega entra no <b>card do cliente</b> no Relacionamento, com o relato e o contrato'
+                    : '<b>1 card</b> no Relacionamento, com o relato da entrega, o contrato e o histórico da conta')
+                + (dRel === undefined ? '' : dRel ? ` · para <b>${escH(dRel)}</b>` : '')));
+            if(rel && dRel === null) linhas.push(item('person_off',
+                'Ninguém configurado para o relacionamento neste quadro: o lead fica <b>sem responsável</b> no Backlog.', true));
             if(cob) linhas.push(item('receipt_long',
-                '<b>1 card</b> em Adm/Financeiro para cobrança' + (moedaEnc(valor) ? ' de ' + moedaEnc(valor) : '')));
+                '<b>1 card</b> em Adm/Fin com CNPJ, contato de faturamento e contrato' + (moedaEnc(valor) ? ' · ' + moedaEnc(valor) : '')
+                + (dCob === undefined ? '' : dCob ? ` · para <b>${escH(dCob)}</b>` : '')));
+            if(cob && dCob === null) linhas.push(item('person_off',
+                'Adm/Fin está sem responsável de cobrança: o card entra na <b>fila</b> e quem direciona é avisado.', true));
 
             if(!linhas.length){
                 linhas.push(item('check_circle',
                     'O card vai para Finalizado. <b>Nada mais é criado.</b>'));
-            }else{
-                linhas.push(item('person_alert',
-                    'Quem responde por cada destino é avisado na hora'));
             }
             document.getElementById('encPrevia').innerHTML = linhas.join('');
 
-            function item(ico, txt){
-                return `<div class="enc-pv"><span class="material-symbols-rounded">${ico}</span>
+            function item(ico, txt, alerta){
+                return `<div class="enc-pv ${alerta?'alerta':''}"><span class="material-symbols-rounded">${ico}</span>
                     <span>${txt}</span></div>`;
             }
         }
@@ -2512,6 +2855,31 @@
             const rel = document.getElementById('encRel').classList.contains('on');
             const cob = document.getElementById('encCob').classList.contains('on');
             const valorTxt = document.getElementById('encValor').value.replace(/[^\d,.-]/g,'').replace(',','.');
+            const relato = document.getElementById('encRelato').value.trim();
+            // Mesma exigência do servidor; aqui o erro aparece no campo.
+            if(rel || cob){
+                if(relato.length < 10){
+                    showToast('Conte em uma frase como foi a entrega: é o que o relacionamento vai ler antes de ligar.', 'error');
+                    const t = document.getElementById('encRelato'); t.classList.add('erro'); t.focus();
+                    if(btn) btn.disabled = false; return;
+                }
+                if(!encSat){
+                    showToast('Escolha como foi a entrega: tranquila, com ruído ou complicada.', 'error');
+                    document.querySelector('.enc-sat').classList.add('erro');
+                    if(btn) btn.disabled = false; return;
+                }
+            }
+            const encerramento = {
+                relacionamento: rel, cobranca: cob,
+                valor: cob && valorTxt ? parseFloat(valorTxt) : null,
+                relato, satisfacao: encSat,
+                atencao: document.getElementById('encAtencao').value.trim(),
+                faturamento: cob ? {
+                    contato: document.getElementById('encFatContato').value.trim(),
+                    email: document.getElementById('encFatEmail').value.trim(),
+                    forma: document.getElementById('encFatForma').value
+                } : null
+            };
             const { id, status } = encPendente;
             encPendente = null;
             document.getElementById('modalEncerrar').classList.remove('ativo');
@@ -2521,10 +2889,14 @@
             if(proj) proj.status = status;
             renderizarProjetos();
             try{
-                await salvarStatus(id, status, {
-                    relacionamento: rel, cobranca: cob,
-                    valor: cob && valorTxt ? parseFloat(valorTxt) : null
-                });
+                const r = await salvarStatus(id, status, encerramento);
+                // 400 não lança: sem esta checagem a tela dizia "finalizado"
+                // com o servidor tendo recusado.
+                if(!r.ok){
+                    let msg = 'Não foi possível finalizar.';
+                    try{ msg = (await r.json()).mensagem || msg; }catch(_){}
+                    throw new Error(msg);
+                }
                 const partes = [];
                 if(rel) partes.push('entrou no Relacionamento');
                 if(cob) partes.push('cobrança criada');
@@ -2534,7 +2906,7 @@
                 // acredita que finalizou e o servidor nao registrou nada.
                 if(proj) proj.status = anteriorEnc;
                 renderizarProjetos();
-                showToast('Não foi possível finalizar. Tente de novo.', 'error');
+                showToast(e && e.message ? e.message : 'Não foi possível finalizar. Tente de novo.', 'error');
             }finally{
                 if(btn) btn.disabled = false;
             }
@@ -2721,6 +3093,7 @@
             
             carregarNotificacoes(); 
             if(activeTimerData) iniciarRelogioVisual();
+            if(projIdEmFoco && document.getElementById('modalDetalhes').style.display === 'flex') pintarCronoDet();
         }
 
         function escH(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -3098,6 +3471,7 @@
                 const decorridoAgora = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
                 const tempoTela = formatarSegundosTick(activeTimerData.baseSegundosOriginal + activeTimerData.sessaoAtualSegundos + decorridoAgora);
                 document.getElementById('fpTempo').innerText = tempoTela;
+                const dd = document.getElementById('detCronoDisp'); if (dd) dd.innerText = tempoTela;
                 const disp = document.getElementById(`disp-${activeTimerData.id}`);
                 if (disp) {
                     disp.innerText = tempoTela;
@@ -3133,69 +3507,69 @@
             } catch(e) { showToast("Erro de conexão ao salvar tempo.", "error"); }
         }
 
+        let detComentarios = [];
         async function carregarComentarios(projetoId) {
             const container = document.getElementById('listaComentarios');
-            container.innerHTML = '<p style="font-size: 12px; color: #999;">Carregando atualizações...</p>';
+            container.innerHTML = '<p class="cxd-vazio">Carregando atualizações…</p>';
             try {
                 const res = await fetch(`/api/projetos/${projetoId}/comentarios`);
                 const data = await res.json();
-                
-                if (data.comentarios && data.comentarios.length > 0) {
-                    const principais = data.comentarios.filter(c => !c.parent_id);
-                    const filhos = data.comentarios.filter(c => c.parent_id);
-
+                if (projIdEmFoco !== projetoId) return;
+                detComentarios = data.comentarios || [];
+                document.getElementById('nCom').innerText = detComentarios.length;
+                if (detComentarios.length > 0) {
+                    // Mais recente primeiro: quem abre o card quer saber o
+                    // que aconteceu por último, e a caixa de escrever fica
+                    // no topo, junto dele. Respostas seguem sob o comentário.
+                    const principais = detComentarios.filter(c => !c.parent_id)
+                        .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+                    const filhos = detComentarios.filter(c => c.parent_id);
                     let html = '';
                     principais.forEach(pai => {
                         html += criarHtmlComentario(pai, false);
-                        const respostasDoPai = filhos.filter(f => f.parent_id === pai.id);
-                        respostasDoPai.forEach(filho => {
-                            html += criarHtmlComentario(filho, true);
-                        });
+                        filhos.filter(f => f.parent_id === pai.id).forEach(f => { html += criarHtmlComentario(f, true); });
                     });
-                    
                     container.innerHTML = html;
-                    container.scrollTop = container.scrollHeight;
                 } else {
-                    container.innerHTML = '<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem novidades por aqui. Seja o primeiro a comentar!</p>';
+                    container.innerHTML = '<p class="cxd-vazio">Sem comentários ainda. Registre aqui o andamento: o que foi feito, o que trava, o que o cliente pediu.</p>';
                 }
+                pintarTudo();
             } catch (e) {
-                container.innerHTML = '<p style="font-size: 12px; color: #ef4444;">Erro ao carregar comentários.</p>';
+                container.innerHTML = '<p class="cxd-vazio" style="color:var(--critico)">Erro ao carregar comentários.</p>';
             }
+        }
+
+        function quandoRel(iso) {
+            const d = new Date(iso); if (isNaN(d)) return '';
+            const min = Math.floor((Date.now() - d.getTime()) / 60000);
+            if (min < 1) return 'agora';
+            if (min < 60) return `há ${min} min`;
+            if (min < 60 * 24) return `há ${Math.floor(min / 60)} h`;
+            return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ', ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
         }
 
         function criarHtmlComentario(c, isResposta) {
             const proj = projetosGlobais.find(p => p.id === c.projeto_id);
-            
-            const isMeuProjeto = (proj && proj.responsavel.trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
-            const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && c.autor.trim().toLowerCase() !== USUARIO_LOGADO.trim().toLowerCase());
-            
-            const classeCaixa = isResposta ? 'chat-bubble resposta' : 'chat-bubble';
-            const highlightClass = isUnread ? 'unread-highlight' : '';
-            const iniciais = c.autor.substring(0,2).toUpperCase();
-            
-            const btnCienteHTML = isUnread ? `<button class="btn-ciente" onclick="marcarComoLido(${c.id}, this)"><span class="material-symbols-rounded" style="font-size: 12px;">done_all</span> Ciente</button>` : '';
-
+            const isMeuProjeto = (proj && (proj.responsavel || '').trim().toLowerCase() === USUARIO_LOGADO.trim().toLowerCase());
+            const isUnread = (!c.lido_pelo_responsavel && isMeuProjeto && (c.autor || '').trim().toLowerCase() !== USUARIO_LOGADO.trim().toLowerCase());
+            const [bg, fg] = corResponsavel(c.autor);
+            const btnCiente = isUnread ? `<button type="button" onclick="marcarComoLido(${c.id}, this)"><span class="material-symbols-rounded">done_all</span>Ciente</button>` : '';
             return `
                 <div class="comentario-thread" id="thread-${c.id}">
-                    <div style="display: flex; gap: 12px;">
-                        <div class="avatar-circle">${iniciais}</div>
-                        <div class="${classeCaixa} ${highlightClass}">
-                            <div class="comentario-header">
-                                <span class="comentario-autor">${c.autor}</span>
-                                <span class="comentario-data">${new Date(c.criado_em).toLocaleString('pt-BR')}</span>
-                            </div>
-                            <div class="comentario-texto" id="texto-comentario-${c.id}">${c.texto}</div>
-                            
-                            <div class="comentario-acoes">
-                                ${!isResposta ? `<button class="btn-comentario-acao" onclick="abrirCaixaResposta(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">reply</span> Responder</button>` : ''}
-                                <button class="btn-comentario-acao" onclick="abrirEdicaoComentario(${c.id})"><span class="material-symbols-rounded" style="font-size: 14px;">edit</span> Editar</button>
-                                ${btnCienteHTML}
+                    <div class="cxd-com${isResposta ? ' resp' : ''}">
+                        <span class="cxd-av" style="background:${bg};color:${fg}" aria-hidden="true">${iniciaisDe(c.autor)}</span>
+                        <div class="corpo${isUnread ? ' naolido chat-bubble unread-highlight' : ' chat-bubble'}">
+                            <div class="quem"><b>${escH(c.autor)}</b><span>${quandoRel(c.criado_em)}</span></div>
+                            <div class="txt comentario-texto" id="texto-comentario-${c.id}">${c.texto}</div>
+                            <div class="acoes comentario-acoes">
+                                ${!isResposta ? `<button type="button" onclick="abrirCaixaResposta(${c.id})"><span class="material-symbols-rounded">reply</span>Responder</button>` : ''}
+                                <button type="button" onclick="abrirEdicaoComentario(${c.id})"><span class="material-symbols-rounded">edit</span>Editar</button>
+                                ${btnCiente}
                             </div>
                         </div>
                     </div>
-                    <div id="caixa-resposta-${c.id}" style="display: none; margin-left: 46px; margin-top: 5px;"></div>
-                </div>
-            `;
+                    <div id="caixa-resposta-${c.id}" style="display:none; margin-left:42px; margin-top:6px;"></div>
+                </div>`;
         }
 
         async function marcarComoLido(comentarioId, btnElement) {
@@ -3295,71 +3669,305 @@
             }
         }
 
-        // NOVO: Função para gravar as anotações
+        /* Anotações salvam sozinhas: o botão "Salvar anotações" era
+           esquecido, e fechar o card perdia o texto sem aviso. */
+        let anotTimer = null;
+        function agendarSalvarAnotacoes() {
+            clearTimeout(anotTimer);
+            document.getElementById('detAnotStatus').innerText = 'Editando…';
+            anotTimer = setTimeout(salvarAnotacoes, 900);
+        }
         async function salvarAnotacoes() {
-            const btn = document.getElementById('btnSalvarAnotacoes');
+            clearTimeout(anotTimer);
+            const id = projIdEmFoco; if (!id) return;
             const txt = document.getElementById('detAnotacoes').value;
-            btn.innerText = "SALVANDO..."; btn.disabled = true;
-
+            const st = document.getElementById('detAnotStatus');
+            const proj = projetosGlobais.find(p => p.id === id);
+            if (proj && (proj.anotacoes || '') === txt) { st.innerText = 'Salvo automaticamente'; return; }
+            st.innerText = 'Salvando…';
             try {
-                await fetch(`/api/projetos/${projIdEmFoco}`, {
-                    method: 'PUT', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ anotacoes: txt })
-                });
-                const proj = projetosGlobais.find(p => p.id === projIdEmFoco);
+                const r = await fetch(`/api/projetos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ anotacoes: txt }) });
+                if (!r.ok) throw new Error();
                 if (proj) proj.anotacoes = txt;
-                showToast("Anotações salvas com sucesso!", "success");
-            } catch(e) {
-                showToast("Erro ao salvar anotações.", "error");
-            } finally {
-                btn.innerText = "SALVAR ANOTAÇÕES"; btn.disabled = false;
+                st.innerText = 'Salvo automaticamente · ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+            } catch (e) {
+                st.innerText = 'Não foi possível salvar. Tente de novo.';
+                showToast('Erro ao salvar anotações.', 'error');
             }
         }
 
         async function abrirDetalhes(id, event) {
-            if(event && (event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes'))) return;
-
-            projIdEmFoco = id;
+            if (event && event.target && (event.target.closest('select') || event.target.closest('button') || event.target.closest('.comentario-acoes'))) return;
             const proj = projetosGlobais.find(p => p.id === id);
-            
-            document.getElementById('detArea').innerText = proj.area;
-            document.getElementById('detNome').innerText = proj.nome_projeto;
-            document.getElementById('detTempoTotal').innerText = formatarSegundosTick(proj.tempo_total_segundos || 0);
+            if (!proj) return;
+            if (projIdEmFoco && projIdEmFoco !== id) salvarAnotacoes();
+            projIdEmFoco = id;
+            detOrigem = null; detHistorico = []; detComentarios = []; detTempoSeg = 0;
 
-            document.getElementById('detDataInicio').innerText = proj.data_inicio ? new Date(proj.data_inicio).toLocaleDateString('pt-BR') : '-';
-            document.getElementById('detDataFim').innerText = proj.data_conclusao ? new Date(proj.data_conclusao).toLocaleDateString('pt-BR') : 'Em aberto';
-
-            // NOVO: Puxa o texto guardado e injeta na textarea da direita
+            pintarCabecalhoDet(proj);
+            pintarEscopoDet(proj, null);
+            pintarLateralDet(proj, null);
             document.getElementById('detAnotacoes').value = proj.anotacoes || '';
-
+            document.getElementById('detAnotStatus').innerText = 'Salvo automaticamente';
+            document.getElementById('detTempoTotal').innerText = formatarSegundosTick(proj.tempo_total_segundos || 0);
+            document.getElementById('detTempoQtd').innerText = '';
+            document.getElementById('listaHistorico').innerHTML = '';
+            document.getElementById('listaTudo').innerHTML = '';
+            document.getElementById('nCom').innerText = '0';
+            const [eb, ef] = corResponsavel(USUARIO_LOGADO);
+            const eu = document.getElementById('detEuAv');
+            eu.innerText = iniciaisDe(USUARIO_LOGADO); eu.style.background = 'var(--acao)'; eu.style.color = '#fff';
+            trocarAbaAtividade('com');
             document.getElementById('modalDetalhes').style.display = 'flex';
 
-            const res = await fetch(`/api/projetos/${id}/historico`);
-            const data = await res.json();
-            const container = document.getElementById('listaHistorico');
-            
-            if (data.historico && data.historico.length > 0) {
-                // Recalcula o total direto dos logs reais — ignora cache
-                const totalReal = data.historico.reduce((soma, h) => soma + (h.tempo_segundos || 0), 0);
-                document.getElementById('detTempoTotal').innerText = formatarSegundosTick(totalReal);
-
-                container.innerHTML = data.historico.map(h => {
-                    return `
-                    <div class="historico-item">
-                        <div class="historico-info">
-                            <span style="font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${h.descricao_tarefa}</span>
-                            <span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
-                                ${new Date(h.criado_em).toLocaleDateString('pt-BR')} • ${h.colaborador}
-                            </span>
-                        </div>
-                        <span style="font-family: monospace; font-size: 16px; font-weight: 900; color: var(--primary-purple);">${formatarSegundosTick(h.tempo_segundos)}</span>
-                    </div>`;
-                }).join('');
-            } else {
-                container.innerHTML = '<p style="font-size: 12px; color: #999;">Sem registros.</p>';
-            }
-
+            // As três leituras em paralelo: nenhuma segura as outras.
             carregarComentarios(id);
+            carregarHistoricoDet(id);
+            carregarOrigemDet(id);
+        }
+
+        let detOrigem = null, detHistorico = [], detTempoSeg = 0;
+
+        /* ---------- cabeçalho: estado e ações ---------- */
+        function pintarCabecalhoDet(p) {
+            const cobranca = !!((p.passagem || {}).faturamento);
+            const sub = p.subquadro ? nomeSub(p.subquadro) : '';
+            document.getElementById('detArea').innerHTML = `<span>${escH(cfg.titulo)}</span>`
+                + (sub ? `<span class="sep">›</span><span>${escH(sub)}</span>` : '')
+                + `<span class="sep">›</span><span>${escH(p.status || '')}</span>`;
+            document.getElementById('detNome').innerText = p.nome_projeto || '';
+
+            const fases = cfg.colunas.map(c => `<option value="${escAttr(c.id)}" ${c.id === p.status ? 'selected' : ''}>${escH(c.nome)}</option>`).join('');
+            const meta = [];
+            meta.push(`<label class="cxd-pill fase"><span class="material-symbols-rounded">view_kanban</span><span class="r">Fase</span>${escH(p.status || '')}<i class="seta" aria-hidden="true"></i>
+                <select aria-label="Mudar a fase" onchange="mudarFaseDet('${escAttr(p.id)}', this.value)">${fases}</select></label>`);
+            if (p.aguardando_responsavel || !p.responsavel) {
+                meta.push(`<button type="button" class="cxd-pill btn at" onclick="abrirFila('${escAttr(p.id)}')"><span class="material-symbols-rounded">person_add</span>Sem responsável</button>`);
+            } else {
+                const [bg, fg] = corResponsavel(p.responsavel);
+                meta.push(`<button type="button" class="cxd-pill btn" onclick="abrirModalEdicao('${escAttr(p.id)}', event)" title="Trocar responsável">
+                    <span class="cxd-av" style="background:${bg};color:${fg}">${iniciaisDe(p.responsavel)}</span>${escH(p.responsavel)}</button>`);
+            }
+            if (p.prazo_data) {
+                const alvo = new Date(p.prazo_data.split('T')[0] + 'T12:00:00');
+                const hoje = new Date(); hoje.setHours(12, 0, 0, 0);
+                const faltam = Math.round((alvo - hoje) / 86400000);
+                const enc = p.status === 'Finalizado' || p.status === 'Cancelado';
+                const txt = enc ? '' : faltam < 0 ? ` · ${Math.abs(faltam)} dia${Math.abs(faltam) === 1 ? '' : 's'} de atraso`
+                    : faltam === 0 ? ' · vence hoje' : ` · em ${faltam} dia${faltam === 1 ? '' : 's'}`;
+                meta.push(`<span class="cxd-pill${!enc && faltam <= 3 ? ' at' : ''}"><span class="material-symbols-rounded">event</span><span class="r">Prazo</span>${alvo.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })}${txt}</span>`);
+            } else {
+                meta.push(`<span class="cxd-pill suave"><span class="material-symbols-rounded">event</span>Sem prazo</span>`);
+            }
+            if (p.lote_total > 1) meta.push(`<span class="cxd-pill suave">Parte ${p.lote_pos} de ${p.lote_total} do contrato</span>`);
+            if (p.origem_lead_id) meta.push(`<span class="cxd-pill suave"><span class="material-symbols-rounded">storefront</span>${cobranca ? 'Criado no fechamento do contrato' : 'Veio do comercial'}</span>`);
+            document.getElementById('detMeta').innerHTML = meta.join('');
+
+            document.getElementById('detAlerta').innerHTML = (p.aguardando_responsavel)
+                ? `<div class="cxd-alerta"><span class="material-symbols-rounded">warning</span><span class="t">Ninguém assumiu este card ainda. Quem direciona o quadro foi avisado.</span>
+                   <button type="button" class="cxd-btn prim" onclick="abrirFila('${escAttr(p.id)}')">Escolher quem executa</button></div>` : '';
+            pintarCronoDet();
+        }
+
+        function pintarCronoDet() {
+            const alvo = document.getElementById('detCrono');
+            if (!alvo || !projIdEmFoco) return;
+            const p = projetosGlobais.find(x => x.id === projIdEmFoco); if (!p) return;
+            const aqui = activeTimerData && activeTimerData.id === p.id;
+            if (aqui) {
+                const t = formatarSegundosTick((activeTimerData.baseSegundosOriginal || 0) + (activeTimerData.sessaoAtualSegundos || 0));
+                alvo.innerHTML = `<div class="cxd-crono-v"><b id="detCronoDisp">${t}</b><span>${escH(activeTimerData.tarefa || '')}</span></div>
+                    <button type="button" class="cxd-play rodando" onclick="alternarTimerCard('${escAttr(p.id)}'); setTimeout(pintarCronoDet, 50)">
+                        <span class="bola"><span class="material-symbols-rounded">${activeTimerData.paused ? 'play_arrow' : 'stop'}</span></span>${activeTimerData.paused ? 'Retomar' : 'Parar cronômetro'}</button>`;
+            } else {
+                // O total dos lançamentos é a fonte: o da lista pode estar
+                // defasado por cache, e os dois números lado a lado não podem
+                // discordar.
+                const total = Math.max(p.tempo_total_segundos || 0, detTempoSeg || 0);
+                alvo.innerHTML = `<div class="cxd-crono-v"><b>${tempoCurto(total)}</b><span>no total</span></div>
+                    <button type="button" class="cxd-play" onclick="abrirPick(event, '${escAttr(p.id)}')">
+                        <span class="bola"><span class="material-symbols-rounded">play_arrow</span></span>Iniciar cronômetro</button>`;
+            }
+        }
+
+        function mudarFaseDet(id, novo) {
+            const p = projetosGlobais.find(x => x.id === id);
+            if (!p || p.status === novo) return;
+            moverProjetoId = id;
+            confirmarMover(novo).then(() => {
+                const q = projetosGlobais.find(x => x.id === id);
+                if (q && projIdEmFoco === id) pintarCabecalhoDet(q);
+            });
+            // Janela de motivo ou de finalização abriu: o cabeçalho volta à
+            // fase real até a pessoa confirmar.
+            setTimeout(() => { const q = projetosGlobais.find(x => x.id === id); if (q && projIdEmFoco === id) pintarCabecalhoDet(q); }, 60);
+        }
+
+        function alternarMaisDet(ev) {
+            ev.stopPropagation();
+            const m = document.getElementById('detMais'), b = document.getElementById('detMaisBtn');
+            const on = !m.classList.contains('on');
+            m.classList.toggle('on', on); b.setAttribute('aria-expanded', on ? 'true' : 'false');
+        }
+        function fecharMaisDet() {
+            document.getElementById('detMais').classList.remove('on');
+            document.getElementById('detMaisBtn').setAttribute('aria-expanded', 'false');
+        }
+        document.addEventListener('click', e => { const w = document.querySelector('.cxd-menu-w'); if (w && !w.contains(e.target)) fecharMaisDet(); });
+
+        /* ---------- escopo: o que foi vendido, ou o que faturar ---------- */
+        function copiavelDet(rotulo, valor, mono) {
+            if (!valor) return `<div class="cxd-campo"><span class="cxd-rot">${rotulo}</span><span class="v" style="color:var(--tinta-3);font-weight:400">não informado</span></div>`;
+            return `<div class="cxd-campo"><span class="cxd-rot">${rotulo}</span><span class="v${mono ? ' mono' : ''}">${escH(valor)}
+                <button type="button" class="cxd-copiar" aria-label="Copiar ${escAttr(rotulo)}" onclick="copiarDet('${escAttr(valor)}')"><span class="material-symbols-rounded">content_copy</span></button></span></div>`;
+        }
+        function copiarDet(v) {
+            (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(
+                () => showToast('Copiado: ' + v, 'success'), () => showToast('Não foi possível copiar.', 'error'));
+        }
+        function contratoDet(d, sub) {
+            if (!d || !d.contrato) return '';
+            return `<div class="cxd-ctr"><span class="material-symbols-rounded">description</span>
+                <span class="n">${escH(d.contrato.nome || 'Contrato assinado')}<small>${sub || ''}</small></span>
+                <button type="button" class="cxd-btn" onclick="abrirContratoCard('${escAttr(d.contrato.url)}')">Abrir</button></div>`;
+        }
+
+        function pintarEscopoDet(p, d) {
+            const pg = (d && d.passagem) || p.passagem || {};
+            const alvo = document.getElementById('detDoComercial');
+            const tit = document.getElementById('detEscopoTit');
+            if (pg.faturamento) {
+                tit.innerText = 'Faturamento';
+                const f = pg.faturamento, e = pg.entrega || {};
+                const valor = pg.valor_contrato != null ? pg.valor_contrato : p.valor;
+                alvo.innerHTML = `<div class="cxd-fat">
+                    <div class="cxd-fat-topo">
+                        <div class="cxd-campo"><span class="cxd-rot">Valor da negociação</span>
+                            ${valor != null ? `<span class="v"><span class="cxd-valor">${escH(fmtBRL2(valor))}</span>
+                            <button type="button" class="cxd-copiar" aria-label="Copiar valor" onclick="copiarDet('${escAttr(String(valor))}')"><span class="material-symbols-rounded">content_copy</span></button></span>
+                            <span class="s">o mesmo valor do dashboard comercial</span>` : `<span class="s">valor não visível para o seu acesso</span>`}</div>
+                        <div class="cxd-campo" style="align-items:flex-end"><span class="cxd-rot">Produto vendido</span><span class="v">${escH(pg.produto || '—')}</span>
+                            ${f.forma ? `<span class="s">${escH(f.forma)}</span>` : ''}</div>
+                    </div>
+                    <div class="cxd-grade">${copiavelDet('Razão social', f.razao_social)}${copiavelDet('CNPJ', f.cnpj, true)}${copiavelDet('E-mail para a nota', f.email)}</div>
+                    ${f.contato ? `<div class="cxd-campo"><span class="cxd-rot">Contato de faturamento</span><span class="v">${escH(f.contato)}</span>${f.telefone ? `<span class="s">${escH(f.telefone)}</span>` : ''}</div>` : ''}
+                    ${e.projeto_nome ? `<div class="cxd-comercial"><div class="topo"><span class="cxd-rot">O que foi entregue</span><span class="quem">${escH(e.executor || '')}${e.concluido_em ? ' · ' + fmtD(e.concluido_em) : ''}</span></div>
+                        <p>${escH(e.projeto_nome)}${e.relato ? ' — ' + escH(e.relato) : ''}</p></div>` : ''}
+                    ${d ? contratoDet(d, 'o mesmo arquivo que a operação recebeu') : '<div class="cxd-vazio">Carregando contrato…</div>'}
+                </div>`;
+                return;
+            }
+            tit.innerText = 'Escopo do trabalho';
+            if (pg.resumo) {
+                alvo.innerHTML = `<div class="cxd-comercial"><div class="topo"><span class="cxd-rot">Do comercial · o que foi vendido</span>
+                    <span class="quem">${escH(pg.closer || '')}${pg.fechado_em ? ' · ' + fmtD(pg.fechado_em) : ''}</span></div><p>${escH(pg.resumo)}</p></div>`;
+            } else if (p.origem_lead_id) {
+                alvo.innerHTML = `<div class="cxd-vazio">Este card veio do comercial antes das informações para a operação existirem. O cliente e o contrato estão ao lado.</div>`;
+            } else {
+                alvo.innerHTML = '';
+            }
+        }
+        function fmtBRL2(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+        /* ---------- lateral: cliente, detalhes ---------- */
+        function pintarLateralDet(p, d) {
+            const pg = (d && d.passagem) || p.passagem || {};
+            const c = (d && d.cadastro) || {};
+            const cobranca = !!pg.faturamento;
+            const cli = document.getElementById('detCliente');
+            const empresa = c.empresa || p.empresa;
+            const dec = pg.decisor || (pg.contato ? { nome: pg.contato, cargo: pg.cargo, telefone: pg.telefone } : null);
+            const tel = (dec && dec.telefone) || c.telefone;
+            const linkCrm = c.lead_id ? `<a href="/crm?lead=${escAttr(c.lead_id)}">CRM<span class="material-symbols-rounded">open_in_new</span></a>` : '';
+            if (!empresa && !d) { cli.innerHTML = ''; }
+            else cli.innerHTML = `<div class="cxd-sec-t"><h3>${cobranca ? 'Origem' : 'Cliente'}</h3>${linkCrm}</div>
+                <div style="font-size:15px;font-weight:700;color:var(--tinta)">${escH(empresa || 'Sem cliente vinculado')}</div>
+                ${!cobranca && c.cnpj ? copiavelDet('CNPJ', c.cnpj, true) : ''}
+                ${dec && dec.nome ? `<div class="cxd-pessoa"><span class="cxd-av">${iniciaisDe(dec.nome)}</span>
+                    <div class="q"><b>${escH(dec.nome)}</b><span>Decisor${dec.cargo ? ' · ' + escH(dec.cargo) : ''}${tel ? ' · ' + escH(tel) : ''}</span></div>
+                    ${tel ? `<a class="cxd-ic" href="tel:${escAttr(String(tel).replace(/\D/g, ''))}" aria-label="Ligar para ${escAttr(dec.nome)}"><span class="material-symbols-rounded">call</span></a>` : ''}</div>`
+                  : (d ? '<div class="cxd-vazio">Decisor não informado no fechamento.</div>' : '')}
+                ${!cobranca ? (d ? (contratoDet(d, 'assinado' + (d.contrato && d.contrato.enviado_em ? ' em ' + fmtD(d.contrato.enviado_em) : '')) || '<div class="cxd-vazio">Sem contrato anexado.</div>') : '<div class="cxd-vazio">Carregando cliente…</div>') : ''}`;
+
+            const det = document.getElementById('detDetalhes');
+            const linhas = [];
+            if (pg.closer) linhas.push(`<div class="cxd-linha"><span class="r">Vendido por</span><span class="v">${escH(pg.closer)}${pg.fechado_em ? `<small>fechado em ${fmtD(pg.fechado_em)}</small>` : ''}</span></div>`);
+            if (pg.prazo_prometido) linhas.push(`<div class="cxd-linha"><span class="r">Prazo da venda</span><span class="v">${fmtD(pg.prazo_prometido)}</span></div>`);
+            linhas.push(`<div class="cxd-linha"><span class="r">Início</span><span class="v">${p.data_inicio ? fmtD(p.data_inicio) : 'não iniciado'}</span></div>`);
+            if (p.data_conclusao) linhas.push(`<div class="cxd-linha"><span class="r">Conclusão</span><span class="v">${fmtD(p.data_conclusao)}</span></div>`);
+            linhas.push(`<div class="cxd-linha"><span class="r">Criado</span><span class="v">${fmtD(p.criado_em)}</span></div>`);
+            if (d && d.lote && (d.lote.cards || []).length > 1) {
+                linhas.push(`<div class="cxd-campo" style="padding-top:6px"><span class="r" style="font-size:12px;color:var(--tinta-3)">Partes do contrato</span>
+                    <div class="cxd-lote">${d.lote.cards.map(x => `<span class="${x.id === p.id ? 'aqui' : (x.status === 'Finalizado' ? 'fim' : '')}" title="${escAttr((x.status || '') + (x.responsavel ? ' · ' + x.responsavel : ''))}">${x.pos}</span>`).join('')}</div></div>`);
+            }
+            det.innerHTML = `<div class="cxd-sec-t"><h3>Detalhes</h3></div>${linhas.join('')}`;
+        }
+
+        async function carregarOrigemDet(id) {
+            let d = null;
+            try { const r = await fetch(`/api/projetos/${id}/origem`); if (r.ok) d = await r.json(); } catch (e) {}
+            if (projIdEmFoco !== id) return;
+            const p = projetosGlobais.find(x => x.id === id); if (!p) return;
+            detOrigem = (d && d.status === 'sucesso') ? d : { passagem: p.passagem || {}, trajetoria: [] };
+            pintarEscopoDet(p, detOrigem);
+            pintarLateralDet(p, detOrigem);
+            pintarTudo();
+        }
+
+        /* ---------- tempo ---------- */
+        async function carregarHistoricoDet(id) {
+            let hist = [];
+            try { const r = await fetch(`/api/projetos/${id}/historico`); const d = await r.json(); hist = d.historico || []; } catch (e) {}
+            if (projIdEmFoco !== id) return;
+            detHistorico = hist;
+            const total = hist.reduce((s, h) => s + (h.tempo_segundos || 0), 0);
+            detTempoSeg = total;
+            pintarCronoDet();
+            document.getElementById('detTempoTotal').innerText = tempoCurto(total) === '0min' && !hist.length ? '0h' : tempoCurto(total);
+            document.getElementById('detTempoQtd').innerText = hist.length ? `em ${hist.length} lançamento${hist.length === 1 ? '' : 's'}` : 'nenhum lançamento';
+            pintarLogsDet(false);
+            pintarTudo();
+        }
+        function pintarLogsDet(todos) {
+            const hist = [...detHistorico].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+            const vis = todos ? hist : hist.slice(0, 4);
+            document.getElementById('listaHistorico').innerHTML = vis.map(h => `<div class="cxd-log">
+                <span class="t">${escH(h.descricao_tarefa || 'Atividade')}<small>${escH(h.colaborador || '')} · ${fmtD(h.criado_em)}</small></span>
+                <span class="d">${tempoCurto(h.tempo_segundos)}</span></div>`).join('')
+                + (hist.length > 4 && !todos ? `<button type="button" class="cxd-mais" onclick="pintarLogsDet(true)">Ver os ${hist.length} lançamentos</button>` : '');
+        }
+
+        /* ---------- atividade: aba "Tudo" junta comentários, fases e tempo ---------- */
+        function trocarAbaAtividade(qual) {
+            const com = qual === 'com';
+            document.getElementById('abaCom').classList.toggle('on', com);
+            document.getElementById('abaTudo').classList.toggle('on', !com);
+            document.getElementById('abaCom').setAttribute('aria-selected', com ? 'true' : 'false');
+            document.getElementById('abaTudo').setAttribute('aria-selected', com ? 'false' : 'true');
+            document.getElementById('listaComentarios').style.display = com ? '' : 'none';
+            document.getElementById('listaTudo').style.display = com ? 'none' : '';
+        }
+        function pintarTudo() {
+            const ev = [];
+            detComentarios.filter(c => !c.parent_id).forEach(c => ev.push({ q: c.criado_em, h: `<div class="cxd-ev"><i></i><span><b>${escH(c.autor)}</b> comentou: ${escH(String(c.texto || '').replace(/<[^>]+>/g, '').slice(0, 140))}</span></div>` }));
+            (detOrigem && detOrigem.trajetoria || []).filter(t => t.tipo === 'card').forEach(t => ev.push({ q: t.quando, h: `<div class="cxd-ev fase"><i></i><span>Foi para <b>${escH(t.titulo)}</b>${t.detalhe ? ' · ' + escH(t.detalhe) : ''} · ${fmtD(t.quando)}</span></div>` }));
+            detHistorico.forEach(h => ev.push({ q: h.criado_em, h: `<div class="cxd-ev tempo"><i></i><span><b>${escH(h.colaborador || '')}</b> lançou ${tempoCurto(h.tempo_segundos)} em ${escH(h.descricao_tarefa || 'atividade')} · ${fmtD(h.criado_em)}</span></div>` }));
+            const p = projetosGlobais.find(x => x.id === projIdEmFoco);
+            if (p) ev.push({ q: p.criado_em, h: `<div class="cxd-ev"><i></i><span>Card criado${p.origem_lead_id ? ' a partir do contrato fechado no comercial' : ''} · ${fmtD(p.criado_em)}</span></div>` });
+            ev.sort((a, b) => new Date(b.q) - new Date(a.q));
+            document.getElementById('listaTudo').innerHTML = ev.map(e => e.h).join('') || '<p class="cxd-vazio">Nada registrado ainda.</p>';
+        }
+
+        function fmtD(s) { const d = s ? new Date(s) : null; return d && !isNaN(d) ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
+        function fmtBRL(v) { return v == null ? '' : 'R$ ' + Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 }); }
+
+        async function abrirContratoCard(url){
+            try{
+                const r = await fetch(url); const d = await r.json();
+                if(!r.ok || !d.url){ showToast(d.mensagem || 'Não foi possível abrir o contrato.', 'error'); return; }
+                window.open(d.url, '_blank', 'noopener');
+            }catch(e){ showToast('Sem conexão com o servidor.', 'error'); }
         }
 
         async function excluirProjeto() {
@@ -3910,6 +4518,9 @@
             <div class="md-corpo">
                 <div class="enc-secao">O que deve acontecer com este cliente agora</div>
 
+                <!-- Nos quadros de produto o Relacionamento não é opção: o
+                     aviso diz para qual card a entrega vai. -->
+                <div class="enc-relinfo" id="encRelInfo" style="display:none"></div>
                 <button class="enc-op" id="encOpRel" onclick="alternarEnc('encRel')">
                     <span class="enc-cx" id="encRel" role="checkbox" aria-checked="false"></span>
                     <span style="flex:1;min-width:0;text-align:left">
@@ -3927,10 +4538,58 @@
                     </span>
                 </button>
 
-                <div class="input-group" id="encLinhaValor" style="display:none">
-                    <label for="encValor">Valor a faturar</label>
-                    <input type="text" id="encValor" class="input-item" placeholder="R$ 0,00"
-                           inputmode="decimal" autocomplete="off" oninput="atualizarPreviaEnc()">
+                <!-- RELATO DA ENTREGA: só aparece quando algum destino está
+                     marcado. É o que o relacionamento lê antes de ligar e o
+                     que o financeiro lê antes de faturar. -->
+                <div id="encRelatoBloco" style="display:none;flex-direction:column;gap:12px">
+                    <div class="enc-secao">Como foi a entrega</div>
+                    <div class="input-group">
+                        <label for="encRelato">Em uma frase <span class="enc-obr">obrigatório</span></label>
+                        <textarea id="encRelato" class="input-item" rows="2" maxlength="500"
+                            placeholder="Ex.: entregamos as cinco contratações; o shortlist atrasou uma semana."
+                            oninput="this.classList.remove('erro')"></textarea>
+                    </div>
+                    <div class="enc-sat" role="radiogroup" aria-label="Satisfação percebida">
+                        <button type="button" class="enc-sat-op" data-sat="tranquilo" onclick="marcarSat('tranquilo')">
+                            <span class="material-symbols-rounded">sentiment_satisfied</span>Tranquila</button>
+                        <button type="button" class="enc-sat-op" data-sat="ruido" onclick="marcarSat('ruido')">
+                            <span class="material-symbols-rounded">sentiment_neutral</span>Teve ruído</button>
+                        <button type="button" class="enc-sat-op" data-sat="complicado" onclick="marcarSat('complicado')">
+                            <span class="material-symbols-rounded">sentiment_dissatisfied</span>Complicada</button>
+                    </div>
+                    <div class="input-group">
+                        <label for="encAtencao">O que não pode ser esquecido no próximo contato <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
+                        <input type="text" id="encAtencao" class="input-item" maxlength="300"
+                               placeholder="Ex.: tratar reposição de vaga antes de falar de contrato novo">
+                    </div>
+                </div>
+
+                <div id="encFatBloco" style="display:none;flex-direction:column;gap:12px">
+                    <div class="enc-secao">Para faturar</div>
+                    <div class="input-group" id="encLinhaValor">
+                        <label for="encValor">Valor a faturar</label>
+                        <input type="text" id="encValor" class="input-item" placeholder="R$ 0,00"
+                               inputmode="decimal" autocomplete="off" oninput="atualizarPreviaEnc()">
+                    </div>
+                    <div class="md-linha2">
+                        <div class="input-group">
+                            <label for="encFatContato">Contato de faturamento</label>
+                            <input type="text" id="encFatContato" class="input-item" placeholder="Quem recebe a nota">
+                        </div>
+                        <div class="input-group">
+                            <label for="encFatForma">Forma de cobrança</label>
+                            <select id="encFatForma" class="input-item">
+                                <option value="">—</option>
+                                <option>À vista</option>
+                                <option>Parcelado</option>
+                                <option>Recorrente</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="encFatEmail">E-mail para a nota</label>
+                        <input type="email" id="encFatEmail" class="input-item" placeholder="financeiro@cliente.com.br">
+                    </div>
                 </div>
 
                 <div class="enc-previa">
