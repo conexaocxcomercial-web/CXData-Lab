@@ -3743,15 +3743,16 @@ def cliente_por_cnpj(cnpj):
     if len(dig) != 14 or dig in CNPJS_DA_CASA:
         return None
     try:
-        # PostgREST não filtra por expressão (regexp_replace), então a
-        # comparação por dígitos é feita aqui. A carteira tem centenas de
-        # clientes; varrer paginado custa uma chamada e não depende de
-        # como cada um digitou a máscara.
-        for c in _paginar("clientes",
-                          "id, nome_empresa, cnpj, cidade, estado, responsavel, criado_em",
-                          lambda q: q.is_("excluido_em", "null").not_.is_("cnpj", "null")):
-            if so_digitos(c.get("cnpj")) == dig:
-                return c
+        # O banco guarda o CNPJ só com dígitos ou com máscara. Uma consulta
+        # pelas duas formas substitui a varredura da tabela inteira, que
+        # crescia com a base e pesava em cada fechamento.
+        m = f"{dig[:2]}.{dig[2:5]}.{dig[5:8]}/{dig[8:12]}-{dig[12:]}"
+        r = (supabase.table("clientes")
+             .select("id, nome_empresa, cnpj, cidade, estado, responsavel, criado_em")
+             .is_("excluido_em", "null").or_(f"cnpj.eq.{dig},cnpj.eq.{m}")
+             .order("criado_em").limit(1).execute())
+        if r.data:
+            return r.data[0]
     except Exception as e:
         print("Aviso: cliente_por_cnpj:", e)
     return None
@@ -4047,10 +4048,12 @@ def lead_relacionamento_aberto(cliente_id, cnpj=None):
                 return r.data[0]
         dig = so_digitos(cnpj)
         if len(dig) == 14 and not cnpj_da_casa(dig):
-            for l in _paginar("leads", "id, responsavel, coluna, cliente_id, cnpj",
-                              lambda q: q.eq("funil", "relacionamento").is_("excluido_em", "null")):
-                if so_digitos(l.get("cnpj")) == dig:
-                    return l
+            m = f"{dig[:2]}.{dig[2:5]}.{dig[5:8]}/{dig[8:12]}-{dig[12:]}"
+            r = (supabase.table("leads").select("id, responsavel, coluna, cliente_id, cnpj")
+                 .eq("funil", "relacionamento").is_("excluido_em", "null")
+                 .or_(f"cnpj.eq.{dig},cnpj.eq.{m}").order("criado_em").limit(1).execute())
+            if r.data:
+                return r.data[0]
     except Exception as e:
         print("Aviso: lead_relacionamento_aberto:", e)
     return None
