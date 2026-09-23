@@ -98,6 +98,15 @@ def _vazio(d):
 # a conta: tudo de um cliente, por cliente_id ou por CNPJ
 # ============================================================================
 
+def _formatos_cnpj(dig):
+    """As duas formas em que o CNPJ aparece no banco: só dígitos e com
+    máscara. Buscar pelas duas numa consulta substitui varrer a tabela
+    inteira e comparar em Python -- a varredura crescia com a base e era
+    a maior parte do tempo de abrir um card."""
+    m = f"{dig[:2]}.{dig[2:5]}.{dig[5:8]}/{dig[8:12]}-{dig[12:]}"
+    return f"cnpj.eq.{dig},cnpj.eq.{m}"
+
+
 def _leads_da_conta(cliente_id, cnpj):
     """Leads ativos da mesma conta. Por cliente_id quando há; por CNPJ
     (dígitos) para os cadastros anteriores ao vínculo."""
@@ -109,14 +118,11 @@ def _leads_da_conta(cliente_id, cnpj):
         for l in _lista("leads", colunas,
                         lambda q: q.eq("cliente_id", cliente_id).is_("excluido_em", "null")):
             saida.append(l); vistos.add(str(l["id"]))
-    if len(dig) == 14:
-        # Sem filtro por expressão no PostgREST: traz leads com CNPJ e
-        # compara os dígitos aqui. O índice da migração cobre o filtro.
-        for l in _c('_paginar')("leads", colunas,
-                                lambda q: q.is_("excluido_em", "null").not_.is_("cnpj", "null")):
-            if str(l["id"]) in vistos:
-                continue
-            if _c('so_digitos')(l.get("cnpj")) == dig:
+    # CNPJ só complementa quando não há cliente ligado (cadastros antigos).
+    if len(dig) == 14 and not cliente_id:
+        for l in _lista("leads", colunas,
+                        lambda q: q.is_("excluido_em", "null").or_(_formatos_cnpj(dig)), 200):
+            if str(l["id"]) not in vistos:
                 saida.append(l); vistos.add(str(l["id"]))
     return saida
 
@@ -274,16 +280,9 @@ def origem_do_projeto(projeto_id):
         contrato = {"nome": info.get("nome"), "enviado_em": info.get("enviado_em"),
                     "url": f"/api/projetos/{projeto_id}/contrato"}
 
-    # Trajetória: eventos do lead (funil) e do card (fases), em ordem.
+    # Trajetória do CARD (fases). A trilha do lead no funil ficou no CRM:
+    # o card não a mostra, e buscá-la custava uma consulta a cada abertura.
     trajetoria = []
-    if lead:
-        for m in _lista("lead_movimentos", "criado_em, de_funil, de_coluna, para_funil, para_coluna, autor",
-                        lambda q: q.eq("lead_id", lead["id"]).order("criado_em"), 200):
-            trajetoria.append({"quando": m.get("criado_em"), "tipo": "lead",
-                               "titulo": f"{m.get('para_coluna')}",
-                               "detalhe": f"{m.get('para_funil')} · {m.get('autor') or ''}".strip(' ·')})
-        trajetoria.insert(0, {"quando": lead.get("criado_em"), "tipo": "lead",
-                              "titulo": "Lead criado", "detalhe": lead.get("origem") or ''})
     if passagem.get("fechado_em"):
         trajetoria.append({"quando": passagem["fechado_em"], "tipo": "ganho",
                            "titulo": "Contrato ganho", "detalhe": passagem.get("closer") or ''})
@@ -303,8 +302,11 @@ def origem_do_projeto(projeto_id):
                 "cards": [{"id": i["id"], "pos": i.get("lote_pos"), "status": i.get("status"),
                            "responsavel": i.get("responsavel")} for i in irmaos]}
 
+    # O resumo da conta (contratos, entregas de todos os projetos) saiu
+    # daqui: o card não o exibe e ele era o trecho mais caro da rota. Vive
+    # em /api/leads/<id>/conta, que é onde o CRM o usa.
     conta = None
-    if p.get("cliente_id") or (cadastro and cadastro.get("cnpj")):
+    if request.args.get("conta") == "1" and (p.get("cliente_id") or (cadastro and cadastro.get("cnpj"))):
         conta = _resumo_conta(p.get("cliente_id"), (cadastro or {}).get("cnpj"), pode_valor)
         conta.pop("leads_ids", None)
 
@@ -644,3 +646,43 @@ def pessoas_ativas():
         if nome:
             pessoas.append({"id": u["id"], "nome": nome})
     return jsonify({"status": "sucesso", "pessoas": pessoas}), 200
+
+
+# ============================================================================
+# GET /api/projetos/<id>/card
+# ============================================================================
+
+@continuidade_bp.route('/api/projetos/<projeto_id>/card', methods=['GET'])
+def card_completo(projeto_id):
+    """Tudo o que o card expandido precisa, numa chamada só: origem,
+    lançamentos de tempo e comentários.
+
+    Abrir um card fazia três chamadas. Na Vercel cada chamada pode cair
+    numa instância fria e esperar o arranque; somadas às consultas, o card
+    levava segundos para ficar completo. Aqui as três respostas saem das
+    MESMAS funções das rotas individuais -- permissões e formato iguais --
+    numa única ida ao servidor.
+    """
+    from flask import current_app
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    vf = current_app.view_functions
+
+    def corpo(nome):
+        try:
+            r = vf[nome](projeto_id)
+            resp, cod = (r if isinstance(r, tuple) else (r, 200))
+            return resp.get_json() if cod == 200 else None
+        except Exception as e:
+            print(f"Aviso: {nome} falhou no card:", e)
+            return None
+
+    origem = corpo('continuidade.origem_do_projeto')
+    if origem is None:
+        # Sem acesso ao projeto (ou projeto inexistente): não devolve os outros.
+        return jsonify({"status": "erro", "mensagem": "Projeto indisponível."}), 404
+    hist = corpo('historico_tempo') or {}
+    com = corpo('listar_comentarios') or {}
+    return jsonify({"status": "sucesso", "origem": origem,
+                    "historico": hist.get("historico") or [],
+                    "comentarios": com.get("comentarios") or []}), 200
