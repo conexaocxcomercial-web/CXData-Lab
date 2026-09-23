@@ -382,6 +382,90 @@
         .cnpj-aviso b{ font-weight:650; }
         .cnpj-aviso.grupo{ background:var(--at-fundo); color:#6B3D03; }
         .cnpj-aviso.grupo .material-symbols-rounded{ color:var(--atencao); }
+
+        /* ================= CARD DO LEAD (cxl) =================
+           Classes com prefixo próprio: o CRM já tem `.ac` (botão de 26px) e
+           uma pílula chamada só "ac" herdava essa largura e saía cortada. */
+        .modal.cxl{ max-width:none; width:min(1180px, 96vw); height:min(92vh, 900px); max-height:none; border-radius:14px; }
+        .cxl-cab{ padding:16px 24px 14px; display:flex; flex-direction:column; gap:11px; border-bottom:1px solid var(--linha); flex-shrink:0; }
+        .cxl-l1{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .cxl-trilha{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--tinta-3); flex-wrap:wrap; }
+        .cxl-trilha .sep{ opacity:.6; }
+        .cxl-acoes{ display:flex; gap:6px; }
+        .cxl-ic{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:var(--r-ctrl);
+            background:transparent; box-shadow:inset 0 0 0 1px var(--linha); color:var(--tinta-2); cursor:pointer; text-decoration:none; }
+        .cxl-ic:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cxl-ic .material-symbols-rounded{ font-size:19px; }
+        .cxl-menu-w{ position:relative; }
+        .cxl-menu{ position:absolute; right:0; top:calc(100% + 6px); min-width:200px; background:var(--papel); border-radius:12px;
+            box-shadow:0 12px 34px rgba(23,23,26,.16), 0 0 0 1px var(--linha); padding:6px; display:none; flex-direction:column; z-index:30; }
+        .cxl-menu.on{ display:flex; }
+        .cxl-menu button{ min-height:42px; display:flex; align-items:center; gap:10px; padding:0 12px; border:none; background:none; border-radius:8px;
+            font:inherit; font-size:13px; font-weight:600; color:var(--tinta); cursor:pointer; }
+        .cxl-menu button:hover{ background:var(--papel-2); }
+        .cxl-menu button.perigo{ color:var(--critico); }
+        .cxl-l2{ display:flex; align-items:center; gap:14px; }
+        .cxl-av{ width:44px !important; height:44px !important; min-width:44px; border-radius:12px !important; font-size:15px !important; }
+        .cxl-id{ flex:1; min-width:0; }
+        .cxl-titulo{ margin:0; font-size:21px; font-weight:700; letter-spacing:-.4px; line-height:1.25; color:var(--tinta); }
+        .cxl-sub{ font-size:13px; font-weight:500; color:var(--tinta-2); margin-top:2px; }
+        .cxl-botoes{ display:flex; gap:8px; flex-shrink:0; }
+        .cxl-btn{ min-height:40px; padding:0 14px; display:inline-flex; align-items:center; gap:7px; border:none; border-radius:var(--r-ctrl);
+            background:var(--papel); box-shadow:inset 0 0 0 1px var(--linha-2); font:inherit; font-size:13px; font-weight:600; color:var(--tinta); cursor:pointer; white-space:nowrap; text-decoration:none; }
+        .cxl-btn:hover{ background:var(--papel-2); }
+        .cxl-btn .material-symbols-rounded{ font-size:17px; }
+        .cxl-btn.prim{ background:var(--acao); color:#fff; box-shadow:none; }
+        .cxl-btn.off{ opacity:.4; pointer-events:none; }
+        .cxl-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .cxl-pill{ min-height:32px; display:inline-flex; align-items:center; gap:7px; padding:0 11px; border-radius:var(--r-pill); background:var(--papel);
+            box-shadow:inset 0 0 0 1px var(--linha); font-size:12.5px; font-weight:600; color:var(--tinta); white-space:nowrap; }
+        .cxl-pill .r{ font-weight:500; color:var(--tinta-3); }
+        .cxl-pill .material-symbols-rounded{ font-size:16px; color:var(--tinta-3); }
+        .cxl-pill.acao{ background:var(--acao-fraco); box-shadow:none; color:var(--acao); }
+        .cxl-pill.acao .r, .cxl-pill.acao .material-symbols-rounded{ color:var(--acao); }
+        .cxl-pill.at{ background:var(--at-fundo); box-shadow:none; color:#6b3d03; }
+        .cxl-pill.suave{ background:var(--papel-2); box-shadow:none; color:var(--tinta-2); }
+        .cxl-pill .mini{ width:22px; height:22px; margin-left:-6px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
+        .cxl-corpo{ flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 340px; overflow:hidden; }
+        .cxl-main{ overflow-y:auto; padding:20px 24px 28px; display:flex; flex-direction:column; gap:22px; min-width:0; }
+        .cxl-lat{ overflow-y:auto; background:#fbfbfc; border-left:1px solid var(--linha); }
+        .cxl-sec{ display:flex; flex-direction:column; gap:12px; }
+        .cxl-lsec{ padding:18px 20px; border-bottom:1px solid var(--linha); display:flex; flex-direction:column; gap:10px; }
+        .cxl-lsec:last-child{ border-bottom:none; }
+        .cxl-sec-t{ display:flex; align-items:center; gap:8px; }
+        .cxl-sec-t h3{ margin:0; font-size:13px; font-weight:700; color:var(--tinta); }
+        .cxl-sec-t .material-symbols-rounded{ font-size:18px; color:var(--tinta-3); }
+        .cxl-acoes-contato{ display:flex; gap:8px; flex-wrap:wrap; }
+        .cxl-grade{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:14px 18px; }
+        .cxl-c{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+        .cxl-c .r{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--tinta-3); }
+        .cxl-c .v{ font-size:14px; font-weight:600; color:var(--tinta); display:flex; align-items:center; gap:4px; overflow-wrap:anywhere; }
+        .cxl-c .v.vazio{ color:var(--tinta-3); font-weight:400; }
+        .cxl-copiar{ width:30px; height:30px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:7px;
+            background:transparent; color:var(--tinta-3); cursor:pointer; }
+        .cxl-copiar:hover{ background:var(--papel-2); color:var(--tinta); }
+        .cxl-copiar .material-symbols-rounded{ font-size:16px; }
+        .cxl-anot{ border-radius:10px; background:var(--papel-2); padding:12px 14px; font-size:13.5px; line-height:1.6; color:var(--tinta-2); white-space:pre-wrap; }
+        .cxl .cta{ margin:0; display:flex; flex-direction:column; gap:12px; }
+        .cxl .cta-bloco{ margin:0; border-radius:12px; box-shadow:inset 0 0 0 1px var(--linha); padding:16px 18px; }
+        .cxl .cta-bloco.destaque{ box-shadow:inset 0 0 0 1.5px var(--acao); }
+        .cxl .cta-t{ font-size:13px; font-weight:700; text-transform:none; letter-spacing:-.1px; color:var(--tinta); margin-bottom:10px; }
+        .cxl-lat .det-num{ display:grid; grid-template-columns:1fr 1fr; gap:8px; background:none; border:none; }
+        .cxl-lat .det-num .dn{ border-radius:10px; box-shadow:inset 0 0 0 1px var(--linha); padding:11px 13px; background:var(--papel); }
+        @media (max-width:900px){
+            .modal.cxl{ width:100vw; height:100%; max-height:none; border-radius:0; }
+            .cxl-cab{ padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); }
+            .cxl-l2{ flex-wrap:wrap; }
+            .cxl-botoes{ width:100%; } .cxl-botoes .cxl-btn{ flex:1; justify-content:center; min-height:46px; }
+            .cxl-titulo{ font-size:18px; }
+            .cxl-corpo{ display:flex; flex-direction:column; overflow-y:auto; }
+            .cxl-main, .cxl-lat{ overflow:visible; }
+            .cxl-main{ padding:16px; }
+            .cxl-lat{ border-left:none; border-top:1px solid var(--linha); padding-bottom:env(safe-area-inset-bottom, 0px); }
+            .cxl-ic{ width:44px; height:44px; }
+            .cxl-acoes-contato .cxl-btn{ flex:1; justify-content:center; min-height:46px; }
+        }
+
         /* briefing da passagem */
         .brf{ background:var(--papel-2); border-radius:var(--r-ctrl); padding:13px 14px 4px;
             display:flex; flex-direction:column; gap:12px; box-shadow:inset 0 0 0 1px var(--linha); }
@@ -410,7 +494,7 @@
         .cta-pil{ font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:var(--r-pill); background:var(--papel-2); color:var(--tinta-2); white-space:nowrap; }
         .cta-pil.ok{ background:var(--ok-fraco); color:var(--ok); }
         .cta-pil.at{ background:var(--at-fundo); color:var(--atencao); }
-        .cta-pil.ac{ background:var(--acao-fraco); color:var(--acao); }
+        .cta-pil.acao{ background:var(--acao-fraco); color:var(--acao); }
         .cta-lin{ display:grid; grid-template-columns:78px 1fr auto; gap:8px 12px; padding:8px 0; border-bottom:1px solid var(--linha); font-size:12.5px; align-items:baseline; }
         .cta-lin:last-child{ border-bottom:none; }
         .cta-lin .d{ color:var(--tinta-3); font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -739,39 +823,55 @@
     <div class="board" id="board"><div class="loading">Carregando...</div></div>
 
     <!-- DETALHE DO LEAD -->
+    <!-- CARD DO LEAD
+         Mesma linguagem do card dos quadros: o cabeçalho diz onde o lead
+         está e com quem; a coluna principal é o trabalho (contato, o que
+         veio da entrega, a pesquisa, a conta); a lateral é consulta
+         (números e linha do tempo). -->
     <div class="modal-overlay" id="modalDetalhe" onclick="fundoModal(event,'modalDetalhe')">
-        <div class="modal largo">
-            <div class="det-cab">
-                <span class="det-av" id="dAv"></span>
-                <div class="det-id">
-                    <div class="det-emp" id="dEmpresa"></div>
-                    <div class="det-nome" id="dContato"></div>
-                    <div class="det-chips" id="dChips"></div>
+        <div class="modal cxl" role="dialog" aria-modal="true" aria-labelledby="dEmpresa">
+            <header class="cxl-cab">
+                <div class="cxl-l1">
+                    <nav class="cxl-trilha" id="dTrilha" aria-label="Funil e etapa"></nav>
+                    <div class="cxl-acoes">
+                        <button type="button" class="cxl-ic" onclick="editarDoDetalhe()" aria-label="Editar dados" title="Editar dados"><span class="material-symbols-rounded">edit</span></button>
+                        <div class="cxl-menu-w">
+                            <button type="button" class="cxl-ic" id="dMaisBtn" aria-haspopup="menu" aria-expanded="false" onclick="alternarMaisLead(event)" aria-label="Mais ações" title="Mais ações"><span class="material-symbols-rounded">more_horiz</span></button>
+                            <div class="cxl-menu" id="dMais" role="menu">
+                                <button type="button" role="menuitem" class="perigo" onclick="fecharMaisLead(); excluirDoDetalhe()"><span class="material-symbols-rounded">delete</span>Excluir lead</button>
+                            </div>
+                        </div>
+                        <button type="button" class="cxl-ic" onclick="fecharModal('modalDetalhe')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
+                    </div>
                 </div>
-                <div class="det-acoes" id="dAcoes"></div>
-                <button class="md-x" onclick="fecharModal('modalDetalhe')" aria-label="Fechar"><span class="material-symbols-rounded">close</span></button>
-            </div>
-            <div class="det-num" id="dNumeros"></div>
-            <div class="det-corpo">
-                <div class="det-esq">
-                    <!-- Conta do cliente: quadros, contratos, entregas, contrato.
-                         Vem de /api/leads/<id>/conta; o funil sozinho não
-                         contava se a conta passou pela operação. -->
+                <div class="cxl-l2">
+                    <span class="det-av cxl-av" id="dAv" aria-hidden="true"></span>
+                    <div class="cxl-id">
+                        <h2 class="cxl-titulo" id="dEmpresa"></h2>
+                        <div class="cxl-sub" id="dContato"></div>
+                    </div>
+                    <div class="cxl-botoes">
+                        <button type="button" class="cxl-btn prim" onclick="moverDoDetalhe()"><span class="material-symbols-rounded">swap_horiz</span>Mover</button>
+                    </div>
+                </div>
+                <div class="cxl-meta" id="dChips"></div>
+            </header>
+            <div class="cxl-corpo">
+                <main class="cxl-main">
+                    <section class="cxl-sec">
+                        <div class="cxl-sec-t"><span class="material-symbols-rounded">person</span><h3>Contato</h3></div>
+                        <div class="cxl-acoes-contato" id="dAcoes"></div>
+                        <div id="dDados"></div>
+                    </section>
                     <div id="dConta" class="cta"></div>
-                    <div class="det-rot">Por onde passou</div>
-                    <div id="dTimeline"><div class="loading">Carregando histórico...</div></div>
-                </div>
-                <div class="det-dir">
-                    <div class="det-rot">Dados</div>
-                    <div id="dDados"></div>
-                    <button class="btn btn-fant" style="width:100%;justify-content:center" onclick="editarDoDetalhe()">
-                        <span class="material-symbols-rounded">edit</span>Editar dados</button>
-                </div>
-            </div>
-            <div class="md-pe">
-                <button class="btn btn-fant" onclick="moverDoDetalhe()"><span class="material-symbols-rounded">swap_horiz</span>Mover</button>
-                <button class="btn btn-perigo" style="margin-left:auto" onclick="excluirDoDetalhe()">
-                    <span class="material-symbols-rounded">delete</span>Excluir</button>
+                </main>
+                <aside class="cxl-lat">
+                    <section class="cxl-lsec"><div class="det-num" id="dNumeros"></div></section>
+                    <section class="cxl-lsec">
+                        <div class="cxl-sec-t"><h3>Linha do tempo</h3></div>
+                        <div id="dTimeline"><div class="loading">Carregando histórico...</div></div>
+                    </section>
+                </aside>
             </div>
         </div>
     </div>
@@ -2333,29 +2433,37 @@
             document.getElementById('dAv').style.color = fg;
             document.getElementById('dAv').innerText = iniciais(l.contato || l.empresa);
             document.getElementById('dEmpresa').innerText = l.empresa || 'Sem empresa';
-            document.getElementById('dContato').innerText = l.contato || 'Sem contato';
+            document.getElementById('dContato').innerText = l.contato ? (l.contato + (l.produto ? ' · ' + l.produto : '')) : (l.produto || 'Sem contato');
+            document.getElementById('dTrilha').innerHTML = `<span>CRM</span><span class="sep">›</span><span>${escH(nomeFunil(l.funil))}</span><span class="sep">›</span><span>${escH(l.coluna || '')}</span>`;
 
+            // Cabeçalho: onde está, com quem e quando é o próximo passo.
+            const prox = dataDe(l.proximo_contato);
+            const atrasado = prox && prox < hoje0();
+            const [rb, rf] = cor(l.responsavel);
             document.getElementById('dChips').innerHTML =
-                `<span class="chip c-funil-${FUNIL_CLASSE[l.funil]||'q'}">${escH(nomeFunil(l.funil))}</span>
-                 <span class="chip c-col">${escH(l.coluna)}</span>
-                 ${l.produto ? `<span class="chip c-prod">${escH(l.produto)}</span>` : ''}
-                 ${l.origem ? `<span class="chip c-orig">${escH(l.origem)}</span>` : ''}`;
+                `<span class="cxl-pill acao"><span class="material-symbols-rounded">view_kanban</span><span class="r">${escH(nomeFunil(l.funil))}</span>${escH(l.coluna || '')}</span>`
+                + (l.responsavel ? `<span class="cxl-pill"><span class="mini" style="background:${rb};color:${rf}">${escH(iniciais(l.responsavel))}</span>${escH(l.responsavel)}</span>` : `<span class="cxl-pill at">Sem responsável</span>`)
+                + `<span class="cxl-pill${atrasado ? ' at' : ''}"><span class="material-symbols-rounded">event</span><span class="r">Próximo contato</span>${prox ? prox.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : 'não agendado'}</span>`
+                + (l.origem ? `<span class="cxl-pill suave"><span class="material-symbols-rounded">call_received</span>${escH(l.origem)}</span>` : '')
+                + (l.funil === 'relacionamento' ? `<span class="cxl-pill suave">Cliente da casa</span>` : '');
 
             const temTel = !!soDigitos(l.telefone), temMail = !!(l.email||'').trim();
             document.getElementById('dAcoes').innerHTML =
-                `<button class="ac ac-wpp" ${temTel?'':'style="opacity:.35"'} title="WhatsApp" onclick="abrirWpp('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">chat</span></button>
-                 <button class="ac ac-mail" ${temMail?'':'style="opacity:.35"'} title="E-mail" onclick="abrirEmail('${escA(l.email||'')}')"><span class="material-symbols-rounded">mail</span></button>
-                 <button class="ac ac-fone" ${temTel?'':'style="opacity:.35"'} title="Ligar" onclick="ligar('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">call</span></button>`;
+                `<button type="button" class="cxl-btn${temTel?'':' off'}" onclick="ligar('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">call</span>Ligar</button>
+                 <button type="button" class="cxl-btn${temTel?'':' off'}" onclick="abrirWpp('${escA(l.telefone||'')}')"><span class="material-symbols-rounded">chat</span>WhatsApp</button>
+                 <button type="button" class="cxl-btn${temMail?'':' off'}" onclick="abrirEmail('${escA(l.email||'')}')"><span class="material-symbols-rounded">mail</span>E-mail</button>`;
 
-            document.getElementById('dDados').innerHTML = `
-                <div class="campo"><div class="campo-r">Telefone</div><div class="campo-v num ${temTel?'':'vazio'}">${temTel?escH(l.telefone):'não informado'}</div></div>
-                <div class="campo"><div class="campo-r">E-mail</div><div class="campo-v ${temMail?'':'vazio'}">${temMail?escH(l.email):'não informado'}</div></div>
-                <div class="campo"><div class="campo-r">Responsável</div><div class="campo-v">${escH(l.responsavel)||'—'}</div></div>
-                <div class="campo"><div class="campo-r">Origem</div><div class="campo-v ${l.origem?'':'vazio'}">${escH(l.origem)||'não informada'}</div></div>
-                <div class="campo"><div class="campo-r">Segmento</div><div class="campo-v ${l.segmento?'':'vazio'}">${escH(l.segmento)||'não informado'}</div></div>
-                <div class="campo"><div class="campo-r">Localização</div><div class="campo-v ${l.cidade?'':'vazio'}">${l.cidade ? escH(l.cidade) + (l.estado ? ', ' + escH(l.estado) : '') : 'não informada'}</div></div>
-                <div class="campo" style="margin-bottom:18px"><div class="campo-r">Anotações</div>
-                    ${l.anotacoes ? `<div class="anot">${escH(l.anotacoes)}</div>` : '<div class="campo-v vazio">sem anotações</div>'}</div>`;
+            const campoL = (r, v, copiar) => `<div class="cxl-c"><span class="r">${r}</span><span class="v${v?'':' vazio'}">${v ? escH(v) : 'não informado'}${v && copiar ? `<button type="button" class="cxl-copiar" aria-label="Copiar ${escA(r)}" onclick="copiarTexto('${escA(v)}')"><span class="material-symbols-rounded">content_copy</span></button>` : ''}</span></div>`;
+            document.getElementById('dDados').innerHTML = `<div class="cxl-grade">
+                    ${campoL('Telefone', temTel ? l.telefone : '', true)}
+                    ${campoL('E-mail', temMail ? l.email : '', true)}
+                    ${campoL('Segmento', l.segmento)}
+                    ${campoL('Cidade / UF', l.cidade ? l.cidade + (l.estado ? ' / ' + l.estado : '') : '')}
+                    ${campoL('CNPJ', l.cnpj, true)}
+                    ${l.valor_estimado ? campoL('Valor', 'R$ ' + Number(l.valor_estimado).toLocaleString('pt-BR',{maximumFractionDigits:0})) : ''}
+                </div>
+                <div class="cxl-c" style="margin-top:14px"><span class="r">Anotações</span>
+                    ${l.anotacoes ? `<div class="cxl-anot">${escH(l.anotacoes)}</div>` : '<span class="v vazio">sem anotações</span>'}</div>`;
 
             document.getElementById('dNumeros').innerHTML = '';
             document.getElementById('dTimeline').innerHTML = '<div class="loading">Carregando histórico...</div>';
@@ -2553,6 +2661,22 @@
                 }catch(e){ aviso.style.display = 'none'; }
             }, 350);
         }
+
+        function copiarTexto(v){
+            (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(
+                () => showToast('Copiado: ' + v, 'success'), () => showToast('Não foi possível copiar.', 'error'));
+        }
+        function alternarMaisLead(ev){
+            ev.stopPropagation();
+            const m = document.getElementById('dMais'), b = document.getElementById('dMaisBtn');
+            const on = !m.classList.contains('on');
+            m.classList.toggle('on', on); b.setAttribute('aria-expanded', on ? 'true' : 'false');
+        }
+        function fecharMaisLead(){
+            document.getElementById('dMais').classList.remove('on');
+            document.getElementById('dMaisBtn').setAttribute('aria-expanded', 'false');
+        }
+        document.addEventListener('click', e => { const w = document.querySelector('.cxl-menu-w'); if(w && !w.contains(e.target)) fecharMaisLead(); });
 
         async function abrirContratoConta(url){
             try{
