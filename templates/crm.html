@@ -376,6 +376,55 @@
         .pv .material-symbols-rounded{ font-size:15px; color:var(--acao); flex-shrink:0; margin-top:1px; }
         .pv b{ font-weight:650; }
         .ig3{ display:grid; grid-template-columns:1fr 108px; gap:12px; }
+        .cnpj-aviso{ margin-top:8px; background:var(--acao-fraco); border-radius:10px; padding:10px 13px;
+            font-size:12.5px; line-height:1.5; color:#3C3489; display:flex; gap:10px; align-items:flex-start; }
+        .cnpj-aviso .material-symbols-rounded{ font-size:18px; color:var(--acao); flex-shrink:0; margin-top:1px; }
+        .cnpj-aviso b{ font-weight:650; }
+        .cnpj-aviso.grupo{ background:var(--at-fundo); color:#6B3D03; }
+        .cnpj-aviso.grupo .material-symbols-rounded{ color:var(--atencao); }
+        /* briefing da passagem */
+        .brf{ background:var(--papel-2); border-radius:var(--r-ctrl); padding:13px 14px 4px;
+            display:flex; flex-direction:column; gap:12px; box-shadow:inset 0 0 0 1px var(--linha); }
+        .brf .ig-secao{ margin-bottom:-2px; }
+        .brf textarea, .brf input{ background:var(--papel); }
+        .brf textarea.erro{ box-shadow:0 0 0 2px var(--cr-borda); }
+        .brf-obr{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
+            color:var(--acao); background:var(--acao-fraco); padding:2px 7px; border-radius:var(--r-pill); margin-left:6px; }
+        .brf-contato{ grid-template-columns:1fr 1fr; }
+        @media(max-width:520px){ .brf-contato{ grid-template-columns:1fr; } }
+
+        /* conta do cliente no card do lead */
+        .cta{ margin-bottom:22px; }
+        .cta-bloco{ background:var(--papel); border-radius:12px; padding:14px 16px; box-shadow:var(--e1); margin-bottom:10px; }
+        .cta-bloco.destaque{ box-shadow:inset 0 0 0 1px var(--acao), var(--e1); }
+        .cta-t{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--acao); margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+        .cta-t .chip{ text-transform:none; letter-spacing:0; }
+        .cta-fala{ font-size:13.5px; font-weight:600; line-height:1.5; color:var(--tinta); }
+        .cta-meta{ font-size:11.5px; color:var(--tinta-3); margin-top:5px; }
+        .cta-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 14px; margin-top:10px; }
+        .cta-at{ background:var(--at-fundo); color:#6B3D03; border-radius:10px; padding:10px 13px; font-size:12.5px; line-height:1.5; margin-top:10px; }
+        .cta-q{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--linha); flex-wrap:wrap; }
+        .cta-q:last-child{ border-bottom:none; }
+        .cta-q-n{ font-size:13px; font-weight:650; flex:1; min-width:120px; }
+        .cta-q-n small{ display:block; font-size:11px; font-weight:500; color:var(--tinta-3); margin-top:2px; }
+        .cta-pil{ font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:var(--r-pill); background:var(--papel-2); color:var(--tinta-2); white-space:nowrap; }
+        .cta-pil.ok{ background:var(--ok-fraco); color:var(--ok); }
+        .cta-pil.at{ background:var(--at-fundo); color:var(--atencao); }
+        .cta-pil.ac{ background:var(--acao-fraco); color:var(--acao); }
+        .cta-lin{ display:grid; grid-template-columns:78px 1fr auto; gap:8px 12px; padding:8px 0; border-bottom:1px solid var(--linha); font-size:12.5px; align-items:baseline; }
+        .cta-lin:last-child{ border-bottom:none; }
+        .cta-lin .d{ color:var(--tinta-3); font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .cta-lin .n{ font-weight:600; min-width:0; word-break:break-word; }
+        .cta-lin .n small{ display:block; font-weight:500; color:var(--tinta-3); font-size:11px; }
+        .cta-lin .v{ font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+        .cta-vazio{ font-size:12.5px; color:var(--tinta-3); font-style:italic; padding:6px 0; }
+        .cta-ctr{ display:flex; align-items:center; gap:11px; background:var(--ok-fraco); border-radius:10px; padding:10px 13px; }
+        .cta-ctr .material-symbols-rounded{ color:var(--ok); font-size:20px; flex-shrink:0; }
+        .cta-ctr-n{ flex:1; min-width:0; font-size:12.5px; font-weight:600; word-break:break-word; }
+        .cta-ctr-n small{ display:block; font-weight:500; color:var(--tinta-3); font-size:11px; }
+        .cta-btn{ min-height:40px; padding:0 14px; border-radius:var(--r-ctrl); border:none; background:var(--papel); box-shadow:inset 0 0 0 1px var(--linha-2, var(--linha)); font:inherit; font-size:12.5px; font-weight:600; color:var(--tinta); cursor:pointer; white-space:nowrap; }
+        .cta-btn:hover{ background:var(--papel-2); }
+        @media(max-width:520px){ .cta-lin{ grid-template-columns:1fr; gap:2px; } .cta-lin .d{ font-size:11px; } }
         .ig-secao{ font-size:10.5px; font-weight:600; text-transform:uppercase;
             letter-spacing:.5px; color:var(--tinta-3); padding-top:6px; margin-bottom:9px;
             border-top:1px solid var(--linha); padding-top:14px; }
@@ -444,49 +493,6 @@
             border-radius:99px; background:var(--papel-2); color:var(--tinta-2); margin-top:7px; }
         .tp-dur.longo{ background:var(--at-fundo); color:var(--atencao); }
         .tp-dur .material-symbols-rounded{ font-size:12px; }
-        /* ENTREGA QUE GEROU O LEAD + HISTÓRICO DA CONTA
-           Mesmos tokens do resto da tela. O bloco da entrega usa a cor
-           de ação porque é a informação que a pessoa leu antes de
-           ligar; o histórico é neutro, é consulta. */
-        .ent-bloco{ background:var(--acao-fraco); border-radius:var(--r-card); padding:14px 15px;
-            margin-bottom:22px; box-shadow:0 0 0 1px #D9D4FB; }
-        .ent-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; }
-        .ent-sat{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:var(--r-pill); white-space:nowrap; }
-        .ent-sat.ok{ background:var(--ok-fraco); color:var(--ok); }
-        .ent-sat.atencao{ background:var(--at-fundo); color:var(--atencao); }
-        .ent-sat.ruim{ background:var(--cr-fundo); color:var(--critico); }
-        .ent-relato{ font-size:13.5px; font-weight:600; line-height:1.5; color:var(--tinta); }
-        .ent-proj{ font-size:12.5px; font-weight:700; color:var(--tinta); margin-top:9px; }
-        .ent-meta{ font-size:12px; color:var(--tinta-2); margin-top:3px; }
-        .ent-atencao{ display:flex; gap:8px; align-items:flex-start; margin-top:10px;
-            background:var(--at-fundo); border-radius:var(--r-ctrl); padding:9px 11px;
-            font-size:12.5px; font-weight:500; line-height:1.45; color:#7A4405; }
-        .ent-atencao .material-symbols-rounded{ font-size:17px; color:var(--atencao); }
-
-        .cn-resumo{ font-size:12.5px; font-weight:600; color:var(--tinta-2); margin-bottom:12px; }
-        .cn-rot{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
-            color:var(--tinta-3); margin:16px 0 7px; }
-        .cq{ background:var(--papel-2); border-radius:var(--r-ctrl); padding:11px 13px; margin-bottom:8px; }
-        .cq-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; }
-        .cq-tot{ font-size:12px; color:var(--tinta-3); }
-        .cq-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-        .cq-chip{ font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:var(--r-pill); }
-        .cq-chip.ok{ background:var(--ok-fraco); color:var(--ok); }
-        .cq-chip.and{ background:var(--at-fundo); color:var(--atencao); }
-        .cq-chip.pes{ background:var(--papel); color:var(--tinta-2); box-shadow:0 0 0 1px var(--linha); }
-        .cl{ display:grid; grid-template-columns:62px 1fr auto auto; gap:10px; align-items:center;
-            padding:8px 2px; border-bottom:1px solid var(--linha); font-size:12.5px; }
-        .cl:last-child{ border-bottom:none; }
-        .cl-d{ color:var(--tinta-3); font-variant-numeric:tabular-nums; }
-        .cl-n{ font-weight:600; color:var(--tinta); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .cl-v{ font-weight:600; color:var(--tinta-2); font-variant-numeric:tabular-nums; }
-        .cl-p{ color:var(--tinta-3); }
-        /* No celular a linha de quatro colunas não cabe: vira duas. */
-        @media (max-width:760px){
-            .cl{ grid-template-columns:58px 1fr; }
-            .cl-v, .cl-p{ grid-column:2; font-size:12px; }
-        }
-
         .tp-obj{ margin-top:8px; background:var(--cr-fundo); border-radius:9px; padding:9px 11px; box-shadow:0 0 0 1px var(--cr-borda); }
         .tp-obj-t{ font-size:11px; font-weight:650; color:#8A1F1F; display:flex; align-items:center; gap:5px; margin-bottom:3px; }
         .tp-obj-t .material-symbols-rounded{ font-size:13px; }
@@ -738,10 +744,11 @@
             <div class="det-num" id="dNumeros"></div>
             <div class="det-corpo">
                 <div class="det-esq">
-                    <div id="dEntrega"></div>
-                    <div class="det-rot">Trabalho e entregas desta conta</div>
-                    <div id="dConta"><div class="loading">Carregando a conta...</div></div>
-                    <div class="det-rot" style="margin-top:22px">Por onde passou</div>
+                    <!-- Conta do cliente: quadros, contratos, entregas, contrato.
+                         Vem de /api/leads/<id>/conta; o funil sozinho não
+                         contava se a conta passou pela operação. -->
+                    <div id="dConta" class="cta"></div>
+                    <div class="det-rot">Por onde passou</div>
                     <div id="dTimeline"><div class="loading">Carregando histórico...</div></div>
                 </div>
                 <div class="det-dir">
@@ -789,9 +796,12 @@
                 <div class="ig">
                     <label for="fCnpj">CNPJ</label>
                     <input type="text" id="fCnpj" inputmode="numeric" maxlength="18"
-                           placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)">
+                           placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this); checarCnpjLead(this.value)">
                     <div class="ig-dica">Vira o cadastro do cliente no fechamento.
                     O portão de Negociação cobra este campo — preencher aqui adianta.</div>
+                    <!-- Um CNPJ, um cliente: se já existe, a tela avisa e o lead
+                         nasce como nova oportunidade da conta, não cadastro novo. -->
+                    <div id="fCnpjAviso" class="cnpj-aviso" style="display:none"></div>
                 </div>
                 <div class="ig">
                     <label for="fTelefone">Telefone</label>
@@ -884,35 +894,37 @@
                     <div class="ig-dica">PDF, Word ou foto, até 4 MB. Fica guardado com o
                     lead, e só quem enxerga o lead consegue abrir.</div>
                 </div>
-                <div class="ig">
+                <!-- BRIEFING DA PASSAGEM: o que a operação vai ler primeiro.
+                     Obrigatório de propósito: o custo de uma frase aqui é
+                     menor que o de quem executa perguntar no WhatsApp. -->
+                <div class="brf">
                     <div class="ig-secao">O que a operação precisa saber</div>
                     <div class="ig">
-                        <label for="fcResumo">O que foi vendido, em uma frase</label>
+                        <label for="fcResumo">O que foi vendido, em uma frase <span class="brf-obr">obrigatório</span></label>
                         <textarea id="fcResumo" rows="2" maxlength="400"
-                                  placeholder="Ex.: cinco vagas de analista fiscal, entrevistas nas sextas, shortlist até 30/09"
-                                  oninput="atualizarPrevia()"></textarea>
-                        <div class="ig-dica">É a primeira coisa que quem executa vai ler no card.</div>
+                            placeholder="Ex.: cinco vagas de analista fiscal, shortlist até 30/09, entrevistas às sextas."
+                            oninput="this.classList.remove('erro')"></textarea>
                     </div>
-                    <div class="ig3" style="margin-top:12px">
-                        <div class="ig"><label for="fcContatoExec">Contato da execução</label>
-                            <input type="text" id="fcContatoExec" maxlength="120"
-                                   placeholder="quem acompanha o trabalho"></div>
-                        <div class="ig"><label for="fcCargoExec">Cargo</label>
-                            <input type="text" id="fcCargoExec" maxlength="80"></div>
+                    <div class="ig3 brf-contato">
+                        <div class="ig"><label for="fcContato">Contato da execução</label>
+                            <input type="text" id="fcContato" placeholder="Quem acompanha o trabalho"></div>
+                        <div class="ig"><label for="fcCargo">Cargo</label>
+                            <input type="text" id="fcCargo" placeholder="Gerente de RH"></div>
                     </div>
-                    <div class="ig3" style="margin-top:12px">
-                        <div class="ig"><label for="fcTelExec">Telefone do contato</label>
-                            <input type="text" id="fcTelExec" maxlength="20"></div>
-                        <div class="ig"><label for="fcPrazo">Prazo prometido na venda</label>
-                            <input type="date" id="fcPrazo" oninput="atualizarPrevia()"></div>
+                    <div class="ig3 brf-contato">
+                        <div class="ig"><label for="fcTelefoneExec">Telefone da execução</label>
+                            <input type="text" id="fcTelefoneExec" placeholder="(84) 99999-0000"></div>
+                        <div class="ig"><label for="fcPrazo">Prazo prometido</label>
+                            <input type="date" id="fcPrazo"></div>
                     </div>
-                    <div class="ig" style="margin-top:12px">
-                        <label for="fcAtencao">O que não pode passar batido
-                            <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
-                        <textarea id="fcAtencao" rows="2" maxlength="400"
-                                  placeholder="cliente exigente com prazo, expectativa desalinhada, quem indicou..."></textarea>
+                    <div class="ig">
+                        <label for="fcAtencao">Atenção da venda <span style="font-weight:400;color:var(--tinta-3)">· opcional</span></label>
+                        <textarea id="fcAtencao" rows="2" maxlength="600"
+                            placeholder="Cliente difícil, expectativa desalinhada, quem indicou…"></textarea>
+                        <div class="ig-dica">As anotações do lead vêm pré-carregadas aqui para você revisar. O que ficar é o que a operação lê.</div>
                     </div>
                 </div>
+
                 <div class="ig">
                     <div class="ig-secao">Onde o trabalho vai acontecer</div>
                     <div class="qds" id="fcQuadros"></div>
@@ -1382,6 +1394,21 @@
                 leads = d.leads || [];
             }catch(e){ leads = []; showToast('Sem conexão com o servidor.','error'); }
             render();
+            abrirLeadViaURL();
+        }
+
+        /* /crm?lead=<id> abre o card direto: é o caminho de volta a partir
+           do painel Origem comercial nos quadros de trabalho. */
+        let leadViaUrlAberto = false;
+        function abrirLeadViaURL(){
+            if(leadViaUrlAberto) return;
+            const id = new URLSearchParams(window.location.search).get('lead');
+            if(!id) return;
+            const l = leads.find(x => String(x.id) === String(id));
+            if(!l) return;
+            leadViaUrlAberto = true;
+            if(l.funil && FUNIS[l.funil] && l.funil !== funilAtual) mudarFunil(l.funil);
+            abrirDetalhe(id);
         }
 
         /* ==================== RENDER ==================== */
@@ -1698,19 +1725,16 @@
             document.getElementById('fcQtd').value = 1;
             document.getElementById('fcCnpj').value = l.cnpj || '';
 
-            /* BRIEFING.
-               Contato e telefone vêm do lead porque são cadastro, e
-               cadastro errado o closer corrige na hora. O resumo começa
-               vazio de propósito: anotação de CRM é recado do comercial
-               para si mesmo e não deve virar o texto que a operação
-               inteira lê no card. */
-            document.getElementById('fcContatoExec').value = l.contato || '';
-            document.getElementById('fcCargoExec').value = '';
-            document.getElementById('fcTelExec').value = l.telefone || '';
-            document.getElementById('fcPrazo').value = '';
-            document.getElementById('fcAtencao').value = '';
+            // Briefing: cadastro pré-carregado do lead, para o closer
+            // revisar em vez de digitar de novo. O resumo começa vazio de
+            // propósito -- é a única coisa que ele precisa escrever.
             document.getElementById('fcResumo').value = '';
             document.getElementById('fcResumo').classList.remove('erro');
+            document.getElementById('fcContato').value = l.contato || '';
+            document.getElementById('fcCargo').value = '';
+            document.getElementById('fcTelefoneExec').value = l.telefone || '';
+            document.getElementById('fcPrazo').value = '';
+            document.getElementById('fcAtencao').value = l.anotacoes || '';
 
             // Quadros: o do produto e o Financeiro já vêm marcados.
             document.getElementById('fcQuadros').innerHTML = QUADROS_TRABALHO.map(([c,n]) => {
@@ -1932,18 +1956,14 @@
                 showToast('CNPJ inválido. Confira os números.','error');
                 cnpjEl.classList.add('erro'); cnpjEl.focus(); return;
             }
-
-            /* O RESUMO DA VENDA.
-               Validado aqui e também no servidor: quem chamar a rota por
-               fora não passa sem ele. Dez caracteres é o piso -- "ok" ou
-               "vendido" não ajudam quem vai executar. */
+            // A mesma exigência do servidor, aqui para o erro aparecer no
+            // campo e não só no aviso.
             const resumoEl = document.getElementById('fcResumo');
             const resumo = resumoEl.value.trim();
             if(resumo.length < 10){
-                showToast('Escreva em uma frase o que foi vendido. É o que a operação vai ler no card.','error');
+                showToast('Descreva em uma frase o que foi vendido: é o que a operação vai ler primeiro.','error');
                 resumoEl.classList.add('erro'); resumoEl.focus(); return;
             }
-            resumoEl.classList.remove('erro');
 
             const btn = document.getElementById('fcSalvar'); btn.disabled = true;
             const l = leads.find(x=>String(x.id)===String(c.leadId));
@@ -1956,15 +1976,15 @@
                         valor: document.getElementById('fcValor').value || null,
                         cnpj: document.getElementById('fcCnpj').value.trim(),
                         quadros: quadrosMarcados().map(q => ({ quadro: q, sub: subDoQuadro(q) })),
-                        briefing: {
-                            resumo: resumo,
-                            contato: document.getElementById('fcContatoExec').value.trim() || null,
-                            cargo: document.getElementById('fcCargoExec').value.trim() || null,
-                            telefone: document.getElementById('fcTelExec').value.trim() || null,
-                            prazo: document.getElementById('fcPrazo').value || null,
-                            atencao: document.getElementById('fcAtencao').value.trim() || null
-                        },
-                        criar_cliente: true
+                        criar_cliente: true,
+                        passagem: {
+                            resumo,
+                            contato: document.getElementById('fcContato').value.trim(),
+                            cargo: document.getElementById('fcCargo').value.trim(),
+                            telefone: document.getElementById('fcTelefoneExec').value.trim(),
+                            prazo_prometido: document.getElementById('fcPrazo').value,
+                            atencao: document.getElementById('fcAtencao').value.trim()
+                        }
                     })});
                 if(!r.ok){ showToast(await motivoErro(r,'Não foi possível fechar o contrato.'),'error'); return; }
                 const d = await r.json();
@@ -2003,23 +2023,12 @@
                     return;
                 }
 
-                showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
-                            : 'Contrato fechado.', 'success');
-
-                /* NADA FOI CRIADO E ALGUEM PEDIU.
-                   Fechar sem marcar quadro e uma escolha legitima -- a
-                   janela avisa que o lead vai para Ganho sem gerar
-                   trabalho. Marcar quadro e nao nascer card nenhum nao
-                   e: significa que a passagem de bastao falhou, e quem
-                   fechou precisa saber na hora, nao o quadro que nunca
-                   recebeu o pedido. */
-                if(!n && (d.pediu_quadros || 0) > 0){
-                    const quais = (d.recusados || []).filter(Boolean);
-                    showToast('O contrato foi registrado, mas nenhum card foi criado nos quadros '
-                            + 'marcados' + (quais.length ? ' (' + quais.join(', ') + ' não existe).' : '. ')
-                            + ' Avise quem administra.', 'error');
-                    console.error('[fechamento] quadros pedidos sem card criado | resposta:', d);
+                if((d.ignorados||[]).length){
+                    showToast('Quadro não reconhecido, nenhum card criado nele: ' + d.ignorados.join(', '), 'error');
                 }
+                showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
+                            : 'Contrato fechado, mas nenhum card foi criado. Confira os quadros marcados.',
+                          n ? 'success' : 'error');
             }catch(e){
                 showToast('Sem conexão com o servidor.','error');
             } finally { btn.disabled = false; }
@@ -2282,120 +2291,147 @@
 
             document.getElementById('dNumeros').innerHTML = '';
             document.getElementById('dTimeline').innerHTML = '<div class="loading">Carregando histórico...</div>';
-            document.getElementById('dConta').innerHTML = '<div class="loading">Carregando a conta...</div>';
-            renderEntrega(l);
+            document.getElementById('dConta').innerHTML = '';
             document.getElementById('modalDetalhe').classList.add('show');
 
-            let movs = [];
-            try{
-                const r = await fetch('/api/leads/'+id+'/movimentos');
-                if(r.ok){ const dd = await r.json(); movs = dd.movimentos || []; }
-            }catch(e){}
+            // As duas leituras andam em paralelo: a conta não pode
+            // atrasar a linha do tempo, nem o contrário.
+            const [movs, conta] = await Promise.all([
+                fetch('/api/leads/'+id+'/movimentos').then(r => r.ok ? r.json() : {}).then(dd => dd.movimentos || []).catch(() => []),
+                fetch('/api/leads/'+id+'/conta').then(r => r.ok ? r.json() : null).catch(() => null)
+            ]);
+            if(String(detalheId) !== String(id)) return;   // abriu outro card no meio
             renderNumeros(l, movs);
             renderTimeline(l, movs);
-            carregarConta(id);
+            renderConta(l, conta);
         }
 
-        /* ==========================================================
-           A ENTREGA QUE GEROU O LEAD
-           Um lead de relacionamento nasce de um projeto entregue. Sem
-           isto, quem recebe abre o card e só vê nome de empresa e
-           telefone -- e liga sem saber o que aconteceu com o cliente.
-           ========================================================== */
-        const SATISFACAO = {
-            tranquilo: ['Tranquilo', 'ok'],
-            ruido:     ['Teve ruído', 'atencao'],
-            complicado:['Complicado', 'ruim']
-        };
+        /* ==================== CONTA DO CLIENTE ====================
+           O que o funil sozinho não conta: se a conta passou pela
+           operação, o que já foi vendido e entregue, o contrato. No
+           relacionamento, começa pela entrega que gerou o lead. */
+        function fmtData(s){ const d = s ? new Date(s) : null; return d && !isNaN(d) ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—'; }
+        function fmtBRL(v){ return v==null ? '' : 'R$ ' + Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0}); }
+        const SATISF = { tranquilo:['Tranquila','ok'], ruido:['Teve ruído','at'], complicado:['Complicada','at'] };
+        const NOME_QUADRO = { recrutamento:'Recrutamento e seleção', rhestrategico:'RH Estratégico', educacao:'Educação',
+            cxdata:'CX Data', projetos:'Projetos', comercial:'Comercial', marketing:'Marketing', financeiro:'Adm/Fin',
+            tecnologia:'Tecnologia', rhinterno:'RH Interno' };
 
-        function renderEntrega(l){
-            const alvo = document.getElementById('dEntrega');
-            const e = l.entrega || {};
-            if(!e.projeto_nome && !e.relato){ alvo.innerHTML = ''; return; }
-            const sat = SATISFACAO[e.satisfacao] || null;
-            const meta = [
-                e.executor ? 'por ' + escH(e.executor) : '',
-                e.quadro ? escH(e.quadro) : '',
-                e.concluido_em ? 'concluído em ' + fmtData(e.concluido_em) : '',
-                (e.horas || e.horas === 0) ? e.horas + 'h lançadas' : ''
-            ].filter(Boolean).join(' · ');
-            alvo.innerHTML = `
-                <div class="ent-bloco">
-                    <div class="ent-topo">
-                        <span class="det-rot" style="margin:0">A entrega que gerou este lead</span>
-                        ${sat ? `<span class="ent-sat ${sat[1]}">${sat[0]}</span>` : ''}
-                    </div>
-                    ${e.relato ? `<div class="ent-relato">${escH(e.relato)}</div>` : ''}
-                    ${e.projeto_nome ? `<div class="ent-proj">${escH(e.projeto_nome)}</div>` : ''}
-                    ${meta ? `<div class="ent-meta">${meta}</div>` : ''}
-                    ${e.atencao ? `<div class="ent-atencao">
-                        <span class="material-symbols-rounded">priority_high</span>
-                        <span>${escH(e.atencao)}</span></div>` : ''}
-                </div>`;
-        }
-
-        function fmtData(s){
-            const d = new Date(s);
-            return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-        }
-
-        /* ==========================================================
-           HISTÓRICO DA CONTA
-           Contratos, entregas e o que está rodando agora, agrupado por
-           quadro. Vem da trilha que já existe: nenhuma linha é
-           duplicada para este painel funcionar.
-           ========================================================== */
-        async function carregarConta(leadId){
+        function renderConta(l, d){
             const alvo = document.getElementById('dConta');
-            try{
-                const r = await fetch('/api/clientes/'+leadId+'/historico?por=lead');
-                if(!r.ok) throw new Error('falhou');
-                const d = await r.json();
-                if(!d.cliente && !d.quadros.length && !d.contratos.length){
-                    alvo.innerHTML = `<div class="col-vazia">Este lead ainda não virou cliente.<br>
-                        Ao fechar o contrato, os cards de trabalho aparecem aqui.</div>`;
-                    return;
-                }
-                const linhaValor = d.ver_valor && d.valor_total
-                    ? ' · R$ ' + Number(d.valor_total).toLocaleString('pt-BR',{maximumFractionDigits:0})
-                    : '';
-                const quadros = (d.quadros || []).map(q => `
-                    <div class="cq">
-                        <div class="cq-topo">
-                            <b>${escH(q.quadro)}</b>
-                            <span class="cq-tot">${q.total} ${q.total===1?'card':'cards'}</span>
-                        </div>
-                        <div class="cq-chips">
-                            ${q.finalizados ? `<span class="cq-chip ok">${q.finalizados} finalizado${q.finalizados!==1?'s':''}</span>` : ''}
-                            ${q.abertos ? `<span class="cq-chip and">${q.abertos} em andamento</span>` : ''}
-                            ${(q.responsaveis||[]).slice(0,2).map(n=>`<span class="cq-chip pes">${escH(n)}</span>`).join('')}
-                        </div>
-                    </div>`).join('');
-                const contratos = (d.contratos || []).slice(0,5).map(c => `
-                    <div class="cl">
-                        <span class="cl-d">${c.fechado_em ? fmtData(c.fechado_em) : '—'}</span>
-                        <span class="cl-n">${escH(c.produto) || 'contrato'}</span>
-                        <span class="cl-v">${d.ver_valor && c.valor ? 'R$ ' + Number(c.valor).toLocaleString('pt-BR',{maximumFractionDigits:0}) : ''}</span>
-                        <span class="cl-p">${escH(c.closer)||''}</span>
-                    </div>`).join('');
-                const entregas = (d.entregas || []).slice(0,5).map(e => `
-                    <div class="cl">
-                        <span class="cl-d">${e.concluido_em ? fmtData(e.concluido_em) : '—'}</span>
-                        <span class="cl-n">${escH(e.nome)}</span>
-                        <span class="cl-v">${escH(e.quadro)||''}</span>
-                        <span class="cl-p">${escH(e.responsavel)||''}</span>
-                    </div>`).join('');
-                alvo.innerHTML = `
-                    <div class="cn-resumo">${d.total_contratos} contrato${d.total_contratos!==1?'s':''}${linhaValor}
-                        · ${d.total_entregas} entrega${d.total_entregas!==1?'s':''} concluída${d.total_entregas!==1?'s':''}
-                        ${d.andamento.length ? ' · ' + d.andamento.length + ' em andamento' : ''}</div>
-                    ${quadros || ''}
-                    ${contratos ? `<div class="cn-rot">Contratos</div>${contratos}` : ''}
-                    ${entregas ? `<div class="cn-rot">Entregas</div>${entregas}` : ''}`;
-            }catch(e){
-                alvo.innerHTML = `<div class="col-vazia">Não foi possível carregar o histórico da conta.
-                    <button class="btn btn-fant" style="margin-top:10px" onclick="carregarConta('${escA(leadId)}')">Tentar de novo</button></div>`;
+            if(!d || d.status !== 'sucesso'){ alvo.innerHTML = ''; return; }
+            const c = d.conta || {};
+            const blocos = [];
+
+            // 1. Relacionamento: a entrega que originou este lead
+            const e = d.entrega || {};
+            if(e.relato || e.projeto_nome){
+                const sat = SATISF[e.satisfacao];
+                blocos.push(`<div class="cta-bloco destaque">
+                    <div class="cta-t">A entrega que gerou este lead
+                        ${sat ? `<span class="cta-pil ${sat[1]}">${sat[0]}</span>` : ''}</div>
+                    ${e.relato ? `<div class="cta-fala">${escH(e.relato)}</div>` : ''}
+                    <div class="cta-meta">${escH(e.projeto_nome||'')}${e.quadro ? ' · ' + escH(NOME_QUADRO[e.quadro]||e.quadro) : ''}
+                        ${e.executor ? ' · por ' + escH(e.executor) : ''}${e.concluido_em ? ' · concluído em ' + fmtData(e.concluido_em) : ''}
+                        ${e.horas ? ' · ' + e.horas + 'h' : ''}</div>
+                    ${e.atencao ? `<div class="cta-at"><b>Não esquecer:</b> ${escH(e.atencao)}</div>` : ''}
+                    ${e.projeto_id ? `<div class="cta-meta"><a href="/board/${escA(e.quadro||'projetos')}?projeto=${escA(e.projeto_id)}">Abrir o card do projeto entregue</a></div>` : ''}
+                </div>`);
             }
+
+            // 2. O que foi prometido na venda (lead ganho)
+            const p = d.prometido;
+            if(p && p.resumo){
+                blocos.push(`<div class="cta-bloco">
+                    <div class="cta-t">O que foi prometido na venda</div>
+                    <div class="cta-fala">${escH(p.resumo)}</div>
+                    <div class="cta-meta">${p.contato ? 'Contato da execução: ' + escH(p.contato) + (p.cargo ? ' · ' + escH(p.cargo) : '') : ''}
+                        ${p.prazo_prometido ? ' · prazo ' + fmtData(p.prazo_prometido) : ''}${p.closer ? ' · ' + escH(p.closer) : ''}</div>
+                    ${p.atencao ? `<div class="cta-at">${escH(p.atencao)}</div>` : ''}
+                </div>`);
+            }
+
+            // 3. Contrato: acompanha o bastão
+            if(d.contrato){
+                blocos.push(`<div class="cta-bloco"><div class="cta-t">Contrato do cliente</div>
+                    <div class="cta-ctr"><span class="material-symbols-rounded">description</span>
+                        <span class="cta-ctr-n">${escH(d.contrato.nome||'contrato')}
+                            <small>${d.contrato.enviado_em ? 'anexado em ' + fmtData(d.contrato.enviado_em) : ''}${d.contrato.compartilhado ? ' · o mesmo arquivo do lead que gerou este' : ''}</small></span>
+                        <button class="cta-btn" onclick="abrirContratoConta('${escA(d.contrato.url)}')">Abrir</button></div></div>`);
+            }
+
+            // 4. Por quais quadros a conta passou
+            const qs = c.quadros || [];
+            blocos.push(`<div class="cta-bloco"><div class="cta-t">Passou pelos quadros</div>
+                ${qs.length ? qs.map(q => `<div class="cta-q">
+                    <div class="cta-q-n">${escH(NOME_QUADRO[q.quadro]||q.area)}<small>${q.total} card${q.total!==1?'s':''}${q.responsaveis.length ? ' · ' + q.responsaveis.map(escH).join(', ') : ''}</small></div>
+                    ${q.finalizados ? `<span class="cta-pil ok">${q.finalizados} finalizado${q.finalizados!==1?'s':''}</span>` : ''}
+                    ${q.em_andamento ? `<span class="cta-pil at">${q.em_andamento} em andamento</span>` : ''}
+                    ${q.sem_dono ? `<span class="cta-pil at">${q.sem_dono} sem dono</span>` : ''}
+                    <a class="cta-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="/board/${escA(q.quadro||'projetos')}">Ver</a>
+                </div>`).join('')
+                : '<div class="cta-vazio">Nenhum card aberto para esta conta ainda. Ao fechar o contrato, os quadros marcados aparecem aqui.</div>'}
+            </div>`);
+
+            // 5. Histórico da conta
+            const ct = c.contratos || [], en = c.entregas || [], and = c.em_andamento || [];
+            if(ct.length || en.length){
+                blocos.push(`<div class="cta-bloco"><div class="cta-t">Histórico da conta
+                    <span class="cta-pil">${c.total_contratos} contrato${c.total_contratos!==1?'s':''}${c.valor_total ? ' · ' + fmtBRL(c.valor_total) : ''}</span>
+                    ${c.cliente_desde ? `<span class="cta-pil">cliente desde ${fmtData(c.cliente_desde)}</span>` : ''}</div>
+                    ${ct.length ? `<div class="det-rot" style="margin:6px 0 2px">Contratos</div>` + ct.slice(0,5).map(x => `<div class="cta-lin">
+                        <span class="d">${fmtData(x.data)}</span>
+                        <span class="n">${escH(x.produto||'—')}<small>${x.closer ? escH(x.closer) : ''}${x.contrato ? ' · contrato anexado' : ''}</small></span>
+                        <span class="v">${x.valor!=null ? fmtBRL(x.valor) : ''}</span></div>`).join('') : ''}
+                    ${en.length ? `<div class="det-rot" style="margin:12px 0 2px">Entregas</div>` + en.slice(0,5).map(x => { const st = SATISF[x.satisfacao]; return `<div class="cta-lin">
+                        <span class="d">${fmtData(x.concluido_em)}</span>
+                        <span class="n">${escH(x.nome)}<small>${escH(NOME_QUADRO[x.quadro]||x.area||'')}${x.responsavel ? ' · ' + escH(x.responsavel) : ''}</small></span>
+                        <span class="v">${st ? `<span class="cta-pil ${st[1]}">${st[0]}</span>` : ''}</span></div>`; }).join('') : ''}
+                    ${and.length ? `<div class="cta-at" style="background:var(--ok-fraco);color:var(--ok)"><b>Em andamento agora:</b> ${and.length} card${and.length!==1?'s':''} · ${[...new Set(and.map(x => NOME_QUADRO[x.quadro]||x.area))].map(escH).join(', ')}</div>` : ''}
+                </div>`);
+            }
+            alvo.innerHTML = blocos.join('');
+        }
+
+        /* Trava de CNPJ, lado da tela. O servidor refaz a checagem no
+           fechamento; aqui é para a pessoa saber ANTES de digitar tudo. */
+        let cnpjTimer = null;
+        function checarCnpjLead(valor){
+            const aviso = document.getElementById('fCnpjAviso');
+            const dig = soDigitos(valor);
+            clearTimeout(cnpjTimer);
+            if(dig.length !== 14){ aviso.style.display = 'none'; return; }
+            cnpjTimer = setTimeout(async () => {
+                try{
+                    const r = await fetch('/api/clientes/por-cnpj?cnpj=' + encodeURIComponent(dig));
+                    const d = await r.json();
+                    if(soDigitos(document.getElementById('fCnpj').value) !== dig) return;
+                    if(d.existe){
+                        const c = d.cliente;
+                        aviso.className = 'cnpj-aviso';
+                        aviso.innerHTML = `<span class="material-symbols-rounded">verified</span><div>
+                            <b>${escH(c.nome)}</b> já é cliente${c.desde ? ' desde ' + fmtData(c.desde) : ''}:
+                            ${d.total_contratos} contrato${d.total_contratos!==1?'s':''}${d.valor_total ? ' · ' + fmtBRL(d.valor_total) : ''}
+                            ${d.em_andamento ? ' · ' + d.em_andamento + ' card' + (d.em_andamento!==1?'s':'') + ' em andamento' : ''}.
+                            Este lead entra como <b>nova oportunidade</b> dessa conta; nenhum cliente novo será criado.</div>`;
+                        aviso.style.display = 'flex';
+                    }else if((d.mesmo_grupo||[]).length){
+                        aviso.className = 'cnpj-aviso grupo';
+                        aviso.innerHTML = `<span class="material-symbols-rounded">account_tree</span><div>
+                            Mesma raiz de CNPJ que <b>${escH(d.mesmo_grupo[0].nome)}</b>: parece outra unidade do mesmo grupo.
+                            Vai nascer como cliente próprio no fechamento; o histórico da conta agrupa pela raiz.</div>`;
+                        aviso.style.display = 'flex';
+                    }else aviso.style.display = 'none';
+                }catch(e){ aviso.style.display = 'none'; }
+            }, 350);
+        }
+
+        async function abrirContratoConta(url){
+            try{
+                const r = await fetch(url); const d = await r.json();
+                if(!r.ok || !d.url){ showToast(d.mensagem || 'Não foi possível abrir o contrato.','error'); return; }
+                window.open(d.url, '_blank', 'noopener');
+            }catch(e){ showToast('Sem conexão com o servidor.','error'); }
         }
 
         function renderNumeros(l, movs){
@@ -2481,6 +2517,7 @@
             document.getElementById('leadTitulo').innerText = l ? 'Editar lead' : 'Novo lead';
             document.getElementById('leadSub').innerText = l ? 'As alterações valem na hora.'
                 : 'Nasce em ' + FUNIS[funilAtual].colunas[0].id + ' e já pode receber contato.';
+            document.getElementById('fCnpjAviso').style.display = 'none';
             document.getElementById('fEmpresa').value = l ? (l.empresa||'') : '';
             document.getElementById('fContato').value = l ? (l.contato||'') : '';
             document.getElementById('fCidade').value = l ? (l.cidade||'') : '';
