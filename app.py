@@ -931,11 +931,22 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
-        res_atual = (supabase.table("projetos")
-                     .select("status", "data_inicio", "data_conclusao", "area",
-                             "nome_projeto", "empresa", "cliente_id", "origem_lead_id",
-                             "responsavel", "subquadro", "passagem", "lote_id", "valor")
-                     .eq("id", projeto_id).execute())
+        # `passagem` depende da migração de 18/09. Sem ela, este select
+        # derrubaria TODA edição de card (mover, renomear, anotar) com 500.
+        # Recua para as colunas antigas em vez de parar o quadro.
+        try:
+            res_atual = (supabase.table("projetos")
+                         .select("status", "data_inicio", "data_conclusao", "area",
+                                 "nome_projeto", "empresa", "cliente_id", "origem_lead_id",
+                                 "responsavel", "subquadro", "passagem", "lote_id", "valor")
+                         .eq("id", projeto_id).execute())
+        except Exception as e_sel:
+            print("Aviso: coluna nova ausente em projetos (rode a migracao de 18/09):", e_sel)
+            res_atual = (supabase.table("projetos")
+                         .select("status", "data_inicio", "data_conclusao", "area",
+                                 "nome_projeto", "empresa", "cliente_id", "origem_lead_id",
+                                 "responsavel", "subquadro", "lote_id", "valor")
+                         .eq("id", projeto_id).execute())
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
         # Preenchido na finalização e disparado só depois do update.
         fluxo_pendente = None
@@ -972,7 +983,15 @@ def atualizar_projeto(projeto_id):
             finalizando = (novo_status == 'Finalizado' and novo_status != status_anterior)
             finalizacao_repetida = finalizando and ja_finalizou_antes(projeto_id)
             relato, satisfacao = None, None
-            if finalizando and not finalizacao_repetida and (enc.get("relacionamento") or enc.get("cobranca")):
+            gera_destino = bool(enc.get("relacionamento") or enc.get("cobranca"))
+            # COMPATIBILIDADE COM A TELA ANTIGA
+            # A tela de quadros anterior não tem o campo de relato. Exigir
+            # o relato dela fazia o servidor recusar (400) e a tela, que
+            # não confere a resposta, mostrava "Finalizado" -- o card
+            # voltava sozinho e nem lead nem cobrança nasciam. Só exige de
+            # quem manda o campo: a tela nova sempre manda, mesmo vazio.
+            tela_nova = "relato" in enc
+            if finalizando and not finalizacao_repetida and gera_destino and tela_nova:
                 relato = (enc.get("relato") or "").strip()
                 if len(relato) < 10:
                     return jsonify({"status": "erro",
@@ -1087,7 +1106,7 @@ def atualizar_projeto(projeto_id):
                     _registrar_execucao(None, 'projeto.finalizado', {"projeto_id": projeto_id},
                                         {"pulado": "finalizacao repetida: fluxo ja rodou "
                                                    "na primeira vez"}, None)
-                elif relato:
+                elif gera_destino:
                     fluxo_pendente = montar_dados_finalizacao(projeto_id, p, enc, relato, satisfacao)
                     # A foto da entrega fica também no próprio card: o
                     # histórico do projeto conta como terminou, mesmo que
@@ -1120,7 +1139,17 @@ def atualizar_projeto(projeto_id):
         # --- GRAVAÇÃO DAS ANOTAÇÕES ---
         if "anotacoes" in dados: atualizacao["anotacoes"] = dados.get("anotacoes")
         
-        supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
+        try:
+            supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
+        except Exception as e_up:
+            # Mesma razão do select: sem a migração, gravar `passagem`
+            # recusaria a finalização inteira. O status vale mais que a foto.
+            if "passagem" in atualizacao and "passagem" in str(e_up):
+                print("Aviso: finalizando sem gravar a entrega no card (coluna ausente):", e_up)
+                atualizacao.pop("passagem")
+                supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
+            else:
+                raise
 
         # O status já está gravado. Agora, e só agora, as consequências.
         fluxo = []
@@ -3895,7 +3924,17 @@ def _acao_criar_lead(acao, dados):
         # Sem papel configurado, quem vendeu mantém a conta.
         novo["responsavel"] = pai.get("responsavel")
 
-    r = supabase.table("leads").insert(novo).execute()
+    try:
+        r = supabase.table("leads").insert(novo).execute()
+    except Exception as e:
+        # Sem a migração, `entrega` não existe e o lead de relacionamento
+        # não nasceria. Perder o lead é pior que perder a foto.
+        if "entrega" not in str(e):
+            raise
+        print("Aviso: lead de relacionamento sem a coluna entrega (rode a migracao):", e)
+        novo.pop("entrega", None)
+        r = supabase.table("leads").insert(novo).execute()
+        novo["entrega"] = dados.get("entrega") or {}
     lead_id = (r.data or [{}])[0].get("id")
 
     # O relato da entrega entra na linha do tempo do lead novo. Quem abrir
