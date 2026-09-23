@@ -689,6 +689,7 @@
         .cxd-sec{ display:flex; flex-direction:column; gap:12px; }
         .cxd-lsec{ padding:18px 20px; border-bottom:1px solid var(--linha-1); display:flex; flex-direction:column; gap:10px; }
         .cxd-lsec:last-child{ border-bottom:none; }
+        .cxd-lsec-in{ display:flex; flex-direction:column; gap:10px; }
         .cxd-sec-t{ display:flex; align-items:center; gap:8px; min-height:26px; }
         .cxd-sec-t h3{ margin:0; font-size:13px; font-weight:700; letter-spacing:-.1px; color:var(--tinta); }
         .cxd-sec-t .material-symbols-rounded{ font-size:18px; color:var(--tinta-3); }
@@ -796,7 +797,19 @@
             .cxd-o1{ order:1; } .cxd-o2{ order:2; } .cxd-o3{ order:3; } .cxd-o4{ order:4; } .cxd-o5{ order:5; padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
             .cxd-titulo{ font-size:18px; }
             .cxd-ic{ width:44px; height:44px; }
+            .cxd-sanf{ display:flex !important; }
+            .cxd-o3:not(.aberta) > :not(.cxd-sanf), .cxd-o4:not(.aberta) > :not(.cxd-sanf), .cxd-o5:not(.aberta) > :not(.cxd-sanf){ display:none !important; }
+            .cxd-o3.aberta > .cxd-sec-t, .cxd-o4.aberta > .cxd-sec-t, .cxd-o5.aberta > .cxd-sec-t{ display:none; }
+            .cxd-o3, .cxd-o4, .cxd-o5{ padding-top:4px !important; padding-bottom:4px !important; }
+            .cxd-o3.aberta, .cxd-o4.aberta, .cxd-o5.aberta{ padding-bottom:16px !important; }
         }
+        .cxd-sanf{ display:none; width:100%; min-height:52px; align-items:center; gap:10px; border:none; background:none; padding:0;
+            font:inherit; cursor:pointer; text-align:left; position:relative; }
+        .cxd-sanf .t{ font-size:14px; font-weight:700; color:var(--tinta); }
+        .cxd-sanf .s{ margin-left:auto; margin-right:22px; font-size:12px; color:var(--tinta-3); }
+        .cxd-sanf .seta{ position:absolute; right:4px; top:50%; width:7px; height:7px; margin-top:-6px; border-right:1.8px solid var(--tinta-3);
+            border-bottom:1.8px solid var(--tinta-3); transform:rotate(45deg); transition:transform .15s; }
+        .aberta > .cxd-sanf .seta{ transform:rotate(-135deg); margin-top:-2px; }
 
         /* origem comercial */
         .org{ border-bottom:1px solid var(--linha-1); background:#FCFCFD; flex-shrink:0; }
@@ -1550,7 +1563,9 @@
 
                 <aside class="cxd-lat">
                     <section class="cxd-lsec cxd-o2" id="detCliente"></section>
-                    <section class="cxd-lsec cxd-o4" id="detDetalhes"></section>
+                    <!-- O conteúdo é redesenhado quando os dados chegam; o botão
+                         do acordeão (celular) fica fora dele para não sumir. -->
+                    <section class="cxd-lsec cxd-o4"><div class="cxd-lsec-in" id="detDetalhes"></div></section>
                     <section class="cxd-lsec cxd-o5">
                         <div class="cxd-sec-t"><h3>Tempo dedicado</h3></div>
                         <div class="cxd-tempo"><span class="cxd-tempo-n" id="detTempoTotal">00:00:00</span><span class="cxd-tempo-s" id="detTempoQtd"></span></div>
@@ -3515,7 +3530,16 @@
                 const res = await fetch(`/api/projetos/${projetoId}/comentarios`);
                 const data = await res.json();
                 if (projIdEmFoco !== projetoId) return;
-                detComentarios = data.comentarios || [];
+                pintarComentarios(data.comentarios || []);
+            } catch (e) {
+                container.innerHTML = '<p class="cxd-vazio" style="color:var(--critico)">Erro ao carregar comentários.</p>';
+            }
+        }
+
+        function pintarComentarios(lista) {
+            const container = document.getElementById('listaComentarios');
+            {
+                detComentarios = lista;
                 document.getElementById('nCom').innerText = detComentarios.length;
                 if (detComentarios.length > 0) {
                     // Mais recente primeiro: quem abre o card quer saber o
@@ -3534,8 +3558,7 @@
                     container.innerHTML = '<p class="cxd-vazio">Sem comentários ainda. Registre aqui o andamento: o que foi feito, o que trava, o que o cliente pediu.</p>';
                 }
                 pintarTudo();
-            } catch (e) {
-                container.innerHTML = '<p class="cxd-vazio" style="color:var(--critico)">Erro ao carregar comentários.</p>';
+                atualizarResumosDet();
             }
         }
 
@@ -3721,10 +3744,25 @@
             trocarAbaAtividade('com');
             document.getElementById('modalDetalhes').style.display = 'flex';
 
-            // As três leituras em paralelo: nenhuma segura as outras.
-            carregarComentarios(id);
-            carregarHistoricoDet(id);
-            carregarOrigemDet(id);
+            prepararSanfonas();
+            carregarCardDet(id);
+        }
+
+        /* Uma chamada só para o card inteiro. Eram três, e na Vercel cada
+           uma podia esperar uma instância fria: o card abria e ficava
+           segundos incompleto. Se a rota nova faltar (servidor antigo),
+           volta às três leituras separadas. */
+        async function carregarCardDet(id) {
+            let d = null;
+            try { const r = await fetch(`/api/projetos/${id}/card`); if (r.ok) d = await r.json(); } catch (e) {}
+            if (projIdEmFoco !== id) return;
+            if (!d || d.status !== 'sucesso') {
+                carregarComentarios(id); carregarHistoricoDet(id); carregarOrigemDet(id);
+                return;
+            }
+            aplicarOrigemDet(id, d.origem);
+            aplicarHistoricoDet(d.historico || []);
+            pintarComentarios(d.comentarios || []);
         }
 
         let detOrigem = null, detHistorico = [], detTempoSeg = 0;
@@ -3908,6 +3946,9 @@
             let d = null;
             try { const r = await fetch(`/api/projetos/${id}/origem`); if (r.ok) d = await r.json(); } catch (e) {}
             if (projIdEmFoco !== id) return;
+            aplicarOrigemDet(id, d);
+        }
+        function aplicarOrigemDet(id, d) {
             const p = projetosGlobais.find(x => x.id === id); if (!p) return;
             detOrigem = (d && d.status === 'sucesso') ? d : { passagem: p.passagem || {}, trajetoria: [] };
             pintarEscopoDet(p, detOrigem);
@@ -3920,6 +3961,9 @@
             let hist = [];
             try { const r = await fetch(`/api/projetos/${id}/historico`); const d = await r.json(); hist = d.historico || []; } catch (e) {}
             if (projIdEmFoco !== id) return;
+            aplicarHistoricoDet(hist);
+        }
+        function aplicarHistoricoDet(hist) {
             detHistorico = hist;
             const total = hist.reduce((s, h) => s + (h.tempo_segundos || 0), 0);
             detTempoSeg = total;
@@ -3928,6 +3972,7 @@
             document.getElementById('detTempoQtd').innerText = hist.length ? `em ${hist.length} lançamento${hist.length === 1 ? '' : 's'}` : 'nenhum lançamento';
             pintarLogsDet(false);
             pintarTudo();
+            atualizarResumosDet();
         }
         function pintarLogsDet(todos) {
             const hist = [...detHistorico].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
@@ -3957,6 +4002,40 @@
             if (p) ev.push({ q: p.criado_em, h: `<div class="cxd-ev"><i></i><span>Card criado${p.origem_lead_id ? ' a partir do contrato fechado no comercial' : ''} · ${fmtD(p.criado_em)}</span></div>` });
             ev.sort((a, b) => new Date(b.q) - new Date(a.q));
             document.getElementById('listaTudo').innerHTML = ev.map(e => e.h).join('') || '<p class="cxd-vazio">Nada registrado ainda.</p>';
+        }
+
+        /* ---------- celular: seções secundárias em acordeão ----------
+           No celular a pessoa abre o card para agir: o escopo e o cliente
+           ficam abertos; atividade, detalhes e tempo recolhem, com um
+           resumo no título para saber se vale abrir. */
+        const SANFONAS = [['cxd-o3', 'Atividade'], ['cxd-o4', 'Detalhes'], ['cxd-o5', 'Tempo dedicado']];
+        function ehCelular() { return window.matchMedia('(max-width: 900px)').matches; }
+        function prepararSanfonas() {
+            SANFONAS.forEach(([cls, tit]) => {
+                const sec = document.querySelector('#modalDetalhes .' + cls);
+                if (!sec) return;
+                let btn = sec.querySelector(':scope > .cxd-sanf');
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.type = 'button'; btn.className = 'cxd-sanf';
+                    btn.innerHTML = `<span class="t">${tit}</span><span class="s"></span><i class="seta" aria-hidden="true"></i>`;
+                    btn.onclick = () => { const on = !sec.classList.contains('aberta'); sec.classList.toggle('aberta', on); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); };
+                    sec.insertBefore(btn, sec.firstChild);
+                }
+                sec.classList.remove('aberta');
+                btn.setAttribute('aria-expanded', 'false');
+            });
+            atualizarResumosDet();
+        }
+        function atualizarResumosDet() {
+            const res = {
+                'cxd-o3': detComentarios.length ? `${detComentarios.length} comentário${detComentarios.length === 1 ? '' : 's'}` : 'nenhum comentário',
+                'cxd-o4': (() => { const p = projetosGlobais.find(x => x.id === projIdEmFoco); return p && p.lote_total > 1 ? `parte ${p.lote_pos} de ${p.lote_total}` : ''; })(),
+                'cxd-o5': detHistorico.length ? `${tempoCurto(detTempoSeg)} · ${detHistorico.length} lançamento${detHistorico.length === 1 ? '' : 's'}` : 'sem lançamentos'
+            };
+            Object.entries(res).forEach(([cls, txt]) => {
+                const el = document.querySelector(`#modalDetalhes .${cls} > .cxd-sanf .s`); if (el) el.innerText = txt;
+            });
         }
 
         function fmtD(s) { const d = s ? new Date(s) : null; return d && !isNaN(d) ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
