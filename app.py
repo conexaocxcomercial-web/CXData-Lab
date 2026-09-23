@@ -979,8 +979,17 @@ def atualizar_projeto(projeto_id):
             # relato precisa vir antes da trilha: um pedido recusado por
             # falta de relato que já tivesse gravado "Finalizado" na
             # trilha faria o pedido seguinte se achar repetição.
-            enc = dados.get("encerramento") or {}
+            enc = dict(dados.get("encerramento") or {})
             finalizando = (novo_status == 'Finalizado' and novo_status != status_anterior)
+            # RELACIONAMENTO SEMPRE
+            # Nos quadros de produto, todo card finalizado leva o cliente
+            # ao Relacionamento: é regra do processo, não escolha de quem
+            # finaliza. Imposto aqui, e não só na tela, para valer também
+            # para a tela antiga e para a lista.
+            if finalizando and res_atual.data:
+                area_card = res_atual.data[0].get("area")
+                if area_card in {QUADRO_AREA[q] for q in QUADROS_PRODUTO if q in QUADRO_AREA}:
+                    enc["relacionamento"] = True
             finalizacao_repetida = finalizando and ja_finalizou_antes(projeto_id)
             relato, satisfacao = None, None
             gera_destino = bool(enc.get("relacionamento") or enc.get("cobranca"))
@@ -3294,6 +3303,31 @@ def mover_lead(lead_id):
         except Exception as e:
             print("Aviso: movimento nao registrado em lead_movimentos:", e)
 
+        # PASSAGEM PARA O CLOSER
+        # Chegando ao Fechamento, o lead já está no nome do closer (a
+        # janela de passagem grava antes de mover). Aqui fica o registro
+        # de quem passou para quem, e o closer é avisado.
+        if destino == 'fechamento' and lead.get("funil") != 'fechamento':
+            closer = (lead.get("responsavel") or "").strip()
+            autor = session.get('usuario_nome', '')
+            try:
+                supabase.table("lead_interacoes").insert({
+                    "lead_id": lead_id, "tipo": "passagem", "autor": autor,
+                    "resumo": f"Passado para o Fechamento por {autor}"
+                              + (f", para {closer}" if closer and closer != autor else ""),
+                }).execute()
+                if closer and closer != autor:
+                    ru = (supabase.table("usuarios").select("id").eq("nome", closer)
+                          .limit(1).execute())
+                    if ru.data:
+                        supabase.table("notificacoes").insert({
+                            "usuario_id": ru.data[0]["id"], "tipo": "lead_recebido",
+                            "ator": autor,
+                            "resumo": f"{lead.get('empresa') or 'Lead'} chegou no seu Agendamento",
+                        }).execute()
+            except Exception as e:
+                print("Aviso: passagem para o closer nao registrada:", e)
+
         lead.update(upd)
         return jsonify({"status": "sucesso", "lead": lead,
                         "etapas_preenchidas": preenchidas}), 200
@@ -3685,6 +3719,19 @@ def so_digitos(valor):
     return ''.join(ch for ch in str(valor or '') if ch.isdigit())
 
 
+# CNPJ DA PRÓPRIA CONEXÃO
+# O diagnóstico de 18/09 mostrou o CNPJ da casa gravado em clientes que
+# não são a conexão (Fogaça, Prevenção): o portão de Negociação exige
+# CNPJ e, sem o do cliente em mãos, alguém digitou o da empresa. Com a
+# trava por CNPJ, esses fechamentos passariam a ser ligados ao cadastro
+# "Conexão" e misturariam as contas. Este CNPJ nunca identifica cliente.
+CNPJS_DA_CASA = {'33675980000181'}
+
+
+def cnpj_da_casa(cnpj):
+    return so_digitos(cnpj) in CNPJS_DA_CASA
+
+
 def cliente_por_cnpj(cnpj):
     """Cliente ativo com este CNPJ, ou None.
 
@@ -3693,7 +3740,7 @@ def cliente_por_cnpj(cnpj):
     resposta precisa ser rápida.
     """
     dig = so_digitos(cnpj)
-    if len(dig) != 14:
+    if len(dig) != 14 or dig in CNPJS_DA_CASA:
         return None
     try:
         # PostgREST não filtra por expressão (regexp_replace), então a
@@ -3924,6 +3971,28 @@ def _acao_criar_lead(acao, dados):
         # Sem papel configurado, quem vendeu mantém a conta.
         novo["responsavel"] = pai.get("responsavel")
 
+    # UM CARD POR CLIENTE NO RELACIONAMENTO
+    # Cada card finalizado criava um lead: um contrato de 5 vagas virava
+    # 5 leads da mesma empresa no Backlog. Se o cliente já tem um card
+    # aberto no Relacionamento, a entrega entra nele. O card fica na
+    # coluna em que está: uma entrega nova não desfaz um follow up em
+    # andamento, só aparece no histórico e na linha do tempo.
+    if novo["funil"] == "relacionamento":
+        existente = lead_relacionamento_aberto(novo.get("cliente_id"), novo.get("cnpj"))
+        if existente:
+            upd = {"entrega": novo.get("entrega") or {}}
+            if novo.get("contrato_arquivo"):
+                upd["contrato_arquivo"] = novo["contrato_arquivo"]
+            try:
+                supabase.table("leads").update(upd).eq("id", existente["id"]).execute()
+            except Exception as e:
+                if "entrega" not in str(e):
+                    raise
+                print("Aviso: coluna entrega ausente (rode a migracao):", e)
+            _registrar_entrega_no_lead(existente["id"], novo.get("entrega") or {})
+            return {"lead_id": existente["id"], "reaproveitado": True,
+                    "responsavel": existente.get("responsavel")}
+
     try:
         r = supabase.table("leads").insert(novo).execute()
     except Exception as e:
@@ -3939,7 +4008,11 @@ def _acao_criar_lead(acao, dados):
 
     # O relato da entrega entra na linha do tempo do lead novo. Quem abrir
     # o card vê a história começar pela entrega, não por um Backlog vazio.
-    ent = novo["entrega"] or {}
+    _registrar_entrega_no_lead(lead_id, novo.get("entrega") or {})
+    return {"lead_id": lead_id, "responsavel": novo.get("responsavel")}
+
+
+def _registrar_entrega_no_lead(lead_id, ent):
     if lead_id and ent:
         try:
             partes = [f"Entrega de \"{ent.get('projeto_nome')}\""]
@@ -3956,7 +4029,31 @@ def _acao_criar_lead(acao, dados):
             }).execute()
         except Exception as e:
             print("Aviso: interacao de entrega nao registrada:", e)
-    return {"lead_id": lead_id, "responsavel": novo.get("responsavel")}
+
+
+def lead_relacionamento_aberto(cliente_id, cnpj=None):
+    """O card do cliente no Relacionamento, se existir.
+
+    Lead no funil de relacionamento e fora da lixeira é card aberto: o
+    Ganho e a Nutrição tiram o lead do funil. Procura pelo cliente e, para
+    cadastros antigos sem vínculo, pelo CNPJ (dígitos).
+    """
+    try:
+        if cliente_id:
+            r = (supabase.table("leads").select("id, responsavel, coluna, cliente_id")
+                 .eq("funil", "relacionamento").eq("cliente_id", cliente_id)
+                 .is_("excluido_em", "null").order("criado_em").limit(1).execute())
+            if r.data:
+                return r.data[0]
+        dig = so_digitos(cnpj)
+        if len(dig) == 14 and not cnpj_da_casa(dig):
+            for l in _paginar("leads", "id, responsavel, coluna, cliente_id, cnpj",
+                              lambda q: q.eq("funil", "relacionamento").is_("excluido_em", "null")):
+                if so_digitos(l.get("cnpj")) == dig:
+                    return l
+    except Exception as e:
+        print("Aviso: lead_relacionamento_aberto:", e)
+    return None
 
 
 ROTULO_SATISFACAO = {"tranquilo": "entrega tranquila",
@@ -4031,6 +4128,9 @@ def _acao_criar_cobranca(acao, dados):
         "closer": origem.get("closer"),
         "fechado_em": origem.get("fechado_em"),
         "contrato": origem.get("contrato"),
+        # O decisor viaja com a cobrança: é com ele que o financeiro fala
+        # se a nota travar. Sem esta linha o card dizia "não informado".
+        "decisor": origem.get("decisor"),
         "faturamento": {
             "razao_social": cliente.get("nome_empresa") or dados.get("cliente_nome"),
             "cnpj": dados.get("cnpj") or cliente.get("cnpj"),
@@ -4044,9 +4144,15 @@ def _acao_criar_cobranca(acao, dados):
         # Só existe quando a cobrança vem de uma entrega finalizada.
         "entrega": dados.get("entrega") or None,
     }
-    nome = f"{dados.get('cliente_nome') or 'Cliente'} · {rotulo.lower()}"
-    if dados.get("projeto_nome"):
-        nome += f" · {dados['projeto_nome']}"
+    # Cliente primeiro (na lista do Adm/Fin o nome do projeto sozinho não
+    # diz de quem é a nota), sem repetir o cliente que o nome do projeto já
+    # costuma trazer, e com a sigla NF em maiúscula.
+    cliente_nome = dados.get("cliente_nome") or 'Cliente'
+    complemento = (dados.get("projeto_nome") or dados.get("produto") or "")
+    for sufixo in (f" · {cliente_nome}", f" - {cliente_nome}", cliente_nome):
+        complemento = complemento.replace(sufixo, "")
+    complemento = complemento.strip(" ·-")
+    nome = f"{cliente_nome} · {rotulo}" + (f" · {complemento}" if complemento else "")
     novo = {
         "nome_projeto": nome,
         "area": QUADRO_AREA['financeiro'],
@@ -4326,8 +4432,23 @@ def fechar_lead(lead_id):
         # frase, o contrato não passa: é atrito de propósito -- o custo de
         # escrever uma linha aqui é menor que o de quem executa ter que
         # perguntar no WhatsApp o que foi combinado.
+        if cnpj and cnpj_da_casa(cnpj):
+            return jsonify({"status": "erro",
+                            "mensagem": "Esse é o CNPJ da própria conexão. Informe o CNPJ "
+                                        "do contratante: é ele que vai na nota e no cadastro."}), 400
+
         briefing = d.get("passagem") or {}
         resumo = (briefing.get("resumo") or "").strip()
+
+        # CONTRATO OBRIGATÓRIO NO GANHO
+        # O contrato acompanha o cliente até o Relacionamento; sem ele o
+        # bastão passa pela metade. E tem que ser o contrato DESTA venda:
+        # um lead que volta do Relacionamento para uma nova venda carrega
+        # o contrato anterior como referência, e aquele não serve aqui.
+        ctr = lead.get("contrato_arquivo") or {}
+        if not str(ctr.get("caminho") or "").startswith(str(lead_id) + "/"):
+            return jsonify({"status": "erro",
+                            "mensagem": "Anexe o contrato assinado desta venda para fechar."}), 400
         if len(resumo) < 10:
             return jsonify({"status": "erro",
                             "mensagem": "Descreva em uma frase o que foi vendido: "
@@ -4419,6 +4540,13 @@ def fechar_lead(lead_id):
         passagem = {
             "resumo": resumo,
             "contato": (briefing.get("contato") or lead.get("contato") or "").strip() or None,
+            # Quem negociou e assinou. É com ele que a operação abre o
+            # trabalho e com quem o financeiro fala se a nota travar.
+            "decisor": {
+                "nome": (briefing.get("contato") or lead.get("contato") or "").strip() or None,
+                "cargo": (briefing.get("cargo") or "").strip() or None,
+                "telefone": (briefing.get("telefone") or lead.get("telefone") or "").strip() or None,
+            },
             "cargo": (briefing.get("cargo") or "").strip() or None,
             "telefone": (briefing.get("telefone") or lead.get("telefone") or "").strip() or None,
             "prazo_prometido": (briefing.get("prazo_prometido") or "").strip() or None,
@@ -7508,6 +7636,8 @@ continuidade.configurar(
     BUCKET_CONTRATOS=BUCKET_CONTRATOS,
     so_digitos=so_digitos,
     cliente_por_cnpj=cliente_por_cnpj,
+    lead_relacionamento_aberto=lead_relacionamento_aberto,
+    cnpj_da_casa=cnpj_da_casa,
     responsavel_do_quadro=responsavel_do_quadro,
     definir_dono=definir_dono,
     _paginar=_paginar,
