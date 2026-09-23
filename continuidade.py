@@ -184,6 +184,7 @@ def _resumo_conta(cliente_id, cnpj, pode_valor):
             "concluido_em": p.get("data_conclusao"), "prazo": p.get("prazo_data"),
             "lote": (f"{p['lote_pos']}/{p['lote_total']}" if p.get("lote_total") else None),
             "satisfacao": ent.get("satisfacao"), "horas": ent.get("horas"),
+            "csat": (ent.get("pesquisa") or {}).get("nota"),
         }
         q["cards"].append(item)
         if p.get("status") in encerrados:
@@ -384,8 +385,15 @@ def destinos_encerramento(projeto_id):
     lead = _um("leads", "responsavel, contato, email, telefone", "id", p["origem_lead_id"]) if p.get("origem_lead_id") else None
     cliente = _um("clientes", "nome_empresa, cnpj, email, telefone", "id", p["cliente_id"]) if p.get("cliente_id") else None
     passagem = p.get("passagem") or {}
+    # A janela de finalizar diz em qual card a entrega vai cair: no card
+    # que o cliente já tem no Relacionamento, ou num novo.
+    aberto = _c('lead_relacionamento_aberto')(p.get("cliente_id"), (cliente or {}).get("cnpj"))
+    eh_produto = _eh_produto(p.get("area"))
     return jsonify({
         "status": "sucesso",
+        "relacionamento_obrigatorio": eh_produto,
+        "relacionamento_existente": ({"id": aberto["id"], "responsavel": aberto.get("responsavel"),
+                                      "coluna": aberto.get("coluna")} if aberto else None),
         "cobranca": {"responsavel": (cob or {}).get("nome")},
         "relacionamento": {"responsavel": (rel or {}).get("nome") or (lead or {}).get("responsavel")},
         "faturamento_sugerido": {
@@ -468,8 +476,11 @@ def conta_do_lead(lead_id):
         cliente = _um("clientes", "id, nome_empresa, cnpj, cidade, estado, responsavel, criado_em",
                       "id", lead["cliente_id"])
 
+    interacoes = _lista("lead_interacoes", "id, tipo, autor, resumo, criado_em",
+                        lambda q: q.eq("lead_id", lead_id).order("criado_em", desc=True), 40)
     return jsonify({
         "status": "sucesso",
+        "interacoes": interacoes,
         "conta": conta,
         "entrega": entrega,
         "prometido": prometido,
@@ -497,6 +508,11 @@ def cliente_pelo_cnpj():
     dig = _c('so_digitos')(cnpj)
     if len(dig) != 14:
         return jsonify({"status": "sucesso", "existe": False, "motivo": "cnpj incompleto"}), 200
+    # CNPJ da casa não é de cliente: sem este corte, a tela diria que o
+    # lead "já é cliente" da própria conexão, ou do mesmo grupo dela.
+    if _c('cnpj_da_casa')(cnpj):
+        return jsonify({"status": "sucesso", "existe": False, "bloqueado": True,
+                        "motivo": "cnpj da propria conexao"}), 200
     c = _c('cliente_por_cnpj')(cnpj)
     if not c:
         # Mesma raiz (8 primeiros dígitos) = outra unidade do mesmo grupo.
@@ -523,3 +539,108 @@ def cliente_pelo_cnpj():
         "em_andamento": len(conta["em_andamento"]),
         "ultima_entrega": (conta["entregas"][0] if conta["entregas"] else None),
     }), 200
+
+
+# ============================================================================
+# POST /api/leads/<id>/pesquisa
+# ============================================================================
+
+ROTULO_CSAT = {1: "Muito insatisfeito", 2: "Insatisfeito", 3: "Neutro",
+               4: "Satisfeito", 5: "Muito satisfeito"}
+CANAIS_PESQUISA = ("Ligação", "WhatsApp", "E-mail", "Reunião", "Formulário")
+
+
+@continuidade_bp.route('/api/leads/<lead_id>/pesquisa', methods=['POST'])
+def registrar_pesquisa(lead_id):
+    """Resposta do cliente à pesquisa de satisfação (CSAT, 1 a 5).
+
+    Fica em três lugares, cada um por um motivo: na linha do tempo do
+    lead (histórico), na entrega atual do lead (o card mostra a última
+    nota) e na entrega do projeto de origem (o histórico da conta mostra
+    a nota de cada entrega, mesmo depois de outras chegarem).
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    lead = _um("leads", "*", "id", lead_id)
+    if not lead:
+        return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
+    if not _c('pode')('crm.lead.editar', lead):
+        return jsonify({"status": "erro", "mensagem": "Sem permissão para registrar a pesquisa."}), 403
+    d = request.get_json() or {}
+    nao_respondeu = bool(d.get("nao_respondeu"))
+    nota = None
+    if not nao_respondeu:
+        try:
+            nota = int(d.get("nota"))
+        except (TypeError, ValueError):
+            nota = None
+        if nota not in ROTULO_CSAT:
+            return jsonify({"status": "erro", "mensagem": "Escolha a nota do cliente, de 1 a 5."}), 400
+    canal = (d.get("canal") or "").strip() or None
+    comentario = (d.get("comentario") or "").strip()[:1000] or None
+    registro = {
+        "nota": nota, "rotulo": ROTULO_CSAT.get(nota) if nota else None,
+        "satisfeito": (nota >= 4) if nota else None,
+        "nao_respondeu": nao_respondeu, "canal": canal, "comentario": comentario,
+        "registrado_por": session.get('usuario_nome'),
+        "registrado_em": datetime.now(timezone.utc).isoformat(),
+    }
+    sb = _c('supabase')
+    resumo = ("Pesquisa: cliente não respondeu" if nao_respondeu
+              else f"Pesquisa CSAT {nota} · {ROTULO_CSAT[nota]}")
+    if canal:
+        resumo += f" · {canal}"
+    if comentario:
+        resumo += f" — {comentario}"
+    sb.table("lead_interacoes").insert({"lead_id": lead_id, "tipo": "pesquisa",
+                                        "autor": session.get('usuario_nome'),
+                                        "resumo": resumo[:1000]}).execute()
+    entrega = dict(lead.get("entrega") or {})
+    if entrega:
+        entrega["pesquisa"] = registro
+        try:
+            sb.table("leads").update({"entrega": entrega}).eq("id", lead_id).execute()
+        except Exception as e:
+            print("Aviso: pesquisa nao gravada na entrega do lead:", e)
+        pid = entrega.get("projeto_id")
+        if pid:
+            proj = _um("projetos", "id, passagem", "id", pid)
+            if proj:
+                pg = dict(proj.get("passagem") or {})
+                ent_p = dict(pg.get("entrega") or {})
+                ent_p["pesquisa"] = registro
+                pg["entrega"] = ent_p
+                try:
+                    sb.table("projetos").update({"passagem": pg}).eq("id", pid).execute()
+                except Exception as e:
+                    print("Aviso: pesquisa nao gravada no projeto:", e)
+    return jsonify({"status": "sucesso", "pesquisa": registro}), 200
+
+
+# ============================================================================
+# GET /api/pessoas
+# ============================================================================
+
+@continuidade_bp.route('/api/pessoas', methods=['GET'])
+def pessoas_ativas():
+    """Nomes das pessoas ativas, exatamente como estão no cadastro.
+
+    As listas de responsáveis ficavam escritas à mão no código. Quando o
+    cadastro e a lista divergiam ("Barbara Caze" x "Bárbara Cazé"), o card
+    ia para um nome que o sistema não reconhecia como a pessoa, e ela
+    deixava de ver o próprio trabalho. Daqui em diante a lista vem do
+    cadastro: o nome escolhido é, por construção, o nome da sessão dela.
+    """
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if session.get('tipo_usuario') == 'externo':
+        return jsonify({"erro": "Acesso negado"}), 403
+    pessoas = []
+    for u in _lista("usuarios", "id, nome, tipo_usuario, ativo",
+                    lambda q: q.order("nome"), 500):
+        if u.get("ativo") is False or (u.get("tipo_usuario") or "interno") != "interno":
+            continue
+        nome = (u.get("nome") or "").strip()
+        if nome:
+            pessoas.append({"id": u["id"], "nome": nome})
+    return jsonify({"status": "sucesso", "pessoas": pessoas}), 200
