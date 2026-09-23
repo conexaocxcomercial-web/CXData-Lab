@@ -924,165 +924,6 @@ def listar_motivos():
                     "cancelamento": list(MOTIVOS_CANCELAMENTO)}), 200
 
 
-def _horas_do_projeto(projeto_id):
-    """Horas lançadas no card, arredondadas. 0 quando não houve registro.
-
-    Vai na foto da entrega: "42h" diz muito mais para quem recebe o
-    cliente de volta do que só a data de conclusão.
-    """
-    try:
-        seg = 0
-        inicio, passo = 0, 1000
-        while True:
-            r = (supabase.table("time_logs").select("tempo_segundos")
-                 .eq("projeto_id", projeto_id).range(inicio, inicio + passo - 1).execute())
-            linhas = r.data or []
-            seg += sum(int(l.get("tempo_segundos") or 0) for l in linhas)
-            if len(linhas) < passo:
-                break
-            inicio += passo
-        return round(seg / 3600.0, 1)
-    except Exception as e:
-        print("Aviso: horas do projeto nao somadas:", e)
-        return None
-
-
-def _ja_foi_finalizado(projeto_id):
-    """True se este card já passou por Finalizado alguma vez.
-
-    A trilha é a fonte da resposta, e não `data_conclusao`: essa coluna
-    é limpa quando o card volta a uma fase ativa, então ela não diz se
-    o fluxo de finalização já rodou uma vez.
-
-    Em caso de falha na consulta devolve False -- deixa o fluxo rodar.
-    Cobrança duplicada alguém vê e apaga; cobrança que nunca nasceu
-    ninguém descobre.
-    """
-    try:
-        r = (supabase.table("projeto_movimentos").select("id")
-             .eq("projeto_id", projeto_id).eq("para_status", "Finalizado")
-             .limit(1).execute())
-        return bool(r.data)
-    except Exception as e:
-        print("Aviso: _ja_foi_finalizado nao pudo ser verificado:", e)
-        return False
-
-
-@app.route('/api/projetos/<projeto_id>/origem', methods=['GET'])
-def origem_do_projeto(projeto_id):
-    """Alimenta o painel "Origem comercial" do card expandido.
-
-    Duas naturezas de dado, de propósito:
-    - `passagem` é a foto do acordo, gravada no fechamento e imutável;
-    - `cadastro` é lido do lead e do cliente AGORA. Telefone corrigido
-      no CRM aparece corrigido aqui, sem ninguém copiar nada.
-
-    Cliente externo não entra: é informação comercial interna.
-    """
-    if 'usuario_id' not in session:
-        return jsonify({"erro": "Nao logado"}), 401
-    if is_externo():
-        return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        rp = (supabase.table("projetos")
-              .select("id, nome_projeto, empresa, area, subquadro, status, responsavel, "
-                      "cliente_id, origem_lead_id, valor, passagem, prazo_data, "
-                      "lote_id, lote_pos, lote_total, criado_em")
-              .eq("id", projeto_id).limit(1).execute())
-        if not rp.data:
-            return jsonify({"status": "erro", "mensagem": "Card não encontrado."}), 404
-        proj = rp.data[0]
-
-        # Quem enxerga o card mas não o funil vê o briefing e a entrega,
-        # não o cadastro comercial. É a mesma régua que o CRM usa.
-        ver_comercial = pode('crm.lead.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
-        ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
-
-        passagem = proj.get("passagem") or {}
-        if not ver_valor:
-            passagem = {k: v for k, v in passagem.items() if k != "valor_contrato"}
-
-        lead, cliente, contrato = None, None, None
-        interacoes, movimentos = [], []
-
-        if proj.get("origem_lead_id") and ver_comercial:
-            rl = (supabase.table("leads").select("*")
-                  .eq("id", proj["origem_lead_id"]).limit(1).execute())
-            if rl.data:
-                l = rl.data[0]
-                lead = {
-                    "id": l.get("id"), "empresa": l.get("empresa"),
-                    "contato": l.get("contato"), "telefone": l.get("telefone"),
-                    "email": l.get("email"), "cnpj": l.get("cnpj"),
-                    "segmento": l.get("segmento"), "cidade": l.get("cidade"),
-                    "estado": l.get("estado"), "origem": l.get("origem"),
-                    "produto": l.get("produto"), "responsavel": l.get("responsavel"),
-                    # `anotacoes` fica de fora de propósito: é recado do
-                    # comercial para si mesmo e não segue para os quadros
-                    # de produto. O que a operação precisa saber vai no
-                    # briefing, escrito para ela.
-                    "funil": l.get("funil"), "coluna": l.get("coluna"),
-                }
-                if ver_valor:
-                    lead["valor_estimado"] = l.get("valor_estimado")
-                info = l.get("contrato_arquivo") or {}
-                if info.get("caminho"):
-                    # Só o nome e o id: o link assinado é pedido à rota
-                    # que já existe, que expira em uma hora. Devolver URL
-                    # aqui criaria um segundo caminho para o arquivo.
-                    contrato = {"nome": info.get("nome"), "lead_id": l.get("id")}
-                try:
-                    ri = (supabase.table("lead_interacoes")
-                          .select("tipo, autor, resumo, criado_em")
-                          .eq("lead_id", l["id"])
-                          .order("criado_em", desc=True).limit(8).execute())
-                    interacoes = ri.data or []
-                except Exception as e:
-                    print("Aviso: interacoes do lead na origem:", e)
-                try:
-                    rm = (supabase.table("lead_movimentos")
-                          .select("de_funil, de_coluna, para_funil, para_coluna, autor, criado_em")
-                          .eq("lead_id", l["id"])
-                          .order("criado_em", desc=True).limit(8).execute())
-                    movimentos = rm.data or []
-                except Exception as e:
-                    print("Aviso: movimentos do lead na origem:", e)
-
-        if proj.get("cliente_id"):
-            rc = (supabase.table("clientes")
-                  .select("id, nome_empresa, cnpj, cidade, estado, telefone, email, responsavel")
-                  .eq("id", proj["cliente_id"]).limit(1).execute())
-            cliente = (rc.data or [None])[0]
-
-        return jsonify({
-            "status": "sucesso",
-            "projeto": {
-                "id": proj.get("id"), "nome": proj.get("nome_projeto"),
-                "area": proj.get("area"), "subquadro": proj.get("subquadro"),
-                "status": proj.get("status"), "responsavel": proj.get("responsavel"),
-                "prazo": str(proj.get("prazo_data") or '')[:10] or None,
-                "valor": proj.get("valor") if ver_valor else None,
-                "lote": ({"pos": proj.get("lote_pos"), "total": proj.get("lote_total")}
-                         if proj.get("lote_total") else None),
-            },
-            "passagem": passagem,
-            "cadastro": lead,
-            "cliente": cliente,
-            "contrato": contrato,
-            "interacoes": interacoes,
-            "movimentos": movimentos,
-            "ver_comercial": ver_comercial,
-            "ver_valor": ver_valor,
-            # Contrato fechado antes desta mudanca nao tem briefing. A
-            # tela avisa em vez de mostrar um painel vazio sem explicacao.
-            "anterior_a_mudanca": not bool(passagem.get("resumo")),
-        }), 200
-    except Exception as e:
-        print("Erro em origem_do_projeto:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar a origem.",
-                        "detalhe": str(e)[:300]}), 500
-
-
 @app.route('/api/projetos/<projeto_id>', methods=['PUT'])
 def atualizar_projeto(projeto_id):
     if 'usuario_id' not in session: return jsonify({"erro": "Nao logado"}), 401
@@ -1090,20 +931,14 @@ def atualizar_projeto(projeto_id):
     dados = request.json
     try:
         atualizacao = {}
-        # Pedido de fluxo de finalizacao. Fica guardado aqui e so roda
-        # depois de o status estar salvo no banco.
-        fluxo_finalizacao = None
-        repetindo_finalizacao = False
         res_atual = (supabase.table("projetos")
                      .select("status", "data_inicio", "data_conclusao", "area",
                              "nome_projeto", "empresa", "cliente_id", "origem_lead_id",
-                             # `responsavel` e `passagem` seguem com o
-                             # bastao: o primeiro diz quem entregou, o
-                             # segundo carrega o acordo da venda para a
-                             # cobranca e para o relacionamento.
-                             "responsavel", "passagem")
+                             "responsavel", "subquadro", "passagem", "lote_id", "valor")
                      .eq("id", projeto_id).execute())
         status_anterior = res_atual.data[0].get("status") if res_atual.data else None
+        # Preenchido na finalização e disparado só depois do update.
+        fluxo_pendente = None
         
         if "status" in dados:
             novo_status = dados.get("status")
@@ -1127,18 +962,31 @@ def atualizar_projeto(projeto_id):
                     return jsonify({"status": "erro",
                                     "mensagem": "Descreva o motivo em poucas palavras."}), 400
 
+            # ENCERRAMENTO: validar ANTES de qualquer escrita.
+            # A trava de repetição consulta a trilha, então precisa olhar
+            # antes de esta finalização entrar nela. E a validação do
+            # relato precisa vir antes da trilha: um pedido recusado por
+            # falta de relato que já tivesse gravado "Finalizado" na
+            # trilha faria o pedido seguinte se achar repetição.
+            enc = dados.get("encerramento") or {}
+            finalizando = (novo_status == 'Finalizado' and novo_status != status_anterior)
+            finalizacao_repetida = finalizando and ja_finalizou_antes(projeto_id)
+            relato, satisfacao = None, None
+            if finalizando and not finalizacao_repetida and (enc.get("relacionamento") or enc.get("cobranca")):
+                relato = (enc.get("relato") or "").strip()
+                if len(relato) < 10:
+                    return jsonify({"status": "erro",
+                                    "mensagem": "Conte em uma frase como foi a entrega: "
+                                                "é o que o relacionamento vai ler antes "
+                                                "de ligar para o cliente."}), 400
+                satisfacao = enc.get("satisfacao")
+                if satisfacao not in SATISFACOES:
+                    return jsonify({"status": "erro",
+                                    "mensagem": "Escolha como foi a entrega: tranquila, "
+                                                "com ruído ou complicada."}), 400
+
             atualizacao["status"] = novo_status
             atualizacao["data_status_atual"] = agora_br()
-
-            # UMA FINALIZACAO, UM FLUXO.
-            # Tirar o card de Finalizado e devolver disparava o fluxo de
-            # novo: segunda cobranca, segundo lead de relacionamento. A
-            # pergunta e feita aqui, antes de a trilha desta vez ser
-            # gravada -- depois dela, todo card pareceria repetido.
-            repetindo_finalizacao = (
-                novo_status == 'Finalizado'
-                and status_anterior != 'Finalizado'
-                and _ja_foi_finalizado(projeto_id))
 
             status_pausa = list(PARADOS)
             # data_conclusao só deve marcar finalização REAL (Finalizado/Cancelado),
@@ -1224,68 +1072,30 @@ def atualizar_projeto(projeto_id):
                 except Exception as e_mov:
                     print("Aviso: movimento de projeto nao registrado:", e_mov)
 
-            # Fluxo de finalizacao: MONTADO aqui, DISPARADO depois de o
-            # status estar salvo.
-            #
-            # Antes ele rodava neste ponto, antes do update. Se o update
-            # falhasse, o lead de relacionamento e a cobranca ja tinham
-            # nascido para um projeto que seguia em andamento -- e nao
-            # havia como saber, porque a resposta era de erro.
-            if novo_status == 'Finalizado' and novo_status != status_anterior:
-                if repetindo_finalizacao:
-                    _registrar_execucao(
-                        None, 'projeto.finalizado', {"projeto_id": projeto_id}, None,
-                        "finalizacao repetida: fluxo nao disparado de novo")
-                else:
-                    # O que acontece ao finalizar e escolha de quem finaliza:
-                    # nem toda entrega gera cobranca, e nem todo produto entra
-                    # em relacionamento. A tela pergunta, e o que vier marcado
-                    # chega aqui em `encerramento`.
-                    p = res_atual.data[0] if res_atual.data else {}
-                    enc = dados.get("encerramento") or {}
-                    # FOTO DA ENTREGA.
-                    # Vai para o lead de relacionamento e para a
-                    # cobranca. Sem ela, quem recebe o cliente de volta
-                    # nao sabe o que foi entregue, por quem, nem se
-                    # houve ruido no caminho.
-                    entrega = {
-                        "projeto_id": projeto_id,
-                        "projeto_nome": p.get("nome_projeto"),
-                        "quadro": next((q for q, a3 in QUADRO_AREA.items()
-                                        if a3 == p.get("area")), None),
-                        "area": p.get("area"),
-                        "executor": p.get("responsavel") or session.get('usuario_nome'),
-                        "finalizou": session.get('usuario_nome'),
-                        "iniciado_em": p.get("data_inicio"),
-                        "concluido_em": agora_br(),
-                        "horas": _horas_do_projeto(projeto_id),
-                        "satisfacao": (enc.get("satisfacao") or "").strip() or None,
-                        "relato": (enc.get("relato") or "").strip() or None,
-                        "atencao": (enc.get("atencao") or "").strip() or None,
-                    }
-                    fluxo_finalizacao = {
-                        "projeto_id": projeto_id,
-                        "projeto_nome": p.get("nome_projeto"),
-                        "area": p.get("area"),
-                        "cliente_id": p.get("cliente_id"),
-                        "cliente_nome": p.get("empresa"),
-                        "lead_id": p.get("origem_lead_id"),
-                        "quadro": next((q for q, a2 in QUADRO_AREA.items()
-                                        if a2 == p.get("area")), None),
-                        "com_relacionamento": bool(enc.get("relacionamento")),
-                        "com_cobranca": bool(enc.get("cobranca")),
-                        "valor": enc.get("valor"),
-                        # A venda continua com o card: a cobranca precisa
-                        # do CNPJ e do produto vendido, e o lead de
-                        # relacionamento do que foi prometido.
-                        "passagem": p.get("passagem") or {},
-                        "entrega": entrega,
-                        "faturamento": {
-                            "contato": (enc.get("contato_faturamento") or "").strip() or None,
-                            "email": (enc.get("email_faturamento") or "").strip() or None,
-                            "forma": (enc.get("forma_cobranca") or "").strip() or None,
-                        },
-                    }
+            # Fluxo de finalizacao: PREPARADO aqui, DISPARADO depois do
+            # update. Antes rodava antes de gravar o status: se a gravação
+            # falhasse, o lead de relacionamento e a cobrança já tinham
+            # nascido para um projeto que continuava em andamento.
+            if finalizando:
+                p = res_atual.data[0] if res_atual.data else {}
+                # TRAVA DE REPETIÇÃO
+                # Tirar um card de Finalizado e colocar de volta disparava
+                # tudo de novo: segundo lead de relacionamento, segunda
+                # cobrança. A trilha já registra a primeira finalização;
+                # se ela existe, esta é reabertura, não entrega.
+                if finalizacao_repetida:
+                    _registrar_execucao(None, 'projeto.finalizado', {"projeto_id": projeto_id},
+                                        {"pulado": "finalizacao repetida: fluxo ja rodou "
+                                                   "na primeira vez"}, None)
+                elif relato:
+                    fluxo_pendente = montar_dados_finalizacao(projeto_id, p, enc, relato, satisfacao)
+                    # A foto da entrega fica também no próprio card: o
+                    # histórico do projeto conta como terminou, mesmo que
+                    # o lead de relacionamento seja excluído depois.
+                    passagem_atual = dict(p.get("passagem") or {})
+                    passagem_atual["entrega"] = fluxo_pendente["entrega"]
+                    atualizacao["passagem"] = passagem_atual
+
 
             if novo_status and novo_status != status_anterior:
                 try:
@@ -1312,18 +1122,17 @@ def atualizar_projeto(projeto_id):
         
         supabase.table("projetos").update(atualizacao).eq("id", projeto_id).execute()
 
-        # Agora sim: o card esta Finalizado no banco. Falha de fluxo daqui
-        # para frente fica em `fluxo_execucoes` e nao desfaz a finalizacao.
-        if fluxo_finalizacao:
+        # O status já está gravado. Agora, e só agora, as consequências.
+        fluxo = []
+        if fluxo_pendente:
             try:
-                disparar('projeto.finalizado', fluxo_finalizacao)
+                fluxo = disparar('projeto.finalizado', fluxo_pendente)
             except Exception as e_fluxo:
                 print("Aviso: fluxo de finalizacao nao rodou:", e_fluxo)
                 _registrar_execucao(None, 'projeto.finalizado',
                                     {"projeto_id": projeto_id}, None,
-                                    f"falha ao disparar: {str(e_fluxo)[:300]}")
-
-        return jsonify({"status": "sucesso"}), 200
+                                    f"falha antes de disparar: {str(e_fluxo)[:300]}")
+        return jsonify({"status": "sucesso", "fluxo": fluxo}), 200
     except Exception as e:
         print(f"[CRITICAL] Erro no PUT (Atualizar): {str(e)}")
         return jsonify({"status": "erro", "mensagem": "Erro interno de atualização"}), 500
@@ -2216,118 +2025,6 @@ def conta_cliente(cliente_id):
     except Exception as e:
         print("Erro em conta_cliente:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar o cliente.",
-                        "detalhe": str(e)[:300]}), 500
-
-
-@app.route('/api/clientes/<cliente_id>/historico', methods=['GET'])
-def historico_da_conta(cliente_id):
-    """Tudo o que a conexão já vendeu e entregou para este cliente.
-
-    Alimenta o painel "Histórico da conta" no card do lead e o resumo
-    "passou pelos quadros" no CRM. Monta a partir da trilha que já
-    existe -- nenhuma linha é duplicada para isto funcionar.
-
-    Aceita o id do cliente ou, com ?por=lead, o id de um lead: no CRM o
-    card às vezes é de um lead que ainda não tem cliente vinculado.
-    """
-    if 'usuario_id' not in session:
-        return jsonify({"erro": "Nao logado"}), 401
-    if is_externo():
-        return jsonify({"erro": "Acesso negado"}), 403
-    try:
-        ver_valor = pode('crm.valor.ver') or session.get('nivel_acesso') in ('admin', 'gestor')
-
-        # Pelo lead: usa o cliente vinculado quando existe; senão o CNPJ,
-        # que é a chave da conta -- é ele que junta contratos diferentes
-        # do mesmo cliente.
-        alvo_cliente, cnpj = cliente_id, None
-        if request.args.get('por') == 'lead':
-            rl = (supabase.table("leads").select("cliente_id, cnpj")
-                  .eq("id", cliente_id).limit(1).execute())
-            if not rl.data:
-                return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
-            alvo_cliente = rl.data[0].get("cliente_id")
-            cnpj = (rl.data[0].get("cnpj") or "").strip() or None
-
-        cliente = None
-        if alvo_cliente:
-            rc = (supabase.table("clientes")
-                  .select("id, nome_empresa, cnpj, cidade, estado, criado_em, responsavel")
-                  .eq("id", alvo_cliente).limit(1).execute())
-            cliente = (rc.data or [None])[0]
-            if cliente and not cnpj:
-                cnpj = (cliente.get("cnpj") or "").strip() or None
-
-        # CONTRATOS: leads desta conta que chegaram a Ganho.
-        contratos = []
-        leads = []
-        if alvo_cliente:
-            rl = (supabase.table("leads").select("*")
-                  .eq("cliente_id", alvo_cliente).is_("excluido_em", "null").execute())
-            leads = rl.data or []
-        elif cnpj:
-            rl = (supabase.table("leads").select("*")
-                  .eq("cnpj", cnpj).is_("excluido_em", "null").execute())
-            leads = rl.data or []
-        for l in leads:
-            if l.get("funil") == "fechamento" and l.get("coluna") == "Ganho":
-                contratos.append({
-                    "lead_id": l.get("id"),
-                    "produto": l.get("produto"),
-                    "valor": l.get("valor_estimado") if ver_valor else None,
-                    "fechado_em": str(l.get("movido_em") or '')[:10] or None,
-                    "closer": l.get("responsavel"),
-                    "tem_contrato": bool((l.get("contrato_arquivo") or {}).get("caminho")),
-                })
-        contratos.sort(key=lambda c: c["fechado_em"] or "", reverse=True)
-
-        # ENTREGAS e EM ANDAMENTO, respeitando o que a pessoa pode ver.
-        entregas, andamento, por_quadro = [], [], {}
-        if alvo_cliente:
-            rp = (supabase.table("projetos").select("*")
-                  .eq("cliente_id", alvo_cliente).is_("excluido_em", "null").execute())
-            for p in filtrar_projetos_permitidos(rp.data or []):
-                quadro = next((q for q, a in QUADRO_AREA.items() if a == p.get("area")),
-                              p.get("area") or "sem quadro")
-                bucket = por_quadro.setdefault(quadro, {
-                    "quadro": quadro, "area": p.get("area"),
-                    "total": 0, "finalizados": 0, "abertos": 0, "responsaveis": []})
-                bucket["total"] += 1
-                if p.get("responsavel") and p["responsavel"] not in bucket["responsaveis"]:
-                    bucket["responsaveis"].append(p["responsavel"])
-                item = {
-                    "id": p.get("id"), "nome": p.get("nome_projeto"),
-                    "quadro": quadro, "area": p.get("area"),
-                    "responsavel": p.get("responsavel"), "status": p.get("status"),
-                    "concluido_em": str(p.get("data_conclusao") or '')[:10] or None,
-                    "satisfacao": ((p.get("passagem") or {}).get("entrega") or {}).get("satisfacao"),
-                    "aguardando": bool(p.get("aguardando_responsavel")),
-                }
-                if p.get("status") in STATUS_ENCERRADOS:
-                    bucket["finalizados"] += 1
-                    entregas.append(item)
-                else:
-                    bucket["abertos"] += 1
-                    andamento.append(item)
-        entregas.sort(key=lambda e: e["concluido_em"] or "", reverse=True)
-
-        total = sum(c["valor"] or 0 for c in contratos) if ver_valor else None
-        return jsonify({
-            "status": "sucesso",
-            "cliente": cliente,
-            "cnpj": cnpj,
-            "contratos": contratos[:20],
-            "total_contratos": len(contratos),
-            "valor_total": total,
-            "entregas": entregas[:20],
-            "total_entregas": len(entregas),
-            "andamento": andamento,
-            "quadros": sorted(por_quadro.values(), key=lambda q: -q["total"]),
-            "ver_valor": ver_valor,
-        }), 200
-    except Exception as e:
-        print("Erro em historico_da_conta:", e)
-        return jsonify({"status": "erro", "mensagem": "Erro ao carregar o histórico.",
                         "detalhe": str(e)[:300]}), 500
 
 
@@ -3953,6 +3650,127 @@ def _condicao_bate(condicao, dados):
     return True
 
 
+def so_digitos(valor):
+    """CNPJ e telefone comparam-se pelos dígitos: a máscara varia por quem
+    digitou, o número não."""
+    return ''.join(ch for ch in str(valor or '') if ch.isdigit())
+
+
+def cliente_por_cnpj(cnpj):
+    """Cliente ativo com este CNPJ, ou None.
+
+    Compara pelos dígitos porque o banco guarda com e sem máscara. Traz
+    poucas colunas: é chamado no fechamento e no cadastro do lead, onde a
+    resposta precisa ser rápida.
+    """
+    dig = so_digitos(cnpj)
+    if len(dig) != 14:
+        return None
+    try:
+        # PostgREST não filtra por expressão (regexp_replace), então a
+        # comparação por dígitos é feita aqui. A carteira tem centenas de
+        # clientes; varrer paginado custa uma chamada e não depende de
+        # como cada um digitou a máscara.
+        for c in _paginar("clientes",
+                          "id, nome_empresa, cnpj, cidade, estado, responsavel, criado_em",
+                          lambda q: q.is_("excluido_em", "null").not_.is_("cnpj", "null")):
+            if so_digitos(c.get("cnpj")) == dig:
+                return c
+    except Exception as e:
+        print("Aviso: cliente_por_cnpj:", e)
+    return None
+
+
+def horas_do_projeto(projeto_id):
+    """Horas lançadas no cronômetro para um projeto, arredondadas."""
+    total = 0
+    try:
+        r = (supabase.table("time_logs").select("tempo_segundos")
+             .eq("projeto_id", projeto_id).limit(5000).execute())
+        total = sum(int(x.get("tempo_segundos") or 0) for x in (r.data or []))
+    except Exception as e:
+        print("Aviso: time_logs indisponivel:", e)
+    return round(total / 3600.0, 1)
+
+
+def ja_finalizou_antes(projeto_id):
+    """True se a trilha de movimentos já tem uma finalização deste card.
+
+    É a trava contra o fluxo rodar duas vezes. Usa a trilha em vez de
+    coluna nova porque a trilha é o registro do fato, e já existe.
+    """
+    try:
+        r = (supabase.table("projeto_movimentos").select("id")
+             .eq("projeto_id", projeto_id).eq("para_status", "Finalizado")
+             .limit(1).execute())
+        return bool(r.data)
+    except Exception as e:
+        print("Aviso: ja_finalizou_antes:", e)
+        return False
+
+
+def montar_dados_finalizacao(projeto_id, p, enc, relato, satisfacao):
+    """O que o evento `projeto.finalizado` carrega para o financeiro e o
+    relacionamento.
+
+    Cadastro do cliente vem do lead de origem (vínculo vivo); a entrega é
+    foto: quem executou, quanto levou, como foi, o que não pode ser
+    esquecido. As duas ações do fluxo lêem daqui.
+    """
+    quadro = next((q for q, a2 in QUADRO_AREA.items() if a2 == p.get("area")), None)
+    lead = {}
+    if p.get("origem_lead_id"):
+        try:
+            rl = supabase.table("leads").select("*").eq("id", p["origem_lead_id"]).limit(1).execute()
+            lead = (rl.data or [{}])[0]
+        except Exception as e:
+            print("Aviso: lead de origem indisponivel na finalizacao:", e)
+    passagem = p.get("passagem") or {}
+    fat = enc.get("faturamento") or {}
+    entrega = {
+        "projeto_id": projeto_id,
+        "projeto_nome": p.get("nome_projeto"),
+        "quadro": quadro,
+        "area": p.get("area"),
+        "subquadro": p.get("subquadro"),
+        "executor": p.get("responsavel"),
+        "iniciado_em": p.get("data_inicio"),
+        "concluido_em": agora_br(),
+        "horas": horas_do_projeto(projeto_id),
+        "relato": relato,
+        "satisfacao": satisfacao,
+        "atencao": (enc.get("atencao") or "").strip() or None,
+        "finalizado_por": session.get('usuario_nome'),
+        "valor_contrato": passagem.get("valor_contrato") or p.get("valor"),
+    }
+    return {
+        "projeto_id": projeto_id,
+        "projeto_nome": p.get("nome_projeto"),
+        "area": p.get("area"),
+        "quadro": quadro,
+        "cliente_id": p.get("cliente_id") or lead.get("cliente_id"),
+        "cliente_nome": p.get("empresa") or lead.get("empresa"),
+        "lead_id": p.get("origem_lead_id"),
+        "lote_id": p.get("lote_id"),
+        "contato": passagem.get("contato") or lead.get("contato"),
+        "telefone": lead.get("telefone") or passagem.get("telefone"),
+        "email": lead.get("email"),
+        "cnpj": lead.get("cnpj"),
+        "produto": passagem.get("produto") or lead.get("produto"),
+        "passagem": passagem,
+        "entrega": entrega,
+        "faturamento": {
+            "contato": (fat.get("contato") or "").strip() or None,
+            "email": (fat.get("email") or "").strip() or None,
+            "telefone": (fat.get("telefone") or "").strip() or None,
+            "forma": (fat.get("forma") or "").strip() or None,
+        },
+        "com_relacionamento": bool(enc.get("relacionamento")),
+        "com_cobranca": bool(enc.get("cobranca")),
+        "valor": enc.get("valor"),
+    }
+
+
 def disparar(evento, dados):
     """Anuncia um evento e executa as regras que casam com ele.
 
@@ -4016,26 +3834,6 @@ def _registrar_execucao(regra, evento, dados, resultado, erro):
 
 # ---------- ações que o motor sabe executar ----------
 
-BRIEFING_OBRIGATORIO = True   # exige a frase do closer no fechamento
-
-
-def _data_ou_none(valor):
-    """Devolve 'AAAA-MM-DD' se o valor for uma data; None se for texto.
-
-    O campo de prazo da janela aceita data ou frase. Passar frase para
-    uma coluna `date` derruba o insert inteiro, e o contrato deixaria
-    de abrir card por causa de um campo de recado.
-    """
-    txt = str(valor or "").strip()[:10]
-    if len(txt) != 10:
-        return None
-    try:
-        datetime.strptime(txt, "%Y-%m-%d")
-        return txt
-    except ValueError:
-        return None
-
-
 def _acao_criar_lead(acao, dados):
     """Cria um lead novo ligado ao anterior.
 
@@ -4045,98 +3843,87 @@ def _acao_criar_lead(acao, dados):
     if acao.get("funil") == "relacionamento" and not dados.get("com_relacionamento"):
         return {"pulado": "relacionamento nao marcado por quem finalizou"}
 
-    # O LEAD ORIGINAL INTEIRO.
-    # Antes so empresa, contato, produto, telefone, email e cnpj eram
-    # copiados. Quem recebia no Backlog do relacionamento nao tinha
-    # anotacao, segmento, cidade, valor nem contrato -- abria o card e
-    # nao sabia nada sobre o cliente.
-    origem = {}
+    # O LEAD ORIGINAL INTEIRO
+    # Antes o lead novo nascia com empresa, contato e telefone. Quem
+    # recebia no Backlog do relacionamento não sabia segmento, cidade,
+    # anotações, quem vendeu nem por quanto -- e nada sobre a entrega.
+    # Agora copia tudo do lead de origem e anexa a foto da entrega.
+    pai = {}
     if dados.get("lead_id"):
         try:
-            ro = (supabase.table("leads").select("*")
-                  .eq("id", dados["lead_id"]).limit(1).execute())
-            origem = (ro.data or [{}])[0]
+            rp = supabase.table("leads").select("*").eq("id", dados["lead_id"]).limit(1).execute()
+            pai = (rp.data or [{}])[0]
         except Exception as e:
-            print("Aviso: lead de origem nao lido ao criar relacionamento:", e)
+            print("Aviso: lead de origem indisponivel:", e)
 
     novo = {
         # A tabela `leads` nao tem coluna `lead`: o CRM mostra `empresa` no
         # card e `contato` no detalhe. Gravar uma coluna inexistente fazia o
         # insert inteiro falhar no Postgres, e o lead de relacionamento
         # simplesmente nunca nascia.
-        "empresa": dados.get("cliente_nome") or origem.get("empresa") or dados.get("empresa"),
-        "contato": dados.get("contato") or origem.get("contato") or dados.get("lead_nome"),
+        "empresa": dados.get("cliente_nome") or pai.get("empresa") or dados.get("empresa"),
+        "contato": dados.get("contato") or pai.get("contato") or dados.get("lead_nome"),
         "funil": acao.get("funil", "relacionamento"),
         "coluna": acao.get("coluna", FASE_ENTRADA),
         "origem": "Cliente da casa",
-        "produto": dados.get("produto") or origem.get("produto"),
+        "produto": dados.get("produto") or pai.get("produto"),
         "lead_pai_id": dados.get("lead_id"),
-        "cliente_id": dados.get("cliente_id") or origem.get("cliente_id"),
+        "cliente_id": dados.get("cliente_id") or pai.get("cliente_id"),
         "contatos": 0,
         "movido_em": datetime.now(timezone.utc).isoformat(),
+        # Continuidade: o que o comercial já sabia segue com a conta.
+        "segmento": pai.get("segmento"),
+        "cidade": pai.get("cidade"),
+        "estado": pai.get("estado"),
+        "anotacoes": pai.get("anotacoes"),
+        "valor_estimado": pai.get("valor_estimado"),
+        # Mesmo arquivo, sem cópia: aponta para o contrato do lead de
+        # origem. As rotas de contrato só apagam do Storage arquivos que
+        # pertencem ao próprio lead, então remover aqui não some com o
+        # original.
+        "contrato_arquivo": pai.get("contrato_arquivo"),
+        "entrega": dados.get("entrega") or {},
     }
-
-    # Cadastro e contexto comercial vindos do lead que originou a conta.
-    # `contrato_arquivo` e o mesmo caminho no Storage, nao uma copia:
-    # duas copias do contrato significam duas versoes e ninguem sabendo
-    # qual foi a assinada.
-    for campo in ("telefone", "email", "cnpj", "segmento", "cidade", "estado",
-                  "localizacao", "anotacoes", "canal_proposta", "contrato_arquivo",
-                  "valor_estimado"):
-        if origem.get(campo) not in (None, ""):
-            novo[campo] = origem[campo]
-
-    # FOTO DA ENTREGA.
-    # E o que responde "o que aconteceu com este cliente" para quem vai
-    # ligar. Montada por `atualizar_projeto` na hora da finalizacao.
-    entrega = dados.get("entrega") or {}
-    if entrega:
-        novo["entrega"] = entrega
+    for c in ("telefone", "email", "cnpj"):
+        novo[c] = dados.get(c) or pai.get(c)
     quadro = dados.get("quadro")
     if quadro:
         resp = responsavel_do_quadro(quadro, "relacionamento")
         if resp:
             novo["responsavel"] = resp.get("nome")
-    for c in ("telefone", "email", "cnpj"):
-        if dados.get(c):
-            novo[c] = dados[c]
-    try:
-        r = supabase.table("leads").insert(novo).execute()
-    except Exception as e:
-        # `entrega` so existe depois de rodar etapa1_continuidade.sql.
-        # Sem ela o lead nasce como antes, em vez de a finalizacao
-        # inteira falhar por causa de uma coluna que falta.
-        if "entrega" not in str(e) or "entrega" not in novo:
-            raise
-        print("Aviso: coluna 'entrega' nao existe em leads. "
-              "Rode etapa1_continuidade.sql. Criando o lead sem ela.")
-        novo.pop("entrega", None)
-        r = supabase.table("leads").insert(novo).execute()
-    lead_novo = (r.data or [{}])[0].get("id")
+    if not novo.get("responsavel"):
+        # Sem papel configurado, quem vendeu mantém a conta.
+        novo["responsavel"] = pai.get("responsavel")
 
-    # O relato tambem entra na linha do tempo do lead. O painel mostra a
-    # foto da entrega; a interacao garante que ela apareca junto das
-    # conversas, na ordem em que as coisas aconteceram.
-    if lead_novo and (entrega.get("relato") or entrega.get("projeto_nome")):
+    r = supabase.table("leads").insert(novo).execute()
+    lead_id = (r.data or [{}])[0].get("id")
+
+    # O relato da entrega entra na linha do tempo do lead novo. Quem abrir
+    # o card vê a história começar pela entrega, não por um Backlog vazio.
+    ent = novo["entrega"] or {}
+    if lead_id and ent:
         try:
-            partes = [p for p in [
-                f"Entrega concluída: {entrega.get('projeto_nome')}" if entrega.get("projeto_nome") else None,
-                f"por {entrega.get('executor')}" if entrega.get("executor") else None,
-                f"({entrega.get('satisfacao')})" if entrega.get("satisfacao") else None,
-            ] if p]
-            resumo_int = " ".join(partes) or "Entrega concluída"
-            if entrega.get("relato"):
-                resumo_int += f". {entrega['relato']}"
+            partes = [f"Entrega de \"{ent.get('projeto_nome')}\""]
+            if ent.get("executor"):
+                partes.append(f"por {ent['executor']}")
+            if ent.get("satisfacao"):
+                partes.append(f"· {ROTULO_SATISFACAO.get(ent['satisfacao'], ent['satisfacao'])}")
+            if ent.get("relato"):
+                partes.append(f"— {ent['relato']}")
             supabase.table("lead_interacoes").insert({
-                "lead_id": lead_novo,
-                "tipo": "entrega",
-                "autor": entrega.get("executor") or "fluxo automático",
-                "resumo": resumo_int[:1000],
+                "lead_id": lead_id, "tipo": "entrega",
+                "autor": ent.get("finalizado_por") or "fluxo automático",
+                "resumo": " ".join(partes)[:1000],
             }).execute()
         except Exception as e:
-            print("Aviso: relato da entrega nao registrado no lead:", e)
+            print("Aviso: interacao de entrega nao registrada:", e)
+    return {"lead_id": lead_id, "responsavel": novo.get("responsavel")}
 
-    return {"lead_id": lead_novo, "com_entrega": bool(entrega)}
+
+ROTULO_SATISFACAO = {"tranquilo": "entrega tranquila",
+                     "ruido": "teve ruído",
+                     "complicado": "entrega complicada"}
+SATISFACOES = tuple(ROTULO_SATISFACAO.keys())
 
 
 def _acao_mover_lead(acao, dados):
@@ -4170,98 +3957,77 @@ def _acao_criar_cobranca(acao, dados):
     """
     if acao.get("etapa") == "entrega" and not dados.get("com_cobranca"):
         return {"pulado": "cobranca nao marcada por quem finalizou"}
+    etapa = acao.get("etapa", "fechamento")
+    rotulo = "Emitir NF e boleto" if etapa == "fechamento" else "Faturar entrega"
 
-    # QUEM FICA COM A COBRANCA.
-    # Antes so o papel 'cobranca' do quadro `financeiro` era consultado,
-    # e toda cobranca nascia com responsavel nulo. A tela de
-    # Configuracoes descreve esse papel como sendo definido em cada
-    # quadro: "fica com o card de faturamento dos contratos deste
-    # quadro". Entao a ordem passa a ser a mesma que a tela promete --
-    # o quadro que entregou primeiro, o Adm/Fin depois -- e, se
-    # nenhum dos dois tiver alguem, o modo do quadro financeiro decide,
-    # igual aos cards de produto.
-    quadro_origem = dados.get("quadro")
-    resp = None
-    if quadro_origem and quadro_origem != 'financeiro':
-        resp = responsavel_do_quadro(quadro_origem, 'cobranca')
-    if not resp:
-        resp = responsavel_do_quadro('financeiro', 'cobranca')
+    # QUEM ASSUME A COBRANÇA
+    # Seis cobranças nasceram sem dono entre 08/09 e 11/09 e ninguém foi
+    # avisado. A busca era só pelo papel "cobrança" no quadro financeiro;
+    # se ele não estava configurado, o card virava órfão em silêncio.
+    # Agora: papel explícito primeiro, depois o modo do quadro (direto,
+    # rodízio, fila) como qualquer outro card -- e aviso a quem direciona
+    # se ainda assim ninguém ficar com ele.
+    resp = responsavel_do_quadro('financeiro', 'cobranca')
     aguardando = False
     if not resp:
         resp, aguardando = definir_dono('financeiro')
 
-    etapa = acao.get("etapa", "fechamento")
-    rotulo = "Emitir NF e boleto" if etapa == "fechamento" else "Faturar entrega"
-    # Nome com o cliente na frente: na lista do Adm/Fin, "Faturar
-    # entrega · Analista Fiscal" nao diz de quem e a nota.
-    alvo = dados.get("cliente_nome") or dados.get("projeto_nome") or "contrato"
-    complemento = dados.get("projeto_nome") if dados.get("cliente_nome") else None
-    nome_cobranca = f"{alvo} · {rotulo}" + (f" · {complemento}" if complemento else "")
-
-    # O QUE A NOTA PRECISA.
-    # Antes a cobranca nascia com empresa e valor, e quem emitia caçava
-    # CNPJ no cadastro e contrato no CRM. A venda e a entrega vem
-    # prontas no card.
-    venda = dados.get("passagem") or {}
+    # DADOS PARA FATURAR
+    # O card nascia com empresa e valor. Quem emitia a nota caçava o CNPJ
+    # no cadastro e o contrato no CRM. Agora tudo chega junto.
     fat = dados.get("faturamento") or {}
-
-    # CNPJ e o dado sem o qual a nota nao sai. A ordem: o que veio na
-    # janela, o que foi combinado na venda, e por fim o cadastro do
-    # cliente -- este ultimo cobre contrato fechado antes do briefing
-    # existir, que e a maioria da base hoje.
-    cnpj = fat.get("cnpj") or dados.get("cnpj") or venda.get("cnpj")
-    if not cnpj and dados.get("cliente_id"):
+    cliente = {}
+    if dados.get("cliente_id"):
         try:
-            rc = (supabase.table("clientes").select("cnpj, email, telefone")
+            rc = (supabase.table("clientes").select("nome_empresa, cnpj, email, telefone, cidade, estado")
                   .eq("id", dados["cliente_id"]).limit(1).execute())
-            cadastro_cli = (rc.data or [{}])[0]
-            cnpj = cadastro_cli.get("cnpj")
-            fat = dict(fat)
-            fat.setdefault("email", cadastro_cli.get("email"))
-            fat.setdefault("telefone", cadastro_cli.get("telefone"))
+            cliente = (rc.data or [{}])[0]
         except Exception as e:
-            print("Aviso: cadastro do cliente nao lido para a cobranca:", e)
-
-    passagem_cobranca = {
-        "cnpj": cnpj,
-        "contato_faturamento": fat.get("contato") or venda.get("contato"),
-        "email_faturamento": fat.get("email") or dados.get("email"),
-        "telefone_faturamento": fat.get("telefone") or venda.get("telefone"),
-        "forma_cobranca": fat.get("forma"),
-        "produto": venda.get("produto") or dados.get("produto"),
-        "valor_contrato": dados.get("valor") or venda.get("valor_contrato"),
-        "resumo_venda": venda.get("resumo"),
-        "closer": venda.get("closer"),
-        "lead_id": dados.get("lead_id"),
-        "entrega": dados.get("entrega") or {},
-        "gerado_em": datetime.now(timezone.utc).isoformat(),
+            print("Aviso: cliente indisponivel para cobranca:", e)
+    origem = dados.get("passagem") or {}
+    passagem = {
+        "resumo": f"{rotulo} · {dados.get('projeto_nome') or 'contrato'}",
+        "produto": dados.get("produto") or origem.get("produto"),
+        "valor_contrato": dados.get("valor"),
+        "closer": origem.get("closer"),
+        "fechado_em": origem.get("fechado_em"),
+        "contrato": origem.get("contrato"),
+        "faturamento": {
+            "razao_social": cliente.get("nome_empresa") or dados.get("cliente_nome"),
+            "cnpj": dados.get("cnpj") or cliente.get("cnpj"),
+            "contato": fat.get("contato") or origem.get("contato") or dados.get("contato"),
+            "email": fat.get("email") or cliente.get("email") or dados.get("email"),
+            "telefone": fat.get("telefone") or cliente.get("telefone") or dados.get("telefone"),
+            "forma": fat.get("forma"),
+            "cidade": cliente.get("cidade"),
+            "estado": cliente.get("estado"),
+        },
+        # Só existe quando a cobrança vem de uma entrega finalizada.
+        "entrega": dados.get("entrega") or None,
     }
-
+    nome = f"{dados.get('cliente_nome') or 'Cliente'} · {rotulo.lower()}"
+    if dados.get("projeto_nome"):
+        nome += f" · {dados['projeto_nome']}"
     novo = {
-        "nome_projeto": nome_cobranca,
+        "nome_projeto": nome,
         "area": QUADRO_AREA['financeiro'],
         "status": FASE_ENTRADA,
         "empresa": dados.get("cliente_nome"),
         "cliente_id": dados.get("cliente_id"),
         "origem_lead_id": dados.get("lead_id"),
-        "vinculado_a": dados.get("lote_id"),
+        "vinculado_a": dados.get("lote_id") or dados.get("projeto_id"),
         "valor": dados.get("valor"),
         "responsavel": resp.get("nome") if resp else None,
-        "aguardando_responsavel": resp is None or aguardando,
+        "aguardando_responsavel": aguardando or resp is None,
         "data_status_atual": datetime.now(timezone.utc).isoformat(),
-        "passagem": passagem_cobranca,
+        "passagem": passagem,
     }
     r = _inserir_projeto(novo)
     projeto_id = (r.data or [{}])[0].get("id")
-
-    # Cobranca sem dono agora avisa, como os cards de produto ja faziam.
-    # Sem isto ela ficava na fila do Adm/Fin ate alguem passar por la
-    # por conta propria -- e nota atrasada ninguem descobre a tempo.
     if novo["aguardando_responsavel"] and projeto_id:
-        avisar_sem_dono(projeto_id, novo["nome_projeto"], 'financeiro')
-
+        avisar_sem_dono(projeto_id, nome, 'financeiro')
     return {"projeto_id": projeto_id, "responsavel": novo["responsavel"],
-            "aguardando_responsavel": novo["aguardando_responsavel"]}
+            "sem_dono": bool(novo["aguardando_responsavel"])}
 
 
 # Colunas que dependem de um SQL ter rodado. Se faltar alguma, o card
@@ -4269,10 +4035,6 @@ def _acao_criar_cobranca(acao, dados):
 # ausente é pior que criar o card sem o dado extra.
 _COLUNAS_OPCIONAIS = ("subquadro", "origem_lead_id", "lote_id", "lote_pos",
                       "lote_total", "aguardando_responsavel", "vinculado_a",
-                      # `passagem` so existe depois de rodar
-                      # etapa1_continuidade.sql. Sem ela o card nasce
-                      # igual a antes, sem briefing, em vez de o
-                      # fechamento inteiro falhar.
                       "passagem")
 
 
@@ -4286,10 +4048,8 @@ def _inserir_projeto(novo):
         faltando = [c for c in _COLUNAS_OPCIONAIS if c in msg and c in novo]
         if not faltando:
             raise
-        arquivo = ("etapa1_continuidade.sql" if faltando == ["passagem"]
-                   else "quadros.sql e fluxo.sql")
         print(f"Aviso: coluna(s) {faltando} nao existem em projetos. "
-              f"Rode {arquivo}. Criando o card sem elas.")
+              f"Rode quadros.sql e fluxo.sql. Criando o card sem elas.")
         reduzido = {k: v for k, v in novo.items() if k not in faltando}
         return supabase.table("projetos").insert(reduzido).execute()
 
@@ -4420,16 +4180,24 @@ def _acao_abrir_quadros(acao, dados):
     produto futuro funciona sem mudar código.
     """
     criados = []
-    recusados = []
+    # Quadro pedido que não existe na árvore era pulado com `continue`,
+    # sem registro. O closer via "Contrato fechado" e o card nunca
+    # nascia em lugar nenhum. Agora fica na resposta e em fluxo_execucoes.
+    ignorados = []
+    passagem = dados.get("passagem") or {}
+    # Prazo prometido na venda vira o prazo do card quando é uma data.
+    # Texto livre ("começar em outubro") fica só no briefing.
+    prazo_card = None
+    try:
+        pp = str(passagem.get("prazo_prometido") or "")[:10]
+        if pp:
+            prazo_card = datetime.strptime(pp, "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        prazo_card = None
     for pedido in (dados.get("quadros") or []):
         quadro = pedido.get("quadro")
         if quadro not in QUADRO_AREA:
-            # Quadro que a janela pediu e a arvore nao conhece. Antes o
-            # pedido morria aqui em silencio: o contrato fechava, o card
-            # nao nascia, e nao havia onde procurar o motivo.
-            recusados.append(quadro)
-            _registrar_execucao(None, 'lead.ganho', dados, None,
-                                f"quadro desconhecido no pedido: {quadro!r}")
+            ignorados.append(str(quadro))
             continue
         # A quantidade vem no nível de cima do pedido, não dentro de cada
         # quadro. Ler só de dentro fazia todo contrato virar 1 card,
@@ -4469,19 +4237,12 @@ def _acao_abrir_quadros(acao, dados):
                 "responsavel": dono.get("nome") if dono else None,
                 "aguardando_responsavel": aguardando,
                 "data_status_atual": datetime.now(timezone.utc).isoformat(),
-                # A foto do acordo vai em TODOS os cards do lote, nao só
-                # no primeiro: quem pega a parte 4 de 5 precisa do
-                # briefing tanto quanto quem pega a parte 1. Só o valor
-                # fica no primeiro, para os painéis não somarem em dobro.
-                "passagem": dados.get("passagem") or {},
+                # A foto do acordo vai em todos os cards do lote, não só no
+                # primeiro: quem pega a parte 4/5 precisa do briefing tanto
+                # quanto quem pega a 1/5.
+                "passagem": passagem or {},
+                "prazo_data": prazo_card,
             }
-            # Prazo prometido na venda vira prazo do card quando o closer
-            # escreveu uma data. Texto livre ("começar em outubro") fica
-            # só no briefing: nao da para transformar em prazo sem
-            # inventar um dia.
-            prazo_venda = _data_ou_none((dados.get("passagem") or {}).get("prazo_prometido"))
-            if prazo_venda:
-                novo["prazo_data"] = prazo_venda
             r = _inserir_projeto(novo)
             projeto_id = (r.data or [{}])[0].get("id")
             # Card sem dono nenhum: avisa quem direciona o quadro, senão
@@ -4494,9 +4255,7 @@ def _acao_abrir_quadros(acao, dados):
                 "quadro": quadro,
                 "responsavel": dono.get("nome") if dono else None,
             })
-    return {"criados": len(criados), "itens": criados,
-            "pedidos": len(dados.get("quadros") or []),
-            "recusados": recusados}
+    return {"criados": len(criados), "itens": criados, "ignorados": ignorados}
 
 
 ACOES = {
@@ -4519,32 +4278,51 @@ def fechar_lead(lead_id):
             return jsonify({"status": "erro", "mensagem": "Lead não encontrado."}), 404
         lead = r.data[0]
 
-        # BRIEFING DA PASSAGEM.
-        # A frase do closer e o que a operacao le primeiro no card. Sem
-        # ela, o card chega com nome de empresa e nome de projeto, e o
-        # resto vira pergunta no WhatsApp -- que foi o motivo desta
-        # mudanca. Se o time reclamar do atrito, `BRIEFING_OBRIGATORIO`
-        # desliga a exigencia sem mexer em mais nada.
-        brief = d.get("briefing") or {}
-        resumo = (brief.get("resumo") or "").strip()
-        if BRIEFING_OBRIGATORIO and len(resumo) < 10:
-            return jsonify({
-                "status": "erro",
-                "campo": "briefing",
-                "mensagem": ("Escreva em uma frase o que foi vendido. "
-                             "É o que a operação vai ler no card."),
-            }), 400
-
         cliente_id = d.get("cliente_id") or lead.get("cliente_id")
         cliente_nome = d.get("cliente_nome") or lead.get("empresa") or lead.get("contato")
+        cnpj = d.get("cnpj") or lead.get("cnpj")
+
+        # BRIEFING DA PASSAGEM
+        # O card que nasce na operação carrega o que foi vendido. Sem a
+        # frase, o contrato não passa: é atrito de propósito -- o custo de
+        # escrever uma linha aqui é menor que o de quem executa ter que
+        # perguntar no WhatsApp o que foi combinado.
+        briefing = d.get("passagem") or {}
+        resumo = (briefing.get("resumo") or "").strip()
+        if len(resumo) < 10:
+            return jsonify({"status": "erro",
+                            "mensagem": "Descreva em uma frase o que foi vendido: "
+                                        "é o que a operação vai ler primeiro."}), 400
+
+        # UM CNPJ, UM CLIENTE
+        # Antes, todo fechamento com `criar_cliente` inseria um cadastro
+        # novo, mesmo que aquele CNPJ já fosse cliente da casa. O histórico
+        # da conta se partia em dois e ninguém sabia quantos clientes reais
+        # a conexão tinha. Agora o CNPJ é procurado primeiro; achou, liga.
+        if not cliente_id and cnpj:
+            existente = cliente_por_cnpj(cnpj)
+            if existente:
+                cliente_id = existente["id"]
+                try:
+                    supabase.table("lead_interacoes").insert({
+                        "lead_id": lead_id, "tipo": "sistema",
+                        "autor": session.get('usuario_nome'),
+                        "resumo": f"Vinculado ao cliente já cadastrado "
+                                  f"\"{existente.get('nome_empresa')}\" pelo CNPJ.",
+                    }).execute()
+                except Exception as e:
+                    print("Aviso: vinculo por CNPJ nao registrado:", e)
 
         # Cliente novo criado na hora, já ligado ao lead de origem.
         if not cliente_id and d.get("criar_cliente"):
             rc = supabase.table("clientes").insert({
                 "nome_empresa": cliente_nome,
-                "cnpj": d.get("cnpj") or lead.get("cnpj"),
+                "cnpj": cnpj,
                 "email": lead.get("email"),
                 "telefone": lead.get("telefone"),
+                "cidade": lead.get("cidade"),
+                "estado": lead.get("estado"),
+                "responsavel": lead.get("responsavel"),
                 "lead_id": lead_id,
                 "ativo": True,
             }).execute()
@@ -4591,67 +4369,69 @@ def fechar_lead(lead_id):
         except Exception:
             pass
 
+        valor = d.get("valor") or lead.get("valor_estimado")
+        contrato = lead.get("contrato_arquivo") or {}
+
+        # FOTO DO ACORDO
+        # O que vai gravado em cada card é o que foi combinado NESTE dia.
+        # Cadastro (telefone, e-mail, CNPJ) o card lê do lead ao vivo; o
+        # acordo não -- se o closer reabrir o lead e mudar o valor daqui a
+        # seis meses, a operação continua vendo o que assinou.
+        passagem = {
+            "resumo": resumo,
+            "contato": (briefing.get("contato") or lead.get("contato") or "").strip() or None,
+            "cargo": (briefing.get("cargo") or "").strip() or None,
+            "telefone": (briefing.get("telefone") or lead.get("telefone") or "").strip() or None,
+            "prazo_prometido": (briefing.get("prazo_prometido") or "").strip() or None,
+            "atencao": (briefing.get("atencao") or "").strip() or None,
+            "produto": d.get("produto") or lead.get("produto"),
+            "origem": lead.get("origem"),
+            "valor_contrato": valor,
+            "closer": resp_novo or session.get('usuario_nome'),
+            "fechado_em": datetime.now(timezone.utc).isoformat(),
+            # Referência, não cópia: o arquivo continua um só no Storage e
+            # cada card gera o próprio link temporário para ele.
+            "contrato": ({"nome": contrato.get("nome"), "caminho": contrato.get("caminho")}
+                         if contrato.get("caminho") else None),
+        }
+
         resultado = disparar('lead.ganho', {
             "lead_id": lead_id, "funil": "fechamento",
             "lead_nome": lead.get("lead"),
             "cliente_id": cliente_id, "cliente_nome": cliente_nome,
             "produto": d.get("produto") or lead.get("produto"),
             "projeto_nome": d.get("projeto_nome") or lead.get("produto"),
-            "valor": d.get("valor") or lead.get("valor_estimado"),
+            "valor": valor,
             "quadros": d.get("quadros") or [],
-            # QUANTIDADE.
-            # A janela pergunta quantos cards o contrato gera e a acao
-            # `abrir_quadros` le `dados["quantidade"]` -- mas este
-            # payload nunca carregava o campo. Resultado: contrato de 5
-            # vagas nascia como 1 card, sem erro nenhum no log.
-            "quantidade": d.get("quantidade"),
-            # FOTO DO ACORDO.
-            # Congelada aqui e gravada em cada card. Ler do lead na hora
-            # de exibir seria mais simples, mas o lead muda: renegociacao
-            # seis meses depois reescreveria o que a operacao combinou.
-            "passagem": {
-                "resumo": resumo or None,
-                "contato": (brief.get("contato") or lead.get("contato") or None),
-                "cargo": brief.get("cargo") or None,
-                "telefone": brief.get("telefone") or lead.get("telefone") or None,
-                "prazo_prometido": brief.get("prazo") or None,
-                "atencao": (brief.get("atencao") or "").strip() or None,
-                "produto": d.get("produto") or lead.get("produto"),
-                "cnpj": d.get("cnpj") or lead.get("cnpj"),
-                "origem": lead.get("origem"),
-                "valor_contrato": d.get("valor") or lead.get("valor_estimado"),
-                "closer": session.get('usuario_nome'),
-                "fechado_em": datetime.now(timezone.utc).isoformat(),
-                "lead_id": lead_id,
-            },
+            # A janela manda a quantidade no topo e `abrir_quadros` lê
+            # daqui -- mas este campo nunca era repassado. Resultado em
+            # produção: contrato de 5 vagas virava 1 card, sem aviso.
+            "quantidade": d.get("quantidade") or 1,
             "telefone": lead.get("telefone"), "email": lead.get("email"),
-            "cnpj": d.get("cnpj") or lead.get("cnpj"),
+            "cnpj": cnpj,
+            "contato": lead.get("contato"),
+            "passagem": passagem,
             # Disponivel para regras de fluxo que queiram avisar ou
             # atribuir com base em quem fechou.
             "responsavel": resp_novo,
             "responsavel_anterior": resp_antes if houve_passagem else None,
         })
-        # QUANTOS CARDS NASCERAM.
-        # A tela le `criados` para avisar "contrato fechado · 5 cards
-        # criados". A resposta nunca teve esse campo, entao o aviso dizia
-        # so "Contrato fechado" mesmo quando nada foi criado -- e a
-        # passagem de bastao falhava sem ninguem ver.
-        criados = 0
-        recusados = []
-        for execucao in (resultado or []):
-            res_acao = execucao.get("resultado")
-            if not isinstance(res_acao, dict):
-                continue
-            if execucao.get("acao") == "abrir_quadros":
-                criados += int(res_acao.get("criados") or 0)
-                recusados.extend(res_acao.get("recusados") or [])
-            elif execucao.get("acao") == "criar_cobranca" and res_acao.get("projeto_id"):
-                criados += 1
 
-        return jsonify({"status": "sucesso", "cliente_id": cliente_id,
-                        "criados": criados, "recusados": recusados,
-                        "pediu_quadros": len(d.get("quadros") or []),
-                        "fluxo": resultado}), 200
+        # A tela lia `d.criados` e a rota nunca devolvia o campo: o aviso
+        # dizia "Contrato fechado" tanto para cinco cards quanto para
+        # nenhum. Seis fechamentos de 04/09 terminaram com zero cards e
+        # ninguém percebeu na hora.
+        criados = 0
+        ignorados = []
+        for item in resultado:
+            res = item.get("resultado") or {}
+            if item.get("acao") == "abrir_quadros":
+                criados += int(res.get("criados") or 0)
+                ignorados += res.get("ignorados") or []
+            elif item.get("acao") == "criar_cobranca" and res.get("projeto_id"):
+                criados += 1
+        return jsonify({"status": "sucesso", "cliente_id": cliente_id, "fluxo": resultado,
+                        "criados": criados, "ignorados": ignorados}), 200
     except Exception as e:
         print("Erro em fechar_lead:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao fechar o contrato.",
@@ -6882,6 +6662,12 @@ def _lead_para_contrato(lead_id):
     return lead, None
 
 
+def _contrato_e_deste_lead(caminho, lead_id):
+    """O arquivo vive em `<lead_id>/<token>.<ext>`. Só o lead da pasta
+    pode apagá-lo do Storage."""
+    return str(caminho or '').startswith(str(lead_id) + '/')
+
+
 @app.route('/api/leads/<lead_id>/contrato', methods=['POST'])
 def subir_contrato(lead_id):
     """Anexa o contrato assinado ao lead."""
@@ -6931,7 +6717,12 @@ def subir_contrato(lead_id):
 
         # Substituir apaga o antigo: dois contratos para o mesmo lead
         # ocupam espaco e criam duvida sobre qual vale.
-        if anterior.get("caminho") and anterior["caminho"] != caminho:
+        #
+        # Mas só se o arquivo for DESTE lead. O lead de relacionamento
+        # aponta para o contrato do lead que o originou (mesmo arquivo,
+        # sem cópia); apagar ali sumiria com o contrato da conta inteira.
+        if (anterior.get("caminho") and anterior["caminho"] != caminho
+                and _contrato_e_deste_lead(anterior["caminho"], lead_id)):
             try:
                 supabase.storage.from_(BUCKET_CONTRATOS).remove([anterior["caminho"]])
             except Exception as e:
@@ -6987,7 +6778,9 @@ def remover_contrato(lead_id):
         # Limpa o campo primeiro: se o Storage falhar, o lead ja nao
         # aponta para um arquivo que a tela nao consegue abrir.
         supabase.table("leads").update({"contrato_arquivo": None}).eq("id", lead_id).execute()
-        if info.get("caminho"):
+        # Arquivo compartilhado com o lead de origem só sai do Storage
+        # quando removido de lá; aqui só desaponta.
+        if info.get("caminho") and _contrato_e_deste_lead(info["caminho"], lead_id):
             try:
                 supabase.storage.from_(BUCKET_CONTRATOS).remove([info["caminho"]])
             except Exception as e:
@@ -7657,6 +7450,30 @@ acessos_v2.configurar(
     registrar_auditoria=registrar_auditoria,
 )
 app.register_blueprint(acessos_v2.acessos_bp)
+
+# ============================================================
+# CONTINUIDADE DA CONTA -- leituras dos paineis dos cards
+#
+# As gravacoes (fechamento, abertura de quadros, finalizacao) ficam
+# neste arquivo, junto do motor de fluxo. As leituras que contam a
+# historia da conta de ponta a ponta vivem em continuidade.py.
+# ============================================================
+import continuidade
+continuidade.configurar(
+    supabase=supabase,
+    pode=pode,
+    filtrar_projetos_permitidos=filtrar_projetos_permitidos,
+    QUADRO_AREA=QUADRO_AREA,
+    QUADROS_PRODUTO=QUADROS_PRODUTO,
+    STATUS_ENCERRADOS=STATUS_ENCERRADOS,
+    BUCKET_CONTRATOS=BUCKET_CONTRATOS,
+    so_digitos=so_digitos,
+    cliente_por_cnpj=cliente_por_cnpj,
+    responsavel_do_quadro=responsavel_do_quadro,
+    definir_dono=definir_dono,
+    _paginar=_paginar,
+)
+app.register_blueprint(continuidade.continuidade_bp)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
