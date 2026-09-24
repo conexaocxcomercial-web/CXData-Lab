@@ -3983,28 +3983,11 @@ def _acao_criar_lead(acao, dados):
         # Sem papel configurado, quem vendeu mantém a conta.
         novo["responsavel"] = pai.get("responsavel")
 
-    # UM CARD POR CLIENTE NO RELACIONAMENTO
-    # Cada card finalizado criava um lead: um contrato de 5 vagas virava
-    # 5 leads da mesma empresa no Backlog. Se o cliente já tem um card
-    # aberto no Relacionamento, a entrega entra nele. O card fica na
-    # coluna em que está: uma entrega nova não desfaz um follow up em
-    # andamento, só aparece no histórico e na linha do tempo.
-    if novo["funil"] == "relacionamento":
-        existente = lead_relacionamento_aberto(novo.get("cliente_id"), novo.get("cnpj"))
-        if existente:
-            upd = {"entrega": novo.get("entrega") or {}}
-            if novo.get("contrato_arquivo"):
-                upd["contrato_arquivo"] = novo["contrato_arquivo"]
-            try:
-                supabase.table("leads").update(upd).eq("id", existente["id"]).execute()
-            except Exception as e:
-                if "entrega" not in str(e):
-                    raise
-                print("Aviso: coluna entrega ausente (rode a migracao):", e)
-            _registrar_entrega_no_lead(existente["id"], novo.get("entrega") or {})
-            return {"lead_id": existente["id"], "reaproveitado": True,
-                    "responsavel": existente.get("responsavel")}
-
+    # UM CARD POR PROJETO FINALIZADO (decisão de 23/09)
+    # Cada projeto que chega ao fim gera o seu card no Relacionamento, mesmo
+    # que o cliente já tenha outros ali: cinco vagas finalizadas são cinco
+    # entregas, cada uma com a sua pesquisa. O que não pode acontecer é um
+    # projeto finalizado NÃO chegar -- por isso não há deduplicação aqui.
     try:
         r = supabase.table("leads").insert(novo).execute()
     except Exception as e:
@@ -4041,33 +4024,6 @@ def _registrar_entrega_no_lead(lead_id, ent):
             }).execute()
         except Exception as e:
             print("Aviso: interacao de entrega nao registrada:", e)
-
-
-def lead_relacionamento_aberto(cliente_id, cnpj=None):
-    """O card do cliente no Relacionamento, se existir.
-
-    Lead no funil de relacionamento e fora da lixeira é card aberto: o
-    Ganho e a Nutrição tiram o lead do funil. Procura pelo cliente e, para
-    cadastros antigos sem vínculo, pelo CNPJ (dígitos).
-    """
-    try:
-        if cliente_id:
-            r = (supabase.table("leads").select("id, responsavel, coluna, cliente_id")
-                 .eq("funil", "relacionamento").eq("cliente_id", cliente_id)
-                 .is_("excluido_em", "null").order("criado_em").limit(1).execute())
-            if r.data:
-                return r.data[0]
-        dig = so_digitos(cnpj)
-        if len(dig) == 14 and not cnpj_da_casa(dig):
-            m = f"{dig[:2]}.{dig[2:5]}.{dig[5:8]}/{dig[8:12]}-{dig[12:]}"
-            r = (supabase.table("leads").select("id, responsavel, coluna, cliente_id, cnpj")
-                 .eq("funil", "relacionamento").is_("excluido_em", "null")
-                 .or_(f"cnpj.eq.{dig},cnpj.eq.{m}").order("criado_em").limit(1).execute())
-            if r.data:
-                return r.data[0]
-    except Exception as e:
-        print("Aviso: lead_relacionamento_aberto:", e)
-    return None
 
 
 ROTULO_SATISFACAO = {"tranquilo": "entrega tranquila",
@@ -7672,7 +7628,6 @@ continuidade.configurar(
     BUCKET_CONTRATOS=BUCKET_CONTRATOS,
     so_digitos=so_digitos,
     cliente_por_cnpj=cliente_por_cnpj,
-    lead_relacionamento_aberto=lead_relacionamento_aberto,
     cnpj_da_casa=cnpj_da_casa,
     responsavel_do_quadro=responsavel_do_quadro,
     definir_dono=definir_dono,
