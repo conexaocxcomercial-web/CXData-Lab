@@ -516,6 +516,15 @@
         .csat-b.on{ background:var(--acao-fraco); box-shadow:inset 0 0 0 1.5px var(--acao); }
         .csat-b.on b, .csat-b.on span{ color:var(--acao); }
         .csat-salvar{ background:var(--acao); color:#fff; box-shadow:none; }
+        .pesq-tipo{ display:inline-flex; gap:4px; padding:4px; border-radius:11px; background:var(--papel-2); }
+        .pesq-tipo button{ min-height:38px; padding:0 14px; border:none; border-radius:8px; background:none; font:inherit;
+            font-size:13px; font-weight:700; color:var(--tinta-2); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+        .pesq-tipo button small{ font-size:11px; font-weight:500; color:var(--tinta-3); }
+        .pesq-tipo button.on{ background:var(--papel); color:var(--acao); box-shadow:0 1px 2px rgba(23,23,26,.08), 0 0 0 1px var(--linha); }
+        .csat-op.nps{ grid-template-columns:repeat(11,1fr); gap:5px; }
+        .csat-op.nps .csat-b{ min-height:46px; }
+        .pesq-linha{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        @media(max-width:520px){ .csat-op.nps{ grid-template-columns:repeat(6,1fr); } .pesq-linha{ grid-template-columns:1fr; } }
         .csat-salvar:hover{ background:var(--acao); filter:brightness(.95); }
         @media(max-width:520px){ .csat-op{ grid-template-columns:repeat(5,1fr); gap:4px; } .csat-b span{ font-size:9.5px; } }
         @media(max-width:520px){ .cta-lin{ grid-template-columns:1fr; gap:2px; } .cta-lin .d{ font-size:11px; } }
@@ -2451,7 +2460,9 @@
                 + (l.responsavel ? `<span class="cxl-pill"><span class="mini" style="background:${rb};color:${rf}">${escH(iniciais(l.responsavel))}</span>${escH(l.responsavel)}</span>` : `<span class="cxl-pill at">Sem responsável</span>`)
                 + `<span class="cxl-pill${atrasado ? ' at' : ''}"><span class="material-symbols-rounded">event</span><span class="r">Próximo contato</span>${prox ? prox.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : 'não agendado'}</span>`
                 + (l.origem ? `<span class="cxl-pill suave"><span class="material-symbols-rounded">call_received</span>${escH(l.origem)}</span>` : '')
-                + (l.funil === 'relacionamento' ? `<span class="cxl-pill suave">Cliente da casa</span>` : '');
+                // A origem de quem volta da operação já é "Cliente da casa":
+                // a pílula só entra quando a origem diz outra coisa.
+                + (l.funil === 'relacionamento' && l.origem !== 'Cliente da casa' ? `<span class="cxl-pill suave">Cliente da casa</span>` : '');
 
             const temTel = !!soDigitos(l.telefone), temMail = !!(l.email||'').trim();
             document.getElementById('dAcoes').innerHTML =
@@ -2587,51 +2598,89 @@
                         <span class="v"></span></div>`).join('')}</div>`);
             }
             alvo.innerHTML = blocos.join('');
+            if(document.getElementById('pesqNotas')) pintarEscalaPesquisa();
         }
 
-        /* ==================== PESQUISA CSAT ====================
-           De 1 a 5, a resposta DO CLIENTE. Satisfeitos = 4 e 5; o CSAT
-           da conexão é a porcentagem deles. Não confundir com a
-           percepção da operação registrada na finalização. */
-        const CSAT = [[1,'Muito insatisfeito'],[2,'Insatisfeito'],[3,'Neutro'],[4,'Satisfeito'],[5,'Muito satisfeito']];
-        let csatNota = null;
+        /* ==================== PESQUISA DE SATISFAÇÃO ====================
+           CSAT (1 a 5) ou NPS (0 a 10), à escolha de quem aplica: a
+           metodologia muda com o tipo de cliente e a quantidade de
+           projetos, e essa regra não é do sistema. Cada registro vai para
+           a tabela que alimenta o dashboard -- cliente, projeto, tipo,
+           nota e data -- e continua aparecendo aqui no card. */
+        const ESCALA = {
+            csat: { nome:'CSAT', pergunta:'"De 1 a 5, quanto você ficou satisfeito com o serviço entregue?"',
+                    notas:[[1,'Muito insatisfeito'],[2,'Insatisfeito'],[3,'Neutro'],[4,'Satisfeito'],[5,'Muito satisfeito']],
+                    rodape:'Contam como satisfeitos as notas 4 e 5.' },
+            nps:  { nome:'NPS', pergunta:'"De 0 a 10, quanto você recomendaria a conexão.cx a um colega?"',
+                    notas:[0,1,2,3,4,5,6,7,8,9,10].map(n => [n, '']),
+                    rodape:'0 a 6 detratores · 7 e 8 neutros · 9 e 10 promotores.' }
+        };
+        let pesqTipo = 'csat', pesqNota = null, pesqLead = null;
         function blocoPesquisa(l, ult){
-            csatNota = null;
-            const feita = ult ? (ult.nao_respondeu
-                ? `<div class="cta-at" style="background:var(--papel-2);color:var(--tinta-2)">Última tentativa: cliente não respondeu${ult.canal ? ' · ' + escH(ult.canal) : ''} · ${fmtData(ult.registrado_em)}</div>`
-                : `<div class="cta-at" style="background:${ult.satisfeito ? 'var(--ok-fraco)' : 'var(--at-fundo)'};color:${ult.satisfeito ? 'var(--ok)' : '#6B3D03'}"><b>CSAT ${ult.nota} · ${escH(ult.rotulo)}</b>${ult.canal ? ' · ' + escH(ult.canal) : ''} · ${fmtData(ult.registrado_em)}${ult.comentario ? '<br>' + escH(ult.comentario) : ''}</div>`) : '';
-            return `<div class="cta-bloco destaque" id="csatBloco"><div class="cta-t">Pesquisa de satisfação · CSAT</div>
-                <div class="cta-meta" style="margin:0 0 10px"><b style="color:var(--tinta)">"De 1 a 5, quanto você ficou satisfeito com o serviço entregue?"</b> Registre a resposta do cliente.</div>
+            pesqNota = null; pesqLead = l.id;
+            pesqTipo = (ult && ult.tipo) || 'csat';
+            const hoje = new Date(); const iso = new Date(hoje.getTime() - hoje.getTimezoneOffset()*60000).toISOString().slice(0,10);
+            let feita = '';
+            if(ult){
+                const sig = (ult.tipo || 'csat').toUpperCase();
+                const quando = fmtData(ult.data || ult.registrado_em);
+                feita = ult.nao_respondeu
+                    ? `<div class="cta-at" style="background:var(--papel-2);color:var(--tinta-2)">Última tentativa (${sig}): cliente não respondeu${ult.canal ? ' · ' + escH(ult.canal) : ''} · ${quando}</div>`
+                    : `<div class="cta-at" style="background:${ult.satisfeito ? 'var(--ok-fraco)' : 'var(--at-fundo)'};color:${ult.satisfeito ? 'var(--ok)' : '#6B3D03'}"><b>${sig} ${ult.nota}${ult.rotulo ? ' · ' + escH(ult.rotulo) : ''}</b>${ult.canal ? ' · ' + escH(ult.canal) : ''} · ${quando}${ult.comentario ? '<br>' + escH(ult.comentario) : ''}</div>`;
+            }
+            return `<div class="cta-bloco destaque" id="pesqBloco"><div class="cta-t">Pesquisa de satisfação</div>
                 ${feita}
-                <div class="csat-op" role="radiogroup" aria-label="Nota CSAT">
-                    ${CSAT.map(([n,t]) => `<button type="button" role="radio" aria-checked="false" class="csat-b" data-n="${n}" onclick="marcarCsat(${n})"><b>${n}</b><span>${t}</span></button>`).join('')}
+                <div class="pesq-tipo" role="radiogroup" aria-label="Tipo de pesquisa">
+                    <button type="button" role="radio" data-t="csat" onclick="escolherTipoPesquisa('csat')">CSAT <small>1 a 5</small></button>
+                    <button type="button" role="radio" data-t="nps" onclick="escolherTipoPesquisa('nps')">NPS <small>0 a 10</small></button>
                 </div>
-                <div class="cta-meta" style="margin:6px 0 10px">Contam como satisfeitos as notas 4 e 5.</div>
+                <div class="cta-meta" id="pesqPergunta" style="margin:10px 0 0"></div>
+                <div class="csat-op" id="pesqNotas" role="radiogroup" aria-label="Nota do cliente"></div>
+                <div class="cta-meta" id="pesqRodape" style="margin:6px 0 10px"></div>
+                <div class="pesq-linha">
+                    <div class="ig"><label for="pesqData">Data da pesquisa</label><input type="date" id="pesqData" value="${iso}" max="${iso}"></div>
+                    <div class="ig"><label for="csatCanal">Como foi feita</label>
+                        <select id="csatCanal"><option>Ligação</option><option>WhatsApp</option><option>Google Forms</option><option>E-mail</option><option>Reunião</option></select></div>
+                </div>
                 <div class="ig"><label for="csatComent">O que o cliente disse</label><textarea id="csatComent" rows="2" maxlength="1000"></textarea></div>
-                <div class="ig"><label for="csatCanal">Como a pesquisa foi feita</label>
-                    <select id="csatCanal"><option>Ligação</option><option>WhatsApp</option><option>E-mail</option><option>Reunião</option><option>Formulário</option></select></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-                    <button type="button" class="cta-btn csat-salvar" onclick="salvarCsat('${escA(l.id)}', false)">Registrar pesquisa</button>
-                    <button type="button" class="cta-btn" onclick="salvarCsat('${escA(l.id)}', true)">Cliente não respondeu</button>
+                    <button type="button" class="cta-btn csat-salvar" onclick="salvarPesquisa(false)">Registrar pesquisa</button>
+                    <button type="button" class="cta-btn" onclick="salvarPesquisa(true)">Cliente não respondeu</button>
                 </div></div>`;
         }
-        function marcarCsat(n){
-            csatNota = n;
-            document.querySelectorAll('.csat-b').forEach(b => {
+        // O bloco é inserido como texto; a escala é pintada depois dele existir.
+        function pintarEscalaPesquisa(){
+            const e = ESCALA[pesqTipo];
+            document.querySelectorAll('.pesq-tipo button').forEach(b => {
+                const on = b.dataset.t === pesqTipo;
+                b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+            const box = document.getElementById('pesqNotas'); if(!box) return;
+            box.classList.toggle('nps', pesqTipo === 'nps');
+            box.innerHTML = e.notas.map(([n,t]) => `<button type="button" role="radio" aria-checked="false" class="csat-b" data-n="${n}" onclick="marcarNota(${n})"><b>${n}</b>${t ? `<span>${t}</span>` : ''}</button>`).join('');
+            document.getElementById('pesqPergunta').innerHTML = `<b style="color:var(--tinta)">${e.pergunta}</b> Registre a resposta do cliente.`;
+            document.getElementById('pesqRodape').innerText = e.rodape;
+        }
+        function escolherTipoPesquisa(t){ pesqTipo = t; pesqNota = null; pintarEscalaPesquisa(); }
+        function marcarNota(n){
+            pesqNota = n;
+            document.querySelectorAll('#pesqNotas .csat-b').forEach(b => {
                 const on = Number(b.dataset.n) === n;
                 b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
             });
         }
-        async function salvarCsat(leadId, naoRespondeu){
-            if(!naoRespondeu && !csatNota){ showToast('Escolha a nota que o cliente deu, de 1 a 5.', 'error'); return; }
+        async function salvarPesquisa(naoRespondeu){
+            const nome = ESCALA[pesqTipo].nome;
+            if(!naoRespondeu && pesqNota === null){ showToast(`Escolha a nota ${nome} que o cliente deu.`, 'error'); return; }
+            const data = (document.getElementById('pesqData')||{}).value || '';
             try{
-                const r = await fetch('/api/leads/' + leadId + '/pesquisa', { method:'POST', headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({ nota: csatNota, nao_respondeu: naoRespondeu,
+                const r = await fetch('/api/leads/' + pesqLead + '/pesquisa', { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ tipo: pesqTipo, nota: pesqNota, nao_respondeu: naoRespondeu, data,
                         comentario: (document.getElementById('csatComent')||{}).value || '',
                         canal: (document.getElementById('csatCanal')||{}).value || '' }) });
                 if(!r.ok){ showToast(await motivoErro(r, 'Não foi possível registrar a pesquisa.'), 'error'); return; }
-                showToast(naoRespondeu ? 'Registrado: cliente não respondeu.' : 'Pesquisa registrada.', 'success');
-                abrirDetalhe(leadId);
+                showToast(naoRespondeu ? 'Registrado: cliente não respondeu.' : `Pesquisa ${nome} registrada.`, 'success');
+                abrirDetalhe(pesqLead);
             }catch(e){ showToast('Sem conexão com o servidor.', 'error'); }
         }
 
