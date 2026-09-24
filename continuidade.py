@@ -190,7 +190,9 @@ def _resumo_conta(cliente_id, cnpj, pode_valor):
             "concluido_em": p.get("data_conclusao"), "prazo": p.get("prazo_data"),
             "lote": (f"{p['lote_pos']}/{p['lote_total']}" if p.get("lote_total") else None),
             "satisfacao": ent.get("satisfacao"), "horas": ent.get("horas"),
-            "csat": (ent.get("pesquisa") or {}).get("nota"),
+            "csat": ((ent.get("pesquisa") or {}).get("nota") if (ent.get("pesquisa") or {}).get("tipo", "csat") == "csat" else None),
+            "pesquisa": ({"tipo": (ent.get("pesquisa") or {}).get("tipo", "csat"), "nota": (ent.get("pesquisa") or {}).get("nota")}
+                         if ent.get("pesquisa") else None),
         }
         q["cards"].append(item)
         if p.get("status") in encerrados:
@@ -551,17 +553,30 @@ def cliente_pelo_cnpj():
 
 ROTULO_CSAT = {1: "Muito insatisfeito", 2: "Insatisfeito", 3: "Neutro",
                4: "Satisfeito", 5: "Muito satisfeito"}
-CANAIS_PESQUISA = ("Ligação", "WhatsApp", "E-mail", "Reunião", "Formulário")
+ESCALAS = {"csat": range(1, 6), "nps": range(0, 11)}
+
+
+def _rotulo_nota(tipo, nota):
+    if nota is None:
+        return None
+    if tipo == "csat":
+        return ROTULO_CSAT.get(nota)
+    # NPS: a classificação padrão do método.
+    return "Promotor" if nota >= 9 else ("Neutro" if nota >= 7 else "Detrator")
 
 
 @continuidade_bp.route('/api/leads/<lead_id>/pesquisa', methods=['POST'])
 def registrar_pesquisa(lead_id):
-    """Resposta do cliente à pesquisa de satisfação (CSAT, 1 a 5).
+    """Resposta do cliente à pesquisa de satisfação: CSAT (1 a 5) ou NPS
+    (0 a 10), à escolha de quem aplica.
 
-    Fica em três lugares, cada um por um motivo: na linha do tempo do
-    lead (histórico), na entrega atual do lead (o card mostra a última
-    nota) e na entrega do projeto de origem (o histórico da conta mostra
-    a nota de cada entrega, mesmo depois de outras chegarem).
+    O registro que conta é a linha em `pesquisas_satisfacao` -- cliente,
+    projeto, tipo, nota e data --, de onde o dashboard compila. O card
+    continua mostrando a última pesquisa (na entrega do lead e na do
+    projeto) e a linha do tempo guarda o histórico com o comentário.
+
+    Se a tabela não existir, recusa com erro em vez de registrar só no
+    card: pesquisa que não chega ao dashboard é pesquisa perdida sem aviso.
     """
     if 'usuario_id' not in session:
         return jsonify({"erro": "Nao logado"}), 401
@@ -571,6 +586,9 @@ def registrar_pesquisa(lead_id):
     if not _c('pode')('crm.lead.editar', lead):
         return jsonify({"status": "erro", "mensagem": "Sem permissão para registrar a pesquisa."}), 403
     d = request.get_json() or {}
+    tipo = (d.get("tipo") or "csat").strip().lower()
+    if tipo not in ESCALAS:
+        return jsonify({"status": "erro", "mensagem": "Escolha o tipo de pesquisa: CSAT ou NPS."}), 400
     nao_respondeu = bool(d.get("nao_respondeu"))
     nota = None
     if not nao_respondeu:
@@ -578,44 +596,76 @@ def registrar_pesquisa(lead_id):
             nota = int(d.get("nota"))
         except (TypeError, ValueError):
             nota = None
-        if nota not in ROTULO_CSAT:
-            return jsonify({"status": "erro", "mensagem": "Escolha a nota do cliente, de 1 a 5."}), 400
+        if nota not in ESCALAS[tipo]:
+            faixa = "de 1 a 5" if tipo == "csat" else "de 0 a 10"
+            return jsonify({"status": "erro", "mensagem": f"Escolha a nota do cliente, {faixa}."}), 400
+    # Data da pesquisa: a do formulário, quando vier de um; senão, hoje.
+    data_txt = (d.get("data") or "").strip()[:10]
+    try:
+        data_pesquisa = datetime.strptime(data_txt, "%Y-%m-%d").date() if data_txt else datetime.now(timezone.utc).date()
+    except ValueError:
+        return jsonify({"status": "erro", "mensagem": "Data da pesquisa inválida."}), 400
+    if data_pesquisa > datetime.now(timezone.utc).date():
+        return jsonify({"status": "erro", "mensagem": "A data da pesquisa não pode ser no futuro."}), 400
+
     canal = (d.get("canal") or "").strip() or None
     comentario = (d.get("comentario") or "").strip()[:1000] or None
+    entrega = dict(lead.get("entrega") or {})
+    projeto_id = entrega.get("projeto_id")
+    sb = _c('supabase')
+
+    # 1. O registro do dashboard. Primeiro, e sem ele nada mais é gravado.
+    try:
+        sb.table("pesquisas_satisfacao").insert({
+            "tipo": tipo, "nota": nota, "respondeu": not nao_respondeu,
+            "cliente_id": lead.get("cliente_id"), "projeto_id": projeto_id, "lead_id": lead_id,
+            "data_pesquisa": data_pesquisa.isoformat(),
+            "registrado_por": session.get('usuario_nome'),
+        }).execute()
+    except Exception as e:
+        print("Erro: pesquisa nao gravada em pesquisas_satisfacao:", e)
+        return jsonify({"status": "erro",
+                        "mensagem": "Não foi possível guardar a pesquisa no banco. "
+                                    "Avise quem administra o sistema (tabela de pesquisas)."}), 503
+
     registro = {
-        "nota": nota, "rotulo": ROTULO_CSAT.get(nota) if nota else None,
-        "satisfeito": (nota >= 4) if nota else None,
+        "tipo": tipo, "nota": nota, "rotulo": _rotulo_nota(tipo, nota),
+        "satisfeito": ((nota >= 4) if tipo == "csat" else (nota >= 9)) if nota is not None else None,
         "nao_respondeu": nao_respondeu, "canal": canal, "comentario": comentario,
+        "data": data_pesquisa.isoformat(),
         "registrado_por": session.get('usuario_nome'),
         "registrado_em": datetime.now(timezone.utc).isoformat(),
     }
-    sb = _c('supabase')
-    resumo = ("Pesquisa: cliente não respondeu" if nao_respondeu
-              else f"Pesquisa CSAT {nota} · {ROTULO_CSAT[nota]}")
+    sigla = tipo.upper()
+    resumo = (f"Pesquisa {sigla}: cliente não respondeu" if nao_respondeu
+              else f"Pesquisa {sigla} {nota} · {registro['rotulo']}")
     if canal:
         resumo += f" · {canal}"
     if comentario:
         resumo += f" — {comentario}"
-    sb.table("lead_interacoes").insert({"lead_id": lead_id, "tipo": "pesquisa",
-                                        "autor": session.get('usuario_nome'),
-                                        "resumo": resumo[:1000]}).execute()
-    entrega = dict(lead.get("entrega") or {})
+
+    # 2. O que o card mostra (histórico, última pesquisa do lead e do projeto).
+    try:
+        sb.table("lead_interacoes").insert({"lead_id": lead_id, "tipo": "pesquisa",
+                                            "autor": session.get('usuario_nome'),
+                                            "resumo": resumo[:1000]}).execute()
+    except Exception as e:
+        print("Aviso: interacao da pesquisa nao registrada:", e)
     if entrega:
         entrega["pesquisa"] = registro
         try:
             sb.table("leads").update({"entrega": entrega}).eq("id", lead_id).execute()
         except Exception as e:
             print("Aviso: pesquisa nao gravada na entrega do lead:", e)
-        pid = entrega.get("projeto_id")
-        if pid:
-            proj = _um("projetos", "id, passagem", "id", pid)
+        if projeto_id:
+            proj = _um("projetos", "id, passagem", "id", projeto_id)
             if proj:
                 pg = dict(proj.get("passagem") or {})
                 ent_p = dict(pg.get("entrega") or {})
                 ent_p["pesquisa"] = registro
                 pg["entrega"] = ent_p
                 try:
-                    sb.table("projetos").update({"passagem": pg}).eq("id", pid).execute()
+                    sb.table("projetos").update({"passagem": pg}).eq("id", projeto_id).execute()
                 except Exception as e:
                     print("Aviso: pesquisa nao gravada no projeto:", e)
     return jsonify({"status": "sucesso", "pesquisa": registro}), 200
