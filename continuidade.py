@@ -389,7 +389,9 @@ def destinos_encerramento(projeto_id):
     passagem = p.get("passagem") or {}
     # A janela de finalizar diz em qual card a entrega vai cair: no card
     # que o cliente já tem no Relacionamento, ou num novo.
-    aberto = _c('lead_relacionamento_aberto')(p.get("cliente_id"), (cliente or {}).get("cnpj"))
+    # Cada projeto finalizado ganha o seu card no Relacionamento: não há
+    # "card existente" para onde a entrega iria.
+    aberto = None
     eh_produto = _eh_produto(p.get("area"))
     return jsonify({
         "status": "sucesso",
@@ -686,3 +688,46 @@ def card_completo(projeto_id):
     return jsonify({"status": "sucesso", "origem": origem,
                     "historico": hist.get("historico") or [],
                     "comentarios": com.get("comentarios") or []}), 200
+
+
+# ============================================================================
+# GET /api/diagnostico/latencia
+# ============================================================================
+
+@continuidade_bp.route('/api/diagnostico/latencia', methods=['GET'])
+def diagnostico_latencia():
+    """Onde o servidor está e quanto custa cada ida ao banco.
+
+    Serve para decidir a região da Vercel sem acesso ao painel do
+    Supabase: a distância entre os dois aparece no tempo de uma consulta
+    mínima. A primeira consulta paga a abertura da conexão, então a
+    leitura usa a mediana de cinco.
+    """
+    import os
+    import time
+    if 'usuario_id' not in session:
+        return jsonify({"erro": "Nao logado"}), 401
+    if not (session.get('admin') or session.get('nivel_acesso') == 'admin'):
+        return jsonify({"erro": "Só administradores"}), 403
+    sb = _c('supabase')
+    tempos = []
+    for _ in range(5):
+        t = time.perf_counter()
+        sb.table("papeis").select("id").limit(1).execute()
+        tempos.append(round((time.perf_counter() - t) * 1000))
+    mediana = sorted(tempos)[len(tempos) // 2]
+    regiao = os.environ.get('VERCEL_REGION') or 'desconhecida'
+    if mediana <= 40:
+        leitura = ("O banco está perto do servidor. A região está certa: "
+                   "NÃO suba o vercel.json novo.")
+    elif regiao.startswith('iad') and mediana <= 250:
+        leitura = ("O servidor está em Washington e o banco está longe dele -- quase "
+                   "certamente em São Paulo. Suba o vercel.json com a região gru1.")
+    else:
+        leitura = "Resultado fora do esperado. Mande este texto para análise."
+    return jsonify({
+        "regiao_do_servidor": regiao,
+        "consultas_ms": tempos,
+        "mediana_ms": mediana,
+        "leitura": leitura,
+    }), 200
