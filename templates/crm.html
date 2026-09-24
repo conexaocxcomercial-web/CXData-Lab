@@ -2164,6 +2164,17 @@
                     if(ctrAtual) l.contrato_arquivo = ctrAtual;
                 }
                 const n = d.criados || 0;
+                // O aviso sai AGORA, com a resposta do servidor. Antes ele
+                // esperava recarregar a base inteira de leads, e o fechamento
+                // parecia levar 10 a 20 segundos. A recarga e a conferência
+                // seguem em segundo plano.
+                if((d.ignorados||[]).length){
+                    showToast('Quadro não reconhecido, nenhum card criado nele: ' + d.ignorados.join(', '), 'error');
+                }
+                showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
+                            : 'Contrato fechado, mas nenhum card foi criado. Confira os quadros marcados.',
+                          n ? 'success' : 'error');
+                render();
                 await carregar();
 
                 /* CONFERE SE PEGOU DE VERDADE.
@@ -2191,12 +2202,7 @@
                     return;
                 }
 
-                if((d.ignorados||[]).length){
-                    showToast('Quadro não reconhecido, nenhum card criado nele: ' + d.ignorados.join(', '), 'error');
-                }
-                showToast(n ? `Contrato fechado · ${n} ${n===1?'card criado':'cards criados'}.`
-                            : 'Contrato fechado, mas nenhum card foi criado. Confira os quadros marcados.',
-                          n ? 'success' : 'error');
+
             }catch(e){
                 showToast('Sem conexão com o servidor.','error');
             } finally { btn.disabled = false; }
