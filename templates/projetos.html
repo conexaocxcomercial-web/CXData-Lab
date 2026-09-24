@@ -2812,7 +2812,7 @@
             info.innerHTML = `<span class="material-symbols-rounded">favorite</span><span class="t"><b>${cli} vai para o Relacionamento</b>`
                 + (existente
                     ? `Já existe um card aberto dele${existente.responsavel ? ', com ' + escH(existente.responsavel) : ''}${existente.coluna ? ' (' + escH(existente.coluna) + ')' : ''}. Esta entrega entra no histórico desse card; nenhum lead novo é criado.`
-                    : `Um card novo nasce no Backlog do Relacionamento, com o CNPJ, o decisor, o contrato e esta entrega.`)
+                    : `Este projeto ganha o seu card no Backlog do Relacionamento, com o CNPJ, o decisor, o contrato e o relato desta entrega.`)
                 + `</span>`;
         }
 
@@ -2833,9 +2833,7 @@
             const dRel = encDestinos ? encDestinos.relacionamento.responsavel : undefined;
             const dCob = encDestinos ? encDestinos.cobranca.responsavel : undefined;
             if(rel) linhas.push(item('sentiment_satisfied',
-                (encDestinos && encDestinos.relacionamento_existente
-                    ? 'A entrega entra no <b>card do cliente</b> no Relacionamento, com o relato e o contrato'
-                    : '<b>1 card</b> no Relacionamento, com o relato da entrega, o contrato e o histórico da conta')
+'<b>1 card</b> no Relacionamento para este projeto, com o relato da entrega, o contrato e o histórico da conta'
                 + (dRel === undefined ? '' : dRel ? ` · para <b>${escH(dRel)}</b>` : '')));
             if(rel && dRel === null) linhas.push(item('person_off',
                 'Ninguém configurado para o relacionamento neste quadro: o lead fica <b>sem responsável</b> no Backlog.', true));
