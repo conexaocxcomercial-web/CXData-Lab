@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for, g
+import time
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -2774,7 +2775,11 @@ def listar_leads():
         # Paginado: com 768 leads a tela ja passaria de 1000 em pouco
         # tempo, e o corte do PostgREST e silencioso -- some lead do
         # quadro sem nenhum aviso.
-        res_data = _paginar("leads", "*",
+        # Só as colunas que a tela usa. `select *` trazia também a foto
+        # da entrega (jsonb), o lote de importação e o id de origem de
+        # cada lead -- peso que viaja a cada abertura do CRM e a cada
+        # recarga depois de mover um card, sem aparecer em lugar nenhum.
+        res_data = _paginar("leads", COLUNAS_LISTA_LEADS,
                             lambda q: q.is_("excluido_em", "null")
                                        .order("movido_em", desc=True))
         res = types.SimpleNamespace(data=res_data)
@@ -2782,6 +2787,12 @@ def listar_leads():
     except Exception as e:
         print("Erro em listar_leads:", e)
         return jsonify({"status": "erro", "mensagem": "Erro ao carregar leads.", "detalhe": str(e)[:300]}), 500
+
+
+COLUNAS_LISTA_LEADS = ("id, empresa, contato, telefone, email, produto, responsavel, origem, anotacoes, "
+                       "valor_estimado, proximo_contato, funil, coluna, cliente_id, criado_em, movido_em, "
+                       "contatos, lead_pai_id, canal_proposta, cnpj, segmento, localizacao, cidade, estado, "
+                       "contrato_arquivo, excluido_em")
 
 
 @app.route('/api/leads', methods=['POST'])
@@ -7611,6 +7622,28 @@ def hub_resumo():
 # Precisa ficar aqui, no fim: ARVORE_QUADROS, AREAS, CATALOGO e
 # gerar_hash so existem depois de todo o arquivo ser lido.
 # ============================================================
+# ============================================================
+# TEMPO DE CADA REQUISIÇÃO
+#
+# Para medir em produção em vez de adivinhar: o navegador mostra o tempo
+# no DevTools (aba Rede › Timing, "Server Timing"), e toda requisição que
+# passa de 1 segundo aparece nos logs da Vercel com a marca [LENTO].
+# ============================================================
+@app.before_request
+def _marcar_inicio():
+    g._inicio = time.perf_counter()
+
+@app.after_request
+def _medir_duracao(resp):
+    inicio = getattr(g, '_inicio', None)
+    if inicio is not None:
+        ms = (time.perf_counter() - inicio) * 1000
+        resp.headers['Server-Timing'] = f'app;dur={ms:.0f}'
+        if ms > 1000:
+            print(f"[LENTO] {request.method} {request.path} {ms:.0f} ms")
+    return resp
+
+
 acessos_v2.configurar(
     supabase=supabase,
     catalogo=CATALOGO,
